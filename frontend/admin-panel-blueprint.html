@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>LuxeStay Admin Panel Blueprint</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #f9f7f4; color: #2d3748; font-size: 13px; line-height: 1.6; }
+
+  /* Print styles */
+  @media print {
+    body { background: white; font-size: 11px; }
+    .no-print { display: none; }
+    .page-break { page-break-before: always; }
+    .card { box-shadow: none !important; border: 1px solid #e2d9cc !important; }
+    h1 { font-size: 22px !important; }
+  }
+
+  /* Layout */
+  .wrapper { max-width: 960px; margin: 0 auto; padding: 32px 24px; }
+
+  /* Print button */
+  .print-btn {
+    position: fixed; top: 20px; right: 20px;
+    background: #434d59; color: white;
+    border: none; padding: 10px 20px; border-radius: 8px;
+    font-size: 13px; font-weight: 600; cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 999;
+  }
+  .print-btn:hover { background: #2d3748; }
+
+  /* Header */
+  .header {
+    background: linear-gradient(135deg, #434d59 0%, #2d3748 100%);
+    color: white; border-radius: 16px; padding: 36px 40px;
+    margin-bottom: 28px; position: relative; overflow: hidden;
+  }
+  .header::after {
+    content: ''; position: absolute; top: -40px; right: -40px;
+    width: 200px; height: 200px; border-radius: 50%;
+    background: rgba(225,217,204,0.08);
+  }
+  .header h1 { font-size: 28px; font-weight: 800; letter-spacing: -0.5px; }
+  .header .subtitle { color: rgba(255,255,255,0.7); margin-top: 6px; font-size: 14px; }
+  .header .meta { display: flex; gap: 24px; margin-top: 20px; }
+  .header .meta-item { background: rgba(255,255,255,0.1); border-radius: 8px; padding: 8px 16px; }
+  .header .meta-item span { display: block; font-size: 10px; color: rgba(255,255,255,0.6); text-transform: uppercase; letter-spacing: 0.5px; }
+  .header .meta-item strong { font-size: 14px; color: white; }
+
+  /* Section title */
+  .section-title {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 16px; font-weight: 700; color: #434d59;
+    margin: 28px 0 14px; padding-bottom: 8px;
+    border-bottom: 2px solid #e1d9cc;
+  }
+  .section-title .dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: #a8977a; flex-shrink: 0;
+  }
+
+  /* Card */
+  .card {
+    background: white; border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(67,77,89,0.08);
+    padding: 20px 24px; margin-bottom: 16px;
+  }
+
+  /* Tech stack table */
+  table { width: 100%; border-collapse: collapse; }
+  th {
+    background: #434d59; color: white;
+    padding: 10px 14px; text-align: left;
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  th:first-child { border-radius: 8px 0 0 0; }
+  th:last-child { border-radius: 0 8px 0 0; }
+  td { padding: 10px 14px; border-bottom: 1px solid #f0ebe4; font-size: 12px; }
+  tr:last-child td { border-bottom: none; }
+  tr:nth-child(even) td { background: #faf8f5; }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 20px;
+    font-size: 10px; font-weight: 600; text-transform: uppercase;
+  }
+  .badge-green { background: #d1fae5; color: #065f46; }
+  .badge-blue { background: #dbeafe; color: #1e40af; }
+  .badge-amber { background: #fef3c7; color: #92400e; }
+  .badge-purple { background: #ede9fe; color: #5b21b6; }
+
+  /* Pages grid */
+  .pages-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .page-card {
+    background: white; border-radius: 10px; padding: 16px 18px;
+    box-shadow: 0 2px 8px rgba(67,77,89,0.07);
+    border-left: 4px solid #a8977a;
+  }
+  .page-card h4 { font-size: 13px; font-weight: 700; color: #434d59; margin-bottom: 6px; }
+  .page-card .route { font-size: 10px; color: #a8977a; font-family: monospace; font-weight: 600; margin-bottom: 8px; }
+  .page-card ul { list-style: none; }
+  .page-card ul li { font-size: 11px; color: #6b7280; padding: 2px 0; padding-left: 12px; position: relative; }
+  .page-card ul li::before { content: '→'; position: absolute; left: 0; color: #a8977a; font-size: 10px; }
+
+  /* API routes */
+  .api-list { display: flex; flex-direction: column; gap: 6px; }
+  .api-item {
+    display: flex; align-items: center; gap: 10px;
+    background: #faf8f5; border-radius: 8px; padding: 8px 12px;
+    border: 1px solid #e1d9cc;
+  }
+  .method {
+    font-size: 10px; font-weight: 700; padding: 2px 8px;
+    border-radius: 4px; font-family: monospace; min-width: 48px;
+    text-align: center;
+  }
+  .method-get { background: #d1fae5; color: #065f46; }
+  .method-post { background: #dbeafe; color: #1e40af; }
+  .method-patch { background: #fef3c7; color: #92400e; }
+  .method-delete { background: #fee2e2; color: #991b1b; }
+  .api-path { font-family: monospace; font-size: 12px; color: #434d59; font-weight: 600; }
+  .api-desc { font-size: 11px; color: #9ca3af; margin-left: auto; }
+
+  /* Flow diagram */
+  .flow {
+    background: #1e2530; border-radius: 12px; padding: 24px;
+    font-family: monospace; font-size: 11px; color: #e1d9cc;
+    line-height: 2; overflow-x: auto;
+  }
+  .flow .highlight { color: #a8977a; font-weight: 700; }
+  .flow .comment { color: #6b7280; }
+
+  /* Env block */
+  .env-block {
+    background: #1e2530; border-radius: 10px; padding: 18px 20px;
+    font-family: monospace; font-size: 12px; color: #e1d9cc; line-height: 2;
+  }
+  .env-block .key { color: #a8977a; }
+  .env-block .val { color: #86efac; }
+  .env-block .comment { color: #6b7280; }
+
+  /* Summary table */
+  .summary-table { width: 100%; border-collapse: collapse; }
+  .summary-table th { background: #434d59; color: white; padding: 10px 14px; font-size: 11px; text-transform: uppercase; }
+  .summary-table td { padding: 10px 14px; border-bottom: 1px solid #f0ebe4; font-size: 12px; }
+  .summary-table tr:last-child td { border-bottom: none; }
+  .complexity-easy { color: #065f46; font-weight: 600; }
+  .complexity-medium { color: #92400e; font-weight: 600; }
+  .complexity-hard { color: #991b1b; font-weight: 600; }
+
+  /* Footer */
+  .footer {
+    text-align: center; margin-top: 40px; padding: 20px;
+    color: #9ca3af; font-size: 11px; border-top: 1px solid #e1d9cc;
+  }
+
+  /* Two col layout */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+</style>
+</head>
+<body>
+
+<button class="print-btn no-print" onclick="window.print()">🖨️ Save as PDF</button>
+
+<div class="wrapper">
+
+  <!-- HEADER -->
+  <div class="header">
+    <h1>🏨 LuxeStay Admin Panel</h1>
+    <div class="subtitle">Complete Technical Blueprint — Tech Stack, Pages, Workflow & API Reference</div>
+    <div class="meta">
+      <div class="meta-item"><span>Project</span><strong>LuxeStay Hotel System</strong></div>
+      <div class="meta-item"><span>Version</span><strong>1.0.0</strong></div>
+      <div class="meta-item"><span>Backend</span><strong>Node.js / Express</strong></div>
+      <div class="meta-item"><span>Database</span><strong>MongoDB Atlas</strong></div>
+    </div>
+  </div>
+
+  <!-- TECH STACK -->
+  <div class="section-title"><div class="dot"></div> Tech Stack</div>
+  <div class="card">
+    <table>
+      <thead>
+        <tr>
+          <th>Layer</th>
+          <th>Technology</th>
+          <th>Purpose</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Frontend</strong></td><td>React + Vite + TypeScript</td><td>Admin UI — same as main project</td><td><span class="badge badge-green">Ready</span></td></tr>
+        <tr><td><strong>UI Components</strong></td><td>shadcn/ui + Tailwind CSS</td><td>Design system — already installed</td><td><span class="badge badge-green">Ready</span></td></tr>
+        <tr><td><strong>Charts</strong></td><td>Recharts</td><td>Revenue, bookings, analytics charts</td><td><span class="badge badge-green">Installed</span></td></tr>
+        <tr><td><strong>Tables</strong></td><td>TanStack Table v8</td><td>Sortable, filterable data tables</td><td><span class="badge badge-blue">Install</span></td></tr>
+        <tr><td><strong>State</strong></td><td>React Context</td><td>Admin auth + global state</td><td><span class="badge badge-green">Built-in</span></td></tr>
+        <tr><td><strong>Routing</strong></td><td>React Router DOM</td><td>Page navigation</td><td><span class="badge badge-green">Installed</span></td></tr>
+        <tr><td><strong>HTTP Client</strong></td><td>Axios</td><td>API calls to backend</td><td><span class="badge badge-green">Installed</span></td></tr>
+        <tr><td><strong>Auth</strong></td><td>JWT (JSON Web Token)</td><td>Secure admin-only access</td><td><span class="badge badge-amber">Add</span></td></tr>
+        <tr><td><strong>Backend</strong></td><td>Express.js</td><td>Existing — add admin routes</td><td><span class="badge badge-green">Running</span></td></tr>
+        <tr><td><strong>Database</strong></td><td>MongoDB Atlas + Mongoose</td><td>Same cluster as main app</td><td><span class="badge badge-green">Connected</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- FOLDER STRUCTURE -->
+  <div class="section-title"><div class="dot"></div> Folder Structure</div>
+  <div class="card">
+    <div class="flow">
+<span class="highlight">admin/</span>                          <span class="comment">← Separate Vite project (npm create vite)</span>
+├── src/
+│   ├── <span class="highlight">pages/</span>
+│   │   ├── Login.tsx           <span class="comment">← Admin login with JWT</span>
+│   │   ├── Dashboard.tsx       <span class="comment">← Stats overview + charts</span>
+│   │   ├── Rooms.tsx           <span class="comment">← CRUD room management</span>
+│   │   ├── Bookings.tsx        <span class="comment">← All bookings + cancel</span>
+│   │   ├── Guests.tsx          <span class="comment">← Guest list + history</span>
+│   │   └── Analytics.tsx       <span class="comment">← Revenue + occupancy charts</span>
+│   ├── <span class="highlight">components/</span>
+│   │   ├── Sidebar.tsx         <span class="comment">← Navigation sidebar</span>
+│   │   ├── Topbar.tsx          <span class="comment">← Header with admin name</span>
+│   │   ├── StatsCard.tsx       <span class="comment">← Reusable metric card</span>
+│   │   ├── DataTable.tsx       <span class="comment">← Reusable sortable table</span>
+│   │   └── ProtectedRoute.tsx  <span class="comment">← JWT guard wrapper</span>
+│   ├── <span class="highlight">services/</span>
+│   │   └── api.ts              <span class="comment">← Axios instance + all API calls</span>
+│   └── <span class="highlight">context/</span>
+│       └── AdminContext.tsx    <span class="comment">← Auth state management</span>
+├── .env                        <span class="comment">← VITE_API_URL=http://localhost:5000/api</span>
+└── package.json
+    </div>
+  </div>
+
+  <!-- PAGES -->
+  <div class="section-title"><div class="dot"></div> Pages &amp; Functionality</div>
+  <div class="pages-grid">
+
+    <div class="page-card">
+      <div class="route">GET /login</div>
+      <h4>🔐 Login Page</h4>
+      <ul>
+        <li>Email + Password fields</li>
+        <li>POST /api/admin/login</li>
+        <li>JWT token → localStorage</li>
+        <li>Redirect to /dashboard on success</li>
+        <li>Error message on wrong credentials</li>
+      </ul>
+    </div>
+
+    <div class="page-card">
+      <div class="route">GET /dashboard</div>
+      <h4>📊 Dashboard</h4>
+      <ul>
+        <li>Total Bookings stat card</li>
+        <li>Total Revenue ($) stat card</li>
+        <li>Available Rooms stat card</li>
+        <li>Total Guests stat card</li>
+        <li>Revenue by Month (Bar chart)</li>
+        <li>Booking Status (Pie chart)</li>
+        <li>Last 5 bookings table</li>
+      </ul>
+    </div>
+
+    <div class="page-card">
+      <div class="route">GET /rooms</div>
+      <h4>🛏️ Rooms Management</h4>
+      <ul>
+        <li>Table: Number, Type, Price, Status, Floor</li>
+        <li>Search by room number or type</li>
+        <li>Filter by status dropdown</li>
+        <li>Add Room button → modal form</li>
+        <li>Edit room → PATCH /api/rooms/:id</li>
+        <li>Change status (Available/Booked/Maintenance)</li>
+        <li>Soft delete → DELETE /api/rooms/:id</li>
+      </ul>
+    </div>
+
+    <div class="page-card">
+      <div class="route">GET /bookings</div>
+      <h4>📋 Bookings Management</h4>
+      <ul>
+        <li>Table: ID, Guest, Room, Dates, Total, Status</li>
+        <li>Filter by status (Confirmed/Cancelled)</li>
+        <li>Date range picker filter</li>
+        <li>Search by guest email</li>
+        <li>View Details modal</li>
+        <li>Cancel booking → PATCH cancel</li>
+      </ul>
+    </div>
+
+    <div class="page-card">
+      <div class="route">GET /guests</div>
+      <h4>👥 Guests Management</h4>
+      <ul>
+        <li>Table: Name, Email, Phone, City, Bookings</li>
+        <li>Search by name or email</li>
+        <li>View booking history per guest</li>
+        <li>GET /api/guests/:id for details</li>
+      </ul>
+    </div>
+
+    <div class="page-card">
+      <div class="route">GET /analytics</div>
+      <h4>📈 Analytics</h4>
+      <ul>
+        <li>Monthly Revenue (BarChart)</li>
+        <li>Occupancy Rate % (LineChart)</li>
+        <li>Popular Room Types (PieChart)</li>
+        <li>Daily Bookings 30 days (AreaChart)</li>
+        <li>Data from GET /api/admin/analytics</li>
+      </ul>
+    </div>
+
+  </div>
+
+  <!-- API ROUTES -->
+  <div class="page-break"></div>
+  <div class="section-title"><div class="dot"></div> Backend API Routes</div>
+
+  <div class="two-col">
+    <div>
+      <div class="card" style="margin-bottom:8px"><strong style="font-size:12px;color:#434d59">🆕 New Admin Routes (to add)</strong></div>
+      <div class="api-list">
+        <div class="api-item"><span class="method method-post">POST</span><span class="api-path">/api/admin/login</span><span class="api-desc">Authenticate admin</span></div>
+        <div class="api-item"><span class="method method-get">GET</span><span class="api-path">/api/admin/stats</span><span class="api-desc">Dashboard numbers</span></div>
+        <div class="api-item"><span class="method method-get">GET</span><span class="api-path">/api/admin/analytics</span><span class="api-desc">Chart data</span></div>
+      </div>
+    </div>
+    <div>
+      <div class="card" style="margin-bottom:8px"><strong style="font-size:12px;color:#434d59">✅ Existing Routes (already working)</strong></div>
+      <div class="api-list">
+        <div class="api-item"><span class="method method-get">GET</span><span class="api-path">/api/rooms</span><span class="api-desc">List all rooms</span></div>
+        <div class="api-item"><span class="method method-post">POST</span><span class="api-path">/api/rooms</span><span class="api-desc">Create room</span></div>
+        <div class="api-item"><span class="method method-patch">PATCH</span><span class="api-path">/api/rooms/:id</span><span class="api-desc">Update status</span></div>
+        <div class="api-item"><span class="method method-delete">DELETE</span><span class="api-path">/api/rooms/:id</span><span class="api-desc">Soft delete</span></div>
+        <div class="api-item"><span class="method method-get">GET</span><span class="api-path">/api/bookings</span><span class="api-desc">All bookings</span></div>
+        <div class="api-item"><span class="method method-patch">PATCH</span><span class="api-path">/api/bookings/:id/cancel</span><span class="api-desc">Cancel booking</span></div>
+        <div class="api-item"><span class="method method-get">GET</span><span class="api-path">/api/guests</span><span class="api-desc">Guest list</span></div>
+        <div class="api-item"><span class="method method-get">GET</span><span class="api-path">/api/guests/:id</span><span class="api-desc">Guest details</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STATS RESPONSE -->
+  <div class="section-title"><div class="dot"></div> Admin Stats API Response</div>
+  <div class="card">
+    <div class="env-block">
+<span class="comment">// GET /api/admin/stats — Response JSON</span>
+{
+  <span class="key">"totalBookings"</span>:       <span class="val">142</span>,
+  <span class="key">"confirmedBookings"</span>:   <span class="val">98</span>,
+  <span class="key">"cancelledBookings"</span>:   <span class="val">44</span>,
+  <span class="key">"totalRevenue"</span>:        <span class="val">284500</span>,
+  <span class="key">"availableRooms"</span>:      <span class="val">8</span>,
+  <span class="key">"bookedRooms"</span>:         <span class="val">5</span>,
+  <span class="key">"maintenanceRooms"</span>:    <span class="val">0</span>,
+  <span class="key">"totalGuests"</span>:         <span class="val">87</span>,
+  <span class="key">"revenueThisMonth"</span>:    <span class="val">42300</span>,
+  <span class="key">"bookingsThisMonth"</span>:   <span class="val">18</span>
+}
+    </div>
+  </div>
+
+  <!-- JWT AUTH FLOW -->
+  <div class="section-title"><div class="dot"></div> JWT Authentication Flow</div>
+  <div class="card">
+    <div class="flow">
+<span class="highlight">Step 1</span>  Admin enters email + password on /login page
+<span class="highlight">Step 2</span>  Frontend → POST /api/admin/login { email, password }
+<span class="highlight">Step 3</span>  Backend checks against ADMIN_EMAIL + ADMIN_PASSWORD in .env
+<span class="highlight">Step 4</span>  Backend returns → { token: "eyJhbGci..." } (expires 24h)
+<span class="highlight">Step 5</span>  Frontend stores token in localStorage
+<span class="highlight">Step 6</span>  Every API call sends header: <span class="comment">Authorization: Bearer &lt;token&gt;</span>
+<span class="highlight">Step 7</span>  Backend middleware verifies token on all /api/admin/* routes
+<span class="highlight">Step 8</span>  Token expired → 401 response → redirect to /login
+    </div>
+  </div>
+
+  <!-- ENV VARIABLES -->
+  <div class="section-title"><div class="dot"></div> Environment Variables to Add</div>
+  <div class="two-col">
+    <div class="card">
+      <strong style="font-size:12px;color:#434d59;display:block;margin-bottom:10px">backend/.env (additions)</strong>
+      <div class="env-block">
+<span class="comment"># Admin credentials</span>
+<span class="key">ADMIN_EMAIL</span>=<span class="val">admin@luxestay.com</span>
+<span class="key">ADMIN_PASSWORD</span>=<span class="val">your_secure_password</span>
+
+<span class="comment"># JWT</span>
+<span class="key">JWT_SECRET</span>=<span class="val">your_jwt_secret_key</span>
+<span class="key">JWT_EXPIRES_IN</span>=<span class="val">24h</span>
+      </div>
+    </div>
+    <div class="card">
+      <strong style="font-size:12px;color:#434d59;display:block;margin-bottom:10px">admin/.env</strong>
+      <div class="env-block">
+<span class="comment"># Backend API URL</span>
+<span class="key">VITE_API_URL</span>=<span class="val">http://localhost:5000/api</span>
+
+<span class="comment"># Admin panel port</span>
+<span class="comment"># runs on http://localhost:5173</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- QUICK START -->
+  <div class="section-title"><div class="dot"></div> Quick Start Commands</div>
+  <div class="card">
+    <div class="flow">
+<span class="comment"># 1. Create admin project</span>
+<span class="highlight">npm create vite@latest admin -- --template react-ts</span>
+<span class="highlight">cd admin</span>
+
+<span class="comment"># 2. Install dependencies</span>
+<span class="highlight">npm install axios react-router-dom recharts @tanstack/react-table jsonwebtoken</span>
+
+<span class="comment"># 3. Copy Tailwind config from main project</span>
+<span class="highlight">copy ..\tailwind.config.ts .\tailwind.config.ts</span>
+<span class="highlight">copy ..\postcss.config.js .\postcss.config.js</span>
+
+<span class="comment"># 4. Copy shadcn/ui components</span>
+<span class="highlight">xcopy ..\src\components\ui .\src\components\ui /E /Y</span>
+
+<span class="comment"># 5. Run admin panel</span>
+<span class="highlight">npm run dev</span>   <span class="comment">→ http://localhost:5173</span>
+
+<span class="comment"># 6. Install JWT on backend</span>
+<span class="highlight">cd ..\backend && npm install jsonwebtoken bcryptjs</span>
+    </div>
+  </div>
+
+  <!-- SUMMARY TABLE -->
+  <div class="section-title"><div class="dot"></div> Build Summary</div>
+  <div class="card">
+    <table class="summary-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Page</th>
+          <th>Route</th>
+          <th>Complexity</th>
+          <th>APIs Used</th>
+          <th>New API Needed?</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>1</td>
+          <td><strong>Login</strong></td>
+          <td><code>/login</code></td>
+          <td class="complexity-easy">Easy</td>
+          <td>POST /admin/login</td>
+          <td><span class="badge badge-amber">Yes — add</span></td>
+        </tr>
+        <tr>
+          <td>2</td>
+          <td><strong>Dashboard</strong></td>
+          <td><code>/dashboard</code></td>
+          <td class="complexity-medium">Medium</td>
+          <td>GET /admin/stats, GET /bookings</td>
+          <td><span class="badge badge-amber">Yes — add</span></td>
+        </tr>
+        <tr>
+          <td>3</td>
+          <td><strong>Rooms</strong></td>
+          <td><code>/rooms</code></td>
+          <td class="complexity-medium">Medium</td>
+          <td>GET/POST/PATCH/DELETE /rooms</td>
+          <td><span class="badge badge-green">No — exists</span></td>
+        </tr>
+        <tr>
+          <td>4</td>
+          <td><strong>Bookings</strong></td>
+          <td><code>/bookings</code></td>
+          <td class="complexity-medium">Medium</td>
+          <td>GET /bookings, PATCH cancel</td>
+          <td><span class="badge badge-green">No — exists</span></td>
+        </tr>
+        <tr>
+          <td>5</td>
+          <td><strong>Guests</strong></td>
+          <td><code>/guests</code></td>
+          <td class="complexity-easy">Easy</td>
+          <td>GET /guests, GET /guests/:id</td>
+          <td><span class="badge badge-green">No — exists</span></td>
+        </tr>
+        <tr>
+          <td>6</td>
+          <td><strong>Analytics</strong></td>
+          <td><code>/analytics</code></td>
+          <td class="complexity-hard">Hard</td>
+          <td>GET /admin/analytics</td>
+          <td><span class="badge badge-amber">Yes — add</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <strong>LuxeStay Hotel Management System</strong> — Admin Panel Blueprint v1.0<br/>
+    Generated: April 2026 &nbsp;|&nbsp; Backend: Node.js/Express on port 5000 &nbsp;|&nbsp; DB: MongoDB Atlas
+  </div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,16 @@
+# Flutter
+hotelmanag/.dart_tool/
+hotelmanag/.flutter-plugins
+hotelmanag/.flutter-plugins-dependencies
+hotelmanag/.pub-cache/
+hotelmanag/.pub/
+hotelmanag/build/
+
+# Node
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+
+# OS
+.DS_Store
+Thumbs.db
