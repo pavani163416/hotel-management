@@ -3,6 +3,9 @@ import 'package:lucide_icons/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/main_layout.dart';
+import '../../../../core/providers/hotel_provider.dart';
+import '../../../../shared/domain/entities/hotel_entity.dart';
+import 'package:provider/provider.dart';
 
 class HotelDetailsPage extends StatefulWidget {
   final String id;
@@ -29,23 +32,40 @@ class _HotelDetailsPageState extends State<HotelDetailsPage> with SingleTickerPr
 
   @override
   Widget build(BuildContext context) {
+    final hotel = context.watch<HotelProvider>().hotels.cast<HotelEntity>().firstWhere(
+      (h) => h.id == widget.id,
+      orElse: () => const HotelEntity(
+        id: '',
+        name: 'Loading...',
+        location: '',
+        rating: 0,
+        pricePerNight: 0,
+        imageUrl: '',
+        description: '',
+      ),
+    );
+
+    if (hotel.id.isEmpty) {
+      return const MainLayout(child: Center(child: CircularProgressIndicator()));
+    }
+
     return MainLayout(
       child: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildGallery(),
+            _buildGallery(hotel),
             Padding(
               padding: const EdgeInsets.all(24.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildHeader(),
+                  _buildHeader(hotel),
                   const SizedBox(height: 32),
                   _buildTabBar(),
                   const SizedBox(height: 24),
-                  _buildTabContent(),
+                  _buildTabContent(hotel),
                 ],
               ),
             ),
@@ -56,18 +76,18 @@ class _HotelDetailsPageState extends State<HotelDetailsPage> with SingleTickerPr
     );
   }
 
-  Widget _buildGallery() {
+  Widget _buildGallery(HotelEntity hotel) {
     return SizedBox(
       height: 300,
       width: double.infinity,
       child: Image.network(
-        'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=1000',
+        hotel.imageUrl,
         fit: BoxFit.cover,
       ),
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(HotelEntity hotel) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -79,16 +99,16 @@ class _HotelDetailsPageState extends State<HotelDetailsPage> with SingleTickerPr
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'The Azure Boutique',
-                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
+                  Text(
+                    hotel.name,
+                    style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
                   ),
                   const SizedBox(height: 8),
                   Row(
                     children: [
                       Icon(LucideIcons.mapPin, size: 16, color: AppTheme.primaryColor.withOpacity(0.5)),
                       const SizedBox(width: 6),
-                      Text('Santorini, Greece', style: TextStyle(color: AppTheme.primaryColor.withOpacity(0.6), fontSize: 14)),
+                      Text(hotel.location, style: TextStyle(color: AppTheme.primaryColor.withOpacity(0.6), fontSize: 14)),
                     ],
                   ),
                 ],
@@ -97,11 +117,11 @@ class _HotelDetailsPageState extends State<HotelDetailsPage> with SingleTickerPr
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(color: AppTheme.mutedColor.withOpacity(0.3), borderRadius: BorderRadius.circular(12)),
-              child: const Row(
+              child: Row(
                 children: [
-                  Icon(LucideIcons.star, color: AppTheme.accentColor, size: 16, fill: 1),
-                  SizedBox(width: 4),
-                  Text('4.9', style: TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+                  const Icon(LucideIcons.star, color: AppTheme.accentColor, size: 16, fill: 1),
+                  const SizedBox(width: 4),
+                  Text(hotel.rating.toString(), style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
                 ],
               ),
             ),
@@ -130,7 +150,7 @@ class _HotelDetailsPageState extends State<HotelDetailsPage> with SingleTickerPr
     );
   }
 
-  Widget _buildTabContent() {
+  Widget _buildTabContent(HotelEntity hotel) {
     return SizedBox(
       height: 600,
       child: TabBarView(

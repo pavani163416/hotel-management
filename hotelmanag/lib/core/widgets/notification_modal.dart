@@ -25,7 +25,12 @@ class NotificationModal extends StatelessWidget {
                 style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
               ),
               TextButton(
-                onPressed: () => Navigator.pop(context),
+                onPressed: () {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('All notifications marked as read'), behavior: SnackBarBehavior.floating),
+                  );
+                },
                 child: const Text('Mark all as read', style: TextStyle(color: AppTheme.accentColor, fontWeight: FontWeight.bold)),
               ),
             ],

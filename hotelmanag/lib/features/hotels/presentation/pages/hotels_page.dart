@@ -4,6 +4,9 @@ import 'package:lucide_icons/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/main_layout.dart';
+import '../../../../core/providers/hotel_provider.dart';
+import '../../../../shared/domain/entities/hotel_entity.dart';
+import 'package:provider/provider.dart';
 
 class HotelsPage extends StatefulWidget {
   const HotelsPage({super.key});
@@ -15,6 +18,12 @@ class HotelsPage extends StatefulWidget {
 class _HotelsPageState extends State<HotelsPage> {
   final ScrollController _dealsController = ScrollController();
   final ScrollController _curatedController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() => context.read<HotelProvider>().fetchHotels());
+  }
 
   @override
   void dispose() {
@@ -117,14 +126,27 @@ class _HotelsPageState extends State<HotelsPage> {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  ListView.separated(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    scrollDirection: Axis.vertical,
-                    itemCount: 5,
-                    separatorBuilder: (context, index) => const SizedBox(height: 24),
-                    itemBuilder: (context, index) => const HotelListCard(),
+                  Consumer<HotelProvider>(
+                    builder: (context, provider, child) {
+                      if (provider.isLoading) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+                      if (provider.error != null) {
+                        return Center(child: Text('Error: ${provider.error}'));
+                      }
+                      if (provider.hotels.isEmpty) {
+                        return const Center(child: Text('No hotels found'));
+                      }
+                      return ListView.separated(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        scrollDirection: Axis.vertical,
+                        itemCount: provider.hotels.length,
+                        separatorBuilder: (context, index) => const SizedBox(height: 24),
+                        itemBuilder: (context, index) => HotelListCard(hotel: provider.hotels[index]),
+                      );
+                    },
                   ),
                 ],
               ),
@@ -156,14 +178,25 @@ class _HotelsPageState extends State<HotelsPage> {
         ),
         SizedBox(
           height: 280,
-          child: ListView.separated(
-            controller: _dealsController,
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            scrollDirection: Axis.horizontal,
-            physics: const BouncingScrollPhysics(),
-            itemCount: 4,
-            separatorBuilder: (context, index) => const SizedBox(width: 16),
-            itemBuilder: (context, index) => const DealCard(),
+          child: Consumer<HotelProvider>(
+            builder: (context, provider, child) {
+              if (provider.isLoading) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              final topDeals = provider.hotels.take(4).toList();
+              if (topDeals.isEmpty) {
+                return const Center(child: Text('No deals found'));
+              }
+              return ListView.separated(
+                controller: _dealsController,
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                scrollDirection: Axis.horizontal,
+                physics: const BouncingScrollPhysics(),
+                itemCount: topDeals.length,
+                separatorBuilder: (context, index) => const SizedBox(width: 16),
+                itemBuilder: (context, index) => DealCard(hotel: topDeals[index]),
+              );
+            },
           ),
         ),
       ],
@@ -182,7 +215,8 @@ class _HotelsPageState extends State<HotelsPage> {
 }
 
 class DealCard extends StatelessWidget {
-  const DealCard({super.key});
+  final HotelEntity hotel;
+  const DealCard({super.key, required this.hotel});
 
   @override
   Widget build(BuildContext context) {
@@ -200,10 +234,10 @@ class DealCard extends StatelessWidget {
             child: Stack(
               children: [
                 Container(
-                  decoration: const BoxDecoration(
-                    borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                  decoration: BoxDecoration(
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
                     image: DecorationImage(
-                      image: NetworkImage('https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?q=80&w=1000'),
+                      image: NetworkImage(hotel.imageUrl),
                       fit: BoxFit.cover,
                     ),
                   ),
@@ -225,28 +259,28 @@ class DealCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Row(
+                Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Expanded(child: Text('Ocean View Resort', style: TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryColor, fontSize: 15), overflow: TextOverflow.ellipsis)),
+                    Expanded(child: Text(hotel.name, style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryColor, fontSize: 15), overflow: TextOverflow.ellipsis)),
                     Row(
                       children: [
-                        Icon(LucideIcons.star, color: AppTheme.accentColor, size: 12, fill: 1),
-                        SizedBox(width: 4),
-                        Text('4.8', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                        const Icon(LucideIcons.star, color: AppTheme.accentColor, size: 12, fill: 1),
+                        const SizedBox(width: 4),
+                        Text(hotel.rating.toString(), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                       ],
                     ),
                   ],
                 ),
                 const SizedBox(height: 4),
-                Text('Maldives', style: TextStyle(fontSize: 12, color: AppTheme.primaryColor.withOpacity(0.6))),
+                Text(hotel.location, style: TextStyle(fontSize: 12, color: AppTheme.primaryColor.withOpacity(0.6))),
                 const SizedBox(height: 12),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('\$320/night', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+                    Text('\$${hotel.pricePerNight}/night', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
                     ElevatedButton(
-                      onPressed: () => context.push('/hotel/1'),
+                      onPressed: () => context.push('/hotel/${hotel.id}'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppTheme.accentColor,
                         foregroundColor: AppTheme.primaryColor,
@@ -267,7 +301,8 @@ class DealCard extends StatelessWidget {
 }
 
 class HotelListCard extends StatelessWidget {
-  const HotelListCard({super.key});
+  final HotelEntity hotel;
+  const HotelListCard({super.key, required this.hotel});
 
   @override
   Widget build(BuildContext context) {
@@ -284,10 +319,10 @@ class HotelListCard extends StatelessWidget {
             AspectRatio(
               aspectRatio: 16 / 9,
               child: Container(
-                decoration: const BoxDecoration(
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                decoration: BoxDecoration(
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
                   image: DecorationImage(
-                    image: NetworkImage('https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?q=80&w=1000'),
+                    image: NetworkImage(hotel.imageUrl),
                     fit: BoxFit.cover,
                   ),
                 ),
@@ -298,15 +333,15 @@ class HotelListCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Row(
+                  Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('Grand Heritage Hotel', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+                      Text(hotel.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
                       Row(
                         children: [
-                          Icon(LucideIcons.star, color: AppTheme.accentColor, size: 16, fill: 1),
-                          SizedBox(width: 4),
-                          Text('4.9', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                          const Icon(LucideIcons.star, color: AppTheme.accentColor, size: 16, fill: 1),
+                          const SizedBox(width: 4),
+                          Text(hotel.rating.toString(), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
                         ],
                       ),
                     ],
@@ -316,7 +351,7 @@ class HotelListCard extends StatelessWidget {
                     children: [
                       Icon(LucideIcons.mapPin, size: 14, color: AppTheme.primaryColor.withOpacity(0.5)),
                       const SizedBox(width: 4),
-                      Text('Paris, France', style: TextStyle(fontSize: 13, color: AppTheme.primaryColor.withOpacity(0.6))),
+                      Text(hotel.location, style: TextStyle(fontSize: 13, color: AppTheme.primaryColor.withOpacity(0.6))),
                     ],
                   ),
                   const SizedBox(height: 12),
@@ -338,11 +373,11 @@ class HotelListCard extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text('From', style: TextStyle(fontSize: 11, color: AppTheme.primaryColor)),
-                          const Text('\$580/night', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+                          Text('\$${hotel.pricePerNight}/night', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
                         ],
                       ),
                       ElevatedButton(
-                        onPressed: () => context.push('/hotel/1'),
+                        onPressed: () => context.push('/hotel/${hotel.id}'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppTheme.accentColor,
                           foregroundColor: AppTheme.primaryColor,

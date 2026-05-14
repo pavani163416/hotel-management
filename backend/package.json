@@ -1,0 +1,35 @@
+{
+  "name": "luxestay-backend",
+  "version": "1.0.0",
+  "description": "LuxeStay Hotel Management System - Backend API",
+  "type": "module",
+  "main": "server.js",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "dev": "nodemon server.js",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "bcryptjs": "2.4.3",
+    "cloudinary": "2.10.0",
+    "cors": "2.8.6",
+    "dotenv": "16.6.1",
+    "express": "4.22.1",
+    "express-mongo-sanitize": "2.2.0",
+    "express-rate-limit": "7.5.1",
+    "express-validator": "7.3.2",
+    "helmet": "8.1.0",
+    "jsonwebtoken": "9.0.3",
+    "mongoose": "8.23.1",
+    "morgan": "1.10.1",
+    "resend": "3.5.0",
+    "socket.io": "4.8.3",
+    "winston": "3.19.0",
+    "ws": "8.20.0"
+  },
+  "devDependencies": {
+    "nodemon": "3.1.14"
+  }
+}

@@ -53,7 +53,14 @@ class PaymentPage extends StatelessWidget {
             DropdownMenuItem(value: 'upi', child: Text('UPI / Google Pay')),
             DropdownMenuItem(value: 'wallet', child: Text('Digital Wallet')),
           ],
-          onChanged: (v) {},
+          onChanged: (v) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Selected Payment Method: ${v == 'card' ? 'Credit/Debit Card' : v == 'upi' ? 'UPI / Google Pay' : 'Digital Wallet'}'),
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          },
         ),
         const SizedBox(height: 24),
         const CustomTextField(label: 'Card Number', hint: '0000 0000 0000 0000'),

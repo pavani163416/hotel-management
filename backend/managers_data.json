@@ -1,0 +1,29 @@
+[
+  {
+    "name": "John Paris",
+    "email": "paris@hotel.com",
+    "password": "bWFuYWdlcjEyMw==",
+    "role": "Manager",
+    "assignedHotelId": "h1",
+    "assignedHotelName": "Hôtel de Lumière",
+    "isActive": true
+  },
+  {
+    "name": "Yuki Tokyo",
+    "email": "tokyo@hotel.com",
+    "password": "bWFuYWdlcjEyMw==",
+    "role": "Manager",
+    "assignedHotelId": "h2",
+    "assignedHotelName": "The Azure Skyline",
+    "isActive": true
+  },
+  {
+    "name": "Sarah Maldives",
+    "email": "maldives@hotel.com",
+    "password": "bWFuYWdlcjEyMw==",
+    "role": "Manager",
+    "assignedHotelId": "h3",
+    "assignedHotelName": "Coral Bay Resort",
+    "isActive": true
+  }
+]

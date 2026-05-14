@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
+import 'package:provider/provider.dart';
+import '../../../../core/providers/auth_provider.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -33,13 +35,22 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
     _controller.forward();
 
-    _navigateToHome();
+    _checkAuthAndNavigate();
   }
 
-  void _navigateToHome() async {
+  void _checkAuthAndNavigate() async {
     await Future.delayed(const Duration(milliseconds: 3000));
+    if (!mounted) return;
+
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final isLoggedIn = await authProvider.tryAutoLogin();
+
     if (mounted) {
-      context.go('/onboarding');
+      if (isLoggedIn) {
+        context.go('/');
+      } else {
+        context.go('/onboarding');
+      }
     }
   }
 

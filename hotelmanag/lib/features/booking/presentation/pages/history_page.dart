@@ -3,6 +3,10 @@ import 'package:lucide_icons/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/main_layout.dart';
+import '../../../../core/providers/booking_provider.dart';
+import '../../domain/entities/booking_entity.dart';
+import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
 
 class HistoryPage extends StatefulWidget {
   const HistoryPage({super.key});
@@ -14,39 +18,14 @@ class HistoryPage extends StatefulWidget {
 class _HistoryPageState extends State<HistoryPage> {
   String _filter = 'all';
 
-  final List<Map<String, dynamic>> _allBookings = [
-    {
-      'hotel': 'The Azure Boutique',
-      'location': 'Santorini, Greece',
-      'dates': 'Oct 12 → Oct 15',
-      'price': '\$1,350',
-      'status': 'Confirmed',
-      'image': 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400'
-    },
-    {
-      'hotel': 'Grand Palace Hotel',
-      'location': 'Paris, France',
-      'dates': 'Sep 20 → Sep 22',
-      'price': '\$840',
-      'status': 'Cancelled',
-      'image': 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=400'
-    },
-    {
-      'hotel': 'Ocean View Resort',
-      'location': 'Maldives',
-      'dates': 'Aug 05 → Aug 10',
-      'price': '\$2,100',
-      'status': 'Confirmed',
-      'image': 'https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=400'
-    },
-  ];
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() => context.read<BookingProvider>().fetchMyBookings());
+  }
 
   @override
   Widget build(BuildContext context) {
-    final filteredBookings = _filter == 'all' 
-      ? _allBookings 
-      : _allBookings.where((b) => b['status'] == _filter).toList();
-
     return MainLayout(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
@@ -65,16 +44,33 @@ class _HistoryPageState extends State<HistoryPage> {
             const SizedBox(height: 32),
             _buildFilters(),
             const SizedBox(height: 24),
-            if (filteredBookings.isEmpty)
-              _buildEmptyState()
-            else
-              ListView.separated(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: filteredBookings.length,
-                separatorBuilder: (context, index) => const SizedBox(height: 20),
-                itemBuilder: (context, index) => BookingListItem(booking: filteredBookings[index]),
-              ),
+            Consumer<BookingProvider>(
+              builder: (context, provider, child) {
+                if (provider.isLoading) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (provider.error != null) {
+                  return Center(child: Text('Error: ${provider.error}'));
+                }
+                
+                final bookings = provider.bookings;
+                final filteredBookings = _filter == 'all' 
+                  ? bookings 
+                  : bookings.where((b) => b.status == _filter).toList();
+
+                if (filteredBookings.isEmpty) {
+                  return _buildEmptyState();
+                }
+
+                return ListView.separated(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: filteredBookings.length,
+                  separatorBuilder: (context, index) => const SizedBox(height: 20),
+                  itemBuilder: (context, index) => BookingListItem(booking: filteredBookings[index]),
+                );
+              },
+            ),
             const SizedBox(height: 100),
           ],
         ),
@@ -129,12 +125,14 @@ class _HistoryPageState extends State<HistoryPage> {
 }
 
 class BookingListItem extends StatelessWidget {
-  final Map<String, dynamic> booking;
+  final BookingEntity booking;
   const BookingListItem({super.key, required this.booking});
 
   @override
   Widget build(BuildContext context) {
-    final isCancelled = booking['status'] == 'Cancelled';
+    final isCancelled = booking.status == 'Cancelled';
+    final df = DateFormat('MMM dd');
+    final dateString = '${df.format(booking.checkIn)} → ${df.format(booking.checkOut)}';
 
     return Container(
       decoration: BoxDecoration(
@@ -156,7 +154,7 @@ class BookingListItem extends StatelessWidget {
                 height: 110,
                 decoration: BoxDecoration(
                   image: DecorationImage(
-                    image: NetworkImage(booking['image']),
+                    image: NetworkImage(booking.imageUrl ?? 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=400'),
                     fit: BoxFit.cover,
                   ),
                 ),
@@ -168,7 +166,7 @@ class BookingListItem extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        booking['hotel'],
+                        booking.hotelName,
                         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppTheme.primaryColor),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -180,7 +178,7 @@ class BookingListItem extends StatelessWidget {
                           const SizedBox(width: 4),
                           Expanded(
                             child: Text(
-                              booking['location'],
+                              'Room: ${booking.roomId}',
                               style: TextStyle(fontSize: 11, color: AppTheme.primaryColor.withOpacity(0.5)),
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -194,7 +192,7 @@ class BookingListItem extends StatelessWidget {
                           const SizedBox(width: 6),
                           Expanded(
                             child: Text(
-                              booking['dates'],
+                              dateString,
                               style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.primaryColor.withOpacity(0.8)),
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -210,9 +208,9 @@ class BookingListItem extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    _buildStatusBadge(booking['status']),
+                    _buildStatusBadge(booking.status),
                     const SizedBox(height: 12),
-                    Text(booking['price'], style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+                    Text('\$${booking.totalAmount}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
                   ],
                 ),
               ),
@@ -229,24 +227,24 @@ class BookingListItem extends StatelessWidget {
                   _ActionButton(
                     icon: LucideIcons.eye,
                     label: 'Details',
-                    onTap: () => context.push('/hotel/1'),
+                    onTap: () => context.push('/hotel/${booking.roomId.split('_')[0]}'), // Rough mapping
                   ),
                   _ActionButton(
                     icon: LucideIcons.download,
                     label: 'Invoice',
-                    onTap: () => _showInvoice(context, booking['hotel']),
+                    onTap: () => _showInvoice(context, booking),
                   ),
                   _ActionButton(
                     icon: LucideIcons.helpCircle,
                     label: 'Support',
-                    onTap: () => _showSupport(context, booking['hotel']),
+                    onTap: () => _showSupport(context, booking.hotelName),
                   ),
-                  if (!isCancelled)
+                  if (!isCancelled && booking.status == 'Confirmed')
                     _ActionButton(
                       icon: LucideIcons.xCircle,
                       label: 'Cancel',
                       isDestructive: true,
-                      onTap: () => _showCancelDialog(context, booking['hotel']),
+                      onTap: () => _showCancelDialog(context, booking),
                     ),
                 ],
               ),
@@ -263,7 +261,7 @@ class BookingListItem extends StatelessWidget {
     );
   }
 
-  void _showInvoice(BuildContext context, String hotel) {
+  void _showInvoice(BuildContext context, BookingEntity booking) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.white,
@@ -282,10 +280,10 @@ class BookingListItem extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 24),
-            _buildInvoiceRow('Booking Reference', 'LX-889234'),
-            _buildInvoiceRow('Hotel', hotel),
-            _buildInvoiceRow('Total Amount', '\$1,350.00'),
-            _buildInvoiceRow('Payment Status', 'Paid via Visa'),
+            _buildInvoiceRow('Booking Reference', booking.id.toUpperCase()),
+            _buildInvoiceRow('Hotel', booking.hotelName),
+            _buildInvoiceRow('Total Amount', '\$${booking.totalAmount}'),
+            _buildInvoiceRow('Payment Status', 'Paid'),
             const SizedBox(height: 32),
             SizedBox(
               width: double.infinity,
@@ -341,18 +339,23 @@ class BookingListItem extends StatelessWidget {
     );
   }
 
-  void _showCancelDialog(BuildContext context, String hotel) {
+  void _showCancelDialog(BuildContext context, BookingEntity booking) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Cancel Booking?'),
-        content: Text('Are you sure you want to cancel your stay at $hotel? This action may incur fees.'),
+        content: Text('Are you sure you want to cancel your stay at ${booking.hotelName}? This action may incur fees.'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('Keep Booking')),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(context);
-              _showFeedback(context, 'Cancellation request received.');
+              final success = await context.read<BookingProvider>().cancelBooking(booking.id);
+              if (success) {
+                _showFeedback(context, 'Booking cancelled successfully.');
+              } else {
+                _showFeedback(context, 'Failed to cancel booking.');
+              }
             },
             child: const Text('Yes, Cancel', style: TextStyle(color: Colors.red)),
           ),

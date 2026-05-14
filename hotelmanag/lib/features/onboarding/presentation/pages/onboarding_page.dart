@@ -171,7 +171,6 @@ class _OnboardingPageState extends State<OnboardingPage> {
                       ),
                       const SizedBox(height: 40),
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           _buildPageIndicator(),
                           const SizedBox(width: 8),
@@ -180,36 +179,40 @@ class _OnboardingPageState extends State<OnboardingPage> {
                             style: TextStyle(fontSize: 10, color: Colors.black.withOpacity(0.4)),
                           ),
                           const Spacer(),
-                          SizedBox(
-                            height: 56,
-                            child: ElevatedButton(
-                              onPressed: () {
-                                if (isLast) {
-                                  context.go('/login');
-                                } else {
-                                  _pageController.nextPage(
-                                    duration: const Duration(milliseconds: 400),
-                                    curve: Curves.easeInOut,
-                                  );
-                                }
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF6D4C41),
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(horizontal: 24),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                elevation: 0,
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    isLast ? 'BEGIN JOURNEY' : 'Continue',
-                                    style: const TextStyle(fontWeight: FontWeight.bold),
+                          Flexible(
+                            child: SizedBox(
+                              height: 56,
+                              child: ElevatedButton(
+                                onPressed: () {
+                                  if (isLast) {
+                                    context.go('/login');
+                                  } else {
+                                    _pageController.nextPage(
+                                      duration: const Duration(milliseconds: 400),
+                                      curve: Curves.easeInOut,
+                                    );
+                                  }
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF6D4C41),
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  elevation: 0,
+                                ),
+                                child: FittedBox(
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        isLast ? 'BEGIN JOURNEY' : 'Continue',
+                                        style: const TextStyle(fontWeight: FontWeight.bold),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      const Icon(LucideIcons.arrowRight, size: 16),
+                                    ],
                                   ),
-                                  const SizedBox(width: 8),
-                                  const Icon(LucideIcons.arrowRight, size: 16),
-                                ],
+                                ),
                               ),
                             ),
                           ),

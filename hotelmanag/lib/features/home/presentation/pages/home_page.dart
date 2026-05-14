@@ -2,8 +2,13 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/main_layout.dart';
+import '../../../../core/providers/favorites_provider.dart';
+import '../../../../core/providers/hotel_provider.dart';
+import '../../../../core/providers/auth_provider.dart';
+import '../../../../shared/domain/entities/hotel_entity.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -14,6 +19,12 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final ScrollController _featuredController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() => context.read<HotelProvider>().fetchHotels());
+  }
 
   @override
   void dispose() {
@@ -112,6 +123,12 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildFavorites(BuildContext context) {
+    final favorites = context.watch<FavoritesProvider>().favorites;
+
+    if (favorites.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -138,23 +155,9 @@ class _HomePageState extends State<HomePage> {
             padding: const EdgeInsets.symmetric(horizontal: 24),
             scrollDirection: Axis.horizontal,
             physics: const BouncingScrollPhysics(),
-            itemCount: 2,
+            itemCount: favorites.length,
             separatorBuilder: (context, index) => const SizedBox(width: 16),
             itemBuilder: (context, index) {
-              final favorites = [
-                {
-                  'title': 'The Ritz-Carlton',
-                  'location': 'Paris, France',
-                  'price': '\$850',
-                  'image': 'https://images.unsplash.com/photo-1541971875076-8f970d573be6?q=80&w=600'
-                },
-                {
-                  'title': 'Marina Bay Sands',
-                  'location': 'Singapore',
-                  'price': '\$600',
-                  'image': 'https://images.unsplash.com/photo-1518733057094-95b53143d2a7?q=80&w=600'
-                },
-              ];
               final item = favorites[index];
               return Container(
                 width: 220,
@@ -170,28 +173,31 @@ class _HomePageState extends State<HomePage> {
                   children: [
                     ClipRRect(
                       borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-                      child: Image.network(item['image']!, height: 140, width: double.infinity, fit: BoxFit.cover),
+                      child: Image.network(item.imageUrl, height: 140, width: double.infinity, fit: BoxFit.cover),
                     ),
                     Padding(
                       padding: const EdgeInsets.all(12),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(item['title']!, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14), maxLines: 1, overflow: TextOverflow.ellipsis),
+                          Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14), maxLines: 1, overflow: TextOverflow.ellipsis),
                           const SizedBox(height: 4),
                           Row(
                             children: [
                               Icon(LucideIcons.mapPin, size: 10, color: Colors.grey[400]),
                               const SizedBox(width: 4),
-                              Text(item['location']!, style: TextStyle(fontSize: 11, color: Colors.grey[600])),
+                              Text(item.location, style: TextStyle(fontSize: 11, color: Colors.grey[600])),
                             ],
                           ),
                           const SizedBox(height: 12),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(item['price']!, style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
-                              const Icon(LucideIcons.heart, size: 16, color: Colors.red, fill: 1),
+                              Text('\$${item.pricePerNight}', style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+                              GestureDetector(
+                                onTap: () => context.read<FavoritesProvider>().toggleFavorite(item),
+                                child: const Icon(LucideIcons.heart, size: 16, color: Colors.red, fill: 1),
+                              ),
                             ],
                           ),
                         ],
@@ -248,30 +254,43 @@ class _HomePageState extends State<HomePage> {
                     borderRadius: BorderRadius.circular(50),
                     child: Row(
                       children: [
-                        Container(
-                          padding: const EdgeInsets.all(2),
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 2),
-                          ),
-                          child: CircleAvatar(
-                            radius: 18,
-                            backgroundImage: NetworkImage('https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=200'),
-                          ),
+                        Consumer<AuthProvider>(
+                          builder: (context, auth, _) {
+                            final profileImage = auth.user?.profileImage;
+                            final name = auth.user?.name ?? 'Guest';
+                            return Container(
+                              padding: const EdgeInsets.all(2),
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Colors.white, width: 2),
+                              ),
+                              child: CircleAvatar(
+                                radius: 18,
+                                backgroundImage: (profileImage != null && profileImage.isNotEmpty)
+                                    ? NetworkImage(profileImage)
+                                    : NetworkImage('https://ui-avatars.com/api/?name=$name&background=F5E6CA&color=2C3E50') as ImageProvider,
+                              ),
+                            );
+                          },
                         ),
                         const SizedBox(width: 12),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Welcome back,',
-                              style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 12),
-                            ),
-                            const Text(
-                              'Alex Johnson',
-                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
-                            ),
-                          ],
+                        Consumer<AuthProvider>(
+                          builder: (context, auth, _) {
+                            final name = auth.user?.name ?? 'Guest';
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Welcome back,',
+                                  style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 12),
+                                ),
+                                Text(
+                                  name,
+                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                                ),
+                              ],
+                            );
+                          },
                         ),
                       ],
                     ),
@@ -541,84 +560,79 @@ class _HomePageState extends State<HomePage> {
           child: Text('Recommended for You', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
         ),
         const SizedBox(height: 8),
-        ListView.separated(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-          itemCount: 2,
-          separatorBuilder: (context, index) => const SizedBox(height: 16),
-          itemBuilder: (context, index) {
-            final items = [
-              {
-                'title': 'The Grand Oasis',
-                'location': 'Dubai, UAE',
-                'price': '\$450',
-                'rating': '5.0',
-                'image': 'https://images.unsplash.com/photo-1541971875076-8f970d573be6?q=80&w=600'
-              },
-              {
-                'title': 'Alpine Retreat',
-                'location': 'Zermatt, Switzerland',
-                'price': '\$380',
-                'rating': '4.8',
-                'image': 'https://images.unsplash.com/photo-1502784444187-359ac186c5bb?q=80&w=600'
-              }
-            ];
-            final item = items[index];
-            return InkWell(
-              onTap: () => context.push('/hotel/1'),
-              child: Container(
-                height: 120,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4)),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    ClipRRect(
-                      borderRadius: const BorderRadius.horizontal(left: Radius.circular(20)),
-                      child: Image.network(item['image']!, width: 120, height: 120, fit: BoxFit.cover),
+        Consumer<HotelProvider>(
+          builder: (context, provider, child) {
+            if (provider.isLoading && provider.hotels.isEmpty) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            final items = provider.hotels.skip(3).take(3).toList();
+            if (items.isEmpty) {
+              return const SizedBox.shrink();
+            }
+            return ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+              itemCount: items.length,
+              separatorBuilder: (context, index) => const SizedBox(height: 16),
+              itemBuilder: (context, index) {
+                final item = items[index];
+                return InkWell(
+                  onTap: () => context.push('/hotel/${item.id}'),
+                  child: Container(
+                    height: 120,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4)),
+                      ],
                     ),
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(item['title']!, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppTheme.primaryColor)),
-                            const SizedBox(height: 4),
-                            Row(
+                    child: Row(
+                      children: [
+                        ClipRRect(
+                          borderRadius: const BorderRadius.horizontal(left: Radius.circular(20)),
+                          child: Image.network(item.imageUrl, width: 120, height: 120, fit: BoxFit.cover),
+                        ),
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(LucideIcons.mapPin, size: 12, color: Colors.grey[400]),
-                                const SizedBox(width: 4),
-                                Text(item['location']!, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text('${item['price']!}/night', style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+                                Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppTheme.primaryColor)),
+                                const SizedBox(height: 4),
                                 Row(
                                   children: [
-                                    const Icon(LucideIcons.star, size: 12, color: AppTheme.accentColor, fill: 1),
+                                    Icon(LucideIcons.mapPin, size: 12, color: Colors.grey[400]),
                                     const SizedBox(width: 4),
-                                    Text(item['rating']!, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                                    Text(item.location, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                                  ],
+                                ),
+                                const SizedBox(height: 12),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text('\$${item.pricePerNight}/night', style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+                                    Row(
+                                      children: [
+                                        const Icon(LucideIcons.star, size: 12, color: AppTheme.accentColor, fill: 1),
+                                        const SizedBox(width: 4),
+                                        Text(item.rating.toString(), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                                      ],
+                                    ),
                                   ],
                                 ),
                               ],
                             ),
-                          ],
+                          ),
                         ),
-                      ),
+                      ],
                     ),
-                  ],
-                ),
-              ),
+                  ),
+                );
+              },
             );
           },
         ),
@@ -752,26 +766,25 @@ class _HomePageState extends State<HomePage> {
         const SizedBox(height: 16),
         SizedBox(
           height: 380,
-          child: ListView.separated(
-            controller: _featuredController,
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
-            scrollDirection: Axis.horizontal,
-            physics: const BouncingScrollPhysics(),
-            itemCount: 3,
-            separatorBuilder: (context, index) => const SizedBox(width: 20),
-            itemBuilder: (context, index) {
-              final images = [
-                'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?q=80&w=1000',
-                'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=1000',
-                'https://images.unsplash.com/photo-1571896349842-33c89424de2d?q=80&w=1000',
-              ];
-              final titles = ['Ocean View Resort', 'Azure Boutique', 'Grand Palace'];
-              final locations = ['Maldives', 'Santorini', 'Paris'];
-              return FeaturedCard(
-                image: images[index],
-                title: titles[index],
-                location: locations[index],
-                price: '\$${350 + (index * 100)}',
+          child: Consumer<HotelProvider>(
+            builder: (context, provider, child) {
+              if (provider.isLoading && provider.hotels.isEmpty) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              final hotels = provider.hotels.take(3).toList();
+              if (hotels.isEmpty) {
+                return const Center(child: Text('No destinations found'));
+              }
+              return ListView.separated(
+                controller: _featuredController,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                scrollDirection: Axis.horizontal,
+                physics: const BouncingScrollPhysics(),
+                itemCount: hotels.length,
+                separatorBuilder: (context, index) => const SizedBox(width: 20),
+                itemBuilder: (context, index) {
+                  return FeaturedCard(hotel: hotels[index]);
+                },
               );
             },
           ),
@@ -848,17 +861,11 @@ class SearchField extends StatelessWidget {
 }
 
 class FeaturedCard extends StatelessWidget {
-  final String image;
-  final String title;
-  final String location;
-  final String price;
+  final HotelEntity hotel;
 
   const FeaturedCard({
     super.key,
-    required this.image,
-    required this.title,
-    required this.location,
-    required this.price,
+    required this.hotel,
   });
 
   @override
@@ -885,7 +892,7 @@ class FeaturedCard extends StatelessWidget {
             ClipRRect(
               borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
               child: Image.network(
-                image,
+                hotel.imageUrl,
                 height: 200,
                 width: double.infinity,
                 fit: BoxFit.cover,
@@ -901,17 +908,17 @@ class FeaturedCard extends StatelessWidget {
                     children: [
                       Expanded(
                         child: Text(
-                          title,
+                          hotel.name,
                           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      const Row(
+                      Row(
                         children: [
-                          Icon(LucideIcons.star, size: 12, color: AppTheme.accentColor, fill: 1),
-                          SizedBox(width: 4),
-                          Text('4.9', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                          const Icon(LucideIcons.star, size: 12, color: AppTheme.accentColor, fill: 1),
+                          const SizedBox(width: 4),
+                          Text(hotel.rating.toString(), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                         ],
                       ),
                     ],
@@ -921,7 +928,7 @@ class FeaturedCard extends StatelessWidget {
                     children: [
                       Icon(LucideIcons.mapPin, size: 12, color: Colors.grey[400]),
                       const SizedBox(width: 4),
-                      Text(location, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                      Text(hotel.location, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
                     ],
                   ),
                   const SizedBox(height: 16),
@@ -931,29 +938,41 @@ class FeaturedCard extends StatelessWidget {
                       RichText(
                         text: TextSpan(
                           children: [
-                            TextSpan(text: price, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+                            TextSpan(text: '\$${hotel.pricePerNight}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
                             TextSpan(text: ' / night', style: TextStyle(fontSize: 11, color: Colors.grey[500])),
                           ],
                         ),
                       ),
-                      InkWell(
-                        onTap: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Added to your wishlist!'),
-                              behavior: SnackBarBehavior.floating,
+                      Consumer<FavoritesProvider>(
+                        builder: (context, provider, child) {
+                          final isFav = provider.isFavorite(hotel);
+                          return InkWell(
+                            onTap: () {
+                              provider.toggleFavorite(hotel);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(isFav ? 'Removed from favorites' : 'Added to favorites!'),
+                                  behavior: SnackBarBehavior.floating,
+                                  duration: const Duration(seconds: 1),
+                                ),
+                              );
+                            },
+                            borderRadius: BorderRadius.circular(50),
+                            child: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: isFav ? Colors.red.withOpacity(0.1) : AppTheme.primaryColor.withOpacity(0.05),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                LucideIcons.heart,
+                                size: 16,
+                                color: isFav ? Colors.red : AppTheme.primaryColor,
+                                fill: isFav ? 1 : 0,
+                              ),
                             ),
                           );
                         },
-                        borderRadius: BorderRadius.circular(50),
-                        child: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: AppTheme.primaryColor.withOpacity(0.05),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(LucideIcons.heart, size: 16, color: AppTheme.primaryColor),
-                        ),
                       ),
                     ],
                   ),

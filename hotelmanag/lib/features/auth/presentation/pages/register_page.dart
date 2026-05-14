@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/custom_text_field.dart';
+import '../../../../core/providers/auth_provider.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -12,7 +14,24 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
+  final _firstNameController = TextEditingController();
+  final _lastNameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
   bool _rememberMe = false;
+
+  @override
+  void dispose() {
+    _firstNameController.dispose();
+    _lastNameController.dispose();
+    _emailController.dispose();
+    _phoneController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -51,19 +70,51 @@ class _RegisterPageState extends State<RegisterPage> {
             const SizedBox(height: 32),
             Row(
               children: [
-                const Expanded(child: CustomTextField(label: 'First Name *', hint: 'Md Rahamat')),
+                Expanded(
+                  child: CustomTextField(
+                    label: 'First Name *',
+                    hint: 'Md Rahamat',
+                    controller: _firstNameController,
+                  ),
+                ),
                 const SizedBox(width: 16),
-                const Expanded(child: CustomTextField(label: 'Last Name *', hint: 'Hawlader')),
+                Expanded(
+                  child: CustomTextField(
+                    label: 'Last Name *',
+                    hint: 'Hawlader',
+                    controller: _lastNameController,
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 16),
-            const CustomTextField(label: 'Email *', hint: 'uirahamat098@gmail.com', keyboardType: TextInputType.emailAddress),
+            CustomTextField(
+              label: 'Email *',
+              hint: 'uirahamat098@gmail.com',
+              keyboardType: TextInputType.emailAddress,
+              controller: _emailController,
+            ),
             const SizedBox(height: 16),
-            const CustomTextField(label: 'Phone *', hint: '+8801724649510', keyboardType: TextInputType.phone),
+            CustomTextField(
+              label: 'Phone *',
+              hint: '+8801724649510',
+              keyboardType: TextInputType.phone,
+              controller: _phoneController,
+            ),
             const SizedBox(height: 16),
-            const CustomTextField(label: 'Password *', hint: '.......', obscureText: true),
+            CustomTextField(
+              label: 'Password *',
+              hint: '.......',
+              obscureText: true,
+              controller: _passwordController,
+            ),
             const SizedBox(height: 16),
-            const CustomTextField(label: 'Confirm Password *', hint: '.......', obscureText: true),
+            CustomTextField(
+              label: 'Confirm Password *',
+              hint: '.......',
+              obscureText: true,
+              controller: _confirmPasswordController,
+            ),
             const SizedBox(height: 16),
             Row(
               children: [
@@ -76,18 +127,62 @@ class _RegisterPageState extends State<RegisterPage> {
               ],
             ),
             const SizedBox(height: 32),
-            SizedBox(
-              width: double.infinity,
-              height: 56,
-              child: ElevatedButton(
-                onPressed: () => context.go('/'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFA67C52),
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            Consumer<AuthProvider>(
+              builder: (context, auth, _) {
+                return SizedBox(
+                  width: double.infinity,
+                  height: 56,
+                  child: ElevatedButton(
+                    onPressed: auth.isLoading
+                        ? null
+                        : () async {
+                            if (_passwordController.text != _confirmPasswordController.text) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Passwords do not match')),
+                              );
+                              return;
+                            }
+                            await auth.register(
+                              '${_firstNameController.text} ${_lastNameController.text}',
+                              _emailController.text,
+                              _passwordController.text,
+                              _phoneController.text,
+                            );
+                            if (auth.isAuthenticated) {
+                              if (context.mounted) context.go('/');
+                            } else if (auth.error != null) {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text(auth.error!)),
+                                );
+                              }
+                            }
+                          },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.accentColor,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    ),
+                    child: auth.isLoading
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : const Text('Continue', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text('Already have an account? ', style: TextStyle(color: AppTheme.primaryColor)),
+                GestureDetector(
+                  onTap: () => context.go('/login'),
+                  child: const Text(
+                    'Sign In',
+                    style: TextStyle(color: AppTheme.accentColor, fontWeight: FontWeight.bold),
+                  ),
                 ),
-                child: const Text('Continue', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-              ),
+              ],
             ),
             const SizedBox(height: 24),
           ],

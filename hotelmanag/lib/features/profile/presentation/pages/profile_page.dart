@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
+import 'dart:convert';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/main_layout.dart';
 import '../../../../core/widgets/custom_text_field.dart';
+import '../../../../core/providers/auth_provider.dart';
+import 'package:provider/provider.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -15,6 +20,9 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
   String _profileImageUrl = 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=200';
   String _coverImageUrl = 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?q=80&w=1000';
+  File? _profileImageFile;
+  File? _coverImageFile;
+  final ImagePicker _picker = ImagePicker();
 
   late TextEditingController _nameController;
   late TextEditingController _emailController;
@@ -23,12 +31,27 @@ class _ProfilePageState extends State<ProfilePage> {
   String _currentLanguage = 'English (US)';
   String _currentTheme = 'System Default';
 
+  bool _pushNotifications = true;
+  bool _emailUpdates = true;
+  bool _promotions = false;
+
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController(text: 'Alex Johnson');
-    _emailController = TextEditingController(text: 'alex.j@example.com');
-    _phoneController = TextEditingController(text: '+1 234 567 890');
+    final user = Provider.of<AuthProvider>(context, listen: false).user;
+    _nameController = TextEditingController(text: user?.name ?? '');
+    _emailController = TextEditingController(text: user?.email ?? '');
+    _phoneController = TextEditingController(text: user?.phone ?? '');
+    
+    if (user?.profileImage != null && user!.profileImage!.isNotEmpty) {
+      _profileImageUrl = user.profileImage!;
+    } else {
+      _profileImageUrl = 'https://ui-avatars.com/api/?name=${user?.name ?? 'User'}&background=F5E6CA&color=2C3E50';
+    }
+
+    _nameController.addListener(() {
+      if (mounted) setState(() {});
+    });
   }
 
   @override
@@ -115,7 +138,9 @@ class _ProfilePageState extends State<ProfilePage> {
             width: double.infinity,
             decoration: BoxDecoration(
               image: DecorationImage(
-                image: NetworkImage(_coverImageUrl),
+                image: _coverImageFile != null
+                    ? FileImage(_coverImageFile!) as ImageProvider
+                    : NetworkImage(_coverImageUrl),
                 fit: BoxFit.cover,
               ),
             ),
@@ -156,10 +181,12 @@ class _ProfilePageState extends State<ProfilePage> {
         ),
         // Profile Info
         Positioned(
-          bottom: -40,
+          bottom: -80,
           left: 24,
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
+          right: 24,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Stack(
                 children: [
@@ -176,7 +203,9 @@ class _ProfilePageState extends State<ProfilePage> {
                           BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 5)),
                         ],
                         image: DecorationImage(
-                          image: NetworkImage(_profileImageUrl),
+                          image: _profileImageFile != null
+                              ? FileImage(_profileImageFile!) as ImageProvider
+                              : NetworkImage(_profileImageUrl),
                           fit: BoxFit.cover,
                         ),
                       ),
@@ -184,33 +213,32 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                 ],
               ),
-              const SizedBox(width: 16),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      _nameController.text,
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        shadows: [Shadow(color: Colors.black26, blurRadius: 10, offset: Offset(0, 2))],
-                      ),
-                    ),
-                    Row(
-                      children: [
-                        const Icon(LucideIcons.mapPin, size: 12, color: Colors.white70),
-                        const SizedBox(width: 4),
-                        Text(
-                          'New York, USA',
-                          style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 13),
-                        ),
-                      ],
-                    ),
-                  ],
+              const SizedBox(height: 12),
+              Text(
+                _nameController.text,
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.primaryColor,
                 ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 4),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  const Icon(LucideIcons.mapPin, size: 12, color: AppTheme.primaryColor),
+                  const SizedBox(width: 4),
+                  Consumer<AuthProvider>(
+                    builder: (context, auth, _) => Text(
+                      auth.user?.city ?? 'Location not set',
+                      style: TextStyle(color: AppTheme.primaryColor.withOpacity(0.7), fontSize: 13),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -221,7 +249,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Widget _buildLoyaltyCard() {
     return Container(
-      margin: const EdgeInsets.only(top: 40),
+      margin: const EdgeInsets.only(top: 180),
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: AppTheme.primaryColor,
@@ -467,9 +495,9 @@ class _ProfilePageState extends State<ProfilePage> {
           children: [
             const Text('Security Settings', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
             const SizedBox(height: 24),
-            _buildSettingItem(LucideIcons.lock, 'Change Password', 'Update your password regularly', onTap: () {}),
-            _buildSettingItem(LucideIcons.fingerprint, 'Biometric Login', 'Use FaceID or Fingerprint', onTap: () {}),
-            _buildSettingItem(LucideIcons.shieldCheck, 'Two-Factor Auth', 'Secure your account with 2FA', onTap: () {}),
+            _buildSettingItem(LucideIcons.lock, 'Change Password', 'Update your password regularly', onTap: () => _showFeedback(context, 'Change Password')),
+            _buildSettingItem(LucideIcons.fingerprint, 'Biometric Login', 'Use FaceID or Fingerprint', onTap: () => _showFeedback(context, 'Biometric Login')),
+            _buildSettingItem(LucideIcons.shieldCheck, 'Two-Factor Auth', 'Secure your account with 2FA', onTap: () => _showFeedback(context, 'Two-Factor Auth')),
             const SizedBox(height: 32),
           ],
         ),
@@ -490,9 +518,9 @@ class _ProfilePageState extends State<ProfilePage> {
           children: [
             const Text('Notifications', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
             const SizedBox(height: 24),
-            _buildNotificationSwitch('Push Notifications', 'Alerts about your bookings', true),
-            _buildNotificationSwitch('Email Updates', 'Invoices and receipts', true),
-            _buildNotificationSwitch('Promotions', 'Exclusive deals and offers', false),
+            _buildNotificationSwitch('Push Notifications', 'Alerts about your bookings', _pushNotifications, (val) => setState(() => _pushNotifications = val)),
+            _buildNotificationSwitch('Email Updates', 'Invoices and receipts', _emailUpdates, (val) => setState(() => _emailUpdates = val)),
+            _buildNotificationSwitch('Promotions', 'Exclusive deals and offers', _promotions, (val) => setState(() => _promotions = val)),
             const SizedBox(height: 32),
           ],
         ),
@@ -500,10 +528,10 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  Widget _buildNotificationSwitch(String title, String subtitle, bool value) {
+  Widget _buildNotificationSwitch(String title, String subtitle, bool value, Function(bool) onChanged) {
     return SwitchListTile(
       value: value,
-      onChanged: (val) {},
+      onChanged: onChanged,
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
       subtitle: Text(subtitle, style: TextStyle(fontSize: 12, color: Colors.grey[500])),
       activeColor: AppTheme.primaryColor,
@@ -538,26 +566,70 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Widget _buildSaveButton(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton(
-        onPressed: () {
-          setState(() {}); // Refresh header with new controller values
-          Navigator.pop(context);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Profile information saved!'),
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-        },
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppTheme.primaryColor,
-          foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+    return Consumer<AuthProvider>(
+      builder: (context, auth, _) => SizedBox(
+        width: double.infinity,
+        child: ElevatedButton(
+          onPressed: auth.isLoading
+              ? null
+              : () async {
+                  String? newProfileImageUrl;
+                  
+                  if (_profileImageFile != null) {
+                    final bytes = await _profileImageFile!.readAsBytes();
+                    final base64Image = base64Encode(bytes);
+                    newProfileImageUrl = await auth.uploadImage(base64Image);
+                    
+                    if (newProfileImageUrl == null) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(auth.error ?? 'Failed to upload image'),
+                            behavior: SnackBarBehavior.floating,
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
+                      return;
+                    }
+                  }
+
+                  final success = await auth.updateProfile(
+                    name: _nameController.text,
+                    phone: _phoneController.text,
+                    profileImage: newProfileImageUrl,
+                  );
+
+                  if (context.mounted) {
+                    if (success) {
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Profile updated successfully!'),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(auth.error ?? 'Failed to update profile'),
+                          behavior: SnackBarBehavior.floating,
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
+                  }
+                },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppTheme.primaryColor,
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          ),
+          child: auth.isLoading
+              ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+              : const Text('Save Changes', style: TextStyle(fontWeight: FontWeight.bold)),
         ),
-        child: const Text('Save Changes', style: TextStyle(fontWeight: FontWeight.bold)),
       ),
     );
   }
@@ -566,7 +638,7 @@ class _ProfilePageState extends State<ProfilePage> {
     return SizedBox(
       width: double.infinity,
       child: OutlinedButton.icon(
-        onPressed: () {},
+        onPressed: () => _showFeedback(context, 'Add New Card'),
         icon: const Icon(LucideIcons.plus, size: 18),
         label: Text(label),
         style: OutlinedButton.styleFrom(foregroundColor: AppTheme.primaryColor, side: const BorderSide(color: AppTheme.primaryColor), padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
@@ -578,7 +650,10 @@ class _ProfilePageState extends State<ProfilePage> {
     return SizedBox(
       width: double.infinity,
       child: OutlinedButton.icon(
-        onPressed: () => context.go('/login'),
+        onPressed: () {
+          context.read<AuthProvider>().logout();
+          context.go('/login');
+        },
         icon: const Icon(LucideIcons.logOut, size: 18),
         label: const Text('Log Out'),
         style: OutlinedButton.styleFrom(
@@ -623,8 +698,8 @@ class _ProfilePageState extends State<ProfilePage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                _buildUploadOption(context, LucideIcons.camera, 'Camera'),
-                _buildUploadOption(context, LucideIcons.image, 'Gallery'),
+                _buildUploadOption(context, LucideIcons.camera, 'Camera', onTap: () => _pickImage(ImageSource.camera, isProfile: true)),
+                _buildUploadOption(context, LucideIcons.image, 'Gallery', onTap: () => _pickImage(ImageSource.gallery, isProfile: true)),
               ],
             ),
             const SizedBox(height: 16),
@@ -666,26 +741,9 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  Widget _buildUploadOption(BuildContext context, IconData icon, String label, {bool isDestructive = false}) {
+  Widget _buildUploadOption(BuildContext context, IconData icon, String label, {required VoidCallback onTap, bool isDestructive = false}) {
     return InkWell(
-      onTap: () {
-        Navigator.pop(context);
-        setState(() {
-          if (isDestructive) {
-            _profileImageUrl = 'https://ui-avatars.com/api/?name=Alex+Johnson&background=F5E6CA&color=2C3E50';
-          } else {
-            // Simulate a new image being uploaded
-            final randomId = DateTime.now().millisecondsSinceEpoch;
-            _profileImageUrl = 'https://picsum.photos/seed/$randomId/200';
-          }
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(isDestructive ? 'Profile photo removed' : 'Profile photo updated!'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      },
+      onTap: onTap,
       child: Column(
         children: [
           Container(
@@ -703,6 +761,36 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
+  Future<void> _pickImage(ImageSource source, {required bool isProfile}) async {
+    try {
+      final XFile? pickedFile = await _picker.pickImage(source: source);
+      if (pickedFile != null) {
+        setState(() {
+          if (isProfile) {
+            _profileImageFile = File(pickedFile.path);
+          } else {
+            _coverImageFile = File(pickedFile.path);
+          }
+        });
+        if (mounted) {
+          Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(isProfile ? 'Profile photo updated!' : 'Cover photo updated!'),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error picking image')),
+        );
+      }
+    }
+  }
+
   void _showCoverImageOptions(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -718,8 +806,8 @@ class _ProfilePageState extends State<ProfilePage> {
               child: Text('Update Cover Photo', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
             ),
             const Divider(),
-            _buildCoverListTile(context, LucideIcons.camera, 'Camera', 'Capture a new cover image'),
-            _buildCoverListTile(context, LucideIcons.image, 'Upload from Gallery', 'Select from your library'),
+            _buildCoverListTile(context, LucideIcons.camera, 'Camera', 'Capture a new cover image', onTap: () => _pickImage(ImageSource.camera, isProfile: false)),
+            _buildCoverListTile(context, LucideIcons.image, 'Upload from Gallery', 'Select from your library', onTap: () => _pickImage(ImageSource.gallery, isProfile: false)),
             const SizedBox(height: 16),
           ],
         ),
@@ -727,7 +815,7 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  Widget _buildCoverListTile(BuildContext context, IconData icon, String title, String subtitle) {
+  Widget _buildCoverListTile(BuildContext context, IconData icon, String title, String subtitle, {required VoidCallback onTap}) {
     return ListTile(
       leading: Container(
         padding: const EdgeInsets.all(8),
@@ -739,19 +827,7 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppTheme.primaryColor)),
       subtitle: Text(subtitle, style: TextStyle(fontSize: 12, color: Colors.grey[500])),
-      onTap: () {
-        Navigator.pop(context);
-        setState(() {
-          final randomId = DateTime.now().millisecondsSinceEpoch + 1;
-          _coverImageUrl = 'https://picsum.photos/seed/$randomId/1000/400';
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Cover photo updated!'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      },
+      onTap: onTap,
     );
   }
 }

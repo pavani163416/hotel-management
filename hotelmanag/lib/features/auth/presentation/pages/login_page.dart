@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/custom_text_field.dart';
+import '../../../../core/providers/auth_provider.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -12,7 +14,16 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
   bool _rememberMe = false;
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -49,9 +60,18 @@ class _LoginPageState extends State<LoginPage> {
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
             ),
             const SizedBox(height: 40),
-            const CustomTextField(label: 'User Name Or Email Address *', hint: 'Type your user name'),
+            CustomTextField(
+              label: 'User Name Or Email Address *',
+              hint: 'Type your user name',
+              controller: _emailController,
+            ),
             const SizedBox(height: 16),
-            const CustomTextField(label: 'Password *', hint: '.......', obscureText: true),
+            CustomTextField(
+              label: 'Password *',
+              hint: '.......',
+              obscureText: true,
+              controller: _passwordController,
+            ),
             const SizedBox(height: 16),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -77,18 +97,37 @@ class _LoginPageState extends State<LoginPage> {
               ],
             ),
             const SizedBox(height: 32),
-            SizedBox(
-              width: double.infinity,
-              height: 56,
-              child: ElevatedButton(
-                onPressed: () => context.go('/'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryColor,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                ),
-                child: const Text('Log In', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-              ),
+            Consumer<AuthProvider>(
+              builder: (context, auth, _) {
+                return SizedBox(
+                  width: double.infinity,
+                  height: 56,
+                  child: ElevatedButton(
+                    onPressed: auth.isLoading
+                        ? null
+                        : () async {
+                            await auth.login(_emailController.text, _passwordController.text);
+                            if (auth.isAuthenticated) {
+                              if (context.mounted) context.go('/');
+                            } else if (auth.error != null) {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text(auth.error!)),
+                                );
+                              }
+                            }
+                          },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primaryColor,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    ),
+                    child: auth.isLoading
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : const Text('Log In', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  ),
+                );
+              },
             ),
             const SizedBox(height: 32),
             Row(
@@ -105,6 +144,20 @@ class _LoginPageState extends State<LoginPage> {
             _buildSocialButton('Continue with Google', LucideIcons.chrome),
             const SizedBox(height: 16),
             _buildSocialButton('Continue with Apple', LucideIcons.apple),
+            const SizedBox(height: 32),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text("Don't have an account? ", style: TextStyle(color: AppTheme.primaryColor)),
+                GestureDetector(
+                  onTap: () => context.go('/register'),
+                  child: const Text(
+                    'Register',
+                    style: TextStyle(color: AppTheme.accentColor, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            ),
             const SizedBox(height: 24),
           ],
         ),
