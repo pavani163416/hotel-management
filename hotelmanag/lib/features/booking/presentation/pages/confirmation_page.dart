@@ -1,73 +1,226 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import 'dart:math';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/main_layout.dart';
+import '../../../../core/providers/booking_provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
-class ConfirmationPage extends StatelessWidget {
+class ConfirmationPage extends StatefulWidget {
   const ConfirmationPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return MainLayout(
-      showNavbar: false,
-      child: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const SizedBox(height: 60),
-              Container(
-                padding: const EdgeInsets.all(24),
-                decoration: const BoxDecoration(color: AppTheme.accentColor, shape: BoxShape.circle),
-                child: const Icon(LucideIcons.check, size: 48, color: AppTheme.primaryColor),
-              ),
-              const SizedBox(height: 32),
-              const Text(
-                'Booking Confirmed!',
-                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Your stay at The Azure Boutique has been successfully booked. Check your email for the receipt.',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: AppTheme.primaryColor.withOpacity(0.6), fontSize: 16),
-              ),
-              const SizedBox(height: 48),
-              _buildBookingSummary(),
-              const SizedBox(height: 48),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () => context.go('/history'),
-                  child: const Text('View My Bookings'),
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextButton(
-                onPressed: () => context.go('/'),
-                child: const Text('Back to Home', style: TextStyle(color: AppTheme.primaryColor)),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+  State<ConfirmationPage> createState() => _ConfirmationPageState();
+}
+
+class _ConfirmationPageState extends State<ConfirmationPage> {
+  late String _bookingId;
+
+  @override
+  void initState() {
+    super.initState();
+    _bookingId = 'LS-${10000 + Random().nextInt(90000)}';
   }
 
-  Widget _buildBookingSummary() {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(color: AppTheme.mutedColor.withOpacity(0.3), borderRadius: BorderRadius.circular(20)),
-      child: const Column(
-        children: [
-          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text('Booking ID', style: TextStyle(color: Colors.grey)), Text('#LX-89231', style: TextStyle(fontWeight: FontWeight.bold))]),
-          SizedBox(height: 12),
-          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text('Check-in', style: TextStyle(color: Colors.grey)), Text('Oct 12, 2025')]),
-          SizedBox(height: 12),
-          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text('Check-out', style: TextStyle(color: Colors.grey)), Text('Oct 15, 2025')]),
-        ],
+  @override
+  Widget build(BuildContext context) {
+    final provider = context.read<BookingProvider>();
+    final hotel = provider.currentHotel;
+
+    if (hotel == null) {
+      return const MainLayout(child: Center(child: Text('No booking data found')));
+    }
+
+    return MainLayout(
+      showNavbar: false,
+      child: SingleChildScrollView(
+        child: Center(
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 500),
+            margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 60),
+            padding: const EdgeInsets.all(32),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: AppTheme.mutedColor.withOpacity(0.5)),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE5E0D8),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(LucideIcons.check, size: 32, color: AppTheme.primaryColor),
+                ),
+                const SizedBox(height: 32),
+                const Text(
+                  'Booking Confirmed!',
+                  style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Color(0xFF2D3748)),
+                ),
+                const SizedBox(height: 16),
+                RichText(
+                  textAlign: TextAlign.center,
+                  text: TextSpan(
+                    style: TextStyle(color: AppTheme.primaryColor.withOpacity(0.6), fontSize: 14, height: 1.5),
+                    children: [
+                      const TextSpan(text: 'Your reservation at '),
+                      TextSpan(text: hotel.name, style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+                      const TextSpan(text: ' is confirmed. Booking ID '),
+                      TextSpan(text: '#$_bookingId', style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+                      const TextSpan(text: ' has been saved to your history.'),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 32),
+                
+                // Booking ID Card
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1EDE6),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Stack(
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('BOOKING ID', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 0.5)),
+                          const SizedBox(height: 8),
+                          Text('#$_bookingId', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF2D3748))),
+                        ],
+                      ),
+                      Positioned(
+                        right: 0,
+                        top: 8,
+                        child: Text(
+                          'PAYMENT SUCCESSFUL',
+                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.black.withOpacity(0.05), letterSpacing: 1),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                
+                const SizedBox(height: 24),
+                const Divider(color: AppTheme.mutedColor),
+                const SizedBox(height: 24),
+                
+                // Hotel Info Row
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: CachedNetworkImage(
+                        imageUrl: hotel.imageUrl,
+                        width: 80,
+                        height: 80,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(hotel.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF2D3748))),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              const Icon(LucideIcons.calendar, size: 14, color: Colors.grey),
+                              const SizedBox(width: 8),
+                              Text(
+                                '${DateFormat('yyyy-MM-dd').format(provider.checkIn)} → ${DateFormat('yyyy-MM-dd').format(provider.checkOut)} (${provider.nights} nights)',
+                                style: const TextStyle(fontSize: 12, color: Colors.grey),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              const Icon(LucideIcons.users, size: 14, color: Colors.grey),
+                              const SizedBox(width: 8),
+                              Text(
+                                '${provider.guests} guests · Standard',
+                                style: const TextStyle(fontSize: 12, color: Colors.grey),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                
+                const SizedBox(height: 24),
+                const Divider(color: AppTheme.mutedColor),
+                const SizedBox(height: 24),
+                
+                // Price Paid Row
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('Total Paid', style: TextStyle(fontSize: 14, color: Colors.grey)),
+                    Text(
+                      '\$${NumberFormat("#,###").format(provider.total)}',
+                      style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFFCBD5E0)),
+                    ),
+                  ],
+                ),
+                
+                const SizedBox(height: 40),
+                
+                // Buttons
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () => context.go('/history'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFE2DED5),
+                          foregroundColor: const Color(0xFF2D3748),
+                          padding: const EdgeInsets.symmetric(vertical: 20),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          elevation: 0,
+                        ),
+                        child: const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text('Go to History', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                            SizedBox(width: 8),
+                            Icon(LucideIcons.arrowRight, size: 14),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () => context.go('/'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFE2DED5),
+                          foregroundColor: const Color(0xFF2D3748),
+                          padding: const EdgeInsets.symmetric(vertical: 20),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          elevation: 0,
+                        ),
+                        child: const Text('Browse More Hotels', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
