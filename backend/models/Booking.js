@@ -117,6 +117,13 @@ const bookingSchema = new mongoose.Schema(
       trim: true,
     },
 
+    hotelStringId: {
+      type: String,
+      trim: true,
+      default: null,
+      index: true,
+    },
+
     // ── Hotel ObjectId reference (for proper scoping) ─────
     hotelId: {
       type: mongoose.Schema.Types.ObjectId,

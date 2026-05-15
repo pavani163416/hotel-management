@@ -29,7 +29,8 @@ export default api;
 // ── Typed helpers ─────────────────────────────────────────
 
 export interface CreateBookingPayload {
-  roomId: string;
+  roomId?: string;
+  roomTypeId?: string;
   guest: {
     name: string;
     email: string;
@@ -59,13 +60,15 @@ export interface BookingResponse {
     status: string;
     nights: number;
     totalAmount: number;
-    room: { roomNumber: string; type: string };
+    room?: { _id: string; roomNumber?: string; type?: string };
+    roomType?: { _id: string; name: string };
     guest: { name: string; email: string };
     checkIn: string;
     checkOut: string;
     promoCode?: string;
     discount: number;
     paymentMethod: string;
+    hotelName?: string;
   };
 }
 

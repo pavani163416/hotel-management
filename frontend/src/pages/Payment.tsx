@@ -85,18 +85,14 @@ const Payment = () => {
       try {
         const response = await createBooking({
           roomId:         selectedRoom.id,
+          roomTypeId:     selectedRoom.id,
           guest:          { name: guest.name, email: user?.email || guest.email, phone: guest.phone, city: "" },
           checkIn:        search.checkIn,
           checkOut:       search.checkOut,
-          pricePerNight:  selectedRoom.price,
-          subtotal,
-          taxes:          taxes + serviceFee,
-          discount,
           totalAmount:    total,
           promoCode:      promo?.code,
           paymentMethod:  method,
           specialRequests: guest.specialRequests || "",
-          hotelName:      selectedHotel.name,
           additionalAdults:   guest.adults || [],
           additionalChildren: guest.children?.map((c) => ({ name: c.name, age: c.age })) || [],
         });
