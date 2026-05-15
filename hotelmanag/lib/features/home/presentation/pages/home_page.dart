@@ -21,6 +21,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final ScrollController _featuredController = ScrollController();
+  final _searchController = TextEditingController();
 
   @override
   void initState() {
@@ -31,6 +32,7 @@ class _HomePageState extends State<HomePage> {
   @override
   void dispose() {
     _featuredController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
