@@ -162,6 +162,11 @@ app.get("/api/health", (req, res) => {
     message:     "LuxeStay API is running",
     environment: process.env.NODE_ENV,
     timestamp:   new Date().toISOString(),
+    config: {
+      hasCloudinary: !!process.env.CLOUDINARY_API_KEY,
+      hasMongo: !!process.env.MONGO_URI,
+      hasJwt: !!process.env.JWT_SECRET,
+    }
   });
 });
 
