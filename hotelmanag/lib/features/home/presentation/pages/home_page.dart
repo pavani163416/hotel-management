@@ -22,6 +22,9 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final ScrollController _featuredController = ScrollController();
   final _searchController = TextEditingController();
+  String _location = 'Where are you going?';
+  DateTimeRange? _dateRange;
+  int _guests = 1;
 
   @override
   void initState() {
@@ -402,7 +405,7 @@ class _HomePageState extends State<HomePage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text('LOCATION', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.grey[400], letterSpacing: 1)),
-                        const Text('Where are you going?', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                        Text(_location, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
                       ],
                     ),
                   ),
@@ -422,7 +425,12 @@ class _HomePageState extends State<HomePage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text('DATES', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.grey[400], letterSpacing: 1)),
-                        const Text('Add Dates', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                        Text(
+                          _dateRange == null 
+                            ? 'Add Dates' 
+                            : '${DateFormat('MMM dd').format(_dateRange!.start)} - ${DateFormat('MMM dd').format(_dateRange!.end)}',
+                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                        ),
                       ],
                     ),
                   ),
@@ -436,7 +444,7 @@ class _HomePageState extends State<HomePage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text('GUESTS', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.grey[400], letterSpacing: 1)),
-                        const Text('Add Guests', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                        Text('$_guests Guests', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
                       ],
                     ),
                   ),
@@ -447,9 +455,9 @@ class _HomePageState extends State<HomePage> {
           const Divider(height: 1, indent: 24, endIndent: 24),
           InkWell(
             onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Finding hotels near you...'), behavior: SnackBarBehavior.floating),
-              );
+              if (_location != 'Where are you going?') {
+                context.read<HotelProvider>().updateSearch(_location);
+              }
               context.push('/hotels');
             },
             child: Padding(
@@ -744,9 +752,10 @@ class _HomePageState extends State<HomePage> {
                           title: Text(loc, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
                           subtitle: const Text('Top destination', style: TextStyle(fontSize: 11, color: Colors.grey)),
                           onTap: () {
-                            hotelProvider.updateSearch(loc);
+                            setState(() {
+                              _location = loc;
+                            });
                             Navigator.pop(context);
-                            context.push('/hotels');
                           },
                         );
                       },
@@ -761,48 +770,95 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  void _showDatePicker(BuildContext context) {
-    showDatePicker(
+  Future<void> _showDatePicker(BuildContext context) async {
+    final range = await showDateRangePicker(
       context: context,
-      initialDate: DateTime.now(),
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365)),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: AppTheme.primaryColor,
+              onPrimary: Colors.white,
+              surface: Colors.white,
+              onSurface: AppTheme.primaryColor,
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
+    if (range != null) {
+      setState(() {
+        _dateRange = range;
+      });
+    }
   }
 
   void _showGuestPicker(BuildContext context) {
     showModalBottomSheet(
       context: context,
+      backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('Select Guests', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text('Adults'),
-                Row(
-                  children: [
-                    IconButton(icon: const Icon(LucideIcons.minusCircle), onPressed: () {}),
-                    const Text('2', style: TextStyle(fontWeight: FontWeight.bold)),
-                    IconButton(icon: const Icon(LucideIcons.plusCircle), onPressed: () {}),
-                  ],
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Apply'),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) => Container(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('How many guests?', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+              const SizedBox(height: 32),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Guests', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      Text('Number of people in stay', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(LucideIcons.minusCircle, color: AppTheme.primaryColor),
+                        onPressed: _guests > 1 ? () {
+                          setModalState(() => _guests--);
+                          setState(() {});
+                        } : null,
+                      ),
+                      const SizedBox(width: 12),
+                      Text('$_guests', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      const SizedBox(width: 12),
+                      IconButton(
+                        icon: const Icon(LucideIcons.plusCircle, color: AppTheme.primaryColor),
+                        onPressed: _guests < 10 ? () {
+                          setModalState(() => _guests++);
+                          setState(() {});
+                        } : null,
+                      ),
+                    ],
+                  ),
+                ],
               ),
-            ),
-          ],
+              const SizedBox(height: 40),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primaryColor,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                  child: const Text('Confirm', style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
