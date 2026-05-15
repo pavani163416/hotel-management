@@ -162,7 +162,13 @@ class _BookingPageState extends State<BookingPage> {
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              _buildCounterRow(LucideIcons.moon, '${provider.nights} nights', null, null, isReadOnly: true),
+                              _buildCounterRow(LucideIcons.moon, '${provider.nights} nights', () {
+                                if (provider.nights > 1) {
+                                  provider.updateDates(provider.checkIn, provider.checkOut.subtract(const Duration(days: 1)));
+                                }
+                              }, () {
+                                provider.updateDates(provider.checkIn, provider.checkOut.add(const Duration(days: 1)));
+                              }),
                               const SizedBox(height: 12),
                               _buildCounterRow(LucideIcons.users, '${provider.guests} guests', () {
                                 if (provider.guests > 1) provider.updateGuests(provider.guests - 1);
