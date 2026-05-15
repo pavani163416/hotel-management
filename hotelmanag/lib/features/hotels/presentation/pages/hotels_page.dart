@@ -7,6 +7,8 @@ import '../../../../core/widgets/main_layout.dart';
 import '../../../../core/providers/hotel_provider.dart';
 import '../../../../shared/domain/entities/hotel_entity.dart';
 import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:shimmer/shimmer.dart';
 
 class HotelsPage extends StatefulWidget {
   const HotelsPage({super.key});
@@ -233,12 +235,18 @@ class DealCard extends StatelessWidget {
           Expanded(
             child: Stack(
               children: [
-                Container(
-                  decoration: BoxDecoration(
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-                    image: DecorationImage(
-                      image: NetworkImage(hotel.imageUrl),
-                      fit: BoxFit.cover,
+                 ClipRRect(
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                  child: CachedNetworkImage(
+                    imageUrl: hotel.imageUrl,
+                    height: 200,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    memCacheWidth: 560,
+                    placeholder: (context, url) => Shimmer.fromColors(
+                      baseColor: Colors.grey[300]!,
+                      highlightColor: Colors.grey[100]!,
+                      child: Container(color: Colors.white),
                     ),
                   ),
                 ),
@@ -316,14 +324,18 @@ class HotelListCard extends StatelessWidget {
         ),
         child: Column(
           children: [
-            AspectRatio(
+             AspectRatio(
               aspectRatio: 16 / 9,
-              child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-                  image: DecorationImage(
-                    image: NetworkImage(hotel.imageUrl),
-                    fit: BoxFit.cover,
+              child: ClipRRect(
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                child: CachedNetworkImage(
+                  imageUrl: hotel.imageUrl,
+                  fit: BoxFit.cover,
+                  memCacheWidth: 800, // Balanced resolution for list view
+                  placeholder: (context, url) => Shimmer.fromColors(
+                    baseColor: Colors.grey[300]!,
+                    highlightColor: Colors.grey[100]!,
+                    child: Container(color: Colors.white),
                   ),
                 ),
               ),

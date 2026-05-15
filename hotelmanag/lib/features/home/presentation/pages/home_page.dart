@@ -109,6 +109,8 @@ class _HomePageState extends State<HomePage> {
                         child: CachedNetworkImage(
                           imageUrl: city['image']!,
                           fit: BoxFit.cover,
+                          memCacheWidth: 160, // Optimize memory for small circles
+                          memCacheHeight: 160,
                           placeholder: (context, url) => Shimmer.fromColors(
                             baseColor: Colors.grey[300]!,
                             highlightColor: Colors.grey[100]!,
@@ -187,6 +189,7 @@ class _HomePageState extends State<HomePage> {
                         height: 140,
                         width: double.infinity,
                         fit: BoxFit.cover,
+                        memCacheWidth: 440, // Reduced resolution for memory
                         placeholder: (context, url) => Shimmer.fromColors(
                           baseColor: Colors.grey[300]!,
                           highlightColor: Colors.grey[100]!,
@@ -617,6 +620,8 @@ class _HomePageState extends State<HomePage> {
                             width: 120,
                             height: 120,
                             fit: BoxFit.cover,
+                            memCacheWidth: 240,
+                            memCacheHeight: 240,
                             placeholder: (context, url) => Shimmer.fromColors(
                               baseColor: Colors.grey[300]!,
                               highlightColor: Colors.grey[100]!,
@@ -926,6 +931,7 @@ class FeaturedCard extends StatelessWidget {
                 height: 200,
                 width: double.infinity,
                 fit: BoxFit.cover,
+                memCacheWidth: 560, // Optimize memory for wide cards
                 placeholder: (context, url) => Shimmer.fromColors(
                   baseColor: Colors.grey[300]!,
                   highlightColor: Colors.grey[100]!,
