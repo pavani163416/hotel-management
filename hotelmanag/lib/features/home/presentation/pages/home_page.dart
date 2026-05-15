@@ -925,7 +925,7 @@ class FeaturedCard extends StatelessWidget {
         ],
       ),
       child: InkWell(
-        onTap: () => context.push('/hotel/1'),
+        onTap: () => context.push('/hotel/${hotel.id}'),
         borderRadius: BorderRadius.circular(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

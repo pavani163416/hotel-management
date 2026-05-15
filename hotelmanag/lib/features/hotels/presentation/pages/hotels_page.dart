@@ -229,80 +229,84 @@ class DealCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppTheme.mutedColor),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Stack(
-              children: [
-                 ClipRRect(
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-                  child: CachedNetworkImage(
-                    imageUrl: hotel.imageUrl,
-                    height: 200,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                    memCacheWidth: 560,
-                    placeholder: (context, url) => Shimmer.fromColors(
-                      baseColor: Colors.grey[300]!,
-                      highlightColor: Colors.grey[100]!,
-                      child: Container(color: Colors.white),
-                    ),
-                  ),
-                ),
-                Positioned(
-                  top: 12,
-                  left: 12,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(color: AppTheme.accentColor, borderRadius: BorderRadius.circular(4)),
-                    child: const Text('TOP DEAL', style: TextStyle(color: AppTheme.primaryColor, fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 1)),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(child: Text(hotel.name, style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryColor, fontSize: 15), overflow: TextOverflow.ellipsis)),
-                    Row(
-                      children: [
-                        const Icon(LucideIcons.star, color: AppTheme.accentColor, size: 12, fill: 1),
-                        const SizedBox(width: 4),
-                        Text(hotel.rating.toString(), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                      ],
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(hotel.location, style: TextStyle(fontSize: 12, color: AppTheme.primaryColor.withOpacity(0.6))),
-                const SizedBox(height: 12),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('\$${hotel.pricePerNight}/night', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
-                    ElevatedButton(
-                      onPressed: () => context.push('/hotel/${hotel.id}'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.accentColor,
-                        foregroundColor: AppTheme.primaryColor,
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      child: InkWell(
+        onTap: () => context.push('/hotel/${hotel.id}'),
+        borderRadius: BorderRadius.circular(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Stack(
+                children: [
+                   ClipRRect(
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                    child: CachedNetworkImage(
+                      imageUrl: hotel.imageUrl,
+                      height: 200,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                      memCacheWidth: 560,
+                      placeholder: (context, url) => Shimmer.fromColors(
+                        baseColor: Colors.grey[300]!,
+                        highlightColor: Colors.grey[100]!,
+                        child: Container(color: Colors.white),
                       ),
-                      child: const Text('Book Now', style: TextStyle(fontSize: 12)),
                     ),
-                  ],
-                ),
-              ],
+                  ),
+                  Positioned(
+                    top: 12,
+                    left: 12,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(color: AppTheme.accentColor, borderRadius: BorderRadius.circular(4)),
+                      child: const Text('TOP DEAL', style: TextStyle(color: AppTheme.primaryColor, fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 1)),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(child: Text(hotel.name, style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryColor, fontSize: 15), overflow: TextOverflow.ellipsis)),
+                      Row(
+                        children: [
+                          const Icon(LucideIcons.star, color: AppTheme.accentColor, size: 12, fill: 1),
+                          const SizedBox(width: 4),
+                          Text(hotel.rating.toString(), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(hotel.location, style: TextStyle(fontSize: 12, color: AppTheme.primaryColor.withOpacity(0.6))),
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('\$${hotel.pricePerNight}/night', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+                      ElevatedButton(
+                        onPressed: () => context.push('/hotel/${hotel.id}'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.accentColor,
+                          foregroundColor: AppTheme.primaryColor,
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
+                        child: const Text('Book Now', style: TextStyle(fontSize: 12)),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -322,86 +326,90 @@ class HotelListCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(24),
           border: Border.all(color: AppTheme.mutedColor),
         ),
-        child: Column(
-          children: [
-             AspectRatio(
-              aspectRatio: 16 / 9,
-              child: ClipRRect(
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-                child: CachedNetworkImage(
-                  imageUrl: hotel.imageUrl,
-                  fit: BoxFit.cover,
-                  memCacheWidth: 800, // Balanced resolution for list view
-                  placeholder: (context, url) => Shimmer.fromColors(
-                    baseColor: Colors.grey[300]!,
-                    highlightColor: Colors.grey[100]!,
-                    child: Container(color: Colors.white),
+        child: InkWell(
+          onTap: () => context.push('/hotel/${hotel.id}'),
+          borderRadius: BorderRadius.circular(24),
+          child: Column(
+            children: [
+               AspectRatio(
+                aspectRatio: 16 / 9,
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                  child: CachedNetworkImage(
+                    imageUrl: hotel.imageUrl,
+                    fit: BoxFit.cover,
+                    memCacheWidth: 800, // Balanced resolution for list view
+                    placeholder: (context, url) => Shimmer.fromColors(
+                      baseColor: Colors.grey[300]!,
+                      highlightColor: Colors.grey[100]!,
+                      child: Container(color: Colors.white),
+                    ),
                   ),
                 ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(hotel.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
-                      Row(
-                        children: [
-                          const Icon(LucideIcons.star, color: AppTheme.accentColor, size: 16, fill: 1),
-                          const SizedBox(width: 4),
-                          Text(hotel.rating.toString(), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-                        ],
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Icon(LucideIcons.mapPin, size: 14, color: AppTheme.primaryColor.withOpacity(0.5)),
-                      const SizedBox(width: 4),
-                      Text(hotel.location, style: TextStyle(fontSize: 13, color: AppTheme.primaryColor.withOpacity(0.6))),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 8,
-                    children: [
-                      _buildAmenityTag('Pool'),
-                      _buildAmenityTag('WiFi'),
-                      _buildAmenityTag('Spa'),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  const Divider(color: AppTheme.mutedColor),
-                  const SizedBox(height: 12),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text('From', style: TextStyle(fontSize: 11, color: AppTheme.primaryColor)),
-                          Text('\$${hotel.pricePerNight}/night', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
-                        ],
-                      ),
-                      ElevatedButton(
-                        onPressed: () => context.push('/hotel/${hotel.id}'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.accentColor,
-                          foregroundColor: AppTheme.primaryColor,
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(hotel.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+                        Row(
+                          children: [
+                            const Icon(LucideIcons.star, color: AppTheme.accentColor, size: 16, fill: 1),
+                            const SizedBox(width: 4),
+                            Text(hotel.rating.toString(), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                          ],
                         ),
-                        child: const Text('View Details'),
-                      ),
-                    ],
-                  ),
-                ],
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(LucideIcons.mapPin, size: 14, color: AppTheme.primaryColor.withOpacity(0.5)),
+                        const SizedBox(width: 4),
+                        Text(hotel.location, style: TextStyle(fontSize: 13, color: AppTheme.primaryColor.withOpacity(0.6))),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      children: [
+                        _buildAmenityTag('Pool'),
+                        _buildAmenityTag('WiFi'),
+                        _buildAmenityTag('Spa'),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    const Divider(color: AppTheme.mutedColor),
+                    const SizedBox(height: 12),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('From', style: TextStyle(fontSize: 11, color: AppTheme.primaryColor)),
+                            Text('\$${hotel.pricePerNight}/night', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+                          ],
+                        ),
+                        ElevatedButton(
+                          onPressed: () => context.push('/hotel/${hotel.id}'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.accentColor,
+                            foregroundColor: AppTheme.primaryColor,
+                          ),
+                          child: const Text('View Details'),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
