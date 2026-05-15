@@ -11,6 +11,7 @@ import '../../../../core/providers/auth_provider.dart';
 import '../../../../shared/domain/entities/hotel_entity.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:intl/intl.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
