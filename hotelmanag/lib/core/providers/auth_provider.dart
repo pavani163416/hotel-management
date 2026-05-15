@@ -95,6 +95,7 @@ class AuthProvider extends ChangeNotifier {
   void logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(AppConstants.tokenKey);
+    await prefs.remove('user_favorites'); // Clear favorites on logout
     await GoogleSignIn().signOut(); // Also sign out from Google
     _user = null;
     notifyListeners();
