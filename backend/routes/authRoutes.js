@@ -217,18 +217,31 @@ router.post("/google", async (req, res, next) => {
     let user = await User.findOne({ email });
 
     if (!user) {
+      // Create User
       user = await User.create({
         name,
         email,
-        passwordHash: await bcrypt.hash(Math.random().toString(36), 10), // Random password
+        passwordHash: await bcrypt.hash(Math.random().toString(36), 10),
         phone: "",
         profileImage: picture || "",
       });
-      logger.info({ email, name }, "New Google user registered");
+
+      // Create linked Guest
+      const guest = await Guest.create({
+        name,
+        email,
+        phone: "",
+        profileImage: picture || "",
+      });
+
+      user.guestId = guest._id;
+      await user.save();
+      
+      logger.info({ email, name }, "New Google user registered with Guest record");
     }
 
     const token = jwt.sign(
-      { id: user._id, email: user.email, name: user.name, role: "customer" },
+      { id: user._id, guestId: user.guestId, email: user.email, name: user.name, role: "customer" },
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );

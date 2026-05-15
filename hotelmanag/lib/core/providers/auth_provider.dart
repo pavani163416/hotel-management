@@ -35,8 +35,7 @@ class AuthProvider extends ChangeNotifier {
       (data) async {
         final (user, token) = data;
         _user = user;
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString(AppConstants.tokenKey, token);
+        await _saveAuthData(user, token);
         _isLoading = false;
         notifyListeners();
       },
@@ -59,8 +58,7 @@ class AuthProvider extends ChangeNotifier {
       (data) async {
         final (user, token) = data;
         _user = user;
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString(AppConstants.tokenKey, token);
+        await _saveAuthData(user, token);
         _isLoading = false;
         notifyListeners();
       },
@@ -139,8 +137,7 @@ class AuthProvider extends ChangeNotifier {
         (data) async {
           final (user, token) = data;
           _user = user;
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setString(AppConstants.tokenKey, token);
+          await _saveAuthData(user, token);
           _isLoading = false;
           notifyListeners();
           return true;
@@ -180,8 +177,9 @@ class AuthProvider extends ChangeNotifier {
         notifyListeners();
         return false;
       },
-      (user) {
+      (user) async {
         _user = user;
+        await _saveAuthData(user, null);
         _isLoading = false;
         notifyListeners();
         return true;
@@ -259,5 +257,14 @@ class AuthProvider extends ChangeNotifier {
         return true;
       },
     );
+  }
+
+  Future<void> _saveAuthData(UserEntity user, String? token) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (token != null) {
+      await prefs.setString(AppConstants.tokenKey, token);
+    }
+    // We only save the token for now as getMe fetches the user on startup.
+    // However, keeping _user in memory is enough for the current session.
   }
 }
