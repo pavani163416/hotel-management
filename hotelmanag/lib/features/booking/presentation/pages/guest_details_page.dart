@@ -86,7 +86,7 @@ class _GuestDetailsPageState extends State<GuestDetailsPage> {
               Align(
                 alignment: Alignment.centerRight,
                 child: ElevatedButton(
-                  onPressed: () => context.push('/payment'),
+                  onPressed: () => context.push('/review'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.primaryColor,
                     foregroundColor: Colors.white,

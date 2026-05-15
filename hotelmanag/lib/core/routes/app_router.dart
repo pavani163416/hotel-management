@@ -13,6 +13,7 @@ import '../../features/profile/presentation/pages/profile_page.dart';
 import '../../features/booking/presentation/pages/booking_page.dart';
 import '../../features/booking/presentation/pages/guest_details_page.dart';
 import '../../features/booking/presentation/pages/payment_page.dart';
+import '../../features/booking/presentation/pages/review_page.dart';
 import '../../features/booking/presentation/pages/confirmation_page.dart';
 
 class AppRouter {
@@ -27,6 +28,7 @@ class AppRouter {
   static const String profile = '/profile';
   static const String booking = '/booking';
   static const String guestDetails = '/guest-details';
+  static const String review = '/review';
   static const String payment = '/payment';
   static const String confirmation = '/confirmation';
 
@@ -76,6 +78,10 @@ class AppRouter {
       GoRoute(
         path: guestDetails,
         builder: (context, state) => const GuestDetailsPage(),
+      ),
+      GoRoute(
+        path: review,
+        builder: (context, state) => const ReviewPage(),
       ),
       GoRoute(
         path: payment,
