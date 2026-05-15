@@ -8,6 +8,7 @@ import '../../../../shared/domain/entities/hotel_entity.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:shimmer/shimmer.dart';
+import '../../../../core/providers/booking_provider.dart';
 
 class HotelDetailsPage extends StatefulWidget {
   final String id;
@@ -186,7 +187,7 @@ class _HotelDetailsPageState extends State<HotelDetailsPage> with SingleTickerPr
       child: TabBarView(
         controller: _tabController,
         children: [
-          _buildRoomsTab(),
+          _buildRoomsTab(hotel),
           _buildAmenitiesTab(),
           _buildReviewsTab(),
         ],
@@ -194,12 +195,12 @@ class _HotelDetailsPageState extends State<HotelDetailsPage> with SingleTickerPr
     );
   }
 
-  Widget _buildRoomsTab() {
+  Widget _buildRoomsTab(HotelEntity hotel) {
     return ListView.separated(
       physics: const NeverScrollableScrollPhysics(),
       itemCount: 3,
       separatorBuilder: (context, index) => const SizedBox(height: 16),
-      itemBuilder: (context, index) => const RoomCard(),
+      itemBuilder: (context, index) => RoomCard(hotel: hotel),
     );
   }
 
@@ -241,7 +242,8 @@ class _HotelDetailsPageState extends State<HotelDetailsPage> with SingleTickerPr
 }
 
 class RoomCard extends StatelessWidget {
-  const RoomCard({super.key});
+  final HotelEntity hotel;
+  const RoomCard({super.key, required this.hotel});
 
   @override
   Widget build(BuildContext context) {
