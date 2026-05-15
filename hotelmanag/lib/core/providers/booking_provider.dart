@@ -25,6 +25,16 @@ class BookingProvider extends ChangeNotifier {
   List<Map<String, String>> _additionalAdults = [];
   List<Map<String, String>> _children = [];
 
+  // Promo Code State
+  String? _appliedPromoCode;
+  double _discountAmount = 0.0;
+
+  final Map<String, double> _validPromos = {
+    'LUXE10': 0.10,
+    'WELCOME15': 0.15,
+    'VIP20': 0.20,
+  };
+
   BookingProvider(this._bookingRepository);
 
   // Getters
@@ -39,26 +49,50 @@ class BookingProvider extends ChangeNotifier {
   Map<String, String> get leadGuest => _leadGuest;
   List<Map<String, String>> get additionalAdults => _additionalAdults;
   List<Map<String, String>> get children => _children;
+  String? get appliedPromoCode => _appliedPromoCode;
+  double get discountAmount => _discountAmount;
 
   int get nights => _checkOut.difference(_checkIn).inDays;
   double get subtotal => (_currentHotel?.pricePerNight ?? 0) * nights;
-  double get serviceFee => subtotal * 0.05;
-  double get taxes => subtotal * 0.08;
-  double get total => subtotal + serviceFee + taxes;
+  double get serviceFee => (subtotal - _discountAmount) * 0.05;
+  double get taxes => (subtotal - _discountAmount) * 0.08;
+  double get total => (subtotal - _discountAmount) + serviceFee + taxes;
 
   // Setters
   void startBooking(HotelEntity hotel) {
     _currentHotel = hotel;
-    // Reset guest info for new booking
+    _appliedPromoCode = null;
+    _discountAmount = 0.0;
     _leadGuest = {'name': '', 'email': '', 'phone': '', 'requests': ''};
     _additionalAdults = [];
     _children = [];
     notifyListeners();
   }
 
+  bool applyPromoCode(String code) {
+    final normalizedCode = code.toUpperCase().trim();
+    if (_validPromos.containsKey(normalizedCode)) {
+      _appliedPromoCode = normalizedCode;
+      _discountAmount = subtotal * _validPromos[normalizedCode]!;
+      notifyListeners();
+      return true;
+    }
+    return false;
+  }
+
+  void removePromoCode() {
+    _appliedPromoCode = null;
+    _discountAmount = 0.0;
+    notifyListeners();
+  }
+
   void updateDates(DateTime checkIn, DateTime checkOut) {
     _checkIn = checkIn;
     _checkOut = checkOut;
+    // Recalculate discount if promo applied
+    if (_appliedPromoCode != null) {
+      _discountAmount = subtotal * _validPromos[_appliedPromoCode]!;
+    }
     notifyListeners();
   }
 

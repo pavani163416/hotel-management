@@ -9,8 +9,43 @@ import '../../../../core/widgets/stepper_widget.dart';
 import '../../../../core/providers/booking_provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
-class ReviewPage extends StatelessWidget {
+class ReviewPage extends StatefulWidget {
   const ReviewPage({super.key});
+
+  @override
+  State<ReviewPage> createState() => _ReviewPageState();
+}
+
+class _ReviewPageState extends State<ReviewPage> {
+  final _promoController = TextEditingController();
+
+  @override
+  void dispose() {
+    _promoController.dispose();
+    super.dispose();
+  }
+
+  void _applyPromo(BookingProvider provider) {
+    if (_promoController.text.isEmpty) return;
+    
+    bool success = provider.applyPromoCode(_promoController.text);
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Promo code "${provider.appliedPromoCode}" applied!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      _promoController.clear();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Invalid promo code'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -211,6 +246,8 @@ class ReviewPage extends StatelessWidget {
           const Text('PRICE SUMMARY', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.primaryColor, letterSpacing: 1)),
           const SizedBox(height: 20),
           _buildPriceRow('Standard (${provider.nights} nights)', '\$${NumberFormat("#,###").format(provider.subtotal)}'),
+          if (provider.discountAmount > 0)
+            _buildPriceRow('Discount (${provider.appliedPromoCode})', '-\$${NumberFormat("#,###").format(provider.discountAmount)}', isDiscount: true),
           _buildPriceRow('Service Fee', '\$${NumberFormat("#,###").format(provider.serviceFee)}'),
           _buildPriceRow('Taxes', '\$${NumberFormat("#,###").format(provider.taxes)}'),
           const SizedBox(height: 24),
@@ -223,8 +260,9 @@ class ReviewPage extends StatelessWidget {
             children: [
               Expanded(
                 child: TextField(
+                  controller: _promoController,
                   decoration: InputDecoration(
-                    hintText: 'LUXF10',
+                    hintText: 'Enter code...',
                     hintStyle: TextStyle(color: Colors.grey[300], fontSize: 13),
                     filled: true,
                     fillColor: Colors.white,
@@ -235,7 +273,7 @@ class ReviewPage extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               ElevatedButton(
-                onPressed: () {},
+                onPressed: () => _applyPromo(provider),
                 style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryColor, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
                 child: const Text('Apply'),
               ),
@@ -245,9 +283,9 @@ class ReviewPage extends StatelessWidget {
           Wrap(
             spacing: 8,
             children: [
-              _buildPromoChip('LUXE10'),
-              _buildPromoChip('WELCOME15'),
-              _buildPromoChip('VIP20'),
+              _buildPromoChip('LUXE10', provider),
+              _buildPromoChip('WELCOME15', provider),
+              _buildPromoChip('VIP20', provider),
               const Padding(padding: EdgeInsets.symmetric(vertical: 4), child: Text('— click to apply', style: TextStyle(fontSize: 10, color: Colors.grey))),
             ],
           ),
@@ -286,24 +324,44 @@ class ReviewPage extends StatelessWidget {
     );
   }
 
-  Widget _buildPriceRow(String label, String value) {
+  Widget _buildPriceRow(String label, String value, {bool isDiscount = false}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: TextStyle(fontSize: 14, color: AppTheme.primaryColor.withOpacity(0.6))),
-          Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+          Text(label, style: TextStyle(fontSize: 14, color: isDiscount ? Colors.green : AppTheme.primaryColor.withOpacity(0.6))),
+          Text(value, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: isDiscount ? Colors.green : AppTheme.primaryColor)),
         ],
       ),
     );
   }
 
-  Widget _buildPromoChip(String code) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(color: AppTheme.mutedColor.withOpacity(0.3), borderRadius: BorderRadius.circular(6)),
-      child: Text(code, style: TextStyle(fontSize: 10, color: AppTheme.primaryColor.withOpacity(0.6), fontWeight: FontWeight.bold)),
+  Widget _buildPromoChip(String code, BookingProvider provider) {
+    bool isApplied = provider.appliedPromoCode == code;
+    return GestureDetector(
+      onTap: () {
+        provider.applyPromoCode(code);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Promo code "$code" applied!'), backgroundColor: Colors.green),
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          color: isApplied ? Colors.green.withOpacity(0.1) : AppTheme.mutedColor.withOpacity(0.3),
+          borderRadius: BorderRadius.circular(6),
+          border: isApplied ? Border.all(color: Colors.green.withOpacity(0.5)) : null,
+        ),
+        child: Text(
+          code,
+          style: TextStyle(
+            fontSize: 10,
+            color: isApplied ? Colors.green : AppTheme.primaryColor.withOpacity(0.6),
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
     );
   }
 }
