@@ -1,0 +1,14 @@
+{
+  "name": "hotel-mgnt-root",
+  "private": true,
+  "version": "1.0.0",
+  "workspaces": [
+    "admin",
+    "frontend"
+  ],
+  "scripts": {
+    "build:admin": "npm --prefix admin run build",
+    "build:frontend": "npm --prefix frontend run build",
+    "build": "npm run build:admin"
+  }
+}
