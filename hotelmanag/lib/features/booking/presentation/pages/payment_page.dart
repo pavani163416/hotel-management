@@ -65,7 +65,9 @@ class _PaymentPageState extends State<PaymentPage> {
                             const SizedBox(height: 24),
                             _buildPaymentMethodSelector(),
                             const SizedBox(height: 24),
-                            _buildCardForm(provider),
+                            if (_selectedMethod == 'card') _buildCardForm(provider),
+                            if (_selectedMethod == 'upi') _buildUpiForm(provider),
+                            if (_selectedMethod == 'bank') _buildNetBankingForm(provider),
                           ],
                         ),
                       ),
@@ -121,7 +123,6 @@ class _PaymentPageState extends State<PaymentPage> {
           Text('PRIMARY GUEST (BILLING RESPONSIBLE)', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.primaryColor.withOpacity(0.4), letterSpacing: 1)),
           const SizedBox(height: 16),
           _buildGuestOption('lead', leadName.toUpperCase(), true),
-          // We could list others if we want, but usually lead is billing
         ],
       ),
     );
@@ -207,17 +208,85 @@ class _PaymentPageState extends State<PaymentPage> {
             ],
           ),
           const SizedBox(height: 32),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () => context.push('/confirmation'),
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF7E8A9A), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 20), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-              child: Text('Pay \$${NumberFormat("#,###").format(provider.total)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-            ),
-          ),
+          _buildPayButton(provider),
           const SizedBox(height: 16),
           const Center(child: Text('Tip: use any card ending in 0000 to simulate a declined payment', style: TextStyle(fontSize: 10, color: Colors.grey))),
         ],
+      ),
+    );
+  }
+
+  Widget _buildUpiForm(BookingProvider provider) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24), border: Border.all(color: AppTheme.mutedColor)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildLabel('UPI ID'),
+          const SizedBox(height: 8),
+          _buildTextField('yourname@bank'),
+          const SizedBox(height: 32),
+          _buildPayButton(provider),
+          const SizedBox(height: 16),
+          const Center(child: Text('Tip: use any card ending in 0000 to simulate a declined payment', style: TextStyle(fontSize: 10, color: Colors.grey))),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNetBankingForm(BookingProvider provider) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24), border: Border.all(color: AppTheme.mutedColor)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildLabel('SELECT BANK'),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            decoration: BoxDecoration(
+              border: Border.all(color: AppTheme.mutedColor),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                isExpanded: true,
+                hint: const Text('Choose your bank', style: TextStyle(fontSize: 14, color: Colors.grey)),
+                items: ['State Bank of India', 'HDFC Bank', 'ICICI Bank', 'Axis Bank'].map((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(value, style: const TextStyle(fontSize: 14, color: AppTheme.primaryColor)),
+                  );
+                }).toList(),
+                onChanged: (_) {},
+              ),
+            ),
+          ),
+          const SizedBox(height: 32),
+          _buildPayButton(provider),
+          const SizedBox(height: 16),
+          const Center(child: Text('Tip: use any card ending in 0000 to simulate a declined payment', style: TextStyle(fontSize: 10, color: Colors.grey))),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPayButton(BookingProvider provider) {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        onPressed: () => context.push('/confirmation'),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFF7E8A9A),
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+        child: Text('Pay \$${NumberFormat("#,###").format(provider.total)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
       ),
     );
   }
