@@ -1,0 +1,295 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * { box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: #0a1628;
+    color: #f0f4ff;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  ::selection {
+    background: rgba(212, 168, 67, 0.3);
+    color: #f0f4ff;
+  }
+}
+
+@layer components {
+  /* ── Glass Card ─────────────────────────────────────── */
+  .glass-card {
+    background: linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%);
+    border: 1px solid rgba(255,255,255,0.08);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  .glass-card:hover {
+    background: linear-gradient(135deg, rgba(255,255,255,0.09) 0%, rgba(255,255,255,0.04) 100%);
+    border-color: rgba(255,255,255,0.13);
+  }
+
+  /* ── Imperial Button ────────────────────────────────── */
+  .btn-imperial {
+    background: linear-gradient(135deg, #c0392b 0%, #a93226 100%);
+    color: #fff;
+    box-shadow: 0 4px 16px rgba(192,57,43,0.35);
+    transition: all 0.2s ease;
+  }
+  .btn-imperial:hover {
+    box-shadow: 0 6px 24px rgba(192,57,43,0.5);
+    transform: translateY(-1px);
+  }
+
+  /* ── Ghost Button ───────────────────────────────────── */
+  .btn-ghost {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.08);
+    color: #94a3b8;
+    transition: all 0.2s ease;
+  }
+  .btn-ghost:hover {
+    background: rgba(255,255,255,0.09);
+    border-color: rgba(255,255,255,0.14);
+    color: #f0f4ff;
+  }
+
+  /* ── Glass Input ────────────────────────────────────── */
+  .glass-input {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    color: #f0f4ff;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .glass-input::placeholder { color: #64748b; }
+  .glass-input:focus {
+    outline: none;
+    background: rgba(255,255,255,0.07);
+    border-color: rgba(212,168,67,0.5);
+    box-shadow: 0 0 0 3px rgba(212,168,67,0.1);
+  }
+
+  /* ── Glass Select ───────────────────────────────────── */
+  .glass-select {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    color: #f0f4ff;
+  }
+  .glass-select:focus {
+    outline: none;
+    border-color: rgba(212,168,67,0.5);
+    box-shadow: 0 0 0 3px rgba(212,168,67,0.1);
+  }
+  .glass-select option {
+    background: #112240;
+    color: #f0f4ff;
+  }
+
+  /* Shared modal form controls used by admin and manager panels */
+  .modal-panel label {
+    color: #64748b !important;
+  }
+
+  .modal-panel input:not([type="checkbox"]):not([type="radio"]),
+  .modal-panel select,
+  .modal-panel textarea {
+    background: rgba(255,255,255,0.04) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    color: #f0f4ff !important;
+    border-radius: 12px !important;
+    transition: border-color 0.2s, box-shadow 0.2s, background 0.2s !important;
+  }
+
+  .modal-panel input::placeholder,
+  .modal-panel textarea::placeholder {
+    color: #64748b !important;
+  }
+
+  .modal-panel input:not([type="checkbox"]):not([type="radio"]):focus,
+  .modal-panel select:focus,
+  .modal-panel textarea:focus {
+    background: rgba(255,255,255,0.07) !important;
+    border-color: rgba(212,168,67,0.5) !important;
+    box-shadow: 0 0 0 3px rgba(212,168,67,0.1) !important;
+    outline: none !important;
+  }
+
+  .modal-panel select option {
+    background: #112240;
+    color: #f0f4ff;
+  }
+
+  .modal-panel input[type="date"] {
+    color-scheme: dark;
+  }
+
+  .modal-panel form button[type="submit"] {
+    background: linear-gradient(135deg, #c0392b 0%, #a93226 100%) !important;
+    border: 1px solid rgba(192,57,43,0.45) !important;
+    color: #fff !important;
+    border-radius: 12px !important;
+    box-shadow: 0 4px 16px rgba(192,57,43,0.35);
+  }
+
+  .modal-panel form button[type="button"] {
+    background: rgba(255,255,255,0.05) !important;
+    border: 1px solid rgba(255,255,255,0.08) !important;
+    color: #94a3b8 !important;
+    border-radius: 12px !important;
+  }
+
+  /* ── Glass Table ────────────────────────────────────── */
+  .glass-table thead tr {
+    background: rgba(255,255,255,0.04);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  .glass-table thead th {
+    color: #64748b;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 12px 20px;
+    text-align: left;
+  }
+  .glass-table tbody tr {
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    transition: background 0.15s ease;
+  }
+  .glass-table tbody tr:last-child { border-bottom: none; }
+  .glass-table tbody tr:hover { background: rgba(255,255,255,0.03); }
+  .glass-table tbody td {
+    padding: 14px 20px;
+    color: #94a3b8;
+    font-size: 0.875rem;
+  }
+
+  /* ══════════════════════════════════════════════════════
+     ADMIN PANEL — DARK GLASS OVERRIDES
+     All "bg-white" cards in admin pages become dark glass.
+     This unifies the admin panel with the manager panel theme.
+  ══════════════════════════════════════════════════════ */
+
+  /* Dark card — replaces bg-white in admin pages */
+  .admin-card {
+    background: linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%) !important;
+    border: 1px solid rgba(255,255,255,0.08) !important;
+    color: #f0f4ff;
+  }
+
+  /* Override bg-white inside admin layout */
+  .admin-layout-content .bg-white {
+    background: linear-gradient(135deg, rgba(17,34,64,0.9) 0%, rgba(13,26,48,0.9) 100%) !important;
+    border-color: rgba(255,255,255,0.08) !important;
+  }
+
+  /* Override text colors for dark theme */
+  .admin-layout-content .text-text-primary  { color: #f0f4ff !important; }
+  .admin-layout-content .text-text-secondary { color: #94a3b8 !important; }
+  .admin-layout-content .text-muted          { color: #64748b !important; }
+
+  /* Override border colors */
+  .admin-layout-content .border-border {
+    border-color: rgba(255,255,255,0.08) !important;
+  }
+
+  /* Override surface backgrounds */
+  .admin-layout-content .bg-surface-2 {
+    background: rgba(255,255,255,0.04) !important;
+  }
+  .admin-layout-content .bg-surface-3 {
+    background: rgba(255,255,255,0.06) !important;
+  }
+
+  /* Override table header */
+  .admin-layout-content thead tr {
+    background: rgba(255,255,255,0.04) !important;
+  }
+  .admin-layout-content thead th {
+    color: #64748b !important;
+  }
+  .admin-layout-content tbody tr:hover {
+    background: rgba(255,255,255,0.03) !important;
+  }
+  .admin-layout-content tbody td {
+    color: #94a3b8;
+  }
+
+  /* Override inputs inside admin */
+  .admin-layout-content input:not([type="checkbox"]):not([type="radio"]),
+  .admin-layout-content select,
+  .admin-layout-content textarea {
+    background: rgba(255,255,255,0.04) !important;
+    border-color: rgba(255,255,255,0.1) !important;
+    color: #f0f4ff !important;
+  }
+  .admin-layout-content input::placeholder,
+  .admin-layout-content textarea::placeholder {
+    color: #64748b !important;
+  }
+  .admin-layout-content input:focus,
+  .admin-layout-content select:focus,
+  .admin-layout-content textarea:focus {
+    border-color: rgba(212,168,67,0.5) !important;
+    box-shadow: 0 0 0 3px rgba(212,168,67,0.1) !important;
+    outline: none !important;
+  }
+  .admin-layout-content select option {
+    background: #112240;
+    color: #f0f4ff;
+  }
+
+  /* Override button variants in admin */
+  .admin-layout-content .hover\:bg-surface-3:hover {
+    background: rgba(255,255,255,0.07) !important;
+  }
+  .admin-layout-content .hover\:bg-surface-2:hover {
+    background: rgba(255,255,255,0.04) !important;
+  }
+
+  /* Credential badge */
+  .credential-badge {
+    background: linear-gradient(135deg, rgba(16,185,129,0.15) 0%, rgba(16,185,129,0.05) 100%);
+    border: 1px solid rgba(16,185,129,0.3);
+    border-radius: 12px;
+    padding: 12px 16px;
+  }
+  .credential-badge code {
+    font-family: 'Courier New', monospace;
+    color: #10b981;
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+}
+
+@layer utilities {
+  /* ── Scrollbar ──────────────────────────────────────── */
+  .scrollbar-thin::-webkit-scrollbar { width: 4px; height: 4px; }
+  .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.12);
+    border-radius: 2px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: rgba(255,255,255,0.2);
+  }
+
+  /* ── Text helpers ───────────────────────────────────── */
+  .text-bright   { color: #f0f4ff; }
+  .text-soft     { color: #94a3b8; }
+  .text-dim      { color: #64748b; }
+  .text-gold     { color: #d4a843; }
+  .text-imperial { color: #c0392b; }
+  .text-emerald  { color: #10b981; }
+  .text-ruby     { color: #e11d48; }
+  .text-amber    { color: #f59e0b; }
+  .text-sapphire { color: #3b82f6; }
+
+  /* ── Glow ───────────────────────────────────────────── */
+  .glow-gold     { box-shadow: 0 0 20px rgba(212,168,67,0.25); }
+  .glow-imperial { box-shadow: 0 0 20px rgba(192,57,43,0.3); }
+  .glow-emerald  { box-shadow: 0 0 20px rgba(16,185,129,0.25); }
+}
