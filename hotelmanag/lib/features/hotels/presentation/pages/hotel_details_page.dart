@@ -6,6 +6,8 @@ import '../../../../core/widgets/main_layout.dart';
 import '../../../../core/providers/hotel_provider.dart';
 import '../../../../shared/domain/entities/hotel_entity.dart';
 import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:shimmer/shimmer.dart';
 
 class HotelDetailsPage extends StatefulWidget {
   final String id;
@@ -32,21 +34,45 @@ class _HotelDetailsPageState extends State<HotelDetailsPage> with SingleTickerPr
 
   @override
   Widget build(BuildContext context) {
-    final hotel = context.watch<HotelProvider>().hotels.cast<HotelEntity>().firstWhere(
-      (h) => h.id == widget.id,
-      orElse: () => const HotelEntity(
-        id: '',
-        name: 'Loading...',
-        location: '',
-        rating: 0,
-        pricePerNight: 0,
-        imageUrl: '',
-        description: '',
+    final hotel = context.select<HotelProvider, HotelEntity>(
+      (p) => p.hotels.cast<HotelEntity>().firstWhere(
+        (h) => h.id == widget.id,
+        orElse: () => const HotelEntity(
+          id: '',
+          name: 'Loading...',
+          location: '',
+          rating: 0,
+          pricePerNight: 0,
+          imageUrl: '',
+          description: '',
+        ),
       ),
     );
 
     if (hotel.id.isEmpty) {
-      return const MainLayout(child: Center(child: CircularProgressIndicator()));
+      return MainLayout(
+        child: Shimmer.fromColors(
+          baseColor: Colors.grey[300]!,
+          highlightColor: Colors.grey[100]!,
+          child: Column(
+            children: [
+              Container(height: 300, color: Colors.white),
+              const SizedBox(height: 24),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(height: 30, width: 200, color: Colors.white),
+                    const SizedBox(height: 12),
+                    Container(height: 16, width: 150, color: Colors.white),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
     }
 
     return MainLayout(
@@ -77,12 +103,16 @@ class _HotelDetailsPageState extends State<HotelDetailsPage> with SingleTickerPr
   }
 
   Widget _buildGallery(HotelEntity hotel) {
-    return SizedBox(
-      height: 300,
-      width: double.infinity,
-      child: Image.network(
-        hotel.imageUrl,
-        fit: BoxFit.cover,
+    return Hero(
+      tag: 'hotel_image_${hotel.id}',
+      child: SizedBox(
+        height: 300,
+        width: double.infinity,
+        child: CachedNetworkImage(
+          imageUrl: hotel.imageUrl,
+          fit: BoxFit.cover,
+          placeholder: (context, url) => Container(color: Colors.grey[200]),
+        ),
       ),
     );
   }

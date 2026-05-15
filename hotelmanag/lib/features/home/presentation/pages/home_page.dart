@@ -182,18 +182,21 @@ class _HomePageState extends State<HomePage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    ClipRRect(
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-                      child: CachedNetworkImage(
-                        imageUrl: item.imageUrl,
-                        height: 140,
-                        width: double.infinity,
-                        fit: BoxFit.cover,
-                        memCacheWidth: 440, // Reduced resolution for memory
-                        placeholder: (context, url) => Shimmer.fromColors(
-                          baseColor: Colors.grey[300]!,
-                          highlightColor: Colors.grey[100]!,
-                          child: Container(color: Colors.white),
+                    Hero(
+                      tag: 'hotel_image_${item.id}',
+                      child: ClipRRect(
+                        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                        child: CachedNetworkImage(
+                          imageUrl: item.imageUrl,
+                          height: 140,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                          memCacheWidth: 440, // Reduced resolution for memory
+                          placeholder: (context, url) => Shimmer.fromColors(
+                            baseColor: Colors.grey[300]!,
+                            highlightColor: Colors.grey[100]!,
+                            child: Container(color: Colors.white),
+                          ),
                         ),
                       ),
                     ),
@@ -613,19 +616,22 @@ class _HomePageState extends State<HomePage> {
                     ),
                     child: Row(
                       children: [
-                        ClipRRect(
-                          borderRadius: const BorderRadius.horizontal(left: Radius.circular(20)),
-                          child: CachedNetworkImage(
-                            imageUrl: item.imageUrl,
-                            width: 120,
-                            height: 120,
-                            fit: BoxFit.cover,
-                            memCacheWidth: 240,
-                            memCacheHeight: 240,
-                            placeholder: (context, url) => Shimmer.fromColors(
-                              baseColor: Colors.grey[300]!,
-                              highlightColor: Colors.grey[100]!,
-                              child: Container(color: Colors.white),
+                        Hero(
+                          tag: 'hotel_image_${item.id}',
+                          child: ClipRRect(
+                            borderRadius: const BorderRadius.horizontal(left: Radius.circular(20)),
+                            child: CachedNetworkImage(
+                              imageUrl: item.imageUrl,
+                              width: 120,
+                              height: 120,
+                              fit: BoxFit.cover,
+                              memCacheWidth: 240,
+                              memCacheHeight: 240,
+                              placeholder: (context, url) => Shimmer.fromColors(
+                                baseColor: Colors.grey[300]!,
+                                highlightColor: Colors.grey[100]!,
+                                child: Container(color: Colors.white),
+                              ),
                             ),
                           ),
                         ),
@@ -924,18 +930,21 @@ class FeaturedCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            ClipRRect(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-              child: CachedNetworkImage(
-                imageUrl: hotel.imageUrl,
-                height: 200,
-                width: double.infinity,
-                fit: BoxFit.cover,
-                memCacheWidth: 560, // Optimize memory for wide cards
-                placeholder: (context, url) => Shimmer.fromColors(
-                  baseColor: Colors.grey[300]!,
-                  highlightColor: Colors.grey[100]!,
-                  child: Container(color: Colors.white),
+            Hero(
+              tag: 'hotel_image_${hotel.id}',
+              child: ClipRRect(
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                child: CachedNetworkImage(
+                  imageUrl: hotel.imageUrl,
+                  height: 200,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                  memCacheWidth: 560, // Optimize memory for wide cards
+                  placeholder: (context, url) => Shimmer.fromColors(
+                    baseColor: Colors.grey[300]!,
+                    highlightColor: Colors.grey[100]!,
+                    child: Container(color: Colors.white),
+                  ),
                 ),
               ),
             ),
