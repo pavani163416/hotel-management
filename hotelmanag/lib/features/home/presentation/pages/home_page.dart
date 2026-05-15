@@ -70,72 +70,85 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildTopCities(BuildContext context) {
-    final cities = [
-      {'name': 'London', 'image': 'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?q=80&w=400', 'count': '120+ Stays'},
-      {'name': 'Paris', 'image': 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?q=80&w=400', 'count': '85+ Stays'},
-      {'name': 'New York', 'image': 'https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?q=80&w=400', 'count': '150+ Stays'},
-      {'name': 'Tokyo', 'image': 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?q=80&w=400', 'count': '90+ Stays'},
-    ];
+    return Consumer<HotelProvider>(
+      builder: (context, provider, child) {
+        final uniqueCities = provider.allHotels.map((h) => h.location).toSet().take(5).toList();
+        
+        final cityData = uniqueCities.map((city) {
+          String img = 'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?q=80&w=400';
+          if (city.toLowerCase().contains('london')) img = 'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?q=80&w=400';
+          if (city.toLowerCase().contains('paris')) img = 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?q=80&w=400';
+          if (city.toLowerCase().contains('york')) img = 'https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?q=80&w=400';
+          if (city.toLowerCase().contains('tokyo')) img = 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?q=80&w=400';
+          
+          return {'name': city, 'image': img};
+        }).toList();
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 24),
-          child: Text(
-            'Top Visited Cities',
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
-          ),
-        ),
-        const SizedBox(height: 16),
-        SizedBox(
-          height: 140,
-          child: ListView.separated(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            scrollDirection: Axis.horizontal,
-            physics: const BouncingScrollPhysics(),
-            itemCount: cities.length,
-            separatorBuilder: (context, index) => const SizedBox(width: 16),
-            itemBuilder: (context, index) {
-              final city = cities[index];
-              return InkWell(
-                onTap: () => context.push('/hotels'),
-                child: Column(
-                  children: [
-                    Container(
-                      width: 80,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4)),
-                        ],
-                      ),
-                      child: ClipOval(
-                        child: CachedNetworkImage(
-                          imageUrl: city['image']!,
-                          fit: BoxFit.cover,
-                          memCacheWidth: 160, // Optimize memory for small circles
-                          memCacheHeight: 160,
-                          placeholder: (context, url) => Shimmer.fromColors(
-                            baseColor: Colors.grey[300]!,
-                            highlightColor: Colors.grey[100]!,
-                            child: Container(color: Colors.white),
+        if (cityData.isEmpty) return const SizedBox.shrink();
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 24),
+              child: Text(
+                'Top Visited Cities',
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
+              ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              height: 140,
+              child: ListView.separated(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                scrollDirection: Axis.horizontal,
+                physics: const BouncingScrollPhysics(),
+                itemCount: cityData.length,
+                separatorBuilder: (context, index) => const SizedBox(width: 16),
+                itemBuilder: (context, index) {
+                  final city = cityData[index];
+                  return InkWell(
+                    onTap: () {
+                      provider.updateSearch(city['name']!);
+                      context.push('/hotels');
+                    },
+                    child: Column(
+                      children: [
+                        Container(
+                          width: 80,
+                          height: 80,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4)),
+                            ],
+                          ),
+                          child: ClipOval(
+                            child: CachedNetworkImage(
+                              imageUrl: city['image']!,
+                              fit: BoxFit.cover,
+                              memCacheWidth: 160,
+                              memCacheHeight: 160,
+                              placeholder: (context, url) => Shimmer.fromColors(
+                                baseColor: Colors.grey[300]!,
+                                highlightColor: Colors.grey[100]!,
+                                child: Container(color: Colors.white),
+                              ),
+                            ),
                           ),
                         ),
-                      ),
+                        const SizedBox(height: 12),
+                        Text(city['name']!, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                      ],
                     ),
-                    const SizedBox(height: 8),
-                    Text(city['name']!, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                    Text(city['count']!, style: TextStyle(fontSize: 10, color: Colors.grey[500])),
-                  ],
-                ),
-              );
-            },
-          ),
-        ),
-        const SizedBox(height: 8),
-      ],
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
+        );
+      },
     );
   }
 
@@ -507,12 +520,7 @@ class _HomePageState extends State<HomePage> {
           final cat = categories[index];
           return InkWell(
             onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Exploring ${cat['label']} stays...'),
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
+              context.read<HotelProvider>().updatePropertyType(cat['label'] as String);
               context.push('/hotels');
             },
             borderRadius: BorderRadius.circular(50),
