@@ -58,21 +58,47 @@ const History = () => {
   useEffect(() => {
     if (!user?.email) return;
     setLoadingBookings(true);
+    
     // Try JWT-based endpoint first (uses guestId from token — always correct)
-    // Fall back to email-based query if token not available
     const token = localStorage.getItem("luxe_customer_token");
-    const fetcher = token
-      ? getMyBookings()
-      : getBookingsByEmail(user.email);
-    fetcher
-      .then((res: any) => { if (res?.data) setApiBookings(res.data); })
-      .catch(() => {
-        // fallback to email query
-        getBookingsByEmail(user.email)
-          .then((res: any) => { if (res?.data) setApiBookings(res.data); })
-          .catch(() => {});
-      })
-      .finally(() => setLoadingBookings(false));
+    
+    const tryJWTFirst = async () => {
+      try {
+        const res: any = await getMyBookings();
+        if (res?.data && res.data.length > 0) {
+          setApiBookings(res.data);
+          setLoadingBookings(false);
+          return true;
+        }
+      } catch (e) {
+        // Continue to fallback
+      }
+      return false;
+    };
+    
+    const tryEmailFallback = async () => {
+      try {
+        const res: any = await getBookingsByEmail(user.email);
+        if (res?.data) {
+          setApiBookings(res.data);
+        }
+      } catch (e) {
+        console.error("Failed to fetch bookings", e);
+      }
+      setLoadingBookings(false);
+    };
+    
+    if (token) {
+      // Try JWT first, then fallback
+      tryJWTFirst().then((success) => {
+        if (!success) {
+          tryEmailFallback();
+        }
+      });
+    } else {
+      // No token, use email-based query
+      tryEmailFallback();
+    }
   }, [user?.email, location.key]);
 
   const handleCancelConfirm = async () => {
@@ -81,11 +107,30 @@ const History = () => {
     const reason = cancelReason === "Other" ? cancelOther || "Other" : cancelReason;
     try {
       await cancelBookingApi(cancelTarget.id, reason);
-      if (user?.email) {
+      
+      // Refresh bookings using JWT-based endpoint if available
+      const token = localStorage.getItem("luxe_customer_token");
+      if (token) {
+        try {
+          const res: any = await getMyBookings();
+          if (res?.data) setApiBookings(res.data);
+        } catch {
+          // Fallback to email-based query if JWT fails
+          if (user?.email) {
+            const res: any = await getBookingsByEmail(user.email);
+            if (res?.data) setApiBookings(res.data);
+          }
+        }
+      } else if (user?.email) {
+        // No token, use email-based query
         const res: any = await getBookingsByEmail(user.email);
         if (res?.data) setApiBookings(res.data);
       }
-    } catch { /* offline — cancel locally */ }
+    } catch (error) {
+      console.error("Cancellation error:", error);
+    }
+    
+    // Also cancel locally
     cancelBooking(cancelTarget.id);
     setCancelTarget(null);
     setCancelReason("");

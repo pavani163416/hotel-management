@@ -168,15 +168,23 @@ router.post("/login", authLimiter, async (req, res, next) => {
 
     // Ensure guest record is linked
     if (!user.guestId) {
-      const guest = await Guest.findOne({ email: normalEmail });
-      if (guest) {
-        user.guestId = guest._id;
-        await user.save();
+      let guest = await Guest.findOne({ email: normalEmail });
+      if (!guest) {
+        // Create guest record if it doesn't exist
+        guest = await Guest.create({
+          name: user.name,
+          email: normalEmail,
+          phone: user.phone || "",
+          city: user.city || "",
+          profileImage: user.profileImage || "",
+        });
       }
+      user.guestId = guest._id;
+      await user.save();
     }
 
     const token = jwt.sign(
-      { id: user._id, guestId: user.guestId, email: user.email, name: user.name, role: "customer" },
+      { id: user._id, guestId: user.guestId?.toString() || user.guestId, email: user.email, name: user.name, role: "customer" },
       getSecret(),
       { expiresIn: JWT_EXPIRES }
     );
@@ -388,7 +396,16 @@ router.get("/bookings", verifyCustomerToken, async (req, res, next) => {
     const skip  = (page - 1) * limit;
 
     // Use guestId from token to find bookings
-    const guestId = req.customer.guestId;
+    let guestId = req.customer.guestId;
+    
+    // If guestId is missing from token, try to find guest by email
+    if (!guestId && req.customer.email) {
+      const guest = await Guest.findOne({ email: req.customer.email.toLowerCase() });
+      if (guest) {
+        guestId = guest._id;
+      }
+    }
+    
     if (!guestId) {
       return res.json({ success: true, count: 0, total: 0, page, pages: 0, data: [] });
     }
@@ -396,6 +413,7 @@ router.get("/bookings", verifyCustomerToken, async (req, res, next) => {
     const [bookings, total] = await Promise.all([
       Booking.find({ guest: guestId })
         .populate("room", "roomNumber type pricePerNight images hotelStringId")
+        .populate("guest", "name email phone")
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit),

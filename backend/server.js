@@ -101,6 +101,13 @@ const corsOptions = {
 app.options("*", cors(corsOptions));
 app.use(cors(corsOptions));
 
+// ── Additional headers for WebSocket support ──────────────
+app.use((req, res, next) => {
+  res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+  res.setHeader("Pragma", "no-cache");
+  next();
+});
+
 // ── Security headers ──────────────────────────────────────
 // CSP disabled — API server only, no HTML pages served.
 // Frontends (Vercel) handle their own CSP.
@@ -123,12 +130,15 @@ app.use(helmet({
 // Skip redirect for health check paths so Railway can probe the service.
 if (isProd) {
   app.use((req, res, next) => {
-    if (req.path === "/" || req.path === "/api/health") return next();
+    // Skip redirect for health check, WebSocket, and Socket.IO paths
+    if (req.path === "/" || req.path === "/api/health" || req.path.startsWith("/socket.io") || req.path.startsWith("/ws")) return next();
     if (req.headers["x-forwarded-proto"] && req.headers["x-forwarded-proto"] !== "https") {
       return res.redirect(301, `https://${req.headers.host}${req.url}`);
     }
     next();
   });
+  // Trust proxy headers for Socket.IO (Railway sets these)
+  app.set("trust proxy", ["loopback", "linklocal", "uniquelocal"]);
 }
 
 // ── Body parsing — limit payload size ────────────────────
@@ -197,10 +207,17 @@ const PORT       = process.env.PORT || 5000;
 const httpServer = createServer(app);
 
 const io = new SocketIOServer(httpServer, {
+  path: "/socket.io/",
+  transports: ["websocket", "polling"],
+  allowUpgrades: true,
+  pingInterval: 25000,
+  pingTimeout: 20000,
+  maxHttpBufferSize: 1e6,
   cors: {
     origin:      allowedOrigins,
     methods:     ["GET", "POST"],
     credentials: true,
+    allowedHeaders: ["Content-Type", "Authorization", "Accept"],
   },
 });
 
