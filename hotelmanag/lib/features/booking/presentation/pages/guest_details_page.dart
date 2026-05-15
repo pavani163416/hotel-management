@@ -15,6 +15,7 @@ class GuestDetailsPage extends StatefulWidget {
 }
 
 class _GuestDetailsPageState extends State<GuestDetailsPage> {
+  final _formKey = GlobalKey<FormState>();
   final _leadNameController = TextEditingController();
   final _leadEmailController = TextEditingController();
   final _leadPhoneController = TextEditingController();
@@ -73,29 +74,38 @@ class _GuestDetailsPageState extends State<GuestDetailsPage> {
   }
 
   void _saveAndContinue() {
-    final provider = context.read<BookingProvider>();
-    
-    provider.updateLeadGuest({
-      'name': _leadNameController.text,
-      'email': _leadEmailController.text,
-      'phone': _leadPhoneController.text,
-      'requests': _leadRequestsController.text,
-    });
+    if (_formKey.currentState!.validate()) {
+      final provider = context.read<BookingProvider>();
+      
+      provider.updateLeadGuest({
+        'name': _leadNameController.text,
+        'email': _leadEmailController.text,
+        'phone': _leadPhoneController.text,
+        'requests': _leadRequestsController.text,
+      });
 
-    final adults = _adultControllers.map((c) => {
-      'name': c['name']!.text,
-      'email': c['email']!.text,
-      'phone': c['phone']!.text,
-      'requests': c['requests']!.text,
-    }).toList();
+      final adults = _adultControllers.map((c) => {
+        'name': c['name']!.text,
+        'email': c['email']!.text,
+        'phone': c['phone']!.text,
+        'requests': c['requests']!.text,
+      }).toList();
 
-    final children = _childControllers.map((c) => {
-      'name': c['name']!.text,
-      'age': c['age']!.text,
-    }).toList();
+      final children = _childControllers.map((c) => {
+        'name': c['name']!.text,
+        'age': c['age']!.text,
+      }).toList();
 
-    provider.setAdditionalGuests(adults, children);
-    context.push('/review');
+      provider.setAdditionalGuests(adults, children);
+      context.push('/review');
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please fill in all required fields.'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+    }
   }
 
   @override
@@ -104,67 +114,70 @@ class _GuestDetailsPageState extends State<GuestDetailsPage> {
       child: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const StepperWidget(currentStep: 1),
-              const SizedBox(height: 24),
-              const Text(
-                'Guest Details',
-                style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: AppTheme.primaryColor, fontFamily: 'Serif'),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Enter the lead guest information for this reservation.',
-                style: TextStyle(color: AppTheme.primaryColor.withOpacity(0.5), fontSize: 14),
-              ),
-              const SizedBox(height: 32),
-              
-              _buildLeadGuestCard(),
-              
-              const SizedBox(height: 48),
-              _buildAdultsHeader(),
-              const SizedBox(height: 16),
-              if (_adultControllers.isEmpty)
-                _buildEmptyState('No additional adults.')
-              else
-                ..._adultControllers.asMap().entries.map((entry) => _buildAdultCard(entry.key)),
-              
-              const SizedBox(height: 32),
-              const Divider(color: AppTheme.mutedColor),
-              const SizedBox(height: 32),
-              
-              _buildChildrenHeader(),
-              const SizedBox(height: 16),
-              if (_childControllers.isEmpty)
-                _buildEmptyState('No children.')
-              else
-                ..._childControllers.asMap().entries.map((entry) => _buildChildRow(entry.key)),
-              
-              const SizedBox(height: 60),
-              
-              Align(
-                alignment: Alignment.centerRight,
-                child: ElevatedButton(
-                  onPressed: _saveAndContinue,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryColor,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text('Continue to Review', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                      SizedBox(width: 12),
-                      Icon(LucideIcons.arrowRight, size: 18),
-                    ],
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const StepperWidget(currentStep: 1),
+                const SizedBox(height: 24),
+                const Text(
+                  'Guest Details',
+                  style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: AppTheme.primaryColor, fontFamily: 'Serif'),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Enter the lead guest information for this reservation.',
+                  style: TextStyle(color: AppTheme.primaryColor.withOpacity(0.5), fontSize: 14),
+                ),
+                const SizedBox(height: 32),
+                
+                _buildLeadGuestCard(),
+                
+                const SizedBox(height: 48),
+                _buildAdultsHeader(),
+                const SizedBox(height: 16),
+                if (_adultControllers.isEmpty)
+                  _buildEmptyState('No additional adults.')
+                else
+                  ..._adultControllers.asMap().entries.map((entry) => _buildAdultCard(entry.key)),
+                
+                const SizedBox(height: 32),
+                const Divider(color: AppTheme.mutedColor),
+                const SizedBox(height: 32),
+                
+                _buildChildrenHeader(),
+                const SizedBox(height: 16),
+                if (_childControllers.isEmpty)
+                  _buildEmptyState('No children.')
+                else
+                  ..._childControllers.asMap().entries.map((entry) => _buildChildRow(entry.key)),
+                
+                const SizedBox(height: 60),
+                
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: ElevatedButton(
+                    onPressed: _saveAndContinue,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primaryColor,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text('Continue to Review', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                        SizedBox(width: 12),
+                        Icon(LucideIcons.arrowRight, size: 18),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 100),
-            ],
+                const SizedBox(height: 100),
+              ],
+            ),
           ),
         ),
       ),
@@ -197,9 +210,9 @@ class _GuestDetailsPageState extends State<GuestDetailsPage> {
           const SizedBox(height: 24),
           const Divider(color: AppTheme.mutedColor),
           const SizedBox(height: 24),
-          _buildLabel('FULL NAME'),
+          _buildLabel('FULL NAME *'),
           const SizedBox(height: 8),
-          _buildTextField('e.g. James Wilson', _leadNameController),
+          _buildTextField('e.g. James Wilson', _leadNameController, required: true),
           const SizedBox(height: 24),
           Row(
             children: [
@@ -207,9 +220,9 @@ class _GuestDetailsPageState extends State<GuestDetailsPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildLabel('EMAIL ADDRESS'),
+                    _buildLabel('EMAIL ADDRESS *'),
                     const SizedBox(height: 8),
-                    _buildTextField('you@example.com', _leadEmailController),
+                    _buildTextField('you@example.com', _leadEmailController, required: true, isEmail: true),
                   ],
                 ),
               ),
@@ -218,9 +231,9 @@ class _GuestDetailsPageState extends State<GuestDetailsPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildLabel('PHONE NUMBER'),
+                    _buildLabel('PHONE NUMBER *'),
                     const SizedBox(height: 8),
-                    _buildTextField('+1 (555) 000-0000', _leadPhoneController),
+                    _buildTextField('+1 (555) 000-0000', _leadPhoneController, required: true),
                   ],
                 ),
               ),
@@ -275,9 +288,9 @@ class _GuestDetailsPageState extends State<GuestDetailsPage> {
             ],
           ),
           const SizedBox(height: 24),
-          _buildLabel('FULL NAME'),
+          _buildLabel('FULL NAME *'),
           const SizedBox(height: 8),
-          _buildTextField('Full Name', controllers['name']!),
+          _buildTextField('Full Name', controllers['name']!, required: true),
           const SizedBox(height: 24),
           Row(
             children: [
@@ -335,9 +348,9 @@ class _GuestDetailsPageState extends State<GuestDetailsPage> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          Expanded(flex: 3, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('CHILD ${index + 1} FULL NAME'), const SizedBox(height: 8), _buildTextField('Full Name', controllers['name']!)])),
+          Expanded(flex: 3, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('CHILD ${index + 1} FULL NAME *'), const SizedBox(height: 8), _buildTextField('Full Name', controllers['name']!, required: true)])),
           const SizedBox(width: 12),
-          Expanded(flex: 1, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('AGE'), const SizedBox(height: 8), _buildTextField('e.g. 5', controllers['age']!)])),
+          Expanded(flex: 1, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('AGE *'), const SizedBox(height: 8), _buildTextField('e.g. 5', controllers['age']!, required: true)])),
           const SizedBox(width: 12),
           Padding(padding: const EdgeInsets.only(bottom: 12), child: IconButton(icon: const Icon(LucideIcons.trash2, size: 20, color: Colors.grey), onPressed: () => setState(() => _childControllers.removeAt(index)))),
         ],
@@ -353,10 +366,22 @@ class _GuestDetailsPageState extends State<GuestDetailsPage> {
     return Text(text, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.primaryColor.withOpacity(0.5), letterSpacing: 0.5));
   }
 
-  Widget _buildTextField(String hint, TextEditingController controller, {int maxLines = 1}) {
-    return TextField(
+  Widget _buildTextField(String hint, TextEditingController controller, {int maxLines = 1, bool required = false, bool isEmail = false}) {
+    return TextFormField(
       controller: controller,
       maxLines: maxLines,
+      validator: (value) {
+        if (required && (value == null || value.isEmpty)) {
+          return 'This field is required';
+        }
+        if (isEmail && value != null && value.isNotEmpty) {
+          final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+          if (!emailRegex.hasMatch(value)) {
+            return 'Please enter a valid email';
+          }
+        }
+        return null;
+      },
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: TextStyle(color: Colors.grey[400], fontSize: 13),
@@ -366,6 +391,7 @@ class _GuestDetailsPageState extends State<GuestDetailsPage> {
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppTheme.mutedColor)),
         enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppTheme.mutedColor)),
         focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppTheme.primaryColor, width: 1.2)),
+        errorStyle: const TextStyle(fontSize: 11, color: Colors.redAccent),
       ),
     );
   }
