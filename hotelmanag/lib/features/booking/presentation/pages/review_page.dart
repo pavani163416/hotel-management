@@ -30,13 +30,8 @@ class _ReviewPageState extends State<ReviewPage> {
     
     bool success = provider.applyPromoCode(_promoController.text);
     if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Promo code "${provider.appliedPromoCode}" applied!'),
-          backgroundColor: Colors.green,
-        ),
-      );
       _promoController.clear();
+      // Success message is now shown in UI
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -244,41 +239,74 @@ class _ReviewPageState extends State<ReviewPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text('PRICE SUMMARY', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.primaryColor, letterSpacing: 1)),
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
           _buildPriceRow('Standard (${provider.nights} nights)', '\$${NumberFormat("#,###").format(provider.subtotal)}'),
-          if (provider.discountAmount > 0)
-            _buildPriceRow('Discount (${provider.appliedPromoCode})', '-\$${NumberFormat("#,###").format(provider.discountAmount)}', isDiscount: true),
           _buildPriceRow('Service Fee', '\$${NumberFormat("#,###").format(provider.serviceFee)}'),
           _buildPriceRow('Taxes', '\$${NumberFormat("#,###").format(provider.taxes)}'),
-          const SizedBox(height: 24),
+          if (provider.discountAmount > 0)
+            _buildPriceRow('Discount (${provider.appliedPromoCode})', '-\$${NumberFormat("#,###").format(provider.discountAmount)}', isDiscount: true),
+          
+          const SizedBox(height: 16),
           const Divider(color: AppTheme.mutedColor),
           const SizedBox(height: 24),
           
-          const Text('PROMO CODE', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.primaryColor, letterSpacing: 1)),
+          Row(
+            children: [
+              Icon(LucideIcons.tag, size: 14, color: AppTheme.primaryColor.withOpacity(0.6)),
+              const SizedBox(width: 8),
+              const Text('PROMO CODE', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.primaryColor, letterSpacing: 1)),
+            ],
+          ),
           const SizedBox(height: 12),
           Row(
             children: [
               Expanded(
-                child: TextField(
-                  controller: _promoController,
-                  decoration: InputDecoration(
-                    hintText: 'Enter code...',
-                    hintStyle: TextStyle(color: Colors.grey[300], fontSize: 13),
-                    filled: true,
-                    fillColor: Colors.white,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppTheme.mutedColor)),
+                child: Container(
+                  height: 48,
+                  child: TextField(
+                    controller: _promoController,
+                    decoration: InputDecoration(
+                      hintText: 'Enter code...',
+                      hintStyle: TextStyle(color: Colors.grey[300], fontSize: 13),
+                      filled: true,
+                      fillColor: Colors.white,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppTheme.mutedColor)),
+                      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppTheme.primaryColor)),
+                    ),
                   ),
                 ),
               ),
               const SizedBox(width: 8),
               ElevatedButton(
                 onPressed: () => _applyPromo(provider),
-                style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryColor, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF4A5568),
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size(80, 48),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  elevation: 0,
+                ),
                 child: const Text('Apply'),
               ),
             ],
           ),
+          
+          if (provider.appliedPromoCode != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: Row(
+                children: [
+                  const Icon(Icons.check, size: 14, color: Color(0xFF38A169)),
+                  const SizedBox(width: 8),
+                  Text(
+                    '${provider.appliedPromoCode} applied — ${_getPromoDesc(provider.appliedPromoCode!)}!',
+                    style: const TextStyle(color: Color(0xFF38A169), fontSize: 11, fontWeight: FontWeight.w500),
+                  ),
+                ],
+              ),
+            ),
+            
           const SizedBox(height: 12),
           Wrap(
             spacing: 8,
@@ -290,12 +318,15 @@ class _ReviewPageState extends State<ReviewPage> {
             ],
           ),
           
+          const SizedBox(height: 24),
+          const Divider(color: AppTheme.mutedColor),
           const SizedBox(height: 32),
+          
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text('Total Amount', style: TextStyle(fontSize: 14, color: AppTheme.primaryColor)),
-              Text('\$${NumberFormat("#,###").format(provider.total)}', style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+              Text('\$${NumberFormat("#,###").format(provider.total)}', style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
             ],
           ),
           const SizedBox(height: 24),
@@ -304,10 +335,11 @@ class _ReviewPageState extends State<ReviewPage> {
             child: ElevatedButton(
               onPressed: () => context.push('/payment'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryColor,
+                backgroundColor: const Color(0xFF4A5568),
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 20),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                elevation: 0,
               ),
               child: const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -324,14 +356,21 @@ class _ReviewPageState extends State<ReviewPage> {
     );
   }
 
+  String _getPromoDesc(String code) {
+    if (code == 'LUXE10') return '10% special discount';
+    if (code == 'WELCOME15') return '15% welcome discount';
+    if (code == 'VIP20') return '20% VIP discount';
+    return 'discount applied';
+  }
+
   Widget _buildPriceRow(String label, String value, {bool isDiscount = false}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: TextStyle(fontSize: 14, color: isDiscount ? Colors.green : AppTheme.primaryColor.withOpacity(0.6))),
-          Text(value, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: isDiscount ? Colors.green : AppTheme.primaryColor)),
+          Text(label, style: TextStyle(fontSize: 14, color: isDiscount ? Colors.grey[400] : AppTheme.primaryColor.withOpacity(0.6))),
+          Text(value, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: isDiscount ? Colors.grey[400] : AppTheme.primaryColor)),
         ],
       ),
     );
@@ -342,22 +381,19 @@ class _ReviewPageState extends State<ReviewPage> {
     return GestureDetector(
       onTap: () {
         provider.applyPromoCode(code);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Promo code "$code" applied!'), backgroundColor: Colors.green),
-        );
       },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
         decoration: BoxDecoration(
-          color: isApplied ? Colors.green.withOpacity(0.1) : AppTheme.mutedColor.withOpacity(0.3),
+          color: isApplied ? const Color(0xFFF7FAFC) : AppTheme.mutedColor.withOpacity(0.2),
           borderRadius: BorderRadius.circular(6),
-          border: isApplied ? Border.all(color: Colors.green.withOpacity(0.5)) : null,
+          border: isApplied ? Border.all(color: AppTheme.mutedColor) : null,
         ),
         child: Text(
           code,
           style: TextStyle(
             fontSize: 10,
-            color: isApplied ? Colors.green : AppTheme.primaryColor.withOpacity(0.6),
+            color: isApplied ? AppTheme.primaryColor.withOpacity(0.3) : AppTheme.primaryColor.withOpacity(0.6),
             fontWeight: FontWeight.bold,
           ),
         ),
