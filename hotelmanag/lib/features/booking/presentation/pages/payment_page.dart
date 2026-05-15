@@ -16,9 +16,34 @@ class PaymentPage extends StatefulWidget {
 }
 
 class _PaymentPageState extends State<PaymentPage> {
+  final _idFormKey = GlobalKey<FormState>();
+  final _paymentFormKey = GlobalKey<FormState>();
+  
   String _selectedMethod = 'card';
   String _selectedGuest = 'lead';
   String _selectedIdType = 'Aadhaar Card';
+  String? _selectedBank;
+
+  void _processPayment(BookingProvider provider) {
+    bool isIdValid = _idFormKey.currentState!.validate();
+    bool isPaymentValid = _paymentFormKey.currentState!.validate();
+
+    if (_selectedMethod == 'bank' && _selectedBank == null) {
+      isPaymentValid = false;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select your bank'), backgroundColor: Colors.redAccent),
+      );
+      return;
+    }
+
+    if (isIdValid && isPaymentValid) {
+      context.push('/confirmation');
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please fill in all mandatory fields'), backgroundColor: Colors.redAccent),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -62,13 +87,20 @@ class _PaymentPageState extends State<PaymentPage> {
                         flex: 3,
                         child: Column(
                           children: [
-                            _buildGuestIdentityVerification(provider),
+                            Form(key: _idFormKey, child: _buildGuestIdentityVerification(provider)),
                             const SizedBox(height: 24),
                             _buildPaymentMethodSelector(),
                             const SizedBox(height: 24),
-                            if (_selectedMethod == 'card') _buildCardForm(provider),
-                            if (_selectedMethod == 'upi') _buildUpiForm(provider),
-                            if (_selectedMethod == 'bank') _buildNetBankingForm(provider),
+                            Form(
+                              key: _paymentFormKey,
+                              child: Column(
+                                children: [
+                                  if (_selectedMethod == 'card') _buildCardForm(provider),
+                                  if (_selectedMethod == 'upi') _buildUpiForm(provider),
+                                  if (_selectedMethod == 'bank') _buildNetBankingForm(provider),
+                                ],
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -121,12 +153,12 @@ class _PaymentPageState extends State<PaymentPage> {
           const SizedBox(height: 8),
           Text('Required by Indian hotel regulations (MHA guidelines). Your ID is used for check-in only and is not stored digitally.', style: TextStyle(fontSize: 11, color: AppTheme.primaryColor.withOpacity(0.5))),
           const SizedBox(height: 24),
-          Text('PRIMARY GUEST (BILLING RESPONSIBLE)', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.primaryColor.withOpacity(0.4), letterSpacing: 1)),
+          Text('PRIMARY GUEST (BILLING RESPONSIBLE) *', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.primaryColor.withOpacity(0.4), letterSpacing: 1)),
           const SizedBox(height: 16),
           _buildGuestOption('lead', leadName.toUpperCase(), true),
           const SizedBox(height: 24),
           
-          _buildLabel('ID TYPE'),
+          _buildLabel('ID TYPE *'),
           const SizedBox(height: 8),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -149,9 +181,9 @@ class _PaymentPageState extends State<PaymentPage> {
             ),
           ),
           const SizedBox(height: 24),
-          _buildLabel('${_selectedIdType.toUpperCase()} NUMBER'),
+          _buildLabel('${_selectedIdType.toUpperCase()} NUMBER *'),
           const SizedBox(height: 8),
-          _buildTextField(_selectedIdType == 'Aadhaar Card' ? 'XXXX XXXX XXXX' : 'Enter your ${_selectedIdType} number'),
+          _buildTextField(_selectedIdType == 'Aadhaar Card' ? 'XXXX XXXX XXXX' : 'Enter your ${_selectedIdType} number', required: true),
           const SizedBox(height: 12),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -235,19 +267,19 @@ class _PaymentPageState extends State<PaymentPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildLabel('CARD NUMBER'),
+          _buildLabel('CARD NUMBER *'),
           const SizedBox(height: 8),
-          _buildTextField('1234 5678 9012 3456'),
+          _buildTextField('1234 5678 9012 3456', required: true),
           const SizedBox(height: 24),
-          _buildLabel('CARDHOLDER NAME'),
+          _buildLabel('CARDHOLDER NAME *'),
           const SizedBox(height: 8),
-          _buildTextField('John Doe'),
+          _buildTextField('John Doe', required: true),
           const SizedBox(height: 24),
           Row(
             children: [
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('EXPIRY'), const SizedBox(height: 8), _buildTextField('MM/YY')])),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('EXPIRY *'), const SizedBox(height: 8), _buildTextField('MM/YY', required: true)])),
               const SizedBox(width: 16),
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('CVV'), const SizedBox(height: 8), _buildTextField('123')])),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('CVV *'), const SizedBox(height: 8), _buildTextField('123', required: true)])),
             ],
           ),
           const SizedBox(height: 32),
@@ -267,9 +299,9 @@ class _PaymentPageState extends State<PaymentPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildLabel('UPI ID'),
+          _buildLabel('UPI ID *'),
           const SizedBox(height: 8),
-          _buildTextField('yourname@bank'),
+          _buildTextField('yourname@bank', required: true),
           const SizedBox(height: 32),
           _buildPayButton(provider),
           const SizedBox(height: 16),
@@ -287,17 +319,18 @@ class _PaymentPageState extends State<PaymentPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildLabel('SELECT BANK'),
+          _buildLabel('SELECT BANK *'),
           const SizedBox(height: 8),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             decoration: BoxDecoration(
-              border: Border.all(color: AppTheme.mutedColor),
+              border: Border.all(color: _selectedBank == null ? Colors.redAccent.withOpacity(0.5) : AppTheme.mutedColor),
               borderRadius: BorderRadius.circular(10),
             ),
             child: DropdownButtonHideUnderline(
               child: DropdownButton<String>(
                 isExpanded: true,
+                value: _selectedBank,
                 hint: const Text('Choose your bank', style: TextStyle(fontSize: 14, color: Colors.grey)),
                 items: ['State Bank of India', 'HDFC Bank', 'ICICI Bank', 'Axis Bank'].map((String value) {
                   return DropdownMenuItem<String>(
@@ -305,7 +338,7 @@ class _PaymentPageState extends State<PaymentPage> {
                     child: Text(value, style: const TextStyle(fontSize: 14, color: AppTheme.primaryColor)),
                   );
                 }).toList(),
-                onChanged: (_) {},
+                onChanged: (v) => setState(() => _selectedBank = v),
               ),
             ),
           ),
@@ -322,7 +355,7 @@ class _PaymentPageState extends State<PaymentPage> {
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
-        onPressed: () => context.push('/confirmation'),
+        onPressed: () => _processPayment(provider),
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF7E8A9A),
           foregroundColor: Colors.white,
@@ -385,7 +418,25 @@ class _PaymentPageState extends State<PaymentPage> {
     return Text(text, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.primaryColor.withOpacity(0.5), letterSpacing: 0.5));
   }
 
-  Widget _buildTextField(String hint) {
-    return TextField(decoration: InputDecoration(hintText: hint, hintStyle: TextStyle(color: Colors.grey[300], fontSize: 14), filled: true, fillColor: Colors.white, contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16), border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppTheme.mutedColor)), enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppTheme.mutedColor))));
+  Widget _buildTextField(String hint, {bool required = false}) {
+    return TextFormField(
+      validator: (value) {
+        if (required && (value == null || value.isEmpty)) {
+          return 'This field is required';
+        }
+        return null;
+      },
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle: TextStyle(color: Colors.grey[300], fontSize: 14),
+        filled: true,
+        fillColor: Colors.white,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppTheme.mutedColor)),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppTheme.mutedColor)),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppTheme.primaryColor, width: 1.2)),
+        errorStyle: const TextStyle(fontSize: 10, color: Colors.redAccent),
+      ),
+    );
   }
 }
