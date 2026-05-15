@@ -718,30 +718,25 @@ class _ProfilePageState extends State<ProfilePage> {
               ? null
               : () async {
                   String? newProfileImageUrl;
+                  String? newCoverImageUrl;
                   
                   if (_profileImageFile != null) {
                     final bytes = await _profileImageFile!.readAsBytes();
                     final base64Image = base64Encode(bytes);
                     newProfileImageUrl = await auth.uploadImage(base64Image);
-                    
-                    if (newProfileImageUrl == null) {
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(auth.error ?? 'Failed to upload image'),
-                            behavior: SnackBarBehavior.floating,
-                            backgroundColor: Colors.red,
-                          ),
-                        );
-                      }
-                      return;
-                    }
+                  }
+
+                  if (_coverImageFile != null) {
+                    final bytes = await _coverImageFile!.readAsBytes();
+                    final base64Image = base64Encode(bytes);
+                    newCoverImageUrl = await auth.uploadImage(base64Image);
                   }
 
                   final success = await auth.updateProfile(
                     name: _nameController.text,
                     phone: _phoneController.text,
                     profileImage: newProfileImageUrl,
+                    coverImage: newCoverImageUrl,
                   );
 
                   if (context.mounted) {
