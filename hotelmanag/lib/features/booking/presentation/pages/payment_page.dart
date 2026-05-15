@@ -154,11 +154,20 @@ class _PaymentPageState extends State<PaymentPage> {
           ),
           const SizedBox(height: 8),
           Text('Required by Indian hotel regulations (MHA guidelines). Your ID is used for check-in only and is not stored digitally.', style: TextStyle(fontSize: 11, color: AppTheme.primaryColor.withOpacity(0.5))),
-          const SizedBox(height: 24),
-          Text('PRIMARY GUEST (BILLING RESPONSIBLE) *', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.primaryColor.withOpacity(0.4), letterSpacing: 1)),
+          Text('SELECT GUEST FOR VERIFICATION *', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.primaryColor.withOpacity(0.4), letterSpacing: 1)),
           const SizedBox(height: 16),
           _buildGuestOption('lead', leadName.toUpperCase(), true),
-          const SizedBox(height: 24),
+          const SizedBox(height: 12),
+          
+          ...provider.additionalAdults.asMap().entries.map((entry) {
+            final index = entry.key;
+            final guest = entry.value;
+            final name = guest['name']?.isNotEmpty == true ? guest['name']! : 'ADULT ${index + 1}';
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: _buildGuestOption('adult_$index', name.toUpperCase(), false),
+            );
+          }),
           
           _buildLabel('ID TYPE *'),
           const SizedBox(height: 8),
