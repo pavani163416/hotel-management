@@ -37,6 +37,8 @@ class _PaymentPageState extends State<PaymentPage> {
     }
 
     if (isIdValid && isPaymentValid) {
+      final bookingId = 'LS-${10000 + (new DateTime.now().millisecondsSinceEpoch % 90000)}';
+      provider.completeBooking(bookingId);
       context.push('/confirmation');
     } else {
       ScaffoldMessenger.of(context).showSnackBar(

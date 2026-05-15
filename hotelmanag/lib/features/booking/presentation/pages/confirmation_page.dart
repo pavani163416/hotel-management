@@ -3,34 +3,22 @@ import 'package:lucide_icons/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'dart:math';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/main_layout.dart';
 import '../../../../core/providers/booking_provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
-class ConfirmationPage extends StatefulWidget {
+class ConfirmationPage extends StatelessWidget {
   const ConfirmationPage({super.key});
 
   @override
-  State<ConfirmationPage> createState() => _ConfirmationPageState();
-}
-
-class _ConfirmationPageState extends State<ConfirmationPage> {
-  late String _bookingId;
-
-  @override
-  void initState() {
-    super.initState();
-    _bookingId = 'LS-${10000 + Random().nextInt(90000)}';
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final provider = context.read<BookingProvider>();
+    final provider = context.watch<BookingProvider>();
+    // Get the latest booking from history
+    final latestBooking = provider.bookings.isNotEmpty ? provider.bookings.first : null;
     final hotel = provider.currentHotel;
 
-    if (hotel == null) {
+    if (hotel == null || latestBooking == null) {
       return const MainLayout(child: Center(child: Text('No booking data found')));
     }
 
@@ -41,7 +29,7 @@ class _ConfirmationPageState extends State<ConfirmationPage> {
           child: Container(
             constraints: const BoxConstraints(maxWidth: 500),
             margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 60),
-            padding: const EdgeInsets.all(32),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 32),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(24),
@@ -52,8 +40,8 @@ class _ConfirmationPageState extends State<ConfirmationPage> {
               children: [
                 Container(
                   padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFE5E0D8),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFE5E0D8),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(LucideIcons.check, size: 32, color: AppTheme.primaryColor),
@@ -61,18 +49,19 @@ class _ConfirmationPageState extends State<ConfirmationPage> {
                 const SizedBox(height: 32),
                 const Text(
                   'Booking Confirmed!',
-                  style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Color(0xFF2D3748)),
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Color(0xFF2D3748)),
                 ),
                 const SizedBox(height: 16),
                 RichText(
                   textAlign: TextAlign.center,
                   text: TextSpan(
-                    style: TextStyle(color: AppTheme.primaryColor.withOpacity(0.6), fontSize: 14, height: 1.5),
+                    style: TextStyle(color: AppTheme.primaryColor.withOpacity(0.6), fontSize: 13, height: 1.5),
                     children: [
                       const TextSpan(text: 'Your reservation at '),
                       TextSpan(text: hotel.name, style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
                       const TextSpan(text: ' is confirmed. Booking ID '),
-                      TextSpan(text: '#$_bookingId', style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+                      TextSpan(text: '#${latestBooking.id}', style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
                       const TextSpan(text: ' has been saved to your history.'),
                     ],
                   ),
@@ -94,15 +83,18 @@ class _ConfirmationPageState extends State<ConfirmationPage> {
                         children: [
                           const Text('BOOKING ID', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 0.5)),
                           const SizedBox(height: 8),
-                          Text('#$_bookingId', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF2D3748))),
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text('#${latestBooking.id}', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF2D3748))),
+                          ),
                         ],
                       ),
-                      Positioned(
+                      const Positioned(
                         right: 0,
                         top: 8,
                         child: Text(
                           'PAYMENT SUCCESSFUL',
-                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.black.withOpacity(0.05), letterSpacing: 1),
+                          style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.black12, letterSpacing: 1),
                         ),
                       ),
                     ],
@@ -113,7 +105,7 @@ class _ConfirmationPageState extends State<ConfirmationPage> {
                 const Divider(color: AppTheme.mutedColor),
                 const SizedBox(height: 24),
                 
-                // Hotel Info Row
+                // Hotel Info Row - FIXED FOR OVERFLOW
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -121,36 +113,40 @@ class _ConfirmationPageState extends State<ConfirmationPage> {
                       borderRadius: BorderRadius.circular(12),
                       child: CachedNetworkImage(
                         imageUrl: hotel.imageUrl,
-                        width: 80,
-                        height: 80,
+                        width: 70,
+                        height: 70,
                         fit: BoxFit.cover,
                       ),
                     ),
-                    const SizedBox(width: 16),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(hotel.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF2D3748))),
-                          const SizedBox(height: 8),
+                          Text(hotel.name, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF2D3748)), maxLines: 1, overflow: TextOverflow.ellipsis),
+                          const SizedBox(height: 6),
                           Row(
                             children: [
-                              const Icon(LucideIcons.calendar, size: 14, color: Colors.grey),
-                              const SizedBox(width: 8),
-                              Text(
-                                '${DateFormat('yyyy-MM-dd').format(provider.checkIn)} → ${DateFormat('yyyy-MM-dd').format(provider.checkOut)} (${provider.nights} nights)',
-                                style: const TextStyle(fontSize: 12, color: Colors.grey),
+                              const Icon(LucideIcons.calendar, size: 12, color: Colors.grey),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  '${DateFormat('MM-dd').format(provider.checkIn)} → ${DateFormat('MM-dd').format(provider.checkOut)} (${provider.nights}n)',
+                                  style: const TextStyle(fontSize: 11, color: Colors.grey),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ),
                             ],
                           ),
                           const SizedBox(height: 4),
                           Row(
                             children: [
-                              const Icon(LucideIcons.users, size: 14, color: Colors.grey),
-                              const SizedBox(width: 8),
+                              const Icon(LucideIcons.users, size: 12, color: Colors.grey),
+                              const SizedBox(width: 6),
                               Text(
                                 '${provider.guests} guests · Standard',
-                                style: const TextStyle(fontSize: 12, color: Colors.grey),
+                                style: const TextStyle(fontSize: 11, color: Colors.grey),
                               ),
                             ],
                           ),
@@ -168,26 +164,27 @@ class _ConfirmationPageState extends State<ConfirmationPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Total Paid', style: TextStyle(fontSize: 14, color: Colors.grey)),
+                    const Text('Total Paid', style: TextStyle(fontSize: 13, color: Colors.grey)),
                     Text(
                       '\$${NumberFormat("#,###").format(provider.total)}',
-                      style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFFCBD5E0)),
+                      style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFFCBD5E0)),
                     ),
                   ],
                 ),
                 
                 const SizedBox(height: 40),
                 
-                // Buttons
-                Row(
+                // Buttons - FIXED FOR OVERFLOW
+                Column(
                   children: [
-                    Expanded(
+                    SizedBox(
+                      width: double.infinity,
                       child: ElevatedButton(
                         onPressed: () => context.go('/history'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFFE2DED5),
                           foregroundColor: const Color(0xFF2D3748),
-                          padding: const EdgeInsets.symmetric(vertical: 20),
+                          padding: const EdgeInsets.symmetric(vertical: 18),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           elevation: 0,
                         ),
@@ -201,14 +198,15 @@ class _ConfirmationPageState extends State<ConfirmationPage> {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 16),
-                    Expanded(
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
                       child: ElevatedButton(
                         onPressed: () => context.go('/'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFFE2DED5),
                           foregroundColor: const Color(0xFF2D3748),
-                          padding: const EdgeInsets.symmetric(vertical: 20),
+                          padding: const EdgeInsets.symmetric(vertical: 18),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           elevation: 0,
                         ),

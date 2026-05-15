@@ -112,8 +112,30 @@ class BookingProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  // --- Finalize Booking ---
+  void completeBooking(String id) {
+    if (_currentHotel == null) return;
+    
+    final newBooking = BookingEntity(
+      id: id,
+      roomId: 'RM-${_currentHotel!.id}-STD',
+      hotelName: _currentHotel!.name,
+      checkIn: _checkIn,
+      checkOut: _checkOut,
+      status: 'Confirmed',
+      totalAmount: total,
+      imageUrl: _currentHotel!.imageUrl,
+    );
+    
+    _bookings.insert(0, newBooking); // Add to history
+    notifyListeners();
+  }
+
   // --- History Logic ---
   Future<void> fetchMyBookings() async {
+    // If we have local bookings, don't overwrite them for now to keep the "real data" the user just entered
+    if (_bookings.isNotEmpty) return;
+    
     _isLoading = true;
     _error = null;
     notifyListeners();
@@ -135,6 +157,24 @@ class BookingProvider extends ChangeNotifier {
   }
 
   Future<bool> cancelBooking(String id) async {
+    // Check local first
+    final index = _bookings.indexWhere((b) => b.id == id);
+    if (index != -1) {
+      final old = _bookings[index];
+      _bookings[index] = BookingEntity(
+        id: old.id,
+        roomId: old.roomId,
+        hotelName: old.hotelName,
+        checkIn: old.checkIn,
+        checkOut: old.checkOut,
+        status: 'Cancelled',
+        totalAmount: old.totalAmount,
+        imageUrl: old.imageUrl,
+      );
+      notifyListeners();
+      return true;
+    }
+
     final result = await _bookingRepository.cancelBooking(id);
     return result.fold(
       (failure) {
@@ -143,9 +183,9 @@ class BookingProvider extends ChangeNotifier {
         return false;
       },
       (booking) {
-        final index = _bookings.indexWhere((b) => b.id == id);
-        if (index != -1) {
-          _bookings[index] = booking;
+        final idx = _bookings.indexWhere((b) => b.id == id);
+        if (idx != -1) {
+          _bookings[idx] = booking;
         }
         notifyListeners();
         return true;
