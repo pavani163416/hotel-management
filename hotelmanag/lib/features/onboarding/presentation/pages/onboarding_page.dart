@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/constants/app_constants.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class OnboardingPage extends StatefulWidget {
   const OnboardingPage({super.key});
@@ -30,6 +32,14 @@ class OnboardingData {
 class _OnboardingPageState extends State<OnboardingPage> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
+
+  Future<void> _completeOnboarding() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(AppConstants.onboardingKey, true);
+    if (mounted) {
+      context.go('/login');
+    }
+  }
 
   final List<OnboardingData> _pages = [
     OnboardingData(
@@ -85,7 +95,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                 ),
                 if (_currentPage < 2)
                   TextButton(
-                    onPressed: () => context.go('/login'),
+                    onPressed: _completeOnboarding,
                     child: const Text('SKIP', style: TextStyle(color: Color(0xFF6D4C41), fontSize: 12, fontWeight: FontWeight.bold)),
                   ),
               ],
@@ -185,7 +195,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                               child: ElevatedButton(
                                 onPressed: () {
                                   if (isLast) {
-                                    context.go('/login');
+                                    _completeOnboarding();
                                   } else {
                                     _pageController.nextPage(
                                       duration: const Duration(milliseconds: 400),

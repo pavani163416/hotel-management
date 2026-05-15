@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/providers/auth_provider.dart';
+import '../../../../core/constants/app_constants.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -49,7 +51,14 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
       if (isLoggedIn) {
         context.go('/');
       } else {
-        context.go('/onboarding');
+        final prefs = await SharedPreferences.getInstance();
+        final hasSeenOnboarding = prefs.getBool(AppConstants.onboardingKey) ?? false;
+        
+        if (hasSeenOnboarding) {
+          context.go('/welcome');
+        } else {
+          context.go('/onboarding');
+        }
       }
     }
   }
