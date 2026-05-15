@@ -9,7 +9,10 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/main_layout.dart';
 import '../../../../core/widgets/custom_text_field.dart';
 import '../../../../core/providers/auth_provider.dart';
+import '../../../../core/utils/performance_utils.dart';
 import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:shimmer/shimmer.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -201,7 +204,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         ? (kIsWeb
                             ? NetworkImage(_coverImageFile!.path)
                             : FileImage(io.File(_coverImageFile!.path)) as ImageProvider)
-                        : NetworkImage(coverUrl),
+                        : CachedNetworkImageProvider(coverUrl),
                     fit: BoxFit.cover,
                   ),
                 ),
@@ -270,7 +273,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                       ? (kIsWeb
                                           ? NetworkImage(_profileImageFile!.path)
                                           : FileImage(io.File(_profileImageFile!.path)) as ImageProvider)
-                                      : NetworkImage(profileUrl),
+                                      : CachedNetworkImageProvider(profileUrl),
                                   fit: BoxFit.cover,
                                 ),
                               ),
@@ -722,13 +725,13 @@ class _ProfilePageState extends State<ProfilePage> {
                   
                   if (_profileImageFile != null) {
                     final bytes = await _profileImageFile!.readAsBytes();
-                    final base64Image = base64Encode(bytes);
+                    final base64Image = await PerformanceUtils.encodeImageToBase64(bytes);
                     newProfileImageUrl = await auth.uploadImage(base64Image);
                   }
 
                   if (_coverImageFile != null) {
                     final bytes = await _coverImageFile!.readAsBytes();
-                    final base64Image = base64Encode(bytes);
+                    final base64Image = await PerformanceUtils.encodeImageToBase64(bytes);
                     newCoverImageUrl = await auth.uploadImage(base64Image);
                   }
 

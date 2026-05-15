@@ -9,6 +9,8 @@ import '../../../../core/providers/favorites_provider.dart';
 import '../../../../core/providers/hotel_provider.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../shared/domain/entities/hotel_entity.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:shimmer/shimmer.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -99,13 +101,20 @@ class _HomePageState extends State<HomePage> {
                       height: 80,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        image: DecorationImage(
-                          image: NetworkImage(city['image']!),
-                          fit: BoxFit.cover,
-                        ),
                         boxShadow: [
                           BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4)),
                         ],
+                      ),
+                      child: ClipOval(
+                        child: CachedNetworkImage(
+                          imageUrl: city['image']!,
+                          fit: BoxFit.cover,
+                          placeholder: (context, url) => Shimmer.fromColors(
+                            baseColor: Colors.grey[300]!,
+                            highlightColor: Colors.grey[100]!,
+                            child: Container(color: Colors.white),
+                          ),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -173,7 +182,17 @@ class _HomePageState extends State<HomePage> {
                   children: [
                     ClipRRect(
                       borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-                      child: Image.network(item.imageUrl, height: 140, width: double.infinity, fit: BoxFit.cover),
+                      child: CachedNetworkImage(
+                        imageUrl: item.imageUrl,
+                        height: 140,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                        placeholder: (context, url) => Shimmer.fromColors(
+                          baseColor: Colors.grey[300]!,
+                          highlightColor: Colors.grey[100]!,
+                          child: Container(color: Colors.white),
+                        ),
+                      ),
                     ),
                     Padding(
                       padding: const EdgeInsets.all(12),
@@ -234,9 +253,10 @@ class _HomePageState extends State<HomePage> {
               stops: const [0.0, 0.4, 0.8, 1.0], // Adjusted stops for quicker fade
             ),
           ),
-          child: Image.network(
-            'https://images.unsplash.com/photo-1571896349842-33c89424de2d?q=80&w=1600',
+          child: CachedNetworkImage(
+            imageUrl: 'https://images.unsplash.com/photo-1571896349842-33c89424de2d?q=80&w=1600',
             fit: BoxFit.cover,
+            placeholder: (context, url) => Container(color: AppTheme.primaryColor),
           ),
         ),
         // Hero Content
@@ -267,8 +287,8 @@ class _HomePageState extends State<HomePage> {
                               child: CircleAvatar(
                                 radius: 18,
                                 backgroundImage: (profileImage != null && profileImage.isNotEmpty)
-                                    ? NetworkImage(profileImage)
-                                    : NetworkImage('https://ui-avatars.com/api/?name=$name&background=F5E6CA&color=2C3E50') as ImageProvider,
+                                    ? CachedNetworkImageProvider(profileImage)
+                                    : CachedNetworkImageProvider('https://ui-avatars.com/api/?name=$name&background=F5E6CA&color=2C3E50') as ImageProvider,
                               ),
                             );
                           },
@@ -592,7 +612,17 @@ class _HomePageState extends State<HomePage> {
                       children: [
                         ClipRRect(
                           borderRadius: const BorderRadius.horizontal(left: Radius.circular(20)),
-                          child: Image.network(item.imageUrl, width: 120, height: 120, fit: BoxFit.cover),
+                          child: CachedNetworkImage(
+                            imageUrl: item.imageUrl,
+                            width: 120,
+                            height: 120,
+                            fit: BoxFit.cover,
+                            placeholder: (context, url) => Shimmer.fromColors(
+                              baseColor: Colors.grey[300]!,
+                              highlightColor: Colors.grey[100]!,
+                              child: Container(color: Colors.white),
+                            ),
+                          ),
                         ),
                         Expanded(
                           child: Padding(
@@ -891,11 +921,16 @@ class FeaturedCard extends StatelessWidget {
           children: [
             ClipRRect(
               borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-              child: Image.network(
-                hotel.imageUrl,
+              child: CachedNetworkImage(
+                imageUrl: hotel.imageUrl,
                 height: 200,
                 width: double.infinity,
                 fit: BoxFit.cover,
+                placeholder: (context, url) => Shimmer.fromColors(
+                  baseColor: Colors.grey[300]!,
+                  highlightColor: Colors.grey[100]!,
+                  child: Container(color: Colors.white),
+                ),
               ),
             ),
             Padding(
