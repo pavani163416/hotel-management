@@ -18,13 +18,13 @@ class _GuestDetailsPageState extends State<GuestDetailsPage> {
 
   void _addAdult() {
     setState(() {
-      _additionalAdults.add({'name': ''});
+      _additionalAdults.add({'name': '', 'email': '', 'phone': '', 'requests': ''});
     });
   }
 
   void _addChild() {
     setState(() {
-      _children.add({'name': ''});
+      _children.add({'name': '', 'age': ''});
     });
   }
 
@@ -58,31 +58,29 @@ class _GuestDetailsPageState extends State<GuestDetailsPage> {
               // Lead Guest Card
               _buildLeadGuestCard(),
               
-              const SizedBox(height: 32),
+              const SizedBox(height: 48),
               
               // Additional Adults Section
-              _buildDynamicSection(
-                title: 'Additional Adults',
-                items: _additionalAdults,
-                onAdd: _addAdult,
-                emptyText: 'No additional adults.',
-                addButtonLabel: 'Add Adult',
-              ),
+              _buildAdultsHeader(),
+              const SizedBox(height: 16),
+              if (_additionalAdults.isEmpty)
+                _buildEmptyState('No additional adults.')
+              else
+                ..._additionalAdults.asMap().entries.map((entry) => _buildAdultCard(entry.key)),
               
-              const SizedBox(height: 24),
+              const SizedBox(height: 32),
               const Divider(color: AppTheme.mutedColor),
-              const SizedBox(height: 24),
+              const SizedBox(height: 32),
               
               // Children Section
-              _buildDynamicSection(
-                title: 'Children',
-                items: _children,
-                onAdd: _addChild,
-                emptyText: 'No children.',
-                addButtonLabel: 'Add Child',
-              ),
+              _buildChildrenHeader(),
+              const SizedBox(height: 16),
+              if (_children.isEmpty)
+                _buildEmptyState('No children.')
+              else
+                ..._children.asMap().entries.map((entry) => _buildChildRow(entry.key)),
               
-              const SizedBox(height: 48),
+              const SizedBox(height: 60),
               
               // Bottom Action Button
               Align(
@@ -92,7 +90,7 @@ class _GuestDetailsPageState extends State<GuestDetailsPage> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.primaryColor,
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
+                    padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   child: const Row(
@@ -121,13 +119,6 @@ class _GuestDetailsPageState extends State<GuestDetailsPage> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: AppTheme.mutedColor),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.02),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -152,13 +143,10 @@ class _GuestDetailsPageState extends State<GuestDetailsPage> {
           const SizedBox(height: 24),
           const Divider(color: AppTheme.mutedColor),
           const SizedBox(height: 24),
-          
           _buildLabel('FULL NAME'),
           const SizedBox(height: 8),
           _buildTextField('e.g. James Wilson'),
-          
           const SizedBox(height: 24),
-          
           Row(
             children: [
               Expanded(
@@ -184,84 +172,183 @@ class _GuestDetailsPageState extends State<GuestDetailsPage> {
               ),
             ],
           ),
-          
           const SizedBox(height: 24),
-          
           _buildLabel('SPECIAL REQUESTS (OPTIONAL)'),
           const SizedBox(height: 8),
           _buildTextField(
             'Late check-in, dietary requirements, room preferences...',
-            maxLines: 4,
+            maxLines: 3,
           ),
         ],
       ),
     );
   }
 
-  Widget _buildDynamicSection({
-    required String title,
-    required List<Map<String, String>> items,
-    required VoidCallback onAdd,
-    required String emptyText,
-    required String addButtonLabel,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildAdultsHeader() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              title,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
-            ),
-            TextButton.icon(
-              onPressed: onAdd,
-              icon: const Icon(LucideIcons.plus, size: 16),
-              label: Text(addButtonLabel),
-              style: TextButton.styleFrom(
-                foregroundColor: AppTheme.primaryColor,
-                textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-              ),
-            ),
-          ],
+        const Text(
+          'Additional Adults',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
         ),
-        const SizedBox(height: 16),
-        if (items.isEmpty)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Text(
-              emptyText,
-              style: TextStyle(
-                color: AppTheme.primaryColor.withOpacity(0.5),
-                fontStyle: FontStyle.italic,
-                fontSize: 14,
-              ),
-            ),
-          )
-        else
-          ...items.asMap().entries.map((entry) {
-            final index = entry.key;
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: _buildTextField('Guest Name ${index + 1}'),
-                  ),
-                  IconButton(
-                    icon: const Icon(LucideIcons.trash2, size: 18, color: Colors.redAccent),
-                    onPressed: () {
-                      setState(() {
-                        items.removeAt(index);
-                      });
-                    },
-                  ),
-                ],
-              ),
-            );
-          }),
+        TextButton.icon(
+          onPressed: _addAdult,
+          icon: const Icon(LucideIcons.plus, size: 16),
+          label: const Text('Add Adult'),
+          style: TextButton.styleFrom(
+            foregroundColor: AppTheme.primaryColor,
+            textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+          ),
+        ),
       ],
+    );
+  }
+
+  Widget _buildAdultCard(int index) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 24),
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppTheme.mutedColor.withOpacity(0.5)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'ADULT ${index + 1}',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.primaryColor.withOpacity(0.6),
+                  letterSpacing: 1,
+                ),
+              ),
+              GestureDetector(
+                onTap: () => setState(() => _additionalAdults.removeAt(index)),
+                child: const Icon(LucideIcons.trash2, size: 18, color: Colors.grey),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          _buildLabel('FULL NAME'),
+          const SizedBox(height: 8),
+          _buildTextField('Full Name'),
+          const SizedBox(height: 24),
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildLabel('EMAIL ADDRESS'),
+                    const SizedBox(height: 8),
+                    _buildTextField('you@example.com'),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildLabel('PHONE NUMBER'),
+                    const SizedBox(height: 8),
+                    _buildTextField('+1 (555) 000-0000'),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          _buildLabel('SPECIAL REQUESTS (OPTIONAL)'),
+          const SizedBox(height: 8),
+          _buildTextField('Dietary requirements, room preferences...', maxLines: 2),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildChildrenHeader() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        const Text(
+          'Children',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
+        ),
+        TextButton.icon(
+          onPressed: _addChild,
+          icon: const Icon(LucideIcons.plus, size: 16),
+          label: const Text('Add Child'),
+          style: TextButton.styleFrom(
+            foregroundColor: AppTheme.primaryColor,
+            textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildChildRow(int index) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 24),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Expanded(
+            flex: 3,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildLabel('CHILD ${index + 1} FULL NAME'),
+                const SizedBox(height: 8),
+                _buildTextField('Full Name'),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            flex: 1,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildLabel('AGE'),
+                const SizedBox(height: 8),
+                _buildTextField('e.g. 5'),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: IconButton(
+              icon: const Icon(LucideIcons.trash2, size: 20, color: Colors.grey),
+              onPressed: () => setState(() => _children.removeAt(index)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(String text) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: AppTheme.primaryColor.withOpacity(0.4),
+          fontStyle: FontStyle.italic,
+          fontSize: 14,
+        ),
+      ),
     );
   }
 
@@ -269,10 +356,10 @@ class _GuestDetailsPageState extends State<GuestDetailsPage> {
     return Text(
       text,
       style: TextStyle(
-        fontSize: 11,
+        fontSize: 10,
         fontWeight: FontWeight.bold,
         color: AppTheme.primaryColor.withOpacity(0.5),
-        letterSpacing: 1,
+        letterSpacing: 0.5,
       ),
     );
   }
@@ -282,21 +369,21 @@ class _GuestDetailsPageState extends State<GuestDetailsPage> {
       maxLines: maxLines,
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
+        hintStyle: TextStyle(color: Colors.grey[400], fontSize: 13),
         filled: true,
         fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(10),
           borderSide: const BorderSide(color: AppTheme.mutedColor),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(10),
           borderSide: const BorderSide(color: AppTheme.mutedColor),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppTheme.primaryColor, width: 1.5),
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: AppTheme.primaryColor, width: 1.2),
         ),
       ),
     );
