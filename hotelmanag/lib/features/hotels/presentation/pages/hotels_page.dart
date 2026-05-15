@@ -228,7 +228,7 @@ class _HotelsPageState extends State<HotelsPage> {
           contentPadding: EdgeInsets.zero,
           dense: true,
           activeColor: AppTheme.primaryColor,
-          controlType: ListTileControlType.leading,
+          controlAffinity: ListTileControlAffinity.leading,
         )),
       ],
     );

@@ -8,6 +8,7 @@ class HotelEntity extends Equatable {
   final double pricePerNight;
   final String imageUrl;
   final String description;
+  final String type; // e.g., Hotel, Resort, Villa, Suite
 
   const HotelEntity({
     required this.id,
@@ -17,6 +18,7 @@ class HotelEntity extends Equatable {
     required this.pricePerNight,
     required this.imageUrl,
     required this.description,
+    this.type = 'Hotel',
   });
 
   Map<String, dynamic> toJson() {
@@ -28,6 +30,7 @@ class HotelEntity extends Equatable {
       'pricePerNight': pricePerNight,
       'imageUrl': imageUrl,
       'description': description,
+      'type': type,
     };
   }
 
@@ -39,10 +42,11 @@ class HotelEntity extends Equatable {
       rating: (json['rating'] as num).toDouble(),
       pricePerNight: (json['pricePerNight'] as num).toDouble(),
       imageUrl: json['imageUrl'],
-      description: json['description'],
+      description: json['description'] ?? '',
+      type: json['type'] ?? 'Hotel',
     );
   }
 
   @override
-  List<Object?> get props => [id, name, location, rating, pricePerNight, imageUrl, description];
+  List<Object?> get props => [id, name, location, rating, pricePerNight, imageUrl, description, type];
 }
