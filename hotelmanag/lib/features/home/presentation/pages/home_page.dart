@@ -456,7 +456,7 @@ class _HomePageState extends State<HomePage> {
                 children: [
                   const Icon(LucideIcons.navigation, size: 18, color: AppTheme.primaryColor),
                   const SizedBox(width: 12),
-                  const Text('Near Hotel Search', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.primaryColor)),
+                  const Text('Find Premium Hotels', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.primaryColor)),
                   const Spacer(),
                   Container(
                     padding: const EdgeInsets.all(8),
@@ -682,33 +682,79 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _showLocationPicker(BuildContext context) {
+    final hotelProvider = context.read<HotelProvider>();
+    final locations = hotelProvider.allHotels.map((h) => h.location).toSet().toList();
+    
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('Select Location', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 24),
-            ListTile(
-              leading: const Icon(LucideIcons.mapPin),
-              title: const Text('London, UK'),
-              onTap: () => Navigator.pop(context),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) {
+          return DraggableScrollableSheet(
+            initialChildSize: 0.7,
+            minChildSize: 0.5,
+            maxChildSize: 0.95,
+            expand: false,
+            builder: (context, scrollController) => Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Where are you going?', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+                  const SizedBox(height: 20),
+                  TextField(
+                    autofocus: true,
+                    decoration: InputDecoration(
+                      hintText: 'Search city or hotel location...',
+                      prefixIcon: const Icon(LucideIcons.search, size: 20),
+                      filled: true,
+                      fillColor: Colors.grey[100],
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                    ),
+                    onChanged: (v) {
+                      setModalState(() {
+                        // filtering is handled by the ListView below
+                      });
+                    },
+                    controller: _searchController,
+                  ),
+                  const SizedBox(height: 24),
+                  const Text('SUGGESTED DESTINATIONS', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 1)),
+                  const SizedBox(height: 16),
+                  Expanded(
+                    child: ListView.separated(
+                      controller: scrollController,
+                      itemCount: locations.where((l) => l.toLowerCase().contains(_searchController.text.toLowerCase())).length,
+                      separatorBuilder: (context, index) => const Divider(height: 1),
+                      itemBuilder: (context, index) {
+                        final filtered = locations.where((l) => l.toLowerCase().contains(_searchController.text.toLowerCase())).toList();
+                        final loc = filtered[index];
+                        return ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(color: AppTheme.primaryColor.withOpacity(0.05), borderRadius: BorderRadius.circular(12)),
+                            child: const Icon(LucideIcons.mapPin, size: 18, color: AppTheme.primaryColor),
+                          ),
+                          title: Text(loc, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+                          subtitle: const Text('Top destination', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                          onTap: () {
+                            hotelProvider.updateSearchQuery(loc);
+                            Navigator.pop(context);
+                            context.push('/hotels');
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
             ),
-            ListTile(
-              leading: const Icon(LucideIcons.mapPin),
-              title: const Text('Paris, France'),
-              onTap: () => Navigator.pop(context),
-            ),
-            ListTile(
-              leading: const Icon(LucideIcons.mapPin),
-              title: const Text('New York, USA'),
-              onTap: () => Navigator.pop(context),
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }

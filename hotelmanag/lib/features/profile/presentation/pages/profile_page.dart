@@ -133,6 +133,12 @@ class _ProfilePageState extends State<ProfilePage> {
                   onTap: () => _showPersonalInfo(context),
                 ),
                 _buildSettingItem(
+                  LucideIcons.heart,
+                  'My Favorites',
+                  'Your saved masterpiece stays',
+                  onTap: () => context.push('/favorites'),
+                ),
+                _buildSettingItem(
                   LucideIcons.creditCard,
                   'Payment Methods',
                   'Manage your cards',
@@ -181,7 +187,7 @@ class _ProfilePageState extends State<ProfilePage> {
       builder: (context, auth, _) {
         final user = auth.user;
         final displayName = user?.name ?? 'Guest';
-        final displayCity = user?.city ?? 'Location not set';
+        final displayCity = user?.city ?? 'Set your location';
         final profileUrl = (user?.profileImage != null && user!.profileImage!.isNotEmpty)
             ? user.profileImage!
             : 'https://ui-avatars.com/api/?name=$displayName&background=F5E6CA&color=2C3E50';

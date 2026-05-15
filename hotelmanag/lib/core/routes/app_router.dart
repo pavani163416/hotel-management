@@ -15,6 +15,7 @@ import '../../features/booking/presentation/pages/guest_details_page.dart';
 import '../../features/booking/presentation/pages/payment_page.dart';
 import '../../features/booking/presentation/pages/review_page.dart';
 import '../../features/booking/presentation/pages/confirmation_page.dart';
+import '../../features/profile/presentation/pages/favorites_page.dart';
 
 class AppRouter {
   static const String splash = '/splash';
@@ -31,6 +32,7 @@ class AppRouter {
   static const String review = '/review';
   static const String payment = '/payment';
   static const String confirmation = '/confirmation';
+  static const String favorites = '/favorites';
 
   static final GoRouter router = GoRouter(
     initialLocation: splash,
@@ -97,6 +99,10 @@ class AppRouter {
           final id = state.pathParameters['id'] ?? '';
           return HotelDetailsPage(id: id);
         },
+      ),
+      GoRoute(
+        path: favorites,
+        builder: (context, state) => const FavoritesPage(),
       ),
     ],
   );

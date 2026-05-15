@@ -365,21 +365,65 @@ class BookingListItem extends StatelessWidget {
   }
 
   void _showCancelDialog(BuildContext context, BookingEntity booking) {
+    String? selectedReason;
+    final reasons = [
+      'Change of plans',
+      'Found a better deal',
+      'Booking error',
+      'Personal emergency',
+      'Other'
+    ];
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Cancel Booking?'),
-        content: Text('Are you sure you want to cancel your stay at ${booking.hotelName}?'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Keep Booking')),
-          TextButton(
-            onPressed: () async {
-              Navigator.pop(context);
-              await context.read<BookingProvider>().cancelBooking(booking.id);
-            },
-            child: const Text('Yes, Cancel', style: TextStyle(color: Colors.red)),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          title: const Text('Cancel Booking?', style: TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Are you sure you want to cancel your stay at ${booking.hotelName}?', style: TextStyle(color: Colors.grey[600], fontSize: 14)),
+              const SizedBox(height: 24),
+              const Text('Please select a reason:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+              const SizedBox(height: 12),
+              ...reasons.map((r) => RadioListTile<String>(
+                title: Text(r, style: const TextStyle(fontSize: 13)),
+                value: r,
+                groupValue: selectedReason,
+                dense: true,
+                contentPadding: EdgeInsets.zero,
+                activeColor: AppTheme.primaryColor,
+                onChanged: (v) => setDialogState(() => selectedReason = v),
+              )),
+            ],
           ),
-        ],
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Keep Booking', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+            ),
+            ElevatedButton(
+              onPressed: selectedReason == null ? null : () async {
+                Navigator.pop(context);
+                await context.read<BookingProvider>().cancelBooking(booking.id);
+                if (context.mounted) {
+                   ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Booking cancelled successfully'), behavior: SnackBarBehavior.floating),
+                  );
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.redAccent,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              child: const Text('Cancel Now', style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
       ),
     );
   }

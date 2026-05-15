@@ -138,7 +138,7 @@ class MainLayout extends StatelessWidget {
         child: Row(
           children: [
             _buildNavItem(context, 0, Icons.home_outlined, Icons.home_rounded, 'Home', currentIndex == 0),
-            _buildNavItem(context, 1, Icons.search_rounded, Icons.search_rounded, 'Search', currentIndex == 1),
+            _buildNavItem(context, 1, Icons.apartment_outlined, Icons.apartment_rounded, 'Hotels', currentIndex == 1),
             _buildNavItem(context, 2, Icons.history_rounded, Icons.manage_history_rounded, 'History', currentIndex == 2),
             _buildNavItem(context, 3, Icons.account_circle_outlined, Icons.account_circle_rounded, 'Profile', currentIndex == 3),
           ],
