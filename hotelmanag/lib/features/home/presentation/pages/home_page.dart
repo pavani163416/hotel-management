@@ -744,7 +744,7 @@ class _HomePageState extends State<HomePage> {
                           title: Text(loc, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
                           subtitle: const Text('Top destination', style: TextStyle(fontSize: 11, color: Colors.grey)),
                           onTap: () {
-                            hotelProvider.updateSearchQuery(loc);
+                            hotelProvider.updateSearch(loc);
                             Navigator.pop(context);
                             context.push('/hotels');
                           },
