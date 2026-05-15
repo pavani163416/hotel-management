@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import '../../features/auth/domain/repositories/auth_repository.dart';
 import '../../features/auth/domain/entities/user_entity.dart';
+import '../../features/auth/data/models/user_model.dart';
 import '../constants/app_constants.dart';
 
 class AuthProvider extends ChangeNotifier {
@@ -95,8 +97,61 @@ class AuthProvider extends ChangeNotifier {
   void logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(AppConstants.tokenKey);
+    await GoogleSignIn().signOut(); // Also sign out from Google
     _user = null;
     notifyListeners();
+  }
+
+  Future<bool> signInWithGoogle() async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final GoogleSignIn googleSignIn = GoogleSignIn();
+      final GoogleSignInAccount? account = await googleSignIn.signIn();
+      
+      if (account == null) {
+        _isLoading = false;
+        notifyListeners();
+        return false;
+      }
+
+      final GoogleSignInAuthentication auth = await account.authentication;
+      final String? idToken = auth.idToken;
+
+      if (idToken == null) {
+        _error = "Could not get ID Token from Google";
+        _isLoading = false;
+        notifyListeners();
+        return false;
+      }
+
+      final result = await _authRepository.signInWithGoogle(idToken);
+
+      return result.fold(
+        (failure) {
+          _error = failure.message;
+          _isLoading = false;
+          notifyListeners();
+          return false;
+        },
+        (data) async {
+          final (user, token) = data;
+          _user = user;
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString(AppConstants.tokenKey, token);
+          _isLoading = false;
+          notifyListeners();
+          return true;
+        },
+      );
+    } catch (e) {
+      _error = e.toString();
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
   }
 
   Future<bool> updateProfile({
@@ -104,6 +159,7 @@ class AuthProvider extends ChangeNotifier {
     String? phone,
     String? city,
     String? profileImage,
+    String? coverImage,
   }) async {
     _isLoading = true;
     _error = null;
@@ -114,6 +170,7 @@ class AuthProvider extends ChangeNotifier {
       phone: phone,
       city: city,
       profileImage: profileImage,
+      coverImage: coverImage,
     );
 
     return result.fold(
@@ -150,6 +207,56 @@ class AuthProvider extends ChangeNotifier {
         _isLoading = false;
         notifyListeners();
         return url;
+      },
+    );
+  }
+
+  Future<bool> addPaymentMethod({
+    required String type,
+    String? brand,
+    String? last4,
+    String? expiry,
+    String? upiId,
+    String? bankName,
+    bool isDefault = false,
+  }) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    final result = await _authRepository.addPaymentMethod(
+      type: type,
+      brand: brand,
+      last4: last4,
+      expiry: expiry,
+      upiId: upiId,
+      bankName: bankName,
+      isDefault: isDefault,
+    );
+
+    return result.fold(
+      (failure) {
+        _error = failure.message;
+        _isLoading = false;
+        notifyListeners();
+        return false;
+      },
+      (paymentMethods) {
+        if (_user != null) {
+          _user = UserModel(
+            id: _user!.id,
+            name: _user!.name,
+            email: _user!.email,
+            phone: _user!.phone,
+            city: _user!.city,
+            profileImage: _user!.profileImage,
+            coverImage: _user!.coverImage,
+            paymentMethods: paymentMethods,
+          );
+        }
+        _isLoading = false;
+        notifyListeners();
+        return true;
       },
     );
   }

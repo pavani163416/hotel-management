@@ -76,6 +76,8 @@ const allowedOrigins = [
   "http://localhost:3000", "http://127.0.0.1:3000",
   "http://localhost:8080", "http://127.0.0.1:8080",
   "http://localhost:8082", "http://127.0.0.1:8082",
+  "http://192.168.1.60:8080",
+  "https://luxestay-fix-final-v2.loca.lt",
   ...rawOrigins,
 ];
 

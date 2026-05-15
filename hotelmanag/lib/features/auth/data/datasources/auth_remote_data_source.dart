@@ -4,14 +4,25 @@ import 'package:hotelmanag/features/auth/data/models/user_model.dart';
 abstract class AuthRemoteDataSource {
   Future<AuthResponse> login(String email, String password);
   Future<AuthResponse> register(String name, String email, String password, String phone);
+  Future<AuthResponse> signInWithGoogle(String idToken);
   Future<UserModel> getMe(String token);
   Future<UserModel> updateProfile({
     String? name,
     String? phone,
     String? city,
     String? profileImage,
+    String? coverImage,
   });
   Future<String> uploadImage(String base64Image);
+  Future<List<PaymentMethodModel>> addPaymentMethod({
+    required String type,
+    String? brand,
+    String? last4,
+    String? expiry,
+    String? upiId,
+    String? bankName,
+    bool isDefault = false,
+  });
 }
 
 class AuthResponse {
@@ -37,6 +48,9 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     if (data == null) {
       throw Exception(response.data['message'] ?? 'Invalid response from server');
     }
+
+    // DEBUG: See what the server sent
+    print('LOGIN DATA: $data');
 
     return AuthResponse(
       user: UserModel.fromJson(data),
@@ -65,6 +79,23 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   }
 
   @override
+  Future<AuthResponse> signInWithGoogle(String idToken) async {
+    final response = await _apiService.post('auth/google', data: {
+      'idToken': idToken,
+    });
+
+    final data = response.data['data'];
+    if (data == null) {
+      throw Exception(response.data['message'] ?? 'Google login failed');
+    }
+
+    return AuthResponse(
+      user: UserModel.fromJson(data),
+      token: data['token'] ?? '',
+    );
+  }
+
+  @override
   Future<UserModel> getMe(String token) async {
     final response = await _apiService.get('auth/me');
     return UserModel.fromJson(response.data['data']);
@@ -76,12 +107,14 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     String? phone,
     String? city,
     String? profileImage,
+    String? coverImage,
   }) async {
     final response = await _apiService.patch('auth/profile', data: {
       if (name != null) 'name': name,
       if (phone != null) 'phone': phone,
       if (city != null) 'city': city,
       if (profileImage != null) 'profileImage': profileImage,
+      if (coverImage != null) 'coverImage': coverImage,
     });
     return UserModel.fromJson(response.data['data']);
   }
@@ -93,5 +126,29 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       'folder': 'profiles',
     });
     return response.data['url'];
+  }
+
+  @override
+  Future<List<PaymentMethodModel>> addPaymentMethod({
+    required String type,
+    String? brand,
+    String? last4,
+    String? expiry,
+    String? upiId,
+    String? bankName,
+    bool isDefault = false,
+  }) async {
+    final response = await _apiService.post('auth/payment-methods', data: {
+      'type': type,
+      'brand': brand,
+      'last4': last4,
+      'expiry': expiry,
+      'upiId': upiId,
+      'bankName': bankName,
+      'isDefault': isDefault,
+    });
+
+    final List data = response.data['data'];
+    return data.map((pm) => PaymentMethodModel.fromJson(pm)).toList();
   }
 }

@@ -141,7 +141,23 @@ class _LoginPageState extends State<LoginPage> {
               ],
             ),
             const SizedBox(height: 32),
-            _buildSocialButton('Continue with Google', LucideIcons.chrome),
+            Consumer<AuthProvider>(
+              builder: (context, auth, _) => _buildSocialButton(
+                'Continue with Google',
+                LucideIcons.chrome,
+                isLoading: auth.isLoading,
+                onTap: () async {
+                  final success = await auth.signInWithGoogle();
+                  if (success && context.mounted) {
+                    context.go('/');
+                  } else if (auth.error != null && context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(auth.error!)),
+                    );
+                  }
+                },
+              ),
+            ),
             const SizedBox(height: 16),
             _buildSocialButton('Continue with Apple', LucideIcons.apple),
             const SizedBox(height: 32),
@@ -176,17 +192,19 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  Widget _buildSocialButton(String label, IconData icon) {
+  Widget _buildSocialButton(String label, IconData icon, {VoidCallback? onTap, bool isLoading = false}) {
     return SizedBox(
       width: double.infinity,
       height: 56,
       child: OutlinedButton.icon(
-        onPressed: () {
+        onPressed: isLoading ? null : (onTap ?? () {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('$label coming soon!')),
           );
-        },
-        icon: Icon(icon, size: 20, color: AppTheme.primaryColor),
+        }),
+        icon: isLoading 
+          ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+          : Icon(icon, size: 20, color: AppTheme.primaryColor),
         label: Text(label, style: const TextStyle(color: AppTheme.primaryColor, fontWeight: FontWeight.w600)),
         style: OutlinedButton.styleFrom(
           side: const BorderSide(color: AppTheme.mutedColor),

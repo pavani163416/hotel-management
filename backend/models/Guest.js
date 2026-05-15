@@ -37,6 +37,10 @@ const guestSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    coverImage: {
+      type: String,
+      default: "",
+    },
 
     // Optional: set when guest creates an account via /api/auth/register
     passwordHash: {

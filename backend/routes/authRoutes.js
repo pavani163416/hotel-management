@@ -19,6 +19,9 @@ import Booking from "../models/Booking.js";
 import { authLimiter } from "../middleware/rateLimiter.js";
 import logger  from "../utils/logger.js";
 
+import { OAuth2Client } from "google-auth-library";
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
 const router = express.Router();
 
 const getSecret  = () => {
@@ -119,6 +122,9 @@ router.post("/register", authLimiter, async (req, res, next) => {
         email: user.email,
         phone: user.phone,
         city:  user.city,
+        profileImage: user.profileImage,
+        coverImage:   user.coverImage,
+        paymentMethods: user.paymentMethods,
         token,
       },
     });
@@ -186,10 +192,65 @@ router.post("/login", authLimiter, async (req, res, next) => {
         email: user.email,
         phone: user.phone,
         city:  user.city,
+        profileImage: user.profileImage,
+        coverImage:   user.coverImage,
+        paymentMethods: user.paymentMethods,
         token,
       },
     });
   } catch (err) { next(err); }
+});
+
+// ── POST /api/auth/google ──────────────────────────────────
+router.post("/google", async (req, res, next) => {
+  try {
+    const { idToken } = req.body;
+    if (!idToken) return res.status(400).json({ success: false, message: "ID Token is required" });
+
+    const ticket = await googleClient.verifyIdToken({
+      idToken,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+    const { email, name, picture, sub: googleId } = payload;
+
+    let user = await User.findOne({ email });
+
+    if (!user) {
+      user = await User.create({
+        name,
+        email,
+        passwordHash: await bcrypt.hash(Math.random().toString(36), 10), // Random password
+        phone: "",
+        profileImage: picture || "",
+      });
+      logger.info({ email, name }, "New Google user registered");
+    }
+
+    const token = jwt.sign(
+      { id: user._id, email: user.email, name: user.name, role: "customer" },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    res.json({
+      success: true,
+      data: {
+        id:    user._id,
+        name:  user.name,
+        email: user.email,
+        phone: user.phone,
+        city:  user.city,
+        profileImage: user.profileImage,
+        coverImage:   user.coverImage,
+        paymentMethods: user.paymentMethods,
+        token,
+      },
+    });
+  } catch (err) {
+    logger.error(err.message, "Google Auth Error");
+    res.status(401).json({ success: false, message: "Invalid Google Token" });
+  }
 });
 
 // ── GET /api/auth/me ──────────────────────────────────────
@@ -205,7 +266,9 @@ router.get("/me", verifyCustomerToken, async (req, res, next) => {
         phone:   user.phone,
         city:    user.city,
         profileImage: user.profileImage,
-        guestId: user.guestId,
+        coverImage:   user.coverImage,
+        paymentMethods: user.paymentMethods,
+        guestId:      user.guestId,
       },
     });
   } catch (err) { next(err); }
@@ -214,7 +277,7 @@ router.get("/me", verifyCustomerToken, async (req, res, next) => {
 // ── PATCH /api/auth/profile ───────────────────────────────
 router.patch("/profile", verifyCustomerToken, async (req, res, next) => {
   try {
-    const { name, phone, city, profileImage } = req.body;
+    const { name, phone, city, profileImage, coverImage } = req.body;
     
     const user = await User.findById(req.customer.id);
     if (!user) return res.status(404).json({ success: false, message: "User not found." });
@@ -223,7 +286,9 @@ router.patch("/profile", verifyCustomerToken, async (req, res, next) => {
     if (phone) user.phone = phone.trim();
     if (city) user.city = city.trim();
     if (profileImage !== undefined) user.profileImage = profileImage;
+    if (coverImage !== undefined) user.coverImage = coverImage;
 
+    console.log(`[ProfileUpdate] Saving user ${user.email}: profile=${profileImage}, cover=${coverImage}`);
     await user.save();
 
     // Sync with Guest record if exists
@@ -234,6 +299,7 @@ router.patch("/profile", verifyCustomerToken, async (req, res, next) => {
         if (phone) guest.phone = phone.trim();
         if (city) guest.city = city.trim();
         if (profileImage !== undefined) guest.profileImage = profileImage;
+        if (coverImage !== undefined) guest.coverImage = coverImage;
         await guest.save();
       }
     }
@@ -248,8 +314,55 @@ router.patch("/profile", verifyCustomerToken, async (req, res, next) => {
         phone:   user.phone,
         city:    user.city,
         profileImage: user.profileImage,
-        guestId: user.guestId,
+        coverImage:   user.coverImage,
+        paymentMethods: user.paymentMethods,
+        guestId:      user.guestId,
       },
+    });
+  } catch (err) { next(err); }
+});
+
+// ── POST /api/auth/payment-methods ────────────────────────
+router.post("/payment-methods", verifyCustomerToken, async (req, res, next) => {
+  try {
+    const { type, brand, last4, expiry, upiId, bankName, isDefault } = req.body;
+    
+    if (!type) return res.status(400).json({ success: false, message: "Type is required." });
+
+    if (type === 'card' && (!brand || !last4 || !expiry)) {
+      return res.status(400).json({ success: false, message: "Missing card details." });
+    }
+    if (type === 'upi' && !upiId) {
+      return res.status(400).json({ success: false, message: "UPI ID is required." });
+    }
+    if (type === 'netbanking' && !bankName) {
+      return res.status(400).json({ success: false, message: "Bank name is required." });
+    }
+
+    const user = await User.findById(req.customer.id);
+    if (!user) return res.status(404).json({ success: false, message: "User not found." });
+
+    // If this is the first card or explicitly set as default, unset others
+    if (isDefault || user.paymentMethods.length === 0) {
+      user.paymentMethods.forEach(pm => pm.isDefault = false);
+    }
+
+    user.paymentMethods.push({
+      type,
+      brand,
+      last4,
+      expiry,
+      upiId,
+      bankName,
+      isDefault: isDefault || user.paymentMethods.length === 0
+    });
+
+    await user.save();
+
+    res.json({
+      success: true,
+      message: "Payment method added successfully.",
+      data: user.paymentMethods,
     });
   } catch (err) { next(err); }
 });

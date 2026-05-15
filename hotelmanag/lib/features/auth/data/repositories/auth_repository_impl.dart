@@ -4,6 +4,7 @@ import 'package:hotelmanag/core/errors/failures.dart';
 import 'package:hotelmanag/features/auth/domain/entities/user_entity.dart';
 import 'package:hotelmanag/features/auth/domain/repositories/auth_repository.dart';
 import 'package:hotelmanag/features/auth/data/datasources/auth_remote_data_source.dart';
+import '../../../../core/constants/app_constants.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
   final AuthRemoteDataSource _remoteDataSource;
@@ -16,9 +17,17 @@ class AuthRepositoryImpl implements AuthRepository {
       final authResponse = await _remoteDataSource.login(email, password);
       return Right((authResponse.user, authResponse.token));
     } on DioException catch (e) {
-      String message = e.response?.data['message'] ?? 'Login failed';
-      if (e.type == DioExceptionType.connectionError || e.type == DioExceptionType.connectionTimeout) {
-        message = 'Cannot reach server. Check your Base URL in AppConstants and ensure your backend is running.';
+      String message = 'Login failed';
+      if (e.response?.data is Map) {
+        message = e.response?.data['message'] ?? message;
+      } else if (e.response?.data is String) {
+        message = e.response?.data;
+      }
+      
+      if (e.type == DioExceptionType.connectionError || 
+          e.type == DioExceptionType.connectionTimeout ||
+          e.response == null) {
+        message = 'Cannot reach server at ${AppConstants.apiBaseUrl}. Ensure your phone and PC are on same Wi-Fi and Firewall is off.';
       }
       return Left(ServerFailure(message));
     } catch (e) {
@@ -32,9 +41,33 @@ class AuthRepositoryImpl implements AuthRepository {
       final authResponse = await _remoteDataSource.register(name, email, password, phone);
       return Right((authResponse.user, authResponse.token));
     } on DioException catch (e) {
-      String message = e.response?.data['message'] ?? 'Registration failed';
-      if (e.type == DioExceptionType.connectionError || e.type == DioExceptionType.connectionTimeout) {
-        message = 'Cannot reach server. Check your Base URL in AppConstants and ensure your backend is running.';
+      String message = 'Registration failed';
+      if (e.response?.data is Map) {
+        message = e.response?.data['message'] ?? message;
+      } else if (e.response?.data is String) {
+        message = e.response?.data;
+      }
+
+      if (e.type == DioExceptionType.connectionError || 
+          e.type == DioExceptionType.connectionTimeout ||
+          e.response == null) {
+        message = 'Cannot reach server at ${AppConstants.apiBaseUrl}. Ensure your phone and PC are on same Wi-Fi and Firewall is off.';
+      }
+      return Left(ServerFailure(message));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, (UserEntity, String)>> signInWithGoogle(String idToken) async {
+    try {
+      final authResponse = await _remoteDataSource.signInWithGoogle(idToken);
+      return Right((authResponse.user, authResponse.token));
+    } on DioException catch (e) {
+      String message = 'Google login failed';
+      if (e.response?.data is Map) {
+        message = e.response?.data['message'] ?? message;
       }
       return Left(ServerFailure(message));
     } catch (e) {
@@ -60,6 +93,7 @@ class AuthRepositoryImpl implements AuthRepository {
     String? phone,
     String? city,
     String? profileImage,
+    String? coverImage,
   }) async {
     try {
       final user = await _remoteDataSource.updateProfile(
@@ -67,6 +101,7 @@ class AuthRepositoryImpl implements AuthRepository {
         phone: phone,
         city: city,
         profileImage: profileImage,
+        coverImage: coverImage,
       );
       return Right(user);
     } on DioException catch (e) {
@@ -83,6 +118,33 @@ class AuthRepositoryImpl implements AuthRepository {
       return Right(url);
     } on DioException catch (e) {
       return Left(ServerFailure(e.response?.data['message'] ?? 'Upload failed'));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+  @override
+  Future<Either<Failure, List<PaymentMethod>>> addPaymentMethod({
+    required String type,
+    String? brand,
+    String? last4,
+    String? expiry,
+    String? upiId,
+    String? bankName,
+    bool isDefault = false,
+  }) async {
+    try {
+      final paymentMethods = await _remoteDataSource.addPaymentMethod(
+        type: type,
+        brand: brand,
+        last4: last4,
+        expiry: expiry,
+        upiId: upiId,
+        bankName: bankName,
+        isDefault: isDefault,
+      );
+      return Right(paymentMethods);
+    } on DioException catch (e) {
+      return Left(ServerFailure(e.response?.data['message'] ?? 'Failed to add payment method'));
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }

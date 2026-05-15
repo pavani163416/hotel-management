@@ -53,6 +53,23 @@ const userSchema = new mongoose.Schema(
       default: "",
     },
 
+    coverImage: {
+      type:  String,
+      default: "",
+    },
+
+    paymentMethods: [
+      {
+        type: { type: String, enum: ['card', 'upi', 'netbanking'], default: 'card' },
+        brand: String, // For cards
+        last4: String, // For cards
+        expiry: String, // For cards
+        upiId: String, // For UPI
+        bankName: String, // For Netbanking
+        isDefault: { type: Boolean, default: false },
+      }
+    ],
+
     // Link to the Guest record (created on first booking or at register time)
     guestId: {
       type:    mongoose.Schema.Types.ObjectId,

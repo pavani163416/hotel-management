@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
-import 'dart:io';
+import 'dart:io' as io;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:convert';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/main_layout.dart';
@@ -20,8 +21,8 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
   String _profileImageUrl = 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=200';
   String _coverImageUrl = 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?q=80&w=1000';
-  File? _profileImageFile;
-  File? _coverImageFile;
+  XFile? _profileImageFile;
+  XFile? _coverImageFile;
   final ImagePicker _picker = ImagePicker();
 
   late TextEditingController _nameController;
@@ -34,6 +35,14 @@ class _ProfilePageState extends State<ProfilePage> {
   bool _pushNotifications = true;
   bool _emailUpdates = true;
   bool _promotions = false;
+
+  final TextEditingController _cardNumberController = TextEditingController();
+  final TextEditingController _expiryController = TextEditingController();
+  final TextEditingController _cvvController = TextEditingController();
+  final TextEditingController _cardNameController = TextEditingController();
+  final TextEditingController _upiIdController = TextEditingController();
+  final TextEditingController _bankNameController = TextEditingController();
+  String _selectedPaymentType = 'card';
 
   @override
   void initState() {
@@ -49,9 +58,41 @@ class _ProfilePageState extends State<ProfilePage> {
       _profileImageUrl = 'https://ui-avatars.com/api/?name=${user?.name ?? 'User'}&background=F5E6CA&color=2C3E50';
     }
 
+    if (user?.coverImage != null && user!.coverImage!.isNotEmpty) {
+      _coverImageUrl = user.coverImage!;
+    } else {
+      _coverImageUrl = 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?q=80&w=1000';
+    }
+
     _nameController.addListener(() {
       if (mounted) setState(() {});
     });
+
+    // Fetch fresh profile data on entry
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _refreshProfile();
+    });
+  }
+
+  Future<void> _refreshProfile() async {
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+    await auth.tryAutoLogin();
+    if (mounted) {
+      final user = auth.user;
+      if (user != null) {
+        setState(() {
+          _nameController.text = user.name;
+          _emailController.text = user.email;
+          _phoneController.text = user.phone ?? '';
+          if (user.profileImage != null && user.profileImage!.isNotEmpty) {
+            _profileImageUrl = user.profileImage!;
+          }
+          if (user.coverImage != null && user.coverImage!.isNotEmpty) {
+            _coverImageUrl = user.coverImage!;
+          }
+        });
+      }
+    }
   }
 
   @override
@@ -59,6 +100,12 @@ class _ProfilePageState extends State<ProfilePage> {
     _nameController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
+    _cardNumberController.dispose();
+    _expiryController.dispose();
+    _cvvController.dispose();
+    _cardNameController.dispose();
+    _upiIdController.dispose();
+    _bankNameController.dispose();
     super.dispose();
   }
 
@@ -73,7 +120,7 @@ class _ProfilePageState extends State<ProfilePage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 60), // Spacing to account for overlapping profile header
+                const SizedBox(height: 100), // Spacing to account for overlapping profile header
                 _buildSectionTitle('Account Settings'),
                 const SizedBox(height: 16),
                 _buildSettingItem(
@@ -127,123 +174,159 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Widget _buildHeader() {
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        // Cover Image
-        InkWell(
-          onTap: () => _showCoverImageOptions(context),
-          child: Container(
-            height: 200,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              image: DecorationImage(
-                image: _coverImageFile != null
-                    ? FileImage(_coverImageFile!) as ImageProvider
-                    : NetworkImage(_coverImageUrl),
-                fit: BoxFit.cover,
-              ),
-            ),
-            child: Stack(
-              children: [
-                Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.black.withOpacity(0.4),
-                        Colors.transparent,
-                      ],
-                    ),
+    return Consumer<AuthProvider>(
+      builder: (context, auth, _) {
+        final user = auth.user;
+        final displayName = user?.name ?? 'Guest';
+        final displayCity = user?.city ?? 'Location not set';
+        final profileUrl = (user?.profileImage != null && user!.profileImage!.isNotEmpty)
+            ? user.profileImage!
+            : 'https://ui-avatars.com/api/?name=$displayName&background=F5E6CA&color=2C3E50';
+        final coverUrl = (user?.coverImage != null && user!.coverImage!.isNotEmpty)
+            ? user.coverImage!
+            : 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?q=80&w=1000';
+
+        return Stack(
+          clipBehavior: Clip.none,
+          children: [
+            // Cover Image
+            InkWell(
+              onTap: () => _showCoverImageOptions(context),
+              child: Container(
+                height: 200,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  image: DecorationImage(
+                    image: _coverImageFile != null
+                        ? (kIsWeb
+                            ? NetworkImage(_coverImageFile!.path)
+                            : FileImage(io.File(_coverImageFile!.path)) as ImageProvider)
+                        : NetworkImage(coverUrl),
+                    fit: BoxFit.cover,
                   ),
                 ),
-                Positioned(
-                  top: 16,
-                  right: 16,
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.4),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.white24),
-                    ),
-                    child: const Row(
-                      children: [
-                        Text('Change Cover', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        // Profile Info
-        Positioned(
-          bottom: -80,
-          left: 24,
-          right: 24,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Stack(
-                children: [
-                  InkWell(
-                    onTap: () => _showImageUploadOptions(context),
-                    borderRadius: BorderRadius.circular(50),
-                    child: Container(
-                      width: 100,
-                      height: 100,
+                child: Stack(
+                  children: [
+                    Container(
                       decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 4),
-                        boxShadow: [
-                          BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 5)),
-                        ],
-                        image: DecorationImage(
-                          image: _profileImageFile != null
-                              ? FileImage(_profileImageFile!) as ImageProvider
-                              : NetworkImage(_profileImageUrl),
-                          fit: BoxFit.cover,
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.black.withOpacity(0.4),
+                            Colors.transparent,
+                          ],
                         ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Text(
-                _nameController.text,
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.primaryColor,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 4),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.start,
-                children: [
-                  const Icon(LucideIcons.mapPin, size: 12, color: AppTheme.primaryColor),
-                  const SizedBox(width: 4),
-                  Consumer<AuthProvider>(
-                    builder: (context, auth, _) => Text(
-                      auth.user?.city ?? 'Location not set',
-                      style: TextStyle(color: AppTheme.primaryColor.withOpacity(0.7), fontSize: 13),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    Positioned(
+                      top: 16,
+                      right: 16,
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.4),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.white24),
+                        ),
+                        child: const Row(
+                          children: [
+                            Text('Change Cover', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                          ],
+                        ),
+                      ),
                     ),
+                  ],
+                ),
+              ),
+            ),
+            // Profile Info
+            Positioned(
+              bottom: -80,
+              left: 24,
+              right: 24,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Stack(
+                    children: [
+                      Stack(
+                        children: [
+                          InkWell(
+                            onTap: () => _showImageUploadOptions(context),
+                            borderRadius: BorderRadius.circular(50),
+                            child: Container(
+                              width: 100,
+                              height: 100,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Colors.white, width: 4),
+                                boxShadow: [
+                                  BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 5)),
+                                ],
+                                image: DecorationImage(
+                                  image: _profileImageFile != null
+                                      ? (kIsWeb
+                                          ? NetworkImage(_profileImageFile!.path)
+                                          : FileImage(io.File(_profileImageFile!.path)) as ImageProvider)
+                                      : NetworkImage(profileUrl),
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                            ),
+                          ),
+                          Positioned(
+                            bottom: 0,
+                            right: 0,
+                            child: GestureDetector(
+                              onTap: () => _showImageUploadOptions(context),
+                              child: Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.primaryColor,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: Colors.white, width: 2),
+                                ),
+                                child: const Icon(LucideIcons.camera, color: Colors.white, size: 16),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    displayName,
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.primaryColor,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      const Icon(LucideIcons.mapPin, size: 12, color: AppTheme.primaryColor),
+                      const SizedBox(width: 4),
+                      Text(
+                        displayCity,
+                        style: TextStyle(color: AppTheme.primaryColor.withOpacity(0.7), fontSize: 13),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ],
-          ),
-        ),
-      ],
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -461,23 +544,53 @@ class _ProfilePageState extends State<ProfilePage> {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.white,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Payment Methods', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
-            const SizedBox(height: 24),
-            _buildPaymentCard('Visa', '**** **** **** 4242', LucideIcons.creditCard, true),
-            const SizedBox(height: 12),
-            _buildPaymentCard('Mastercard', '**** **** **** 8888', LucideIcons.creditCard, false),
-            const SizedBox(height: 24),
-            _buildAddButton(context, 'Add New Card'),
-            const SizedBox(height: 32),
-          ],
-        ),
+      builder: (context) => Consumer<AuthProvider>(
+        builder: (context, auth, _) {
+          final paymentMethods = auth.user?.paymentMethods ?? [];
+          
+          return Container(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Payment Methods', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+                const SizedBox(height: 24),
+                if (paymentMethods.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 20),
+                    child: Center(
+                      child: Text('No payment methods saved', style: TextStyle(color: Colors.grey[500])),
+                    ),
+                  )
+                else
+                  ...paymentMethods.map((pm) {
+                    String title;
+                    String subtitle;
+                    if (pm.type == 'upi') {
+                      title = 'UPI';
+                      subtitle = pm.upiId ?? '';
+                    } else if (pm.type == 'netbanking') {
+                      title = pm.bankName ?? 'Bank';
+                      subtitle = 'Net Banking';
+                    } else {
+                      title = pm.brand ?? 'Card';
+                      subtitle = '**** **** **** ${pm.last4}';
+                    }
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: _buildPaymentCard(pm.type, title, subtitle, pm.isDefault),
+                    );
+                  }),
+                const SizedBox(height: 12),
+                _buildAddButton(context, 'Add Payment Method'),
+                const SizedBox(height: 32),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
@@ -539,27 +652,58 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  Widget _buildPaymentCard(String brand, String number, IconData icon, bool isDefault) {
+  Widget _buildPaymentCard(String type, String title, String subtitle, bool isDefault) {
+    IconData icon;
+    switch (type) {
+      case 'upi':
+        icon = LucideIcons.smartphone;
+        break;
+      case 'netbanking':
+        icon = LucideIcons.landmark;
+        break;
+      default:
+        icon = LucideIcons.creditCard;
+    }
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
+        color: Colors.white,
         border: Border.all(color: isDefault ? AppTheme.primaryColor : Colors.grey[200]!),
         borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          if (isDefault) BoxShadow(color: AppTheme.primaryColor.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4)),
+        ],
       ),
       child: Row(
         children: [
-          Icon(icon, color: AppTheme.primaryColor),
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: AppTheme.primaryColor.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: AppTheme.primaryColor, size: 20),
+          ),
           const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(brand, style: const TextStyle(fontWeight: FontWeight.bold)),
-                Text(number, style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+                Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                Text(subtitle, style: TextStyle(color: Colors.grey[600], fontSize: 12)),
               ],
             ),
           ),
-          if (isDefault) Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: AppTheme.primaryColor.withOpacity(0.1), borderRadius: BorderRadius.circular(4)), child: const Text('DEFAULT', style: TextStyle(color: AppTheme.primaryColor, fontSize: 8, fontWeight: FontWeight.bold))),
+          if (isDefault) 
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), 
+              decoration: BoxDecoration(
+                color: AppTheme.primaryColor.withOpacity(0.1), 
+                borderRadius: BorderRadius.circular(4)
+              ), 
+              child: const Text('DEFAULT', style: TextStyle(color: AppTheme.primaryColor, fontSize: 8, fontWeight: FontWeight.bold))
+            ),
         ],
       ),
     );
@@ -638,10 +782,220 @@ class _ProfilePageState extends State<ProfilePage> {
     return SizedBox(
       width: double.infinity,
       child: OutlinedButton.icon(
-        onPressed: () => _showFeedback(context, 'Add New Card'),
+        onPressed: () => _showAddPaymentMethodDialog(context),
         icon: const Icon(LucideIcons.plus, size: 18),
         label: Text(label),
-        style: OutlinedButton.styleFrom(foregroundColor: AppTheme.primaryColor, side: const BorderSide(color: AppTheme.primaryColor), padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AppTheme.primaryColor,
+          side: const BorderSide(color: AppTheme.primaryColor),
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        ),
+      ),
+    );
+  }
+
+  void _showAddPaymentMethodDialog(BuildContext context) {
+    setState(() {
+      _selectedPaymentType = 'card';
+    });
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) => Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom + 32,
+            top: 32,
+            left: 24,
+            right: 24,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Add Payment Method',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
+              ),
+              const SizedBox(height: 24),
+              // Type Selector
+              Row(
+                children: [
+                  _buildTypeTab('Card', 'card', setModalState),
+                  const SizedBox(width: 8),
+                  _buildTypeTab('UPI', 'upi', setModalState),
+                  const SizedBox(width: 8),
+                  _buildTypeTab('Bank', 'netbanking', setModalState),
+                ],
+              ),
+              const SizedBox(height: 24),
+              if (_selectedPaymentType == 'card') ...[
+                CustomTextField(
+                  label: 'Cardholder Name',
+                  hint: 'John Doe',
+                  prefixIcon: LucideIcons.user,
+                  controller: _cardNameController,
+                ),
+                const SizedBox(height: 16),
+                CustomTextField(
+                  label: 'Card Number',
+                  hint: '0000 0000 0000 0000',
+                  prefixIcon: LucideIcons.creditCard,
+                  keyboardType: TextInputType.number,
+                  controller: _cardNumberController,
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: CustomTextField(
+                        label: 'Expiry',
+                        hint: 'MM/YY',
+                        prefixIcon: LucideIcons.calendar,
+                        controller: _expiryController,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: CustomTextField(
+                        label: 'CVV',
+                        hint: '000',
+                        prefixIcon: LucideIcons.lock,
+                        keyboardType: TextInputType.number,
+                        controller: _cvvController,
+                      ),
+                    ),
+                  ],
+                ),
+              ] else if (_selectedPaymentType == 'upi') ...[
+                CustomTextField(
+                  label: 'UPI ID',
+                  hint: 'user@upi',
+                  prefixIcon: LucideIcons.smartphone,
+                  controller: _upiIdController,
+                ),
+              ] else if (_selectedPaymentType == 'netbanking') ...[
+                CustomTextField(
+                  label: 'Bank Name',
+                  hint: 'Select your bank',
+                  prefixIcon: LucideIcons.landmark,
+                  controller: _bankNameController,
+                ),
+              ],
+              const SizedBox(height: 32),
+              Consumer<AuthProvider>(
+                builder: (context, auth, _) => SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: auth.isLoading
+                        ? null
+                        : () async {
+                            bool success = false;
+                            if (_selectedPaymentType == 'card') {
+                              if (_cardNumberController.text.length < 16) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Invalid card number'), backgroundColor: Colors.red),
+                                );
+                                return;
+                              }
+                              final last4 = _cardNumberController.text.substring(_cardNumberController.text.length - 4);
+                              final brand = _cardNumberController.text.startsWith('4') ? 'Visa' : 'Mastercard';
+                              success = await auth.addPaymentMethod(
+                                type: 'card',
+                                brand: brand,
+                                last4: last4,
+                                expiry: _expiryController.text,
+                              );
+                            } else if (_selectedPaymentType == 'upi') {
+                              if (_upiIdController.text.isEmpty) return;
+                              success = await auth.addPaymentMethod(
+                                type: 'upi',
+                                upiId: _upiIdController.text,
+                              );
+                            } else if (_selectedPaymentType == 'netbanking') {
+                              if (_bankNameController.text.isEmpty) return;
+                              success = await auth.addPaymentMethod(
+                                type: 'netbanking',
+                                bankName: _bankNameController.text,
+                              );
+                            }
+
+                            if (mounted) {
+                              if (success) {
+                                Navigator.pop(context);
+                                _cardNumberController.clear();
+                                _expiryController.clear();
+                                _cvvController.clear();
+                                _cardNameController.clear();
+                                _upiIdController.clear();
+                                _bankNameController.clear();
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Payment method added successfully!'),
+                                    behavior: SnackBarBehavior.floating,
+                                    backgroundColor: Colors.green,
+                                  ),
+                                );
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(auth.error ?? 'Failed to add payment method'),
+                                    behavior: SnackBarBehavior.floating,
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                              }
+                            }
+                          },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primaryColor,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    ),
+                    child: auth.isLoading
+                        ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                        : const Text('Save Payment Method', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTypeTab(String label, String type, StateSetter setModalState) {
+    bool isSelected = _selectedPaymentType == type;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          setModalState(() {
+            _selectedPaymentType = type;
+          });
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(
+            color: isSelected ? AppTheme.primaryColor : Colors.grey[100],
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: isSelected ? AppTheme.primaryColor : Colors.grey[200]!),
+          ),
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: isSelected ? Colors.white : Colors.grey[600],
+              fontWeight: FontWeight.bold,
+              fontSize: 13,
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -765,27 +1119,78 @@ class _ProfilePageState extends State<ProfilePage> {
     try {
       final XFile? pickedFile = await _picker.pickImage(source: source);
       if (pickedFile != null) {
+        if (mounted) Navigator.pop(context); // Close the bottom sheet
+
         setState(() {
           if (isProfile) {
-            _profileImageFile = File(pickedFile.path);
+            _profileImageFile = pickedFile;
           } else {
-            _coverImageFile = File(pickedFile.path);
+            _coverImageFile = pickedFile;
           }
         });
+
         if (mounted) {
-          Navigator.pop(context);
+          // Show loading indicator
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(isProfile ? 'Profile photo updated!' : 'Cover photo updated!'),
+              content: Row(
+                children: [
+                  const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)),
+                  const SizedBox(width: 16),
+                  Text(isProfile ? 'Uploading profile photo...' : 'Uploading cover photo...'),
+                ],
+              ),
+              duration: const Duration(seconds: 2),
               behavior: SnackBarBehavior.floating,
             ),
           );
+
+          final auth = Provider.of<AuthProvider>(context, listen: false);
+          final bytes = await pickedFile.readAsBytes();
+          final base64Image = base64Encode(bytes);
+          
+          final newImageUrl = await auth.uploadImage(base64Image);
+          
+          if (newImageUrl != null) {
+            final success = await auth.updateProfile(
+              profileImage: isProfile ? newImageUrl : null,
+              coverImage: !isProfile ? newImageUrl : null,
+            );
+            if (success && mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(isProfile ? 'Profile photo updated successfully!' : 'Cover photo updated successfully!'),
+                  behavior: SnackBarBehavior.floating,
+                  backgroundColor: Colors.green,
+                ),
+              );
+              setState(() {
+                if (isProfile) {
+                  _profileImageUrl = newImageUrl;
+                  _profileImageFile = null;
+                } else {
+                  _coverImageUrl = newImageUrl;
+                  _coverImageFile = null;
+                }
+              });
+            }
+          } else {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(auth.error ?? 'Failed to upload image'),
+                  behavior: SnackBarBehavior.floating,
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+          }
         }
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error picking image')),
+          SnackBar(content: Text('Error picking image: $e')),
         );
       }
     }

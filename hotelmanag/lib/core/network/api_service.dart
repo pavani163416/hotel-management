@@ -20,6 +20,9 @@ class ApiService {
           if (token != null && token.isNotEmpty) {
             options.headers['Authorization'] = 'Bearer $token';
           }
+          
+          // Bypass localtunnel landing page
+          options.headers['Bypass-Tunnel-Reminder'] = 'true';
 
           debugPrint('API REQUEST[${options.method}] => PATH: ${options.path}');
           debugPrint('DATA: ${options.data}');
