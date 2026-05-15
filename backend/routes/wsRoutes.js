@@ -25,8 +25,8 @@ export const broadcastBookingUpdate = (booking) => {
   });
 };
 
-export const initWebSocket = (server) => {
-  const wss = new WebSocketServer({ server, path: "/ws" });
+export const initWebSocket = () => {
+  const wss = new WebSocketServer({ noServer: true, path: "/ws" });
 
   wss.on("connection", (ws, req) => {
     const role = new URL(req.url, "http://localhost").searchParams.get("role");

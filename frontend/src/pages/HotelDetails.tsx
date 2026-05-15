@@ -33,7 +33,7 @@ const amenityIcon = (name: string) => {
 const HotelDetails = () => {
   const { id } = useParams();
   const nav = useNavigate();
-  const { hotels, user, setSelectedHotel, setSelectedRoom, reviews, addReview } = useBooking();
+  const { hotels, user, search, setSelectedHotel, setSelectedRoom, reviews, addReview } = useBooking();
   const hotel = hotels.find((h) => h.id === id);
   const [tab, setTab] = useState<"rooms" | "amenities" | "reviews">("rooms");
   const [reviewText, setReviewText] = useState("");

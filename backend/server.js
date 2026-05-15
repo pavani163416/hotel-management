@@ -208,16 +208,20 @@ const httpServer = createServer(app);
 
 const io = new SocketIOServer(httpServer, {
   path: "/socket.io/",
-  transports: ["websocket", "polling"],
-  allowUpgrades: true,
-  pingInterval: 25000,
-  pingTimeout: 20000,
-  maxHttpBufferSize: 1e6,
+  transports: ["polling", "websocket"],  // Polling FIRST for Railway compatibility
+  upgrade: true,
+  pingInterval: 30000,
+  pingTimeout: 60000,
+  maxHttpBufferSize: 1e7,
+  cookie: false,
+  serveClient: false,
+  connectTimeout: 45000,
   cors: {
     origin:      allowedOrigins,
     methods:     ["GET", "POST"],
     credentials: true,
-    allowedHeaders: ["Content-Type", "Authorization", "Accept"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+    exposedHeaders: ["Content-Length"],
   },
 });
 
@@ -259,7 +263,17 @@ app.set("io", io);
 setNotificationIo(io);
 
 // Attach WebSocket server for real-time visitor tracking
-initWebSocket(httpServer);
+const wss = initWebSocket();
+
+httpServer.on("upgrade", (request, socket, head) => {
+  const pathname = new URL(request.url, "http://localhost").pathname;
+  if (pathname.startsWith("/ws")) {
+    wss.handleUpgrade(request, socket, head, (ws) => {
+      wss.emit("connection", ws, request);
+    });
+  }
+  // Socket.IO handles its own upgrade event for /socket.io/
+});
 
 // ── Start server ──────────────────────────────────────────
 httpServer.listen(PORT, "0.0.0.0", () => {
