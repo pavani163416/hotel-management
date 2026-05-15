@@ -18,6 +18,7 @@ class PaymentPage extends StatefulWidget {
 class _PaymentPageState extends State<PaymentPage> {
   String _selectedMethod = 'card';
   String _selectedGuest = 'lead';
+  String _selectedIdType = 'Aadhaar Card';
 
   @override
   Widget build(BuildContext context) {
@@ -123,6 +124,48 @@ class _PaymentPageState extends State<PaymentPage> {
           Text('PRIMARY GUEST (BILLING RESPONSIBLE)', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.primaryColor.withOpacity(0.4), letterSpacing: 1)),
           const SizedBox(height: 16),
           _buildGuestOption('lead', leadName.toUpperCase(), true),
+          const SizedBox(height: 24),
+          
+          _buildLabel('ID TYPE'),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            decoration: BoxDecoration(
+              border: Border.all(color: AppTheme.mutedColor),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                isExpanded: true,
+                value: _selectedIdType,
+                items: ['Aadhaar Card', 'PAN Card', 'Voter ID', 'Passport'].map((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(value, style: const TextStyle(fontSize: 14, color: AppTheme.primaryColor)),
+                  );
+                }).toList(),
+                onChanged: (v) => setState(() => _selectedIdType = v!),
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+          _buildLabel('${_selectedIdType.toUpperCase()} NUMBER'),
+          const SizedBox(height: 8),
+          _buildTextField(_selectedIdType == 'Aadhaar Card' ? 'XXXX XXXX XXXX' : 'Enter your ${_selectedIdType} number'),
+          const SizedBox(height: 12),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(LucideIcons.info, size: 12, color: AppTheme.primaryColor.withOpacity(0.4)),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'As per Ministry of Home Affairs guidelines, hotels are required to collect a valid government-issued photo ID at check-in.',
+                  style: TextStyle(fontSize: 10, color: AppTheme.primaryColor.withOpacity(0.4)),
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
