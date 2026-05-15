@@ -30,7 +30,7 @@ class _HistoryPageState extends State<HistoryPage> {
     return MainLayout(
       child: SingleChildScrollView(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 32),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -41,7 +41,7 @@ class _HistoryPageState extends State<HistoryPage> {
               const SizedBox(height: 8),
               Text(
                 'Manage your upcoming stays and review past adventures.',
-                style: TextStyle(color: AppTheme.primaryColor.withOpacity(0.6), fontSize: 16),
+                style: TextStyle(color: AppTheme.primaryColor.withOpacity(0.6), fontSize: 14),
               ),
               const SizedBox(height: 32),
               _buildFilters(),
@@ -64,8 +64,11 @@ class _HistoryPageState extends State<HistoryPage> {
                     return _buildEmptyState();
                   }
 
-                  return Column(
-                    children: filteredBookings.map((b) => BookingListItem(booking: b)).toList(),
+                  return ListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: filteredBookings.length,
+                    itemBuilder: (context, index) => BookingListItem(booking: filteredBookings[index]),
                   );
                 },
               ),
@@ -95,6 +98,7 @@ class _HistoryPageState extends State<HistoryPage> {
     final filters = ['all', 'Confirmed', 'Cancelled'];
     return Wrap(
       spacing: 12,
+      runSpacing: 12,
       children: filters.map((f) {
         final isSelected = _filter == f;
         return InkWell(
@@ -112,7 +116,7 @@ class _HistoryPageState extends State<HistoryPage> {
               style: TextStyle(
                 color: isSelected ? AppTheme.primaryColor : AppTheme.primaryColor.withOpacity(0.7),
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                fontSize: 14,
+                fontSize: 13,
               ),
             ),
           ),
@@ -128,127 +132,210 @@ class BookingListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isCancelled = booking.status == 'Cancelled';
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isWide = constraints.maxWidth > 700;
+        return Container(
+          margin: const EdgeInsets.only(bottom: 24),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: AppTheme.mutedColor.withOpacity(0.5)),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: isWide ? _buildDesktopCard(context) : _buildMobileCard(context),
+        );
+      },
+    );
+  }
+
+  Widget _buildDesktopCard(BuildContext context) {
     final df = DateFormat('yyyy-MM-dd');
     final dateString = '${df.format(booking.checkIn)} — ${df.format(booking.checkOut)}';
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppTheme.mutedColor.withOpacity(0.5)),
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SizedBox(
+            width: 160,
+            child: CachedNetworkImage(
+              imageUrl: booking.imageUrl ?? 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=400',
+              fit: BoxFit.cover,
+            ),
+          ),
+          Expanded(
+            flex: 3,
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _buildLabel('PROPERTY'),
+                  const SizedBox(height: 4),
+                  Text(booking.hotelName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppTheme.primaryColor)),
+                  Row(
+                    children: [
+                      Icon(LucideIcons.mapPin, size: 10, color: Colors.grey[400]),
+                      const SizedBox(width: 4),
+                      Text('guntur', style: TextStyle(fontSize: 11, color: Colors.grey[400])),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  _buildLabel('DATES'),
+                  const SizedBox(height: 4),
+                  Text(dateString, style: TextStyle(fontSize: 13, color: AppTheme.primaryColor.withOpacity(0.7))),
+                ],
+              ),
+            ),
+          ),
+          Expanded(
+            flex: 2,
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _buildLabel('STATUS'),
+                  const SizedBox(height: 8),
+                  _buildStatusBadge(booking.status),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Booked ${DateFormat('MMM dd, yyyy').format(DateTime.now())}',
+                    style: TextStyle(fontSize: 9, color: Colors.grey[400]),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          VerticalDivider(width: 1, thickness: 1, color: AppTheme.mutedColor.withOpacity(0.5)),
+          Expanded(
+            flex: 2,
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text('Total', style: TextStyle(fontSize: 10, color: Colors.grey)),
+                  Text('\$${NumberFormat("#,###").format(booking.totalAmount)}', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () {},
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFE5E0D8),
+                      foregroundColor: AppTheme.primaryColor,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      elevation: 0,
+                    ),
+                    child: const Text('View Details', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                  ),
+                  const SizedBox(height: 8),
+                  if (booking.status != 'Cancelled')
+                    GestureDetector(
+                      onTap: () => _showCancelDialog(context, booking),
+                      child: const Text('Cancel Booking', style: TextStyle(color: Colors.redAccent, fontSize: 11, fontWeight: FontWeight.bold)),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
-      clipBehavior: Clip.antiAlias,
-      child: IntrinsicHeight(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+    );
+  }
+
+  Widget _buildMobileCard(BuildContext context) {
+    final df = DateFormat('MM-dd');
+    final dateString = '${df.format(booking.checkIn)} → ${df.format(booking.checkOut)}';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Stack(
           children: [
-            // Hotel Image
-            Container(
-              width: 140,
-              child: CachedNetworkImage(
-                imageUrl: booking.imageUrl ?? 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=400',
-                fit: BoxFit.cover,
-              ),
+            CachedNetworkImage(
+              imageUrl: booking.imageUrl ?? 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=400',
+              height: 160,
+              width: double.infinity,
+              fit: BoxFit.cover,
             ),
-            
-            // Details Section
-            Expanded(
-              flex: 4,
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    _buildLabel('PROPERTY'),
-                    const SizedBox(height: 4),
-                    Text(booking.hotelName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppTheme.primaryColor)),
-                    Row(
-                      children: [
-                        Icon(LucideIcons.mapPin, size: 10, color: Colors.grey[400]),
-                        const SizedBox(width: 4),
-                        Text('guntur', style: TextStyle(fontSize: 11, color: Colors.grey[400])),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                    _buildLabel('DATES'),
-                    const SizedBox(height: 4),
-                    Text(dateString, style: TextStyle(fontSize: 13, color: AppTheme.primaryColor.withOpacity(0.7))),
-                  ],
-                ),
-              ),
-            ),
-            
-            // Status Section
-            Expanded(
-              flex: 2,
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    _buildLabel('STATUS'),
-                    const SizedBox(height: 8),
-                    _buildStatusBadge(booking.status),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Icon(LucideIcons.clock, size: 10, color: Colors.grey[400]),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: Text(
-                            'Booked ${DateFormat('MMM dd, yyyy').format(DateTime.now())} at ${DateFormat('hh:mm a').format(DateTime.now())}',
-                            style: TextStyle(fontSize: 9, color: Colors.grey[400]),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            
-            // Vertical Divider
-            VerticalDivider(width: 1, thickness: 1, color: AppTheme.mutedColor.withOpacity(0.5)),
-            
-            // Price & Actions Section
-            Expanded(
-              flex: 2,
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text('Total', style: TextStyle(fontSize: 10, color: Colors.grey)),
-                    Text('\$${NumberFormat("#,###").format(booking.totalAmount)}', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: () {},
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFE5E0D8),
-                        foregroundColor: AppTheme.primaryColor,
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                        elevation: 0,
-                      ),
-                      child: const Text('View Details', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                    ),
-                    const SizedBox(height: 8),
-                    if (!isCancelled)
-                      GestureDetector(
-                        onTap: () => _showCancelDialog(context, booking),
-                        child: const Text('Cancel Booking', style: TextStyle(color: Colors.redAccent, fontSize: 11, fontWeight: FontWeight.bold)),
-                      ),
-                  ],
-                ),
-              ),
+            Positioned(
+              top: 12,
+              right: 12,
+              child: _buildStatusBadge(booking.status),
             ),
           ],
         ),
-      ),
+        Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildLabel('PROPERTY'),
+                        const SizedBox(height: 4),
+                        Text(booking.hotelName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppTheme.primaryColor), maxLines: 1, overflow: TextOverflow.ellipsis),
+                        Text('guntur', style: TextStyle(fontSize: 11, color: Colors.grey[400])),
+                      ],
+                    ),
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      const Text('Total Paid', style: TextStyle(fontSize: 10, color: Colors.grey)),
+                      Text('\$${NumberFormat("#,###").format(booking.totalAmount)}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+                    ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildLabel('DATES'),
+                      const SizedBox(height: 4),
+                      Text(dateString, style: TextStyle(fontSize: 13, color: AppTheme.primaryColor.withOpacity(0.7))),
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      if (booking.status != 'Cancelled')
+                        TextButton(
+                          onPressed: () => _showCancelDialog(context, booking),
+                          child: const Text('Cancel', style: TextStyle(color: Colors.redAccent, fontSize: 12, fontWeight: FontWeight.bold)),
+                        ),
+                      const SizedBox(width: 8),
+                      ElevatedButton(
+                        onPressed: () {},
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFE5E0D8),
+                          foregroundColor: AppTheme.primaryColor,
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          elevation: 0,
+                        ),
+                        child: const Text('Details', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
@@ -264,6 +351,7 @@ class BookingListItem extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppTheme.mutedColor),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 5)],
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
