@@ -9,29 +9,36 @@ class HotelModel extends HotelEntity {
     required super.pricePerNight,
     required super.imageUrl,
     required super.description,
+    super.type,
+    super.amenities,
   });
 
   factory HotelModel.fromJson(Map<String, dynamic> json) {
     return HotelModel(
-      id: json['id'] ?? json['_id'] ?? '',
+      id: json['hotelId'] ?? json['id'] ?? json['_id'] ?? '',
       name: json['name'] ?? '',
       location: json['location'] ?? json['city'] ?? '',
       rating: (json['rating'] ?? 0).toDouble(),
       pricePerNight: (json['pricePerNight'] ?? 0).toDouble(),
       imageUrl: json['imageUrl'] ?? json['image'] ?? '',
       description: json['description'] ?? '',
+      type: json['type'] ?? 'Hotel',
+      amenities: List<String>.from(json['amenities'] ?? []),
     );
   }
 
+  @override
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
+      'hotelId': id,
       'name': name,
       'location': location,
       'rating': rating,
       'pricePerNight': pricePerNight,
       'imageUrl': imageUrl,
       'description': description,
+      'type': type,
+      'amenities': amenities,
     };
   }
 }

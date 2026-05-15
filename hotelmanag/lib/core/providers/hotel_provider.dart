@@ -97,10 +97,10 @@ class HotelProvider extends ChangeNotifier {
       final matchesType = _propertyType == 'Any' || hotel.type == _propertyType;
       final matchesRating = hotel.rating >= _minRating;
       
-      // Rough amenity matching (if entities have amenities)
-      // Since HotelEntity doesn't have an explicit list yet, we'll skip for now or use mock logic
+      final matchesAmenities = _selectedAmenities.isEmpty || 
+                               _selectedAmenities.every((a) => hotel.amenities.contains(a));
       
-      return matchesSearch && matchesPrice && matchesType && matchesRating;
+      return matchesSearch && matchesPrice && matchesType && matchesRating && matchesAmenities;
     }).toList();
     notifyListeners();
   }
