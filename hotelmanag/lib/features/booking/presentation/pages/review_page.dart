@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/main_layout.dart';
 import '../../../../core/widgets/stepper_widget.dart';
+import '../../../../core/providers/booking_provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
 class ReviewPage extends StatelessWidget {
@@ -12,6 +14,13 @@ class ReviewPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final provider = context.watch<BookingProvider>();
+    final hotel = provider.currentHotel;
+
+    if (hotel == null) {
+      return const MainLayout(child: Center(child: Text('No hotel selected')));
+    }
+
     return MainLayout(
       child: SingleChildScrollView(
         child: Padding(
@@ -23,12 +32,7 @@ class ReviewPage extends StatelessWidget {
               const SizedBox(height: 24),
               const Text(
                 'Review Your Booking',
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.primaryColor,
-                  fontFamily: 'Serif',
-                ),
+                style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: AppTheme.primaryColor, fontFamily: 'Serif'),
               ),
               const SizedBox(height: 8),
               Text(
@@ -47,9 +51,9 @@ class ReviewPage extends StatelessWidget {
                         flex: 3,
                         child: Column(
                           children: [
-                            _buildStaySummary(),
+                            _buildStaySummary(provider),
                             const SizedBox(height: 24),
-                            _buildGuestInformation(),
+                            _buildGuestInformation(provider),
                           ],
                         ),
                       ),
@@ -57,7 +61,7 @@ class ReviewPage extends StatelessWidget {
                       if (isWide)
                         Expanded(
                           flex: 2,
-                          child: _buildPriceSummary(context),
+                          child: _buildPriceSummary(context, provider),
                         ),
                     ],
                   );
@@ -70,7 +74,7 @@ class ReviewPage extends StatelessWidget {
                   if (constraints.maxWidth <= 800) {
                     return Padding(
                       padding: const EdgeInsets.only(top: 32),
-                      child: _buildPriceSummary(context),
+                      child: _buildPriceSummary(context, provider),
                     );
                   }
                   return const SizedBox.shrink();
@@ -84,7 +88,8 @@ class ReviewPage extends StatelessWidget {
     );
   }
 
-  Widget _buildStaySummary() {
+  Widget _buildStaySummary(BookingProvider provider) {
+    final hotel = provider.currentHotel!;
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -102,7 +107,7 @@ class ReviewPage extends StatelessWidget {
               ClipRRect(
                 borderRadius: BorderRadius.circular(16),
                 child: CachedNetworkImage(
-                  imageUrl: 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?q=80&w=400',
+                  imageUrl: hotel.imageUrl,
                   width: 100,
                   height: 100,
                   fit: BoxFit.cover,
@@ -113,14 +118,14 @@ class ReviewPage extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('swagruha hotel', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
-                    Text('guntur', style: TextStyle(fontSize: 12, color: AppTheme.primaryColor.withOpacity(0.5))),
+                    Text(hotel.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+                    Text(hotel.location, style: TextStyle(fontSize: 12, color: AppTheme.primaryColor.withOpacity(0.5))),
                     const SizedBox(height: 12),
                     Row(
                       children: [
-                        _buildSummaryItem('Check-in', '2026-05-22'),
+                        _buildSummaryItem('Check-in', DateFormat('yyyy-MM-dd').format(provider.checkIn)),
                         const SizedBox(width: 32),
-                        _buildSummaryItem('Check-out', '2026-05-25'),
+                        _buildSummaryItem('Check-out', DateFormat('yyyy-MM-dd').format(provider.checkOut)),
                       ],
                     ),
                     const SizedBox(height: 12),
@@ -128,7 +133,7 @@ class ReviewPage extends StatelessWidget {
                       children: [
                         _buildSummaryItem('Room', 'Standard'),
                         const SizedBox(width: 32),
-                        _buildSummaryItem('Guests', '2 - 3 nights'),
+                        _buildSummaryItem('Guests', '${provider.guests} - ${provider.nights} nights'),
                       ],
                     ),
                   ],
@@ -151,7 +156,8 @@ class ReviewPage extends StatelessWidget {
     );
   }
 
-  Widget _buildGuestInformation() {
+  Widget _buildGuestInformation(BookingProvider provider) {
+    final lead = provider.leadGuest;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
@@ -168,13 +174,13 @@ class ReviewPage extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildInfoBlock('Name', 'ABDUL RAHIMA'),
+              _buildInfoBlock('Name', lead['name'] ?? 'Not set'),
               const Spacer(),
-              _buildInfoBlock('Email', '23505A1201@pvpsit.ac.in'),
+              _buildInfoBlock('Email', lead['email'] ?? 'Not set'),
             ],
           ),
           const SizedBox(height: 20),
-          _buildInfoBlock('Phone', '98745624100'),
+          _buildInfoBlock('Phone', lead['phone'] ?? 'Not set'),
         ],
       ),
     );
@@ -191,7 +197,7 @@ class ReviewPage extends StatelessWidget {
     );
   }
 
-  Widget _buildPriceSummary(BuildContext context) {
+  Widget _buildPriceSummary(BuildContext context, BookingProvider provider) {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -204,14 +210,13 @@ class ReviewPage extends StatelessWidget {
         children: [
           const Text('PRICE SUMMARY', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.primaryColor, letterSpacing: 1)),
           const SizedBox(height: 20),
-          _buildPriceRow('Standard (3 nights)', '\$1,038'),
-          _buildPriceRow('Service Fee', '\$52'),
-          _buildPriceRow('Taxes', '\$83'),
+          _buildPriceRow('Standard (${provider.nights} nights)', '\$${NumberFormat("#,###").format(provider.subtotal)}'),
+          _buildPriceRow('Service Fee', '\$${NumberFormat("#,###").format(provider.serviceFee)}'),
+          _buildPriceRow('Taxes', '\$${NumberFormat("#,###").format(provider.taxes)}'),
           const SizedBox(height: 24),
           const Divider(color: AppTheme.mutedColor),
           const SizedBox(height: 24),
           
-          // Promo Code
           const Text('PROMO CODE', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.primaryColor, letterSpacing: 1)),
           const SizedBox(height: 12),
           Row(
@@ -225,18 +230,13 @@ class ReviewPage extends StatelessWidget {
                     fillColor: Colors.white,
                     contentPadding: const EdgeInsets.symmetric(horizontal: 16),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppTheme.mutedColor)),
-                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppTheme.mutedColor)),
                   ),
                 ),
               ),
               const SizedBox(width: 8),
               ElevatedButton(
                 onPressed: () {},
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryColor,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                ),
+                style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryColor, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
                 child: const Text('Apply'),
               ),
             ],
@@ -248,10 +248,7 @@ class ReviewPage extends StatelessWidget {
               _buildPromoChip('LUXE10'),
               _buildPromoChip('WELCOME15'),
               _buildPromoChip('VIP20'),
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 4),
-                child: Text('— click to apply', style: TextStyle(fontSize: 10, color: Colors.grey)),
-              ),
+              const Padding(padding: EdgeInsets.symmetric(vertical: 4), child: Text('— click to apply', style: TextStyle(fontSize: 10, color: Colors.grey))),
             ],
           ),
           
@@ -260,7 +257,7 @@ class ReviewPage extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text('Total Amount', style: TextStyle(fontSize: 14, color: AppTheme.primaryColor)),
-              const Text('\$1,173', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+              Text('\$${NumberFormat("#,###").format(provider.total)}', style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
             ],
           ),
           const SizedBox(height: 24),
@@ -305,10 +302,7 @@ class ReviewPage extends StatelessWidget {
   Widget _buildPromoChip(String code) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: AppTheme.mutedColor.withOpacity(0.3),
-        borderRadius: BorderRadius.circular(6),
-      ),
+      decoration: BoxDecoration(color: AppTheme.mutedColor.withOpacity(0.3), borderRadius: BorderRadius.circular(6)),
       child: Text(code, style: TextStyle(fontSize: 10, color: AppTheme.primaryColor.withOpacity(0.6), fontWeight: FontWeight.bold)),
     );
   }

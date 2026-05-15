@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/main_layout.dart';
 import '../../../../core/widgets/stepper_widget.dart';
+import '../../../../core/providers/booking_provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class BookingPage extends StatefulWidget {
   const BookingPage({super.key});
@@ -14,16 +17,11 @@ class BookingPage extends StatefulWidget {
 }
 
 class _BookingPageState extends State<BookingPage> {
-  DateTime checkInDate = DateTime(2026, 5, 22);
-  DateTime checkOutDate = DateTime(2026, 5, 25);
-  int nights = 3;
-  int guests = 2;
-  final double pricePerNight = 346.0;
-
   Future<void> _selectDate(BuildContext context, bool isCheckIn) async {
+    final provider = context.read<BookingProvider>();
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: isCheckIn ? checkInDate : checkOutDate,
+      initialDate: isCheckIn ? provider.checkIn : provider.checkOut,
       firstDate: DateTime.now(),
       lastDate: DateTime(2101),
       builder: (context, child) {
@@ -40,49 +38,57 @@ class _BookingPageState extends State<BookingPage> {
       },
     );
     if (picked != null) {
-      setState(() {
-        if (isCheckIn) {
-          checkInDate = picked;
-          if (checkOutDate.isBefore(checkInDate.add(const Duration(days: 1)))) {
-            checkOutDate = checkInDate.add(const Duration(days: 1));
-          }
-        } else {
-          checkOutDate = picked;
+      if (isCheckIn) {
+        DateTime newCheckOut = provider.checkOut;
+        if (newCheckOut.isBefore(picked.add(const Duration(days: 1)))) {
+          newCheckOut = picked.add(const Duration(days: 1));
         }
-        nights = checkOutDate.difference(checkInDate).inDays;
-      });
+        provider.updateDates(picked, newCheckOut);
+      } else {
+        provider.updateDates(provider.checkIn, picked);
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final provider = context.watch<BookingProvider>();
+    final hotel = provider.currentHotel;
+
+    if (hotel == null) {
+      return const MainLayout(child: Center(child: Text('No hotel selected')));
+    }
+
     return MainLayout(
       showAppBar: true,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24.0),
-        child: Column(
-          children: [
-            const StepperWidget(currentStep: 0),
-            const SizedBox(height: 16),
-            const Text(
-              'Your Selection',
-              style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: AppTheme.primaryColor, fontFamily: 'Serif'),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Confirm your stay details before continuing.',
-              style: TextStyle(color: AppTheme.primaryColor.withOpacity(0.5), fontSize: 14),
-            ),
-            const SizedBox(height: 32),
-            _buildMainSelectionCard(),
-            const SizedBox(height: 60),
-          ],
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          child: Column(
+            children: [
+              const StepperWidget(currentStep: 0),
+              const SizedBox(height: 16),
+              const Text(
+                'Your Selection',
+                style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: AppTheme.primaryColor, fontFamily: 'Serif'),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Confirm your stay details before continuing.',
+                style: TextStyle(color: AppTheme.primaryColor.withOpacity(0.5), fontSize: 14),
+              ),
+              const SizedBox(height: 32),
+              _buildMainSelectionCard(provider),
+              const SizedBox(height: 60),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildMainSelectionCard() {
+  Widget _buildMainSelectionCard(BookingProvider provider) {
+    final hotel = provider.currentHotel!;
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -99,11 +105,10 @@ class _BookingPageState extends State<BookingPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Hotel Image
           ClipRRect(
             borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-            child: Image.network(
-              'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?q=80&w=1600',
+            child: CachedNetworkImage(
+              imageUrl: hotel.imageUrl,
               height: 250,
               width: double.infinity,
               fit: BoxFit.cover,
@@ -115,29 +120,27 @@ class _BookingPageState extends State<BookingPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'swagruha hotel',
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF2C3E50)),
+                Text(
+                  hotel.name,
+                  style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
                 ),
                 const SizedBox(height: 4),
                 Row(
                   children: [
-                    Icon(LucideIcons.mapPin, size: 14, color: Colors.blue.withOpacity(0.7)),
+                    Icon(LucideIcons.mapPin, size: 14, color: AppTheme.primaryColor.withOpacity(0.6)),
                     const SizedBox(width: 4),
                     Text(
-                      'guntur',
-                      style: TextStyle(color: Colors.blue.withOpacity(0.7), fontSize: 14),
+                      hotel.location,
+                      style: TextStyle(color: AppTheme.primaryColor.withOpacity(0.6), fontSize: 14),
                     ),
                   ],
                 ),
                 const SizedBox(height: 24),
-                const Divider(color: Color(0xFFEEEEEE)),
+                const Divider(color: AppTheme.mutedColor),
                 const SizedBox(height: 24),
                 
-                // Responsive Row/Column for Details
                 LayoutBuilder(
                   builder: (context, constraints) {
-                    final bool isWide = constraints.maxWidth > 600;
                     return Wrap(
                       spacing: 32,
                       runSpacing: 24,
@@ -146,35 +149,25 @@ class _BookingPageState extends State<BookingPage> {
                         _buildSection(
                           'DATES',
                           Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              _buildDateInput(checkInDate, true),
+                              _buildDateInput(provider.checkIn, true),
                               const SizedBox(height: 8),
-                              _buildDateInput(checkOutDate, false),
+                              _buildDateInput(provider.checkOut, false),
                             ],
                           ),
                         ),
                         _buildSection(
                           'DURATION',
                           Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              _buildCounterRow(LucideIcons.moon, '$nights nights', () {
-                                if (nights > 1) {
-                                  setState(() {
-                                    nights--;
-                                    checkOutDate = checkInDate.add(Duration(days: nights));
-                                  });
-                                }
-                              }, () {
-                                setState(() {
-                                  nights++;
-                                  checkOutDate = checkInDate.add(Duration(days: nights));
-                                });
-                              }),
+                              _buildCounterRow(LucideIcons.moon, '${provider.nights} nights', null, null, isReadOnly: true),
                               const SizedBox(height: 12),
-                              _buildCounterRow(LucideIcons.users, '$guests guests', () {
-                                if (guests > 1) setState(() => guests--);
+                              _buildCounterRow(LucideIcons.users, '${provider.guests} guests', () {
+                                if (provider.guests > 1) provider.updateGuests(provider.guests - 1);
                               }, () {
-                                setState(() => guests++);
+                                provider.updateGuests(provider.guests + 1);
                               }),
                             ],
                           ),
@@ -185,27 +178,26 @@ class _BookingPageState extends State<BookingPage> {
                 ),
                 
                 const SizedBox(height: 32),
-                const Divider(color: Color(0xFFEEEEEE)),
+                const Divider(color: AppTheme.mutedColor),
                 const SizedBox(height: 24),
                 
-                // Footer: Price and Continue
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Subtotal ($nights nights)', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                        Text('Subtotal (${provider.nights} nights)', style: const TextStyle(fontSize: 12, color: Colors.grey)),
                         Text(
-                          '\$${NumberFormat("#,###").format(pricePerNight * nights)}',
-                          style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Color(0xFF2C3E50)),
+                          '\$${NumberFormat("#,###").format(provider.subtotal)}',
+                          style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
                         ),
                       ],
                     ),
                     ElevatedButton(
                       onPressed: () => context.push('/guest-details'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF34495E),
+                        backgroundColor: AppTheme.primaryColor,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -234,11 +226,11 @@ class _BookingPageState extends State<BookingPage> {
       children: [
         Row(
           children: [
-            Icon(_getIconForLabel(label), size: 14, color: Colors.grey),
+            Icon(_getIconForLabel(label), size: 14, color: AppTheme.primaryColor.withOpacity(0.4)),
             const SizedBox(width: 8),
             Text(
               label,
-              style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 1),
+              style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.primaryColor.withOpacity(0.4), letterSpacing: 1),
             ),
           ],
         ),
@@ -263,32 +255,33 @@ class _BookingPageState extends State<BookingPage> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          border: Border.all(color: const Color(0xFFEEEEEE)),
+          border: Border.all(color: AppTheme.mutedColor),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(DateFormat('dd - MM - yyyy').format(date), style: const TextStyle(fontSize: 13, color: Colors.black87)),
+            Text(DateFormat('dd - MM - yyyy').format(date), style: const TextStyle(fontSize: 13, color: AppTheme.primaryColor)),
             const SizedBox(width: 12),
-            const Icon(LucideIcons.calendar, size: 14, color: Colors.grey),
+            Icon(LucideIcons.calendar, size: 14, color: AppTheme.primaryColor.withOpacity(0.4)),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildCounterRow(IconData icon, String text, VoidCallback onMinus, VoidCallback onPlus) {
+  Widget _buildCounterRow(IconData icon, String text, VoidCallback? onMinus, VoidCallback? onPlus, {bool isReadOnly = false}) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        _buildCounterBtn(LucideIcons.minus, onMinus),
+        if (!isReadOnly) _buildCounterBtn(LucideIcons.minus, onMinus!),
+        if (isReadOnly) Icon(icon, size: 14, color: AppTheme.primaryColor.withOpacity(0.4)),
         const SizedBox(width: 12),
         SizedBox(
           width: 70,
-          child: Text(text, style: const TextStyle(fontSize: 14, color: Colors.black87)),
+          child: Text(text, style: const TextStyle(fontSize: 14, color: AppTheme.primaryColor)),
         ),
-        _buildCounterBtn(LucideIcons.plus, onPlus),
+        if (!isReadOnly) _buildCounterBtn(LucideIcons.plus, onPlus!),
       ],
     );
   }
@@ -299,14 +292,13 @@ class _BookingPageState extends State<BookingPage> {
       child: Container(
         padding: const EdgeInsets.all(4),
         decoration: BoxDecoration(
-          border: Border.all(color: const Color(0xFFEEEEEE)),
+          border: Border.all(color: AppTheme.mutedColor),
           shape: BoxShape.circle,
         ),
-        child: Icon(icon, size: 12, color: Colors.grey),
+        child: Icon(icon, size: 12, color: AppTheme.primaryColor.withOpacity(0.4)),
       ),
     );
   }
 
-  TextStyle _valueStyle() => const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF2C3E50));
+  TextStyle _valueStyle() => const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.primaryColor);
 }
-

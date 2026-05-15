@@ -274,7 +274,10 @@ class RoomCard extends StatelessWidget {
                 ],
               ),
               ElevatedButton(
-                onPressed: () => context.push('/booking'),
+                onPressed: () {
+                  context.read<BookingProvider>().startBooking(hotel);
+                  context.push('/booking');
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.accentColor,
                   foregroundColor: AppTheme.primaryColor,
