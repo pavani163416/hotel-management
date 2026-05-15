@@ -17,8 +17,6 @@ class HotelsPage extends StatefulWidget {
 }
 
 class _HotelsPageState extends State<HotelsPage> {
-  final _searchController = TextEditingController();
-
   @override
   void initState() {
     super.initState();
@@ -38,15 +36,15 @@ class _HotelsPageState extends State<HotelsPage> {
               Expanded(
                 child: SingleChildScrollView(
                   child: Padding(
-                    padding: const EdgeInsets.all(32),
+                    padding: EdgeInsets.all(isWide ? 32 : 16),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildTopDeals(context),
-                        const SizedBox(height: 48),
-                        _buildMainListHeader(context),
+                        _buildTopDeals(context, isWide),
+                        const SizedBox(height: 32),
+                        _buildMainListHeader(context, isWide),
                         const SizedBox(height: 24),
-                        _buildMainList(context),
+                        _buildMainList(context, isWide),
                         const SizedBox(height: 100),
                       ],
                     ),
@@ -123,7 +121,7 @@ class _HotelsPageState extends State<HotelsPage> {
                 children: [
                   Icon(LucideIcons.maximize2, size: 12, color: AppTheme.primaryColor),
                   SizedBox(width: 8),
-                  Text('Explore Map', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+                  const Text('Explore Map', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
                 ],
               ),
             ),
@@ -234,12 +232,12 @@ class _HotelsPageState extends State<HotelsPage> {
     );
   }
 
-  Widget _buildTopDeals(BuildContext context) {
+  Widget _buildTopDeals(BuildContext context, bool isWide) {
     final provider = context.watch<HotelProvider>();
     final deals = provider.allHotels.take(3).toList();
     
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.all(isWide ? 24 : 16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
@@ -264,7 +262,7 @@ class _HotelsPageState extends State<HotelsPage> {
                   const Text('Limited-time premium offers', style: TextStyle(fontSize: 11, color: Colors.grey)),
                 ],
               ),
-              Row(
+              if (isWide) Row(
                 children: [
                   _buildNavBtn(LucideIcons.chevronLeft, () {}),
                   const SizedBox(width: 8),
@@ -300,7 +298,7 @@ class _HotelsPageState extends State<HotelsPage> {
   Widget _buildDealCard(BuildContext context, HotelEntity hotel) {
     return Container(
       width: 250,
-      margin: const EdgeInsets.only(right: 24),
+      margin: const EdgeInsets.only(right: 20),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppTheme.mutedColor),
@@ -312,21 +310,21 @@ class _HotelsPageState extends State<HotelsPage> {
             children: [
               ClipRRect(
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                child: CachedNetworkImage(imageUrl: hotel.imageUrl, height: 150, width: double.infinity, fit: BoxFit.cover),
+                child: CachedNetworkImage(imageUrl: hotel.imageUrl, height: 140, width: double.infinity, fit: BoxFit.cover),
               ),
               Positioned(top: 10, left: 10, child: _buildBadge('TOP DEAL', const Color(0xFFF7FAFC))),
               Positioned(top: 10, right: 10, child: _buildBadge('-20%', Colors.black.withOpacity(0.5), textColor: Colors.white)),
             ],
           ),
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Expanded(child: Text(hotel.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14))),
+                    Expanded(child: Text(hotel.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13), maxLines: 1, overflow: TextOverflow.ellipsis)),
                     Row(children: [const Icon(LucideIcons.star, size: 10, color: Colors.orange, fill: 1), const SizedBox(width: 4), Text(hotel.rating.toString(), style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold))]),
                   ],
                 ),
@@ -338,8 +336,8 @@ class _HotelsPageState extends State<HotelsPage> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                         Text('\$${(hotel.pricePerNight * 1.2).toInt()}', style: const TextStyle(fontSize: 10, color: Colors.grey, decoration: TextDecoration.lineThrough)),
-                         Text('\$${hotel.pricePerNight.toInt()}/night', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+                         Text('\$${(hotel.pricePerNight * 1.2).toInt()}', style: const TextStyle(fontSize: 9, color: Colors.grey, decoration: TextDecoration.lineThrough)),
+                         Text('\$${hotel.pricePerNight.toInt()}/night', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
                       ],
                     ),
                     ElevatedButton(
@@ -347,11 +345,11 @@ class _HotelsPageState extends State<HotelsPage> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFE5E0D8),
                         foregroundColor: AppTheme.primaryColor,
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                         elevation: 0,
                       ),
-                      child: const Text('Book Now', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                      child: const Text('Book', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
                     ),
                   ],
                 ),
@@ -371,62 +369,89 @@ class _HotelsPageState extends State<HotelsPage> {
     );
   }
 
-  Widget _buildMainListHeader(BuildContext context) {
+  Widget _buildMainListHeader(BuildContext context, bool isWide) {
     final provider = context.watch<HotelProvider>();
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('All Premium Stays', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppTheme.primaryColor, fontFamily: 'Serif')),
-            Text('Showing ${provider.hotels.length} curated properties', style: const TextStyle(fontSize: 12, color: Colors.grey)),
-          ],
-        ),
         Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            _buildIconBtn(LucideIcons.list, true),
-            const SizedBox(width: 8),
-            _buildIconBtn(LucideIcons.layoutGrid, false),
-            const SizedBox(width: 16),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(border: Border.all(color: AppTheme.mutedColor), borderRadius: BorderRadius.circular(8)),
-              child: const Row(
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Top Rated', style: TextStyle(fontSize: 12, color: AppTheme.primaryColor)),
-                  SizedBox(width: 8),
-                  Icon(LucideIcons.chevronDown, size: 14),
+                  const Text('All Premium Stays', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppTheme.primaryColor, fontFamily: 'Serif')),
+                  Text('Showing ${provider.hotels.length} curated properties', style: const TextStyle(fontSize: 11, color: Colors.grey)),
                 ],
               ),
             ),
+            if (isWide) Row(
+              children: [
+                _buildIconBtn(LucideIcons.list, true),
+                const SizedBox(width: 8),
+                _buildIconBtn(LucideIcons.layoutGrid, false),
+                const SizedBox(width: 16),
+                _buildSortDropdown(),
+              ],
+            ),
           ],
         ),
+        if (!isWide) ...[
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(child: _buildSortDropdown()),
+              const SizedBox(width: 12),
+              _buildIconBtn(LucideIcons.slidersHorizontal, false, onTap: () => _showMobileFilters(context)),
+            ],
+          ),
+        ],
       ],
     );
   }
 
-  Widget _buildIconBtn(IconData icon, bool active) {
+  Widget _buildSortDropdown() {
     return Container(
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: active ? AppTheme.primaryColor : Colors.white,
-        border: Border.all(color: active ? AppTheme.primaryColor : AppTheme.mutedColor),
-        borderRadius: BorderRadius.circular(8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(border: Border.all(color: AppTheme.mutedColor), borderRadius: BorderRadius.circular(8)),
+      child: const Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text('Top Rated', style: TextStyle(fontSize: 12, color: AppTheme.primaryColor)),
+          SizedBox(width: 8),
+          Icon(LucideIcons.chevronDown, size: 14),
+        ],
       ),
-      child: Icon(icon, size: 16, color: active ? Colors.white : AppTheme.primaryColor),
     );
   }
 
-  Widget _buildMainList(BuildContext context) {
+  Widget _buildIconBtn(IconData icon, bool active, {VoidCallback? onTap}) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: active ? AppTheme.primaryColor : Colors.white,
+          border: Border.all(color: active ? AppTheme.primaryColor : AppTheme.mutedColor),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(icon, size: 16, color: active ? Colors.white : AppTheme.primaryColor),
+      ),
+    );
+  }
+
+  Widget _buildMainList(BuildContext context, bool isWide) {
     final provider = context.watch<HotelProvider>();
     if (provider.isLoading) return const Center(child: CircularProgressIndicator());
     return Column(
-      children: provider.hotels.map((hotel) => _buildHotelCard(context, hotel)).toList(),
+      children: provider.hotels.map((hotel) => _buildHotelCard(context, hotel, isWide)).toList(),
     );
   }
 
-  Widget _buildHotelCard(BuildContext context, HotelEntity hotel) {
+  Widget _buildHotelCard(BuildContext context, HotelEntity hotel, bool isWide) {
+    if (!isWide) return _buildMobileHotelCard(context, hotel);
+
     return Container(
       margin: const EdgeInsets.only(bottom: 24),
       decoration: BoxDecoration(
@@ -522,11 +547,140 @@ class _HotelsPageState extends State<HotelsPage> {
     );
   }
 
+  Widget _buildMobileHotelCard(BuildContext context, HotelEntity hotel) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppTheme.mutedColor),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => context.push('/hotel/${hotel.id}'),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Stack(
+              children: [
+                CachedNetworkImage(imageUrl: hotel.imageUrl, height: 200, width: double.infinity, fit: BoxFit.cover),
+                Positioned(top: 12, left: 12, child: _buildBadge('TOP DEAL', Colors.white.withOpacity(0.9))),
+              ],
+            ),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(child: Text(hotel.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.primaryColor), maxLines: 1, overflow: TextOverflow.ellipsis)),
+                      Row(
+                        children: [
+                          const Icon(LucideIcons.star, size: 12, color: Colors.orange, fill: 1),
+                          const SizedBox(width: 4),
+                          Text(hotel.rating.toString(), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Icon(LucideIcons.mapPin, size: 10, color: Colors.grey[400]),
+                      const SizedBox(width: 4),
+                      Text(hotel.location, style: TextStyle(fontSize: 11, color: Colors.grey[400])),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Starting from', style: TextStyle(fontSize: 9, color: Colors.grey)),
+                          Text('\$${hotel.pricePerNight.toInt()}', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+                          const Text('per night', style: TextStyle(fontSize: 9, color: Colors.grey)),
+                        ],
+                      ),
+                      ElevatedButton(
+                        onPressed: () => context.push('/hotel/${hotel.id}'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFE5E0D8),
+                          foregroundColor: AppTheme.primaryColor,
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          elevation: 0,
+                        ),
+                        child: const Text('View Details', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildAmenityChip(String text) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(color: const Color(0xFFF7FAFC), borderRadius: BorderRadius.circular(6), border: Border.all(color: AppTheme.mutedColor)),
       child: Text(text, style: const TextStyle(fontSize: 10, color: AppTheme.primaryColor, fontWeight: FontWeight.w500)),
+    );
+  }
+
+  void _showMobileFilters(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.9,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        expand: false,
+        builder: (context, scrollController) => SingleChildScrollView(
+          controller: scrollController,
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Filters', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+                  IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(LucideIcons.x)),
+                ],
+              ),
+              const SizedBox(height: 24),
+              _buildPriceFilter(context.read<HotelProvider>()),
+              const SizedBox(height: 32),
+              _buildPropertyTypeFilter(context.read<HotelProvider>()),
+              const SizedBox(height: 32),
+              _buildRatingFilter(context.read<HotelProvider>()),
+              const SizedBox(height: 32),
+              _buildAmenitiesFilter(context.read<HotelProvider>()),
+              const SizedBox(height: 40),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 18)),
+                  child: const Text('Apply Filters'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

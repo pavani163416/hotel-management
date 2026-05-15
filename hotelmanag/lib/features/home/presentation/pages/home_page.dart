@@ -183,7 +183,7 @@ class _HomePageState extends State<HomePage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Hero(
-                      tag: 'hotel_image_${item.id}',
+                      tag: 'hotel_image_fav_${item.id}',
                       child: ClipRRect(
                         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
                         child: CachedNetworkImage(
@@ -617,7 +617,7 @@ class _HomePageState extends State<HomePage> {
                     child: Row(
                       children: [
                         Hero(
-                          tag: 'hotel_image_${item.id}',
+                          tag: 'hotel_image_rec_${item.id}',
                           child: ClipRRect(
                             borderRadius: const BorderRadius.horizontal(left: Radius.circular(20)),
                             child: CachedNetworkImage(
