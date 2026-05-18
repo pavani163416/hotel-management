@@ -19,7 +19,6 @@ const TABS = [
   { id: "floor-map",    label: "Floor Map",    icon: Map,             path: "/m/floor-map" },
   { id: "bookings",     label: "Bookings",     icon: CalendarCheck,   path: "/m/bookings" },
   { id: "rooms",        label: "Rooms",        icon: BedDouble,       path: "/m/rooms" },
-  { id: "housekeeping", label: "Housekeeping", icon: Sparkles,        path: "/m/housekeeping" },
   { id: "financials",   label: "Financials",   icon: DollarSign,      path: "/m/financials" },
   { id: "hotels",       label: "Hotels",       icon: BarChart2,       path: "/m/hotels-overview" },
   { id: "halls",        label: "Halls",        icon: Presentation,    path: "/m/halls" },

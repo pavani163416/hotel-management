@@ -32,16 +32,11 @@ import MDashboard     from "@/pages/manager/MDashboard";
 import MFloorMap      from "@/pages/manager/MFloorMap";
 import MBookings      from "@/pages/manager/MBookings";
 import MRooms         from "@/pages/manager/MRooms";
-import MHousekeeping  from "@/pages/manager/MHousekeeping";
 import MFinancials    from "@/pages/manager/MFinancials";
 import MHotelsOverview from "@/pages/manager/MHotelsOverview";
 import MHalls         from "@/pages/manager/MHalls";
 import MPricing       from "@/pages/manager/MPricing";
 import MProfile       from "@/pages/manager/MProfile";
-
-// ── Staff pages ───────────────────────────────────────────
-import StaffLogin     from "@/pages/staff/StaffLogin";
-import StaffDashboard from "@/pages/staff/StaffDashboard";
 
 export default function App() {
   return (
@@ -56,10 +51,6 @@ export default function App() {
                     {/* ── Public ── */}
                     <Route path="/login" element={<Login />} />
                     <Route path="/reset-password" element={<ResetPassword />} />
-                    
-                    {/* ── Staff routes (Mobile First) ── */}
-                    <Route path="/staff/login" element={<StaffLogin />} />
-                    <Route path="/staff/dashboard" element={<StaffDashboard />} />
                     
                     <Route path="/"      element={<Navigate to="/dashboard" replace />} />
 
@@ -86,7 +77,6 @@ export default function App() {
                     <Route path="/m/floor-map"       element={<ProtectedRoute><MFloorMap /></ProtectedRoute>} />
                     <Route path="/m/bookings"        element={<ProtectedRoute><MBookings /></ProtectedRoute>} />
                     <Route path="/m/rooms"           element={<ProtectedRoute><MRooms /></ProtectedRoute>} />
-                    <Route path="/m/housekeeping"    element={<ProtectedRoute><MHousekeeping /></ProtectedRoute>} />
                     <Route path="/m/financials"      element={<ProtectedRoute><MFinancials /></ProtectedRoute>} />
                     <Route path="/m/hotels-overview" element={<ProtectedRoute><MHotelsOverview /></ProtectedRoute>} />
                     <Route path="/m/halls"           element={<ProtectedRoute><MHalls /></ProtectedRoute>} />
