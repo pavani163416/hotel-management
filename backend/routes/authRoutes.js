@@ -31,6 +31,64 @@ const getSecret  = () => {
 };
 const JWT_EXPIRES = "7d";
 
+const twilioAuthHeaders = () => {
+  const sid = process.env.TWILIO_ACCOUNT_SID;
+  const token = process.env.TWILIO_AUTH_TOKEN;
+  const serviceSid = process.env.TWILIO_VERIFY_SERVICE_SID;
+  if (!sid || !token || !serviceSid) {
+    throw new Error("Twilio verification is not configured.");
+  }
+  return {
+    auth: `Basic ${Buffer.from(`${sid}:${token}`).toString("base64")}`,
+    serviceSid,
+  };
+};
+
+const normalizePhoneNumber = (phone) => {
+  if (!phone) return "";
+  const normalized = phone.trim().replace(/[\s()\-]/g, "");
+  if (!normalized.startsWith("+")) {
+    throw new Error("Phone number must include a country code and start with +.");
+  }
+  return normalized;
+};
+
+const sendTwilioVerification = async (normalizedPhone) => {
+  const { auth, serviceSid } = twilioAuthHeaders();
+  const body = new URLSearchParams({ To: normalizedPhone, Channel: "sms" }).toString();
+  const response = await fetch(`https://verify.twilio.com/v2/Services/${serviceSid}/Verifications`, {
+    method: "POST",
+    headers: {
+      Authorization: auth,
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body,
+  });
+  const data = await response.json();
+  if (!response.ok || data.status !== "pending") {
+    throw new Error(data.message || "Unable to send OTP. Please try again.");
+  }
+  return data;
+};
+
+const verifyTwilioCode = async (normalizedPhone, code) => {
+  const { auth, serviceSid } = twilioAuthHeaders();
+  const body = new URLSearchParams({ To: normalizedPhone, Code: code }).toString();
+  const response = await fetch(`https://verify.twilio.com/v2/Services/${serviceSid}/VerificationCheck`, {
+    method: "POST",
+    headers: {
+      Authorization: auth,
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body,
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.message || "Unable to verify OTP.");
+  }
+  return data;
+};
+
 // ── Middleware: verify customer JWT ──────────────────────
 export const verifyCustomerToken = (req, res, next) => {
   const header = req.headers.authorization;
@@ -207,6 +265,100 @@ router.post("/login", authLimiter, async (req, res, next) => {
       },
     });
   } catch (err) { next(err); }
+});
+
+router.post("/phone/send", authLimiter, async (req, res, next) => {
+  try {
+    const phone = req.body.phone?.trim();
+    if (!phone) {
+      return res.status(400).json({ success: false, message: "Phone number is required." });
+    }
+
+    const normalizedPhone = normalizePhoneNumber(phone);
+    await sendTwilioVerification(normalizedPhone);
+    return res.status(200).json({ success: true, message: "OTP sent successfully." });
+  } catch (err) {
+    logger.error(err.message, "Phone OTP send failed");
+    const status = err.message?.includes("country code") ? 400 : 500;
+    return res.status(status).json({ success: false, message: err.message || "Unable to send OTP." });
+  }
+});
+
+router.post("/phone/verify", authLimiter, async (req, res, next) => {
+  try {
+    const phone = req.body.phone?.trim();
+    const code = req.body.code?.trim();
+    if (!phone || !code) {
+      return res.status(400).json({ success: false, message: "Phone and OTP code are required." });
+    }
+
+    const normalizedPhone = normalizePhoneNumber(phone);
+    const verification = await verifyTwilioCode(normalizedPhone, code);
+    if (verification.status !== "approved") {
+      return res.status(401).json({ success: false, message: "OTP verification failed." });
+    }
+
+    let user = await User.findOne({ phone: normalizedPhone }).select("+passwordHash");
+    if (!user) {
+      const safePhone = normalizedPhone.replace(/\D/g, "") || "unknown";
+      const generatedEmail = `${safePhone || "no-phone"}@phone.luxe`;
+      const generatedName = `Guest ${safePhone.slice(-4) || safePhone}`;
+      const passwordHash = await bcrypt.hash(Math.random().toString(36) + Date.now(), 12);
+
+      user = await User.create({
+        name: generatedName,
+        email: generatedEmail,
+        passwordHash,
+        phone: normalizedPhone,
+      });
+
+      const guest = await Guest.create({
+        name: generatedName,
+        email: generatedEmail,
+        phone: normalizedPhone,
+      });
+      user.guestId = guest._id;
+      await user.save();
+    }
+
+    if (!user.guestId) {
+      let guest = await Guest.findOne({ phone: normalizedPhone });
+      if (!guest) {
+        guest = await Guest.create({
+          name: user.name,
+          email: user.email,
+          phone: user.phone,
+        });
+      }
+      user.guestId = guest._id;
+      await user.save();
+    }
+
+    const token = jwt.sign(
+      { id: user._id, guestId: user.guestId, email: user.email, name: user.name, role: "customer" },
+      getSecret(),
+      { expiresIn: JWT_EXPIRES }
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Phone verification successful.",
+      data: {
+        id:    user._id,
+        name:  user.name,
+        email: user.email,
+        phone: user.phone,
+        city:  user.city,
+        profileImage: user.profileImage,
+        coverImage:   user.coverImage,
+        paymentMethods: user.paymentMethods,
+        token,
+      },
+    });
+  } catch (err) {
+    logger.error(err.message, "Phone OTP verify failed");
+    return res.status(500).json({ success: false, message: err.message || "Unable to verify OTP." });
+  }
 });
 
 // ── POST /api/auth/google ──────────────────────────────────

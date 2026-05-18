@@ -20,11 +20,15 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
   const [name, setName]         = useState("");
   const [phone, setPhone]       = useState("");
   const [city, setCity]         = useState("");
+  const [otpSent, setOtpSent] = useState(false);
+  const [verificationCode, setVerificationCode] = useState("");
+  const [otpMessage, setOtpMessage] = useState("");
 
   useEffect(() => { if (isOpen) { setMode(defaultMode); setError(""); } }, [isOpen, defaultMode]);
 
   const resetForm = () => {
     setEmail(""); setPassword(""); setName(""); setPhone(""); setCity(""); setError("");
+    setOtpSent(false); setVerificationCode(""); setOtpMessage("");
   };
 
   const handleOpenChange = (open: boolean) => { if (!open) { onClose(); resetForm(); } };
@@ -70,6 +74,42 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
     onClose(); resetForm();
   };
 
+  const handleSendPhoneOTP = async () => {
+    if (!phone?.trim()) {
+      setError("Please enter a valid phone number.");
+      return;
+    }
+    setError(""); setLoading(true);
+    try {
+      await api.post("/auth/phone/send", { phone: phone.trim() });
+      setOtpSent(true);
+      setOtpMessage("OTP sent. Please check your phone and enter the code below.");
+    } catch (err: any) {
+      setError(err.response?.data?.message || err.message || "Unable to send OTP.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyPhoneOTP = async () => {
+    if (!phone?.trim() || !verificationCode?.trim()) {
+      setError("Phone number and OTP code are required.");
+      return;
+    }
+    setError(""); setLoading(true);
+    try {
+      const res: any = await api.post("/auth/phone/verify", {
+        phone: phone.trim(),
+        code: verificationCode.trim(),
+      });
+      finishAuth(res.data?.data ?? res.data);
+    } catch (err: any) {
+      setError(err.response?.data?.message || err.message || "OTP verification failed.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const loadGoogleScript = () =>
     new Promise<void>((resolve, reject) => {
       if ((window as any).google?.accounts?.id) return resolve();
@@ -82,8 +122,9 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
       document.head.appendChild(script);
     });
 
+  const GOOGLE_CLIENT_ID_FALLBACK = "70312411330-jo6eo462a26qo7gcici4nr1csaoa8v0q.apps.googleusercontent.com";
   const handleGoogleLogin = async () => {
-    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID_FALLBACK;
     if (!clientId) {
       setError("Google sign-in is not configured yet.");
       return;
@@ -134,7 +175,7 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
           </svg>
           Continue with Google
         </button>
-        <button type="button" onClick={() => { setMode("phone"); setError(""); }}
+        <button type="button" onClick={() => { setMode("phone"); setError(""); setOtpSent(false); setVerificationCode(""); setOtpMessage(""); }}
           className="w-full bg-card hover:bg-secondary text-primary border border-border py-3 rounded-xl font-semibold flex items-center justify-center gap-3 transition-base">
           <Smartphone className="w-5 h-5" />
           Continue with Phone Number
@@ -232,13 +273,20 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
                 className="w-full px-4 py-2 border border-border rounded-lg outline-none focus:border-accent"
                 placeholder="+1 555 000 0000" autoComplete="tel" />
             </div>
-            <p className="text-sm text-muted-foreground">
-              Phone number sign-in needs OTP service configuration. Use email/password or Google for now.
-            </p>
+            {otpSent && (
+              <div className="space-y-2">
+                <label className="block text-sm font-medium">OTP Code</label>
+                <input type="text" value={verificationCode} onChange={e => setVerificationCode(e.target.value)}
+                  className="w-full px-4 py-2 border border-border rounded-lg outline-none focus:border-accent"
+                  placeholder="Enter OTP" autoComplete="one-time-code" />
+              </div>
+            )}
+            {otpMessage && <p className="text-sm text-foreground">{otpMessage}</p>}
             {error && <p className="text-destructive text-sm font-medium">{error}</p>}
-            <button type="button" onClick={() => { setMode("signup"); setError(""); }}
+            <button type="button" onClick={otpSent ? handleVerifyPhoneOTP : handleSendPhoneOTP}
+              disabled={loading}
               className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-3 rounded-xl font-semibold transition-base">
-              Continue to Create Account
+              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : otpSent ? "Verify OTP" : "Send OTP"}
             </button>
             <p className="text-center text-sm text-muted-foreground mt-4">
               Prefer email?{" "}
