@@ -27,6 +27,8 @@ export const createBooking = async (req, res, next) => {
   try {
     const {
       roomId,
+      roomNumber,
+      roomTypeId,
       guest: guestData,
       checkIn,
       checkOut,
@@ -44,12 +46,22 @@ export const createBooking = async (req, res, next) => {
 
     // ── 1. Validate room availability ──────────────────
     let room = null;
-    logger.debug(`Booking lookup: roomId="${roomId}", price=${pricePerNight}`);
+    logger.debug(`Booking lookup: roomId="${roomId}", roomNumber="${roomNumber}", roomTypeId="${roomTypeId}", price=${pricePerNight}`);
 
     if (mongoose.Types.ObjectId.isValid(roomId)) {
       room = await Room.findById(roomId).session(session);
-    } else {
+    }
+
+    if (!room && roomNumber) {
+      room = await Room.findOne({ roomNumber: String(roomNumber).trim(), isActive: true }).session(session);
+    }
+
+    if (!room && roomId) {
       room = await Room.findOne({ roomNumber: roomId, isActive: true }).session(session);
+    }
+
+    if (!room && roomTypeId && roomTypeId !== roomId) {
+      room = await Room.findOne({ roomNumber: roomTypeId, isActive: true }).session(session);
     }
 
     // Last resort: match by price

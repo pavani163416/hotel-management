@@ -10,13 +10,17 @@ const Review = () => {
   const { selectedHotel, selectedRoom, search, guest, promo, applyPromo, user } = useBooking();
   const [code, setCode] = useState("");
   const [msg, setMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
-  const [availableCodes, setAvailableCodes] = useState<string[]>(["LUXE10", "WELCOME15", "VIP20"]);
+  const [availableCodes, setAvailableCodes] = useState<string[] | null>(null);
 
   useEffect(() => { if (!selectedHotel || !selectedRoom || !guest) nav("/hotels"); }, [selectedHotel, selectedRoom, guest, nav]);
 
   // Fetch which promo codes are valid for this user
   useEffect(() => {
-    if (!user?.email) return;
+    if (!user?.email) {
+      setAvailableCodes([]);
+      return;
+    }
+    setAvailableCodes(null);
     const base = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
     // Check each code to see if it's valid for this user
     Promise.all([
@@ -120,7 +124,7 @@ const Review = () => {
               <div className="flex gap-2 mt-2">
                 <input value={code} onChange={(e) => setCode(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && apply()}
-                  placeholder={availableCodes[0] || "Enter code"}
+                  placeholder={availableCodes === null ? "Checking promo codes..." : availableCodes[0] || "Enter code"}
                   className="flex-1 px-3 py-2 border border-border rounded-lg outline-none focus:ring-2 focus:ring-primary focus:border-primary text-sm" />
                 <button type="button" onClick={apply} className="bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-lg text-sm font-semibold transition-base">Apply</button>
               </div>
@@ -129,7 +133,9 @@ const Review = () => {
                   {msg.type === "ok" && <Check className="w-3 h-3" />} {msg.text}
                 </p>
               )}
-              {availableCodes.length > 0 ? (
+              {availableCodes === null ? (
+                <p className="text-[11px] text-muted-foreground mt-2">Checking promo codes for your account...</p>
+              ) : availableCodes.length > 0 ? (
                 <div className="mt-2 flex flex-wrap gap-1.5">
                   {availableCodes.map((c) => (
                     <button key={c} type="button"

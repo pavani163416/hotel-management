@@ -61,7 +61,18 @@ function getCachedHotels(): Hotel[] {
   try {
     const raw = localStorage.getItem(HOTEL_CACHE_KEY);
     const parsed = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed) ? parsed : [];
+    if (!Array.isArray(parsed)) return [];
+
+    // Clear stale demo/local hotel cache to avoid showing outdated dummy data
+    const isDemoCache = parsed.some((hotel: any) =>
+      Array.isArray(hotel.rooms) && hotel.rooms.some((room: any) => /^r\d+$/.test(String(room.id)))
+    );
+    if (isDemoCache) {
+      localStorage.removeItem(HOTEL_CACHE_KEY);
+      return [];
+    }
+
+    return parsed;
   } catch {
     return [];
   }

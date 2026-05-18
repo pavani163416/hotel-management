@@ -85,6 +85,7 @@ const Payment = () => {
       try {
         const response = await createBooking({
           roomId:         selectedRoom.id,
+          roomNumber:     selectedRoom.id,
           roomTypeId:     selectedRoom.id,
           guest:          { name: guest.name, email: user?.email || guest.email, phone: guest.phone, city: "" },
           checkIn:        search.checkIn,
@@ -99,6 +100,7 @@ const Payment = () => {
           specialRequests: guest.specialRequests || "",
           additionalAdults:   guest.adults || [],
           additionalChildren: guest.children?.map((c) => ({ name: c.name, age: c.age })) || [],
+          hotelName:      selectedHotel.name,
         });
         mongoBookingId = response.data._id;
         setSavedToDb(true);
