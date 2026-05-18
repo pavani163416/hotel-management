@@ -31,7 +31,13 @@ function esc(s) {
     return "\\^$.|?*+()[]{}-".indexOf(ch) >= 0 ? "\\" + ch : ch;
   }).join("");
 }
-function hotelNameFilter(n) { return n ? { hotelName: new RegExp(esc(n), "i") } : {}; }
+function hotelScopeFilter(hotelId, hotelName) {
+  const clauses = [];
+  if (hotelId) clauses.push({ hotelStringId: hotelId });
+  if (hotelName) clauses.push({ hotelName: new RegExp(esc(hotelName), "i") });
+  if (clauses.length === 0) return {};
+  return clauses.length === 1 ? clauses[0] : { $or: clauses };
+}
 
 function getHotelPrefix(id, name) {
   if (HOTEL_PREFIXES[id]) return HOTEL_PREFIXES[id];
@@ -94,7 +100,7 @@ export const managerLogin = async (req, res, next) => {
 export const getManagerDashboard = async (req, res, next) => {
   try {
     const { scopedHotelId: hotelId, scopedHotelName: hotelName } = req;
-    const hf = hotelNameFilter(hotelName);
+    const hf = hotelScopeFilter(hotelId, hotelName);
     const rf = { isActive:true, ...roomPrefixFilter(hotelId) };
     const today = new Date(); today.setHours(0,0,0,0);
     const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate()+1);
@@ -207,7 +213,7 @@ export const deleteManagerRoom = async (req, res, next) => {
 export const getManagerBookings = async (req, res, next) => {
   try {
     const { status, guestEmail } = req.query;
-    const filter = { ...hotelNameFilter(req.scopedHotelName) };
+    const filter = { ...hotelScopeFilter(req.scopedHotelId, req.scopedHotelName) };
     if (status) filter.status = status;
     if (guestEmail) {
       const guest = await Guest.findOne({ email: guestEmail });
@@ -315,7 +321,7 @@ export const createWalkInBooking = async (req, res, next) => {
 // ── GET /api/manager/guests ───────────────────────────────
 export const getManagerGuests = async (req, res, next) => {
   try {
-    const hf = hotelNameFilter(req.scopedHotelName);
+    const hf = hotelScopeFilter(req.scopedHotelId, req.scopedHotelName);
     const bookings = await Booking.find(hf).select("guest").lean();
     const guestIds = [...new Set(bookings.map(b => b.guest?.toString()).filter(Boolean))];
     const guests = await Guest.find({ _id:{ $in:guestIds } })
@@ -332,8 +338,8 @@ export const getManagerAdditionalGuests = async (req, res, next) => {
     const filter = {};
     if (email)     filter.leadGuestEmail = email;
     if (bookingId) filter.bookingId      = bookingId;
-    if (req.scopedHotelName && !bookingId) {
-      const ids = (await Booking.find(hotelNameFilter(req.scopedHotelName)).select("_id").lean()).map(b => b._id);
+    if (!bookingId) {
+      const ids = (await Booking.find(hotelScopeFilter(req.scopedHotelId, req.scopedHotelName)).select("_id").lean()).map(b => b._id);
       filter.bookingId = { $in: ids };
     }
     const records = await AdditionalGuest.find(filter).sort({ createdAt:-1 });
