@@ -13,11 +13,16 @@
 import express from "express";
 import bcrypt  from "bcryptjs";
 import jwt     from "jsonwebtoken";
+import crypto  from "crypto";
+import mongoose from "mongoose";
 import User    from "../models/User.js";
 import Guest   from "../models/Guest.js";
 import Booking from "../models/Booking.js";
+import Manager from "../models/Manager.js";
+import connectAdminDB from "../config/adminDb.js";
 import { authLimiter } from "../middleware/rateLimiter.js";
 import logger  from "../utils/logger.js";
+import { sendPasswordResetEmail } from "../utils/emailService.js";
 
 import { OAuth2Client } from "google-auth-library";
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
@@ -42,6 +47,33 @@ const twilioAuthHeaders = () => {
     auth: `Basic ${Buffer.from(`${sid}:${token}`).toString("base64")}`,
     serviceSid,
   };
+};
+
+let AdminUserModel = null;
+const getAdminUserModel = async () => {
+  if (AdminUserModel) return AdminUserModel;
+  const conn = await connectAdminDB();
+  if (!conn) return null;
+
+  const schema = new mongoose.Schema({
+    name:                String,
+    email:               { type: String, lowercase: true, trim: true },
+    password:            String,
+    role:                String,
+    isActive:            Boolean,
+    lastLogin:           Date,
+    resetPasswordToken:   String,
+    resetPasswordExpires: Date,
+  }, { collection: "adminusers" });
+
+  AdminUserModel = conn.models.AdminUser || conn.model("AdminUser", schema);
+  return AdminUserModel;
+};
+
+const createResetToken = () => {
+  const token = crypto.randomBytes(24).toString("hex");
+  const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+  return { token, hashedToken };
 };
 
 const normalizePhoneNumber = (phone) => {
@@ -187,6 +219,100 @@ router.post("/register", authLimiter, async (req, res, next) => {
       },
     });
   } catch (err) { next(err); }
+});
+
+// ── POST /api/auth/forgot-password ─────────────────────────
+router.post("/forgot-password", authLimiter, async (req, res, next) => {
+  try {
+    const email = (req.body.email || "").toLowerCase().trim();
+    if (!email) {
+      return res.status(400).json({ success: false, message: "Email is required." });
+    }
+
+    const adminEmail = process.env.ADMIN_EMAIL?.toLowerCase().trim();
+    const [manager, AdminModel] = await Promise.all([
+      Manager.findOne({ email, isActive: true }),
+      getAdminUserModel(),
+    ]);
+
+    const adminUser = AdminModel ? await AdminModel.findOne({ email, isActive: true }) : null;
+
+    if (manager || adminUser) {
+      const { token, hashedToken } = createResetToken();
+      const expires = new Date(Date.now() + 1000 * 60 * 60);
+      const url = `${process.env.FRONTEND_URL || "http://localhost:5173"}/reset-password?token=${token}&email=${encodeURIComponent(email)}`;
+
+      if (manager) {
+        manager.resetPasswordToken = hashedToken;
+        manager.resetPasswordExpires = expires;
+        await manager.save();
+      }
+      if (adminUser) {
+        adminUser.resetPasswordToken = hashedToken;
+        adminUser.resetPasswordExpires = expires;
+        await adminUser.save();
+      }
+
+      await sendPasswordResetEmail({
+        to: email,
+        name: manager?.name || adminUser?.name || "LuxeStay Admin",
+        resetUrl: url,
+      });
+    } else if (adminEmail === email) {
+      logger.warn("Password reset requested for env admin email; admin account uses env credentials.", { email });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "If an account exists for this email, a password reset link has been sent.",
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ── POST /api/auth/reset-password ────────────────────────
+router.post("/reset-password", authLimiter, async (req, res, next) => {
+  try {
+    const { email, token, password } = req.body;
+    if (!email || !token || !password) {
+      return res.status(400).json({ success: false, message: "Email, token, and new password are required." });
+    }
+    if (password.length < 6) {
+      return res.status(400).json({ success: false, message: "Password must be at least 6 characters." });
+    }
+
+    const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+    const now = new Date();
+
+    const [manager, AdminModel] = await Promise.all([
+      Manager.findOne({ email: email.toLowerCase().trim(), resetPasswordToken: hashedToken, resetPasswordExpires: { $gt: now } }),
+      getAdminUserModel(),
+    ]);
+    const adminUser = AdminModel ? await AdminModel.findOne({ email: email.toLowerCase().trim(), resetPasswordToken: hashedToken, resetPasswordExpires: { $gt: now } }) : null;
+
+    if (!manager && !adminUser) {
+      return res.status(400).json({ success: false, message: "Invalid or expired reset link." });
+    }
+
+    const passwordHash = await bcrypt.hash(password, 12);
+    if (manager) {
+      manager.password = passwordHash;
+      manager.resetPasswordToken = null;
+      manager.resetPasswordExpires = null;
+      await manager.save();
+    }
+    if (adminUser) {
+      adminUser.password = passwordHash;
+      adminUser.resetPasswordToken = null;
+      adminUser.resetPasswordExpires = null;
+      await adminUser.save();
+    }
+
+    return res.status(200).json({ success: true, message: "Password has been reset. Please sign in with your new password." });
+  } catch (error) {
+    next(error);
+  }
 });
 
 // ── POST /api/auth/login ──────────────────────────────────

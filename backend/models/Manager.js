@@ -8,6 +8,8 @@ const managerSchema = new mongoose.Schema(
     role:            { type: String, default: "Manager" },
     isActive:        { type: Boolean, default: true },
     lastLogin:       { type: Date },
+    resetPasswordToken:   { type: String, default: null },
+    resetPasswordExpires: { type: Date, default: null },
     assignedHotelId: { type: String, default: null },
     assignedHotelName: { type: String, default: null },
     hotelObjectId: {

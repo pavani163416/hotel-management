@@ -34,6 +34,12 @@ api.interceptors.response.use(
 export const adminLogin = (email: string, password: string) =>
   api.post("/admin/login", { email, password });
 
+export const requestPasswordReset = (email: string) =>
+  api.post("/auth/forgot-password", { email });
+
+export const resetPassword = (payload: { email: string; token: string; password: string }) =>
+  api.post("/auth/reset-password", payload);
+
 // ════════════════════════════════════════════════════════
 // DASHBOARD STATS
 // GET /api/admin/stats

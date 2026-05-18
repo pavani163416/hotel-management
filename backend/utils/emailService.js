@@ -39,6 +39,79 @@ const resolveRecipient = (to) => {
   return [to];
 };
 
+export const sendPasswordResetEmail = async ({ to, name, resetUrl }) => {
+  if (!process.env.RESEND_API_KEY) {
+    console.log("📧 [Email] RESEND_API_KEY not set — skipping password reset email.");
+    return;
+  }
+
+  console.log(`📧 [Email] Triggering password reset → ${to}`);
+
+  try {
+    const resendClient = getResend();
+    if (!resendClient) return;
+
+    const { data, error } = await resendClient.emails.send({
+      from:    FROM,
+      to:      resolveRecipient(to),
+      subject: `Reset your LuxeStay password`,
+      html: `
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"/></head>
+<body style="margin:0;padding:0;background:#f4f4f0;font-family:'Helvetica Neue',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f0;padding:40px 0;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+        <tr>
+          <td style="background:#1a1f2e;padding:32px 40px;text-align:center;">
+            <h1 style="color:#ffffff;margin:0;font-size:26px;font-weight:700;">LuxeStay</h1>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:32px 40px;text-align:left;color:#374151;">
+            <p style="margin:0 0 16px;font-size:16px;">Hi <strong>${name || "LuxeStay User"}</strong>,</p>
+            <p style="margin:0 0 20px;font-size:14px;color:#6b7280;line-height:1.7;">
+              We received a request to reset your LuxeStay password. Click the button below to choose a new password.
+            </p>
+            <p style="text-align:center;margin:0 0 24px;">
+              <a href="${resetUrl}" target="_blank" rel="noopener noreferrer"
+                style="display:inline-block;padding:14px 28px;background:#c0392b;color:#ffffff;text-decoration:none;border-radius:999px;font-weight:700;">
+                Reset Password
+              </a>
+            </p>
+            <p style="margin:0 0 8px;font-size:14px;color:#6b7280;line-height:1.7;">
+              If the button does not work, copy and paste this link into your browser:
+            </p>
+            <p style="margin:0;font-size:12px;color:#4b5563;word-break:break-all;">${resetUrl}</p>
+            <p style="margin:24px 0 0;font-size:13px;color:#9ca3af;line-height:1.6;">
+              If you did not request a password reset, you can safely ignore this email.
+            </p>
+          </td>
+        </tr>
+        <tr>
+          <td style="background:#f9fafb;border-top:1px solid #e5e7eb;padding:20px 40px;text-align:center;">
+            <p style="margin:0;color:#9ca3af;font-size:12px;">© 2026 LuxeStay Hospitality. All rights reserved.</p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>
+      `,
+    });
+
+    if (error) {
+      console.error("📧 [Email] Resend API error:", error);
+    } else {
+      console.log(`📧 [Email] Password reset sent → ${to} | ID: ${data?.id}`);
+    }
+  } catch (err) {
+    console.error("📧 [Email] Exception sending password reset email:", err.message);
+  }
+};
+
 // ─────────────────────────────────────────────────────────
 // sendBookingConfirmation
 // Called after a successful booking/payment

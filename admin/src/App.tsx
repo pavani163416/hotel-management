@@ -9,6 +9,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 
 // ── Admin pages ───────────────────────────────────────────
 import Login      from "@/pages/Login";
+import ResetPassword from "@/pages/ResetPassword";
 import Dashboard  from "@/pages/Dashboard";
 import Hotels     from "@/pages/Hotels";
 import HotelDetail from "@/pages/HotelDetail";
@@ -50,6 +51,7 @@ export default function App() {
                   <Routes>
                     {/* ── Public ── */}
                     <Route path="/login" element={<Login />} />
+                    <Route path="/reset-password" element={<ResetPassword />} />
                     <Route path="/"      element={<Navigate to="/dashboard" replace />} />
 
                     {/* ── Admin routes (Super Admin / Staff) ── */}

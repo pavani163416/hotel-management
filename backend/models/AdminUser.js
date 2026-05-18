@@ -9,6 +9,8 @@ const adminUserSchema = new mongoose.Schema(
     role:            { type: String, enum: ["Super Admin", "Manager", "Staff"], default: "Staff" },
     isActive:        { type: Boolean, default: true },
     lastLogin:       { type: Date },
+    resetPasswordToken:   { type: String, default: null },
+    resetPasswordExpires: { type: Date, default: null },
 
     // ── Multi-tenant: hotel assignment for Manager role ──
     // assignedHotelId: string key like "h1", "h2" (legacy / seeded)

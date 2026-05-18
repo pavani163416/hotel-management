@@ -12,6 +12,11 @@ export default function Login() {
   const [remember, setRemember] = useState(false);
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState("");
+  const [resetMode, setResetMode] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetMessage, setResetMessage] = useState("");
+  const [resetError, setResetError] = useState("");
+  const [resetLoading, setResetLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,6 +74,37 @@ export default function Login() {
     }
   };
 
+  const handleResetSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setResetError("");
+    setResetMessage("");
+    if (!resetEmail) {
+      setResetError("Please enter your email address.");
+      return;
+    }
+
+    setResetLoading(true);
+    const API = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+
+    try {
+      const res = await fetch(`${API}/auth/forgot-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: resetEmail.trim().toLowerCase() }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setResetMessage("If an account exists for this email, a reset link has been sent.");
+      } else {
+        setResetError(data?.message || "Unable to send password reset email.");
+      }
+    } catch {
+      setResetError("Unable to connect to server. Please try again.");
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
   const inputStyle: React.CSSProperties = {
     background: "rgba(255,255,255,0.04)",
     border: "1px solid rgba(255,255,255,0.1)",
@@ -122,81 +158,138 @@ export default function Login() {
               <p className="text-sm text-dim mt-1 text-center">LuxeStay Multi-Hotel Platform Management</p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Email */}
-              <div>
-                <label className="block text-xs font-semibold text-dim uppercase tracking-wider mb-1.5">
-                  Email Address
+            {resetMode ? (
+              <form onSubmit={handleResetSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold text-dim uppercase tracking-wider mb-1.5">
+                    Email Address
+                  </label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-dim" />
+                    <input type="email" value={resetEmail} onChange={(e) => setResetEmail(e.target.value)}
+                      placeholder="admin@luxestay.com" style={inputStyle}
+                      onFocus={e => { e.currentTarget.style.borderColor = "rgba(212,168,67,0.5)"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(212,168,67,0.1)"; }}
+                      onBlur={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"; e.currentTarget.style.boxShadow = "none"; }}
+                    />
+                  </div>
+                </div>
+
+                {resetError && (
+                  <div className="text-sm px-4 py-2.5 rounded-xl"
+                    style={{ background: "rgba(225,29,72,0.12)", border: "1px solid rgba(225,29,72,0.25)", color: "#e11d48" }}>
+                    {resetError}
+                  </div>
+                )}
+                {resetMessage && (
+                  <div className="text-sm px-4 py-2.5 rounded-xl"
+                    style={{ background: "rgba(16,185,129,0.12)", border: "1px solid rgba(16,185,129,0.25)", color: "#047857" }}>
+                    {resetMessage}
+                  </div>
+                )}
+
+                <button type="submit" disabled={resetLoading}
+                  className="w-full py-3 rounded-xl font-semibold text-sm text-white flex items-center justify-center gap-2 mt-2 transition-all disabled:opacity-70"
+                  style={{
+                    background: "linear-gradient(135deg, #0f766e 0%, #047857 100%)",
+                    boxShadow: "0 4px 16px rgba(6,95,70,0.35)",
+                  }}
+                >
+                  {resetLoading
+                    ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    : "Send reset link"
+                  }
+                </button>
+
+                <button type="button" onClick={() => {
+                    setResetMode(false);
+                    setResetEmail("");
+                    setResetError("");
+                    setResetMessage("");
+                  }}
+                  className="w-full py-3 rounded-xl font-semibold text-sm text-white border border-white/10 mt-2 transition-all"
+                  style={{ background: "rgba(255,255,255,0.04)" }}
+                >
+                  Back to sign in
+                </button>
+              </form>
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {/* Email */}
+                <div>
+                  <label className="block text-xs font-semibold text-dim uppercase tracking-wider mb-1.5">
+                    Email Address
+                  </label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-dim" />
+                    <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
+                      placeholder="admin@luxestay.com" style={inputStyle}
+                      onFocus={e => { e.currentTarget.style.borderColor = "rgba(212,168,67,0.5)"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(212,168,67,0.1)"; }}
+                      onBlur={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"; e.currentTarget.style.boxShadow = "none"; }}
+                    />
+                  </div>
+                </div>
+
+                {/* Password */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-xs font-semibold text-dim uppercase tracking-wider">Password</label>
+                    <button type="button" className="text-xs text-gold transition-colors"
+                      onClick={() => { setResetMode(true); setResetEmail(email); setResetMessage(""); setResetError(""); }}
+                      onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = "#e8c96a"}
+                      onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = "#d4a843"}>
+                      Forgot password?
+                    </button>
+                  </div>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-dim" />
+                    <input type={showPw ? "text" : "password"} value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      style={{ ...inputStyle, paddingRight: "40px" }}
+                      onFocus={e => { e.currentTarget.style.borderColor = "rgba(212,168,67,0.5)"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(212,168,67,0.1)"; }}
+                      onBlur={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"; e.currentTarget.style.boxShadow = "none"; }}
+                    />
+                    <button type="button" onClick={() => setShowPw(!showPw)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-dim transition-colors"
+                      onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = "#94a3b8"}
+                      onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = "#64748b"}>
+                      {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Remember */}
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)}
+                    className="w-4 h-4 rounded" style={{ accentColor: "#c0392b" }} />
+                  <span className="text-sm text-soft">Remember this device for 30 days</span>
                 </label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-dim" />
-                  <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
-                    placeholder="admin@luxestay.com" style={inputStyle}
-                    onFocus={e => { e.currentTarget.style.borderColor = "rgba(212,168,67,0.5)"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(212,168,67,0.1)"; }}
-                    onBlur={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"; e.currentTarget.style.boxShadow = "none"; }}
-                  />
-                </div>
-              </div>
 
-              {/* Password */}
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-xs font-semibold text-dim uppercase tracking-wider">Password</label>
-                  <button type="button" className="text-xs text-gold transition-colors"
-                    onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = "#e8c96a"}
-                    onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = "#d4a843"}>
-                    Forgot password?
-                  </button>
-                </div>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-dim" />
-                  <input type={showPw ? "text" : "password"} value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    style={{ ...inputStyle, paddingRight: "40px" }}
-                    onFocus={e => { e.currentTarget.style.borderColor = "rgba(212,168,67,0.5)"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(212,168,67,0.1)"; }}
-                    onBlur={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"; e.currentTarget.style.boxShadow = "none"; }}
-                  />
-                  <button type="button" onClick={() => setShowPw(!showPw)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-dim transition-colors"
-                    onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = "#94a3b8"}
-                    onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = "#64748b"}>
-                    {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-              </div>
+                {/* Error */}
+                {error && (
+                  <div className="text-sm px-4 py-2.5 rounded-xl"
+                    style={{ background: "rgba(225,29,72,0.12)", border: "1px solid rgba(225,29,72,0.25)", color: "#e11d48" }}>
+                    {error}
+                  </div>
+                )}
 
-              {/* Remember */}
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)}
-                  className="w-4 h-4 rounded" style={{ accentColor: "#c0392b" }} />
-                <span className="text-sm text-soft">Remember this device for 30 days</span>
-              </label>
-
-              {/* Error */}
-              {error && (
-                <div className="text-sm px-4 py-2.5 rounded-xl"
-                  style={{ background: "rgba(225,29,72,0.12)", border: "1px solid rgba(225,29,72,0.25)", color: "#e11d48" }}>
-                  {error}
-                </div>
-              )}
-
-              {/* Submit */}
-              <button type="submit" disabled={loading}
-                className="w-full py-3 rounded-xl font-semibold text-sm text-white flex items-center justify-center gap-2 mt-2 transition-all disabled:opacity-70"
-                style={{
-                  background: "linear-gradient(135deg, #c0392b 0%, #a93226 100%)",
-                  boxShadow: "0 4px 16px rgba(192,57,43,0.35)",
-                }}
-                onMouseEnter={e => { if (!loading) { (e.currentTarget as HTMLElement).style.boxShadow = "0 6px 24px rgba(192,57,43,0.5)"; (e.currentTarget as HTMLElement).style.transform = "translateY(-1px)"; } }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = "0 4px 16px rgba(192,57,43,0.35)"; (e.currentTarget as HTMLElement).style.transform = "translateY(0)"; }}
-              >
-                {loading
-                  ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  : <>Sign in to Dashboard <ArrowRight className="w-4 h-4" /></>
-                }
-              </button>
-            </form>
+                {/* Submit */}
+                <button type="submit" disabled={loading}
+                  className="w-full py-3 rounded-xl font-semibold text-sm text-white flex items-center justify-center gap-2 mt-2 transition-all disabled:opacity-70"
+                  style={{
+                    background: "linear-gradient(135deg, #c0392b 0%, #a93226 100%)",
+                    boxShadow: "0 4px 16px rgba(192,57,43,0.35)",
+                  }}
+                  onMouseEnter={e => { if (!loading) { (e.currentTarget as HTMLElement).style.boxShadow = "0 6px 24px rgba(192,57,43,0.5)"; (e.currentTarget as HTMLElement).style.transform = "translateY(-1px)"; } }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = "0 4px 16px rgba(192,57,43,0.35)"; (e.currentTarget as HTMLElement).style.transform = "translateY(0)"; }}
+                >
+                  {loading
+                    ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    : <>Sign in to Dashboard <ArrowRight className="w-4 h-4" /></>
+                  }
+                </button>
+              </form>
+            )}
 
             {/* Demo hint */}
             <div className="mt-6 text-center">
