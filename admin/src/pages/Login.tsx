@@ -233,10 +233,8 @@ export default function Login() {
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
                     <label className="text-xs font-semibold text-dim uppercase tracking-wider">Password</label>
-                    <button type="button" className="text-xs text-gold transition-colors"
-                      onClick={() => { setResetMode(true); setResetEmail(email); setResetMessage(""); setResetError(""); }}
-                      onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = "#e8c96a"}
-                      onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = "#d4a843"}>
+                    <button type="button" className="text-xs text-gold transition-colors hover:text-yellow-300 cursor-pointer px-2 py-1 rounded hover:bg-white/5"
+                      onClick={() => { setResetMode(true); setResetEmail(email); setResetMessage(""); setResetError(""); }}>
                       Forgot password?
                     </button>
                   </div>
