@@ -10,6 +10,7 @@ import Modal from "@/components/Modal";
 import { Guest } from "@/context/GuestsContext";
 import { useBookings } from "@/context/BookingsContext";
 import { getGuests as apiGetGuests, getGuestById as apiGetGuestById } from "@/services/api";
+import socket from "@/services/socket";
 
 const HOTEL_INITIALS_MAP: Record<string, string> = {
   hdl: "Hôtel de Lumière", tas: "The Azure Skyline", cbr: "Coral Bay Resort",
@@ -51,27 +52,51 @@ function normalizeGuestBooking(b: any) {
 
 export default function Guests() {
   const navigate = useNavigate();
-  const { bookings } = useBookings();
+  const { bookings, loading: loadingBookings } = useBookings();
   const [backendGuests, setBackendGuests] = useState<any[]>([]);
   const [loadingGuests, setLoadingGuests] = useState(true);
 
   const abortRef = useRef<AbortController | null>(null);
+  const fetchSeq = useRef(0);
 
   const fetchGuests = () => {
     if (abortRef.current) abortRef.current.abort();
-    abortRef.current = new AbortController();
+    const controller = new AbortController();
+    abortRef.current = controller;
+    const seq = fetchSeq.current + 1;
+    fetchSeq.current = seq;
     setLoadingGuests(true);
     apiGetGuests()
       .then((r: any) => {
+        if (seq !== fetchSeq.current || controller.signal.aborted) return;
         setBackendGuests(Array.isArray(r?.data) ? r.data : []);
       })
-      .catch(() => setBackendGuests([]))
-      .finally(() => setLoadingGuests(false));
+      .catch(() => {
+        if (seq !== fetchSeq.current || controller.signal.aborted) return;
+        setBackendGuests([]);
+      })
+      .finally(() => {
+        if (seq === fetchSeq.current && !controller.signal.aborted) {
+          setLoadingGuests(false);
+        }
+      });
   };
 
   useEffect(() => {
     fetchGuests();
-    return () => { if (abortRef.current) abortRef.current.abort(); };
+    
+    // Listen for real-time updates to refetch guests list
+    const handleUpdate = () => fetchGuests();
+    socket.on("newBooking", handleUpdate);
+    socket.on("booking_update", handleUpdate);
+    socket.on("visitor_update", handleUpdate);
+
+    return () => { 
+      if (abortRef.current) abortRef.current.abort(); 
+      socket.off("newBooking", handleUpdate);
+      socket.off("booking_update", handleUpdate);
+      socket.off("visitor_update", handleUpdate);
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const guests: Guest[] = backendGuests.map((g: any) => {
@@ -185,17 +210,21 @@ export default function Guests() {
 
   const vipCount = guests.filter((g) => g.status === "VIP").length;
   const totalLTV = guests.reduce((s, g) => s + g.lifetimeValue, 0);
-  const recentActivity = bookings.slice(0, 3).map((b) => ({
-    label: "Booking",
-    desc: `${b.guestSnapshot.name || "Guest"} booked ${b.property || "LuxeStay"}.`,
-    time: b.createdAt ? new Date(b.createdAt).toLocaleDateString() : "Recent",
-  }));
-  if (recentActivity.length === 0 && guests.length > 0) {
-    recentActivity.push(...guests.slice(0, 3).map((g) => ({
-      label: "Guest",
-      desc: `${g.name} is listed as a guest.`,
-      time: "Current",
-    })));
+  
+  let recentActivity: any[] = [];
+  if (!loadingBookings) {
+    recentActivity = bookings.slice(0, 3).map((b) => ({
+      label: "Booking",
+      desc: `${b.guestSnapshot.name || "Guest"} booked ${b.property || "LuxeStay"}.`,
+      time: b.createdAt ? new Date(b.createdAt).toLocaleDateString() : "Recent",
+    }));
+    if (recentActivity.length === 0 && guests.length > 0) {
+      recentActivity.push(...guests.slice(0, 3).map((g) => ({
+        label: "Guest",
+        desc: `${g.name} is listed as a guest.`,
+        time: "Current",
+      })));
+    }
   }
 
   return (
@@ -340,7 +369,9 @@ export default function Guests() {
           <div className="bg-white rounded-xl border border-border p-5 shadow-card">
             <h4 className="font-semibold text-sm text-text-primary mb-3">Recent Activity</h4>
             <div className="space-y-3">
-              {recentActivity.length === 0 ? (
+              {loadingBookings ? (
+                <p className="text-xs text-muted">Loading activity...</p>
+              ) : recentActivity.length === 0 ? (
                 <p className="text-xs text-muted">No recent guest activity.</p>
               ) : recentActivity.map((a, i) => (
                 <div key={i} className="flex gap-3">

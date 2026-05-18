@@ -192,13 +192,13 @@ export default function Bookings() {
 
         {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <StatsCard title="Total Bookings" value={loading ? "—" : stats.total.toLocaleString()} change={`${stats.confirmed} confirmed`} trend="up"
+          <StatsCard title="Total Bookings" value={loading ? "—" : stats.total.toLocaleString()} change={loading ? "—" : `${stats.confirmed} confirmed`} trend="up"
             icon={<CalendarCheck className="w-5 h-5 text-primary" />} iconBg="bg-primary-light" />
           <StatsCard title="Pending" value={loading ? "—" : stats.pending} change="Requiring immediate action"
             icon={<Clock className="w-5 h-5 text-warning" />} iconBg="bg-warning-light" />
           <StatsCard title="Confirmed" value={loading ? "—" : stats.confirmed} change="Active reservations"
             icon={<LogIn className="w-5 h-5 text-success" />} iconBg="bg-success-light" />
-          <StatsCard title="Net Revenue" value={loading ? "—" : `$${stats.revenue.toLocaleString()}`} change={`${stats.total} bookings total`}
+          <StatsCard title="Net Revenue" value={loading ? "—" : `$${stats.revenue.toLocaleString()}`} change={loading ? "—" : `${stats.total} bookings total`}
             trend="up" icon={<DollarSign className="w-5 h-5 text-text-secondary" />} iconBg="bg-surface-3" />
         </div>
 

@@ -47,6 +47,11 @@ type BookingsCtx = {
 
 const Ctx = createContext<BookingsCtx | null>(null);
 
+try {
+  localStorage.removeItem("luxe_bookings");
+  localStorage.removeItem("bookings");
+} catch {}
+
 function mapBackend(b: any): Booking {
   const nights = b.nights ??
     Math.max(1, Math.round(
@@ -114,11 +119,15 @@ export const BookingsProvider = ({ children }: { children: ReactNode }) => {
   const MIN_FETCH_INTERVAL = 3000;
   // AbortController for cleanup
   const abortRef = useRef<AbortController | null>(null);
+  const fetchSeq = useRef(0);
 
   const doFetch = useCallback(() => {
     // Cancel any in-flight request
     if (abortRef.current) abortRef.current.abort();
-    abortRef.current = new AbortController();
+    const controller = new AbortController();
+    abortRef.current = controller;
+    const seq = fetchSeq.current + 1;
+    fetchSeq.current = seq;
 
     lastFetchAt.current = Date.now();
     setLoading(true);
@@ -128,7 +137,7 @@ export const BookingsProvider = ({ children }: { children: ReactNode }) => {
       headers: {
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
-      signal: abortRef.current.signal,
+      signal: controller.signal,
     })
       .then((r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
@@ -141,13 +150,18 @@ export const BookingsProvider = ({ children }: { children: ReactNode }) => {
           ? data
           : [];
         // Always replace state with fresh data — even empty array clears stale
+        if (seq !== fetchSeq.current) return;
         setBookings(raw.map(mapBackend));
       })
       .catch((err) => {
         if (err.name === "AbortError") return; // intentional cancel — ignore
         // Network error — keep current state, stop loading
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (seq === fetchSeq.current && !controller.signal.aborted) {
+          setLoading(false);
+        }
+      });
   }, []);
 
   const fetchBookings = useCallback((immediate = false) => {
@@ -171,29 +185,6 @@ export const BookingsProvider = ({ children }: { children: ReactNode }) => {
 
   const pushLiveAlert = useCallback((alert: NewBookingAlert) => {
     setLiveAlerts((prev) => [alert, ...prev].slice(0, 20));
-    // Prepend synthetic booking immediately so it shows without waiting for re-fetch
-    const synthetic: Booking = {
-      id:            alert.bookingId,
-      guestSnapshot: { name: alert.userName, email: "" },
-      room:          { type: alert.roomType, roomNumber: "—" },
-      checkIn:       alert.createdAt,
-      checkOut:      alert.createdAt,
-      nights:        1,
-      totalAmount:   alert.amount,
-      status:        "Confirmed",
-      property:      alert.hotelName,
-      createdAt:     alert.createdAt,
-      payment: {
-        transactionId: `TXN-${String(alert.bookingId).slice(-8).toUpperCase()}`,
-        method:        "Credit Card",
-        paidAt:        alert.createdAt,
-        status:        "Paid",
-      },
-    };
-    setBookings((prev) => {
-      if (prev.some((b) => b.id === synthetic.id)) return prev;
-      return [synthetic, ...prev];
-    });
   }, []);
 
   // Socket.IO real-time listener
@@ -223,7 +214,7 @@ export const BookingsProvider = ({ children }: { children: ReactNode }) => {
       createdAt,
       payment: makePayment(data.status, createdAt),
     };
-    setBookings((prev) => [newBooking, ...prev]);
+    doFetch();
     return newBooking;
   };
 
