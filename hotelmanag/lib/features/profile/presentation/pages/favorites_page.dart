@@ -120,9 +120,28 @@ class FavoritesPage extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text('\$${hotel.pricePerNight}/night', style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
-                        GestureDetector(
-                          onTap: () => context.read<FavoritesProvider>().toggleFavorite(hotel),
-                          child: const Icon(LucideIcons.heart, size: 18, color: Colors.red, fill: 1),
+                        Consumer<FavoritesProvider>(
+                          builder: (context, provider, child) {
+                            final isFav = provider.isFavorite(hotel);
+                            return GestureDetector(
+                              onTap: () {
+                                provider.toggleFavorite(hotel);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(isFav ? 'Removed from Favorites!' : 'Added to Favorites!'),
+                                    behavior: SnackBarBehavior.floating,
+                                    duration: const Duration(seconds: 1),
+                                  ),
+                                );
+                              },
+                              child: Icon(
+                                LucideIcons.heart,
+                                size: 18,
+                                color: isFav ? Colors.red : Colors.grey[400],
+                                fill: isFav ? 1.0 : 0.0,
+                              ),
+                            );
+                          },
                         ),
                       ],
                     ),

@@ -238,9 +238,38 @@ class _HomePageState extends State<HomePage> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text('\$${item.pricePerNight}', style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
-                              GestureDetector(
-                                onTap: () => context.read<FavoritesProvider>().toggleFavorite(item),
-                                child: const Icon(LucideIcons.heart, size: 16, color: Colors.red, fill: 1),
+                              Consumer<FavoritesProvider>(
+                                builder: (context, provider, child) {
+                                  final isFav = provider.isFavorite(item);
+                                  return GestureDetector(
+                                    onTap: () {
+                                      if (isFav) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(
+                                            content: Text('Already in Favorites!'),
+                                            behavior: SnackBarBehavior.floating,
+                                            duration: Duration(seconds: 1),
+                                          ),
+                                        );
+                                      } else {
+                                        provider.toggleFavorite(item);
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(
+                                            content: Text('Added to Favorites!'),
+                                            behavior: SnackBarBehavior.floating,
+                                            duration: Duration(seconds: 1),
+                                          ),
+                                        );
+                                      }
+                                    },
+                                    child: Icon(
+                                      LucideIcons.heart,
+                                      size: 16,
+                                      color: isFav ? Colors.red : Colors.grey[400],
+                                      fill: isFav ? 1.0 : 0.0,
+                                    ),
+                                  );
+                                },
                               ),
                             ],
                           ),
@@ -1382,19 +1411,29 @@ class FeaturedCard extends StatelessWidget {
                           ],
                         ),
                       ),
-                      Consumer<FavoritesProvider>(
+                       Consumer<FavoritesProvider>(
                         builder: (context, provider, child) {
                           final isFav = provider.isFavorite(hotel);
                           return InkWell(
                             onTap: () {
-                              provider.toggleFavorite(hotel);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(isFav ? 'Removed from favorites' : 'Added to favorites!'),
-                                  behavior: SnackBarBehavior.floating,
-                                  duration: const Duration(seconds: 1),
-                                ),
-                              );
+                              if (isFav) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Already in Favorites!'),
+                                    behavior: SnackBarBehavior.floating,
+                                    duration: Duration(seconds: 1),
+                                  ),
+                                );
+                              } else {
+                                provider.toggleFavorite(hotel);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Added to Favorites!'),
+                                    behavior: SnackBarBehavior.floating,
+                                    duration: Duration(seconds: 1),
+                                  ),
+                                );
+                              }
                             },
                             borderRadius: BorderRadius.circular(50),
                             child: Container(
