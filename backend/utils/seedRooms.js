@@ -40,6 +40,12 @@ const sampleRooms = [
   { roomNumber: "scs-102", type: "Villa",     description: "Private villa with infinity pool",         pricePerNight: 1650, capacity: 2, bedType: "King",  floor: 2,  amenities: ["Infinity Pool", "Butler", "Private Terrace"],      images: ["https://images.unsplash.com/photo-1582719508461-905c673771fd?w=800&q=80"],  status: "Available" },
 ];
 
+// ── Himalaya Hotel (hh) — added to support frontend fixtures that use `hh-101` ──
+sampleRooms.push(
+  { roomNumber: "hh-101", type: "Deluxe",    description: "Mountain view deluxe room",      pricePerNight: 560,  capacity: 2, bedType: "Queen", floor: 2, amenities: ["Free WiFi", "Breakfast", "Heater"], images: ["https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=800&q=80"], status: "Available" },
+  { roomNumber: "hh-102", type: "Standard",  description: "Comfort room with valley view",  pricePerNight: 420,  capacity: 2, bedType: "Queen", floor: 1, amenities: ["Free WiFi", "AC"], images: ["https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?w=800&q=80"], status: "Available" }
+);
+
 const seed = async () => {
   await connectDB();
 
