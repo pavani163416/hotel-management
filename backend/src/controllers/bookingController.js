@@ -21,6 +21,7 @@ export const createBooking = async (req, res, next) => {
   try {
     const {
       roomId,
+      roomNumber,
       roomTypeId,
       guest: guestData,
       checkIn,
@@ -33,9 +34,9 @@ export const createBooking = async (req, res, next) => {
       additionalChildren,
     } = req.body;
 
-    if (!roomId && !roomTypeId) {
+    if (!roomId && !roomNumber && !roomTypeId) {
       await session.abortTransaction();
-      return res.status(400).json({ success: false, message: "roomId or roomTypeId is required" });
+      return res.status(400).json({ success: false, message: "roomId, roomNumber or roomTypeId is required" });
     }
 
     const startDate = new Date(checkIn);
@@ -52,8 +53,14 @@ export const createBooking = async (req, res, next) => {
 
     // 1. Validate Room or RoomType
     let room = null;
-    if (roomId) {
+    if (roomId && mongoose.Types.ObjectId.isValid(roomId)) {
       room = await Room.findById(roomId)
+        .populate({ path: "roomTypeId", populate: { path: "hotelId", select: "name hotelId" } })
+        .session(session);
+    }
+
+    if (!room && roomNumber) {
+      room = await Room.findOne({ roomNumber, isActive: true })
         .populate({ path: "roomTypeId", populate: { path: "hotelId", select: "name hotelId" } })
         .session(session);
     }

@@ -81,12 +81,17 @@ const Payment = () => {
     setProcessing(true);
 
     try {
+      if (selectedRoom.id === "default") {
+        setError("No valid room selected. Please choose a booking-ready room and try again.");
+        setProcessing(false);
+        return;
+      }
+
       let mongoBookingId: string | null = null;
       try {
         const response = await createBooking({
           roomId:         selectedRoom.id,
           roomNumber:     selectedRoom.id,
-          roomTypeId:     selectedRoom.id,
           guest:          { name: guest.name, email: user?.email || guest.email, phone: guest.phone, city: "" },
           checkIn:        search.checkIn,
           checkOut:       search.checkOut,

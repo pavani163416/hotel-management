@@ -34,19 +34,7 @@ function mapHotel(h: any): Hotel {
           available: r.available ?? 1,
           features: r.features || ["WiFi"],
         }))
-      : [
-          // No rooms defined — create a default room using the hotel's pricePerNight
-          {
-            id: "default",
-            name: "Standard Room",
-            description: "",
-            price: h.pricePerNight || 500,
-            capacity: 2,
-            bed: "1 King Bed",
-            available: 1,
-            features: ["WiFi"],
-          },
-        ],
+      : [],
     reviews: (h.reviews || []).map((r: any) => ({
       id: r._id || r.id || Math.random().toString(36),
       author: r.author || "",

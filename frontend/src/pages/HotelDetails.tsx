@@ -158,12 +158,17 @@ const HotelDetails = () => {
         {tab === "rooms" && (
           <div className="mt-8">
             <h2 className="font-display text-2xl font-bold mb-5">Select Your Room</h2>
-            <div className="border border-border rounded-2xl overflow-hidden bg-card">
-              <div className="hidden md:grid grid-cols-[2fr_2fr_1fr_auto] bg-primary text-primary-foreground text-xs uppercase tracking-wider font-semibold">
-                <div className="p-4">Room Type</div><div className="p-4">Key Features</div><div className="p-4 text-right">Daily Price</div><div className="p-4">Action</div>
+            {hotel.rooms.length === 0 ? (
+              <div className="rounded-2xl border border-border bg-card p-8 text-center text-muted-foreground">
+                No rooms are currently available for this hotel. Please check back later or select another property.
               </div>
-              {hotel.rooms.map((r) => (
-                <div key={r.id} className="grid md:grid-cols-[2fr_2fr_1fr_auto] gap-4 p-5 border-t border-border first:border-t-0 items-center">
+            ) : (
+              <div className="border border-border rounded-2xl overflow-hidden bg-card">
+                <div className="hidden md:grid grid-cols-[2fr_2fr_1fr_auto] bg-primary text-primary-foreground text-xs uppercase tracking-wider font-semibold">
+                  <div className="p-4">Room Type</div><div className="p-4">Key Features</div><div className="p-4 text-right">Daily Price</div><div className="p-4">Action</div>
+                </div>
+                {hotel.rooms.map((r) => (
+                  <div key={r.id} className="grid md:grid-cols-[2fr_2fr_1fr_auto] gap-4 p-5 border-t border-border first:border-t-0 items-center">
                   <div>
                     <h4 className="font-semibold text-primary">{r.name}</h4>
                     <p className="text-xs text-muted-foreground mt-1 flex items-center gap-3">
