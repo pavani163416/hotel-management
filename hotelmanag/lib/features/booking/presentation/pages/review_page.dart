@@ -151,18 +151,20 @@ class _ReviewPageState extends State<ReviewPage> {
                     Text(hotel.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
                     Text(hotel.location, style: TextStyle(fontSize: 12, color: AppTheme.primaryColor.withOpacity(0.5))),
                     const SizedBox(height: 12),
-                    Row(
+                    Wrap(
+                      spacing: 16,
+                      runSpacing: 8,
                       children: [
                         _buildSummaryItem('Check-in', DateFormat('yyyy-MM-dd').format(provider.checkIn)),
-                        const SizedBox(width: 32),
                         _buildSummaryItem('Check-out', DateFormat('yyyy-MM-dd').format(provider.checkOut)),
                       ],
                     ),
                     const SizedBox(height: 12),
-                    Row(
+                    Wrap(
+                      spacing: 16,
+                      runSpacing: 8,
                       children: [
                         _buildSummaryItem('Room', 'Standard'),
-                        const SizedBox(width: 32),
                         _buildSummaryItem('Guests', '${provider.guests} - ${provider.nights} nights'),
                       ],
                     ),
