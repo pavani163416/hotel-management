@@ -46,6 +46,12 @@ sampleRooms.push(
   { roomNumber: "hh-102", type: "Standard",  description: "Comfort room with valley view",  pricePerNight: 420,  capacity: 2, bedType: "Queen", floor: 1, amenities: ["Free WiFi", "AC"], images: ["https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?w=800&q=80"], status: "Available" }
 );
 
+// ── Additional alias (nh) — cover frontends that use `nh-101` prefix
+sampleRooms.push(
+  { roomNumber: "nh-101", type: "Deluxe",   description: "Mountain view deluxe room (alias)", pricePerNight: 560, capacity: 2, bedType: "Queen", floor: 2, amenities: ["Free WiFi", "Breakfast", "Heater"], images: ["https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=800&q=80"], status: "Available" },
+  { roomNumber: "nh-102", type: "Standard", description: "Comfort room with valley view (alias)", pricePerNight: 420, capacity: 2, bedType: "Queen", floor: 1, amenities: ["Free WiFi", "AC"], images: ["https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?w=800&q=80"], status: "Available" }
+);
+
 const seed = async () => {
   await connectDB();
 
