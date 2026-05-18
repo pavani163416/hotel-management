@@ -168,7 +168,7 @@ class BookingProvider extends ChangeNotifier {
         notifyListeners();
       },
       (bookings) {
-        _bookings = bookings;
+        _bookings = List<BookingEntity>.from(bookings);
         _isLoading = false;
         notifyListeners();
       },

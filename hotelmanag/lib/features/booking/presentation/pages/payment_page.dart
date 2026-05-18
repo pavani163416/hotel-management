@@ -231,7 +231,7 @@ class _PaymentPageState extends State<PaymentPage> {
                 }).toList(),
                 onChanged: (v) => setState(() {
                   _selectedIdType = v!;
-                  _idNumber = ''; // clear previous tracking
+                  _idNumberController.clear(); // clear previous tracking
                 }),
               ),
             ),
