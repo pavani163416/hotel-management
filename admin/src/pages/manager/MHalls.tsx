@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
   Plus, Calendar, List, ChevronLeft, ChevronRight,
   Users, Clock, MapPin, Edit2, Trash2, Check,
@@ -6,9 +6,11 @@ import {
 import ManagerLayout from "@/components/ManagerLayout";
 import Modal from "@/components/Modal";
 import StatusBadge from "@/components/StatusBadge";
+import { getManagerHalls, createManagerHall, updateManagerHall } from "@/services/api";
 
 type HallEvent = {
   id: string;
+  hallId: string;
   hallName: string;
   eventName: string;
   organizer: string;
@@ -20,30 +22,21 @@ type HallEvent = {
   notes?: string;
 };
 
-const HALLS = ["Grand Ballroom", "Crystal Hall", "Garden Pavilion", "Boardroom A", "Boardroom B"];
-
-const DEMO_EVENTS: HallEvent[] = [
-  { id: "1", hallName: "Grand Ballroom",   eventName: "Wedding Reception",   organizer: "Sarah & James",  date: "2026-04-30", startTime: "18:00", endTime: "23:00", capacity: 200, status: "Confirmed" },
-  { id: "2", hallName: "Crystal Hall",     eventName: "Corporate Gala",      organizer: "TechCorp Inc.",  date: "2026-05-02", startTime: "19:00", endTime: "22:00", capacity: 150, status: "Confirmed" },
-  { id: "3", hallName: "Garden Pavilion",  eventName: "Birthday Celebration", organizer: "Emily Chen",    date: "2026-05-05", startTime: "14:00", endTime: "18:00", capacity: 80,  status: "Pending" },
-  { id: "4", hallName: "Boardroom A",      eventName: "Strategy Meeting",    organizer: "Luxe Hotels",    date: "2026-05-07", startTime: "09:00", endTime: "12:00", capacity: 20,  status: "Confirmed" },
-  { id: "5", hallName: "Grand Ballroom",   eventName: "Annual Conference",   organizer: "Global Summit",  date: "2026-05-10", startTime: "08:00", endTime: "17:00", capacity: 300, status: "Pending" },
-  { id: "6", hallName: "Crystal Hall",     eventName: "Product Launch",      organizer: "StartupXYZ",     date: "2026-05-15", startTime: "10:00", endTime: "14:00", capacity: 100, status: "Confirmed" },
-];
-
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTHS_FULL = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 
 const emptyForm = {
-  hallName: HALLS[0], eventName: "", organizer: "",
+  hallName: "", eventName: "", organizer: "",
   date: "", startTime: "09:00", endTime: "12:00",
   capacity: "50", status: "Pending", notes: "",
 };
 
 export default function Halls() {
-  const [events, setEvents]     = useState<HallEvent[]>(DEMO_EVENTS);
+  const [halls, setHalls]       = useState<any[]>([]);
+  const [events, setEvents]     = useState<HallEvent[]>([]);
+  const [loading, setLoading]   = useState(true);
   const [view, setView]         = useState<"calendar" | "list">("calendar");
-  const [currentDate, setCurrentDate] = useState(new Date(2026, 4, 1)); // May 2026
+  const [currentDate, setCurrentDate] = useState(new Date());
   const [showAdd, setShowAdd]   = useState(false);
   const [editEvent, setEditEvent] = useState<HallEvent | null>(null);
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
@@ -58,6 +51,63 @@ export default function Halls() {
   const prevMonth = () => setCurrentDate(new Date(year, month - 1, 1));
   const nextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
 
+  const loadHalls = useCallback(async () => {
+    try {
+      const res: any = await getManagerHalls();
+      let data = res?.data || [];
+      
+      // Seed default halls if none exist
+      if (data.length === 0) {
+        const defaults = [
+          { name: "Grand Ballroom", capacity: 300, pricePerDay: 1500 },
+          { name: "Crystal Hall", capacity: 150, pricePerDay: 800 },
+          { name: "Garden Pavilion", capacity: 100, pricePerDay: 600 },
+          { name: "Boardroom A", capacity: 20, pricePerDay: 300 }
+        ];
+        await Promise.all(
+          defaults.map((h) => createManagerHall(h))
+        );
+        const res2: any = await getManagerHalls();
+        data = res2?.data || [];
+      }
+      
+      setHalls(data);
+      if (data.length > 0 && !form.hallName) {
+        setForm((f) => ({ ...f, hallName: data[0].name }));
+      }
+      
+      // Extract bookings
+      const allEvents: HallEvent[] = [];
+      data.forEach((hall: any) => {
+        (hall.bookings || []).forEach((b: any) => {
+          allEvents.push({
+            id: b._id || b.id,
+            hallId: hall._id,
+            hallName: hall.name,
+            eventName: b.eventName,
+            organizer: b.organizer,
+            date: b.date ? new Date(b.date).toISOString().split("T")[0] : "",
+            startTime: b.startTime,
+            endTime: b.endTime,
+            capacity: b.capacity,
+            status: b.status || "Confirmed",
+            notes: b.notes,
+          });
+        });
+      });
+      setEvents(allEvents);
+    } catch {
+      setHalls([]);
+      setEvents([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [form.hallName]);
+
+  useEffect(() => {
+    loadHalls();
+  }, [loadHalls]);
+
   const eventsOnDay = (day: number) => {
     const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
     return events.filter((e) => e.date === dateStr);
@@ -65,34 +115,53 @@ export default function Halls() {
 
   const selectedDayEvents = selectedDay ? events.filter((e) => e.date === selectedDay) : [];
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    const payload: HallEvent = {
-      id:        editEvent?.id || Date.now().toString(),
-      hallName:  form.hallName,
+    const targetHall = halls.find((h) => h.name === form.hallName);
+    if (!targetHall) return;
+
+    const payload = {
       eventName: form.eventName,
       organizer: form.organizer,
-      date:      form.date,
+      date: new Date(form.date),
       startTime: form.startTime,
-      endTime:   form.endTime,
-      capacity:  Number(form.capacity),
-      status:    form.status as HallEvent["status"],
-      notes:     form.notes,
+      endTime: form.endTime,
+      capacity: Number(form.capacity),
+      status: form.status,
+      notes: form.notes,
     };
-    if (editEvent) {
-      setEvents((prev) => prev.map((ev) => ev.id === editEvent.id ? payload : ev));
-    } else {
-      setEvents((prev) => [...prev, payload]);
-    }
-    setSuccess(true);
-    setTimeout(() => {
-      setShowAdd(false); setEditEvent(null);
-      setForm({ ...emptyForm }); setSuccess(false);
-    }, 1000);
+
+    try {
+      if (editEvent) {
+        const currentHall = halls.find((h) => h._id === editEvent.hallId);
+        if (currentHall) {
+          const updatedBookings = currentHall.bookings.map((b: any) =>
+            (b._id === editEvent.id || b.id === editEvent.id) ? { ...b, ...payload } : b
+          );
+          await updateManagerHall(currentHall._id, { bookings: updatedBookings });
+        }
+      } else {
+        await updateManagerHall(targetHall._id, { booking: payload });
+      }
+      setSuccess(true);
+      await loadHalls();
+      setTimeout(() => {
+        setShowAdd(false);
+        setEditEvent(null);
+        setForm({ ...emptyForm, hallName: halls[0]?.name || "" });
+        setSuccess(false);
+      }, 1000);
+    } catch { /* silent */ }
   };
 
-  const handleDelete = (id: string) => {
-    setEvents((prev) => prev.filter((e) => e.id !== id));
+  const handleDelete = async (eventId: string, hallId: string) => {
+    const currentHall = halls.find((h) => h._id === hallId);
+    if (!currentHall) return;
+    try {
+      const updatedBookings = currentHall.bookings.filter((b: any) => (b._id !== eventId && b.id !== eventId));
+      await updateManagerHall(currentHall._id, { bookings: updatedBookings });
+      await loadHalls();
+    } catch { /* silent */ }
   };
 
   const openEdit = (ev: HallEvent) => {
@@ -103,7 +172,6 @@ export default function Halls() {
       capacity: String(ev.capacity), status: ev.status, notes: ev.notes || "",
     });
     setSuccess(false);
-    // showAdd drives the modal open when editEvent is set — no extra flag needed
   };
 
   const statusDot: Record<string, string> = {
@@ -270,7 +338,7 @@ export default function Halls() {
                             className="flex-1 flex items-center justify-center gap-1 text-xs font-medium text-soft border border-white/10 rounded-lg py-1.5 hover:bg-white/5 hover:text-bright transition-colors">
                             <Edit2 className="w-3 h-3" /> Edit
                           </button>
-                          <button onClick={() => handleDelete(ev.id)}
+                          <button onClick={() => handleDelete(ev.id, ev.hallId)}
                             className="flex items-center justify-center w-7 h-7 text-danger border border-danger/20 rounded-lg hover:bg-danger/10 transition-colors">
                             <Trash2 className="w-3 h-3" />
                           </button>
@@ -328,7 +396,7 @@ export default function Halls() {
                         className="p-1.5 text-dim hover:text-bright hover:bg-white/10 rounded-lg transition-colors">
                         <Edit2 className="w-3.5 h-3.5" />
                       </button>
-                      <button onClick={() => handleDelete(ev.id)}
+                      <button onClick={() => handleDelete(ev.id, ev.hallId)}
                         className="p-1.5 text-danger hover:bg-danger/10 rounded-lg transition-colors">
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -369,7 +437,7 @@ export default function Halls() {
                 <label className="block text-xs font-semibold text-dim uppercase tracking-wider mb-1">Hall *</label>
                 <select value={form.hallName} onChange={(e) => setForm({ ...form, hallName: e.target.value })}
                   className="w-full glass-select border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none">
-                  {HALLS.map((h) => <option key={h}>{h}</option>)}
+                  {halls.map((h: any) => <option key={h._id} value={h.name}>{h.name}</option>)}
                 </select>
               </div>
               <div>

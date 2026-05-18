@@ -70,14 +70,28 @@ export default function HotelsOverview() {
     setSaving(false);
   };
 
-  // Derived comparison metrics
-  const hotelMetrics: HotelMetric[] = hotels.map((h) => ({
-    ...h,
-    totalRooms: Array.isArray(h.rooms) ? h.rooms.length : 0,
-    occupancy:  Math.floor(Math.random() * 40 + 50),
-    revenue:    Math.floor(Math.random() * 500 + 200) * 1000,
-    rating:     h.rating ?? parseFloat((Math.random() * 1 + 4).toFixed(1)),
-  }));
+  // Derived comparison metrics (stable and deterministic based on hotel ID)
+  const hotelMetrics: HotelMetric[] = hotels.map((h) => {
+    let hash = 0;
+    const str = h._id || "";
+    for (let i = 0; i < str.length; i++) {
+      hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const seed = Math.abs(hash);
+    
+    const occupancy = 62 + (seed % 27);
+    const price = h.pricePerNight || 150;
+    const roomsCount = Array.isArray(h.rooms) ? h.rooms.length : 15;
+    const revenue = Math.floor(roomsCount * (occupancy / 100) * price * 30);
+    
+    return {
+      ...h,
+      totalRooms: roomsCount,
+      occupancy,
+      revenue,
+      rating: h.rating ?? parseFloat((4.1 + ((seed % 9) / 10)).toFixed(1)),
+    };
+  });
 
   const maxRevenue  = Math.max(...hotelMetrics.map((h) => h.revenue), 1);
   const maxOccupancy = Math.max(...hotelMetrics.map((h) => h.occupancy), 1);

@@ -190,3 +190,9 @@ export const getManagerStats = () => api.get("/manager/stats");
  */
 export const checkHotelAccess = (hotelId: string) =>
   api.get(`/manager/hotel/${hotelId}`);
+
+/** Function Hall endpoints */
+export const getManagerHalls = () => api.get("/manager/halls");
+export const createManagerHall = (data: Record<string, any>) => api.post("/manager/halls", data);
+export const updateManagerHall = (id: string, data: Record<string, any>) => api.put(`/manager/halls/${id}`, data);
+

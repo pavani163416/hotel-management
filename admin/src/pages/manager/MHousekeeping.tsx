@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
   Plus, CheckCircle2, Clock, AlertCircle, User,
   BedDouble, Sparkles, Wrench, RefreshCw, X,
 } from "lucide-react";
 import ManagerLayout from "@/components/ManagerLayout";
 import Drawer from "@/components/Drawer";
+import { getManagerRooms, updateManagerRoom } from "@/services/api";
 
 type TaskStatus = "Pending" | "In Progress" | "Completed" | "Blocked";
 type TaskType   = "Cleaning" | "Maintenance" | "Inspection" | "Turndown";
@@ -22,19 +23,9 @@ type Task = {
 };
 
 const STAFF = ["Maria Santos", "James Okafor", "Priya Nair", "Carlos Reyes", "Aisha Patel", "Tom Nguyen"];
-const ROOMS = ["101","102","103","201","202","203","301","302","303","401","402","501"];
 const TASK_TYPES: TaskType[] = ["Cleaning", "Maintenance", "Inspection", "Turndown"];
 
-const DEMO_TASKS: Task[] = [
-  { id: "1", roomNumber: "302", type: "Maintenance", assignedTo: "Tom Nguyen",    status: "Pending",     priority: "High",   notes: "AC unit requires service", createdAt: new Date().toISOString() },
-  { id: "2", roomNumber: "101", type: "Cleaning",    assignedTo: "Maria Santos",  status: "In Progress", priority: "Medium", createdAt: new Date().toISOString() },
-  { id: "3", roomNumber: "205", type: "Inspection",  assignedTo: "Priya Nair",    status: "Completed",   priority: "Low",    createdAt: new Date().toISOString(), completedAt: new Date().toISOString() },
-  { id: "4", roomNumber: "401", type: "Turndown",    assignedTo: "James Okafor",  status: "Pending",     priority: "Medium", createdAt: new Date().toISOString() },
-  { id: "5", roomNumber: "103", type: "Cleaning",    assignedTo: "Carlos Reyes",  status: "Blocked",     priority: "High",   notes: "Guest still in room", createdAt: new Date().toISOString() },
-  { id: "6", roomNumber: "501", type: "Cleaning",    assignedTo: "Aisha Patel",   status: "Completed",   priority: "Low",    createdAt: new Date().toISOString(), completedAt: new Date().toISOString() },
-];
-
-const emptyForm = { roomNumber: ROOMS[0], type: "Cleaning" as TaskType, assignedTo: STAFF[0], priority: "Medium" as Task["priority"], notes: "" };
+const emptyForm = { roomNumber: "", type: "Cleaning" as TaskType, assignedTo: STAFF[0], priority: "Medium" as Task["priority"], notes: "" };
 
 const statusColor: Record<TaskStatus, string> = {
   "Pending":     "bg-warning-light text-warning",
@@ -51,7 +42,9 @@ const typeIcon: Record<TaskType, React.ReactNode> = {
 };
 
 export default function Housekeeping() {
-  const [tasks, setTasks]       = useState<Task[]>(DEMO_TASKS);
+  const [rooms, setRooms]       = useState<any[]>([]);
+  const [tasks, setTasks]       = useState<Task[]>([]);
+  const [loading, setLoading]   = useState(true);
   const [showAdd, setShowAdd]   = useState(false);
   const [form, setForm]         = useState({ ...emptyForm });
   const [filterStatus, setFilterStatus] = useState<string>("All");
@@ -62,17 +55,75 @@ export default function Housekeeping() {
     { id: "3", msg: "Room 302 maintenance task assigned to Tom Nguyen", time: "20 min ago" },
   ]);
 
+  const adminData = JSON.parse(localStorage.getItem("luxe_admin") || "{}");
+  const hotelId = adminData.assignedHotelId || "default";
+  const localStorageKey = `luxe_housekeeping_tasks_${hotelId}`;
+
+  const loadData = useCallback(async () => {
+    try {
+      const res: any = await getManagerRooms();
+      const roomsList = res?.data || [];
+      setRooms(roomsList);
+      if (roomsList.length > 0 && !form.roomNumber) {
+        setForm((f) => ({ ...f, roomNumber: roomsList[0].roomNumber }));
+      }
+      
+      const stored = localStorage.getItem(localStorageKey);
+      if (stored) {
+        setTasks(JSON.parse(stored));
+      } else {
+        if (roomsList.length > 0) {
+          const seeded: Task[] = [
+            {
+              id: "1",
+              roomNumber: roomsList[0].roomNumber,
+              type: "Cleaning",
+              assignedTo: "Maria Santos",
+              status: "In Progress",
+              priority: "Medium",
+              createdAt: new Date().toISOString(),
+            },
+            {
+              id: "2",
+              roomNumber: roomsList[Math.min(1, roomsList.length - 1)].roomNumber,
+              type: "Maintenance",
+              assignedTo: "Tom Nguyen",
+              status: "Pending",
+              priority: "High",
+              notes: "AC unit requires service",
+              createdAt: new Date().toISOString(),
+            }
+          ];
+          setTasks(seeded);
+          localStorage.setItem(localStorageKey, JSON.stringify(seeded));
+        } else {
+          setTasks([]);
+        }
+      }
+    } catch {
+      setRooms([]);
+      setTasks([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [localStorageKey, form.roomNumber]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
   const filtered = tasks.filter((t) => {
     const matchStatus = filterStatus === "All" || t.status === filterStatus;
     const matchStaff  = filterStaff  === "All" || t.assignedTo === filterStaff;
     return matchStatus && matchStaff;
   });
 
-  const handleAdd = (e: React.FormEvent) => {
+  const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
+    const targetRoomNumber = form.roomNumber || (rooms[0]?.roomNumber || "");
     const newTask: Task = {
       id:         Date.now().toString(),
-      roomNumber: form.roomNumber,
+      roomNumber: targetRoomNumber,
       type:       form.type,
       assignedTo: form.assignedTo,
       status:     "Pending",
@@ -80,24 +131,48 @@ export default function Housekeeping() {
       notes:      form.notes,
       createdAt:  new Date().toISOString(),
     };
-    setTasks((prev) => [newTask, ...prev]);
+    const updatedTasks = [newTask, ...tasks];
+    setTasks(updatedTasks);
+    localStorage.setItem(localStorageKey, JSON.stringify(updatedTasks));
+
+    if (form.type === "Maintenance") {
+      const roomDoc = rooms.find((r) => r.roomNumber === targetRoomNumber);
+      if (roomDoc) {
+        try {
+          await updateManagerRoom(roomDoc._id, { status: "Maintenance" });
+        } catch { /* silent */ }
+      }
+    }
+
     setLiveLog((prev) => [
-      { id: Date.now().toString(), msg: `Room ${form.roomNumber} ${form.type} assigned to ${form.assignedTo}`, time: "just now" },
+      { id: Date.now().toString(), msg: `Room #${targetRoomNumber.replace(/^[a-z]+-/i, "")} ${form.type} assigned to ${form.assignedTo}`, time: "just now" },
       ...prev.slice(0, 9),
     ]);
     setShowAdd(false);
-    setForm({ ...emptyForm });
+    setForm({ ...emptyForm, roomNumber: rooms[0]?.roomNumber || "" });
   };
 
-  const updateStatus = (id: string, status: TaskStatus) => {
-    setTasks((prev) => prev.map((t) => t.id === id ? {
+  const updateStatus = async (id: string, status: TaskStatus) => {
+    const updated = tasks.map((t) => t.id === id ? {
       ...t, status,
       completedAt: status === "Completed" ? new Date().toISOString() : t.completedAt,
-    } : t));
+    } : t);
+    setTasks(updated);
+    localStorage.setItem(localStorageKey, JSON.stringify(updated));
+
     const task = tasks.find((t) => t.id === id);
     if (task) {
+      if (status === "Completed") {
+        const roomDoc = rooms.find((r) => r.roomNumber === task.roomNumber);
+        if (roomDoc) {
+          try {
+            await updateManagerRoom(roomDoc._id, { status: "Available" });
+          } catch { /* silent */ }
+        }
+      }
+
       setLiveLog((prev) => [
-        { id: Date.now().toString(), msg: `Room ${task.roomNumber} ${task.type} → ${status} by ${task.assignedTo}`, time: "just now" },
+        { id: Date.now().toString(), msg: `Room #${task.roomNumber.replace(/^[a-z]+-/i, "")} ${task.type} → ${status} by ${task.assignedTo}`, time: "just now" },
         ...prev.slice(0, 9),
       ]);
     }
@@ -179,7 +254,7 @@ export default function Housekeeping() {
 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1.5">
-                    <span className="font-bold text-bright text-base">Room #{task.roomNumber}</span>
+                    <span className="font-bold text-bright text-base">Room #{task.roomNumber.replace(/^[a-z]+-/i, "")}</span>
                     <span className="text-xs text-dim">· {task.type}</span>
                     {task.priority === "High" && (
                       <span className="text-[10px] font-bold text-ruby bg-ruby/10 border border-ruby/20 px-1.5 py-0.5 rounded-md uppercase tracking-wider">High</span>
@@ -212,7 +287,11 @@ export default function Housekeeping() {
                     <button onClick={() => updateStatus(task.id, "Completed")}
                       className="text-xs text-emerald font-bold hover:underline whitespace-nowrap">Done</button>
                   )}
-                  <button onClick={() => setTasks((prev) => prev.filter((t) => t.id !== task.id))}
+                  <button onClick={() => {
+                    const updated = tasks.filter((t) => t.id !== task.id);
+                    setTasks(updated);
+                    localStorage.setItem(localStorageKey, JSON.stringify(updated));
+                  }}
                     className="text-dim hover:text-ruby transition-all opacity-0 group-hover:opacity-100">
                     <X className="w-4 h-4" />
                   </button>
@@ -245,38 +324,42 @@ export default function Housekeeping() {
           <div>
             <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1.5">Room *</label>
             <select value={form.roomNumber} onChange={(e) => setForm({ ...form, roomNumber: e.target.value })}
-              className="w-full border border-border rounded-xl px-3 py-2.5 text-sm outline-none focus:border-accent bg-white">
-              {ROOMS.map((r) => <option key={r} value={r}>Room {r}</option>)}
+              className="w-full border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-gold bg-white/5 text-bright">
+              {rooms.map((r: any) => (
+                <option key={r._id} value={r.roomNumber} className="bg-neutral-900 text-bright">
+                  Room {r.roomNumber.replace(/^[a-z]+-/i, "")} ({r.type})
+                </option>
+              ))}
             </select>
           </div>
           <div>
             <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1.5">Task Type *</label>
             <select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value as TaskType })}
-              className="w-full border border-border rounded-xl px-3 py-2.5 text-sm outline-none focus:border-accent bg-white">
-              {TASK_TYPES.map((t) => <option key={t}>{t}</option>)}
+              className="w-full border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-gold bg-white/5 text-bright">
+              {TASK_TYPES.map((t) => <option key={t} className="bg-neutral-900 text-bright">{t}</option>)}
             </select>
           </div>
           <div>
             <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1.5">Assign To *</label>
             <select value={form.assignedTo} onChange={(e) => setForm({ ...form, assignedTo: e.target.value })}
-              className="w-full border border-border rounded-xl px-3 py-2.5 text-sm outline-none focus:border-accent bg-white">
-              {STAFF.map((s) => <option key={s}>{s}</option>)}
+              className="w-full border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-gold bg-white/5 text-bright">
+              {STAFF.map((s) => <option key={s} className="bg-neutral-900 text-bright">{s}</option>)}
             </select>
           </div>
           <div>
             <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1.5">Priority</label>
             <select value={form.priority} onChange={(e) => setForm({ ...form, priority: e.target.value as Task["priority"] })}
-              className="w-full border border-border rounded-xl px-3 py-2.5 text-sm outline-none focus:border-accent bg-white">
-              <option>High</option>
-              <option>Medium</option>
-              <option>Low</option>
+              className="w-full border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-gold bg-white/5 text-bright">
+              <option className="bg-neutral-900 text-bright">High</option>
+              <option className="bg-neutral-900 text-bright">Medium</option>
+              <option className="bg-neutral-900 text-bright">Low</option>
             </select>
           </div>
           <div>
             <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1.5">Notes</label>
             <textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })}
               rows={3} placeholder="Additional instructions..."
-              className="w-full border border-border rounded-xl px-3 py-2.5 text-sm outline-none focus:border-accent resize-none" />
+              className="w-full border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-gold bg-white/5 text-bright resize-none" />
           </div>
           <button type="submit"
             className="w-full bg-primary text-white py-3 rounded-xl font-semibold text-sm hover:bg-primary-dark transition-colors">

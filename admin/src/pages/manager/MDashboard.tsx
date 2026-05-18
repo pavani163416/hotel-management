@@ -86,7 +86,7 @@ export default function Dashboard() {
   const [alerts, setAlerts] = useState(() => loadAlerts());
   const [alertDetail, setAlertDetail] = useState<any | null>(null);
 
-  const updateAlerts = (next: typeof DEMO_ALERTS) => {
+  const updateAlerts = (next: any[]) => {
     setAlerts(next);
     saveAlerts(next);
   };
