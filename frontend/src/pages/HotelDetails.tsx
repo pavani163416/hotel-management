@@ -218,9 +218,10 @@ const HotelDetails = () => {
                   <p className="text-muted-foreground leading-relaxed">{hotel.description}</p>
                 </div>
               </>
-             )}
-           </div>
-         )}
+            )}
+          </div>
+        )}
+        {tab === "amenities" && (
           <div className="mt-8 grid sm:grid-cols-2 md:grid-cols-3 gap-3">
             {hotel.amenities.map((a) => (
               <div key={a} className="flex items-center gap-3 p-4 border border-border rounded-xl bg-card">
