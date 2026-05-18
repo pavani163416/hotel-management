@@ -24,22 +24,38 @@ class _PaymentPageState extends State<PaymentPage> {
   String _selectedIdType = 'Aadhaar Card';
   String? _selectedBank;
 
-  void _processPayment(BookingProvider provider) {
-    bool isIdValid = _idFormKey.currentState!.validate();
-    bool isPaymentValid = _paymentFormKey.currentState!.validate();
+  void _processPayment(BookingProvider provider) async {
+    bool isIdValid = _idFormKey.currentState?.validate() ?? false;
+    bool isPaymentValid = true;
 
-    if (_selectedMethod == 'bank' && _selectedBank == null) {
-      isPaymentValid = false;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select your bank'), backgroundColor: Colors.redAccent),
-      );
-      return;
+    if (_selectedMethod == 'card' || _selectedMethod == 'upi') {
+      isPaymentValid = _paymentFormKey.currentState?.validate() ?? false;
+    } else if (_selectedMethod == 'bank') {
+      if (_selectedBank == null) {
+        isPaymentValid = false;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please select your bank'), backgroundColor: Colors.redAccent),
+        );
+        return;
+      }
     }
 
     if (isIdValid && isPaymentValid) {
-      final bookingId = 'LS-${10000 + (new DateTime.now().millisecondsSinceEpoch % 90000)}';
-      provider.completeBooking(bookingId);
-      context.push('/confirmation');
+      final success = await provider.completeBooking(_selectedMethod);
+      if (success) {
+        if (mounted) {
+          context.push('/confirmation');
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(provider.error ?? 'Failed to complete booking. Please try again.'), 
+              backgroundColor: Colors.redAccent,
+            ),
+          );
+        }
+      }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please fill in all mandatory fields'), backgroundColor: Colors.redAccent),
@@ -363,17 +379,24 @@ class _PaymentPageState extends State<PaymentPage> {
   }
 
   Widget _buildPayButton(BookingProvider provider) {
+    final isLoading = provider.isLoading;
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
-        onPressed: () => _processPayment(provider),
+        onPressed: isLoading ? null : () => _processPayment(provider),
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF7E8A9A),
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(vertical: 20),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
-        child: Text('Pay \$${NumberFormat("#,###").format(provider.total)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        child: isLoading
+            ? const SizedBox(
+                height: 20,
+                width: 20,
+                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+              )
+            : Text('Pay \$${NumberFormat("#,###").format(provider.total)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
       ),
     );
   }
@@ -431,6 +454,7 @@ class _PaymentPageState extends State<PaymentPage> {
 
   Widget _buildTextField(String hint, {bool required = false}) {
     return TextFormField(
+      key: ValueKey(hint),
       validator: (value) {
         if (required && (value == null || value.isEmpty)) {
           return 'This field is required';

@@ -129,22 +129,38 @@ class BookingProvider extends ChangeNotifier {
   }
 
   // --- Finalize Booking ---
-  void completeBooking(String id) {
-    if (_currentHotel == null) return;
+  Future<bool> completeBooking(String paymentMethod) async {
+    if (_currentHotel == null) return false;
     
-    final newBooking = BookingEntity(
-      id: id,
-      roomId: 'RM-${_currentHotel!.id}-${_selectedRoomType.replaceAll(' ', '-').toUpperCase()}',
-      hotelName: _currentHotel!.name,
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    final roomId = 'RM-${_currentHotel!.id}-${_selectedRoomType.replaceAll(' ', '-').toUpperCase()}';
+    
+    final result = await _bookingRepository.createBooking(
+      roomId: roomId,
       checkIn: _checkIn,
       checkOut: _checkOut,
-      status: 'Confirmed',
-      totalAmount: total,
-      imageUrl: _currentHotel!.imageUrl,
+      paymentMethod: paymentMethod,
+      specialRequests: _leadGuest['requests'],
+      promoCode: _appliedPromoCode,
     );
-    
-    _bookings.insert(0, newBooking); // Add to history
-    notifyListeners();
+
+    _isLoading = false;
+
+    return result.fold(
+      (failure) {
+        _error = failure.message;
+        notifyListeners();
+        return false;
+      },
+      (booking) {
+        _bookings.insert(0, booking); // Add to history
+        notifyListeners();
+        return true;
+      },
+    );
   }
 
   // --- History Logic ---
@@ -173,25 +189,35 @@ class BookingProvider extends ChangeNotifier {
   }
 
   Future<bool> cancelBooking(String id) async {
-    // Check local first
-    final index = _bookings.indexWhere((b) => b.id == id);
-    if (index != -1) {
-      final old = _bookings[index];
-      _bookings[index] = BookingEntity(
-        id: old.id,
-        roomId: old.roomId,
-        hotelName: old.hotelName,
-        checkIn: old.checkIn,
-        checkOut: old.checkOut,
-        status: 'Cancelled',
-        totalAmount: old.totalAmount,
-        imageUrl: old.imageUrl,
-      );
-      notifyListeners();
-      return true;
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    // Check mock first
+    if (id.startsWith('LS-')) {
+      final index = _bookings.indexWhere((b) => b.id == id);
+      if (index != -1) {
+        final old = _bookings[index];
+        _bookings[index] = BookingEntity(
+          id: old.id,
+          roomId: old.roomId,
+          hotelName: old.hotelName,
+          checkIn: old.checkIn,
+          checkOut: old.checkOut,
+          status: 'Cancelled',
+          totalAmount: old.totalAmount,
+          imageUrl: old.imageUrl,
+          createdAt: old.createdAt,
+        );
+        _isLoading = false;
+        notifyListeners();
+        return true;
+      }
     }
 
     final result = await _bookingRepository.cancelBooking(id);
+    _isLoading = false;
+
     return result.fold(
       (failure) {
         _error = failure.message;
@@ -202,6 +228,8 @@ class BookingProvider extends ChangeNotifier {
         final idx = _bookings.indexWhere((b) => b.id == id);
         if (idx != -1) {
           _bookings[idx] = booking;
+        } else {
+          _bookings.insert(0, booking);
         }
         notifyListeners();
         return true;
