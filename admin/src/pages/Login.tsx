@@ -90,7 +90,11 @@ export default function Login() {
       const res = await fetch(`${API}/auth/forgot-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: resetEmail.trim().toLowerCase() }),
+        body: JSON.stringify({ 
+          email: resetEmail.trim().toLowerCase(),
+          fromAdmin: true,
+          originUrl: window.location.origin
+        }),
       });
       const data = await res.json();
       if (res.ok && data.success) {

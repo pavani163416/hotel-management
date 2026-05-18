@@ -240,7 +240,8 @@ router.post("/forgot-password", authLimiter, async (req, res, next) => {
     if (manager || adminUser) {
       const { token, hashedToken } = createResetToken();
       const expires = new Date(Date.now() + 1000 * 60 * 60);
-      const url = `${process.env.FRONTEND_URL || "http://localhost:5173"}/reset-password?token=${token}&email=${encodeURIComponent(email)}`;
+      const baseUrl = req.body.originUrl || req.headers.origin || (process.env.CLIENT_ORIGIN ? process.env.CLIENT_ORIGIN.split(',')[0] : "http://localhost:5174");
+      const url = `${baseUrl}/reset-password?token=${token}&email=${encodeURIComponent(email)}`;
 
       if (manager) {
         manager.resetPasswordToken = hashedToken;
