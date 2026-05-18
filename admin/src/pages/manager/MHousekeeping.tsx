@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import {
   Plus, CheckCircle2, Clock, AlertCircle, User,
-  BedDouble, Sparkles, Wrench, RefreshCw, X,
+  BedDouble, Sparkles, Wrench, RefreshCw, X, Users,
 } from "lucide-react";
 import ManagerLayout from "@/components/ManagerLayout";
 import Drawer from "@/components/Drawer";
@@ -22,17 +22,7 @@ type Task = {
   completedAt?: string;
 };
 
-const STAFF = ["Maria Santos", "James Okafor", "Priya Nair", "Carlos Reyes", "Aisha Patel", "Tom Nguyen"];
 const TASK_TYPES: TaskType[] = ["Cleaning", "Maintenance", "Inspection", "Turndown"];
-
-const emptyForm = { roomNumber: "", type: "Cleaning" as TaskType, assignedTo: STAFF[0], priority: "Medium" as Task["priority"], notes: "" };
-
-const statusColor: Record<TaskStatus, string> = {
-  "Pending":     "bg-warning-light text-warning",
-  "In Progress": "bg-accent-light text-secondary",
-  "Completed":   "bg-success-light text-success",
-  "Blocked":     "bg-danger-light text-danger",
-};
 
 const typeIcon: Record<TaskType, React.ReactNode> = {
   Cleaning:    <Sparkles className="w-4 h-4" />,
@@ -44,9 +34,21 @@ const typeIcon: Record<TaskType, React.ReactNode> = {
 export default function Housekeeping() {
   const [rooms, setRooms]       = useState<any[]>([]);
   const [tasks, setTasks]       = useState<Task[]>([]);
+  const [staffList, setStaffList] = useState<string[]>([]);
   const [loading, setLoading]   = useState(true);
+  
   const [showAdd, setShowAdd]   = useState(false);
-  const [form, setForm]         = useState({ ...emptyForm });
+  const [showStaffModal, setShowStaffModal] = useState(false);
+  const [newStaffName, setNewStaffName] = useState("");
+  
+  const [form, setForm]         = useState({
+    roomNumber: "",
+    type: "Cleaning" as TaskType,
+    assignedTo: "",
+    priority: "Medium" as Task["priority"],
+    notes: ""
+  });
+  
   const [filterStatus, setFilterStatus] = useState<string>("All");
   const [filterStaff, setFilterStaff]   = useState("All");
   const [liveLog, setLiveLog]   = useState<{ id: string; msg: string; time: string }[]>([
@@ -58,14 +60,33 @@ export default function Housekeeping() {
   const adminData = JSON.parse(localStorage.getItem("luxe_admin") || "{}");
   const hotelId = adminData.assignedHotelId || "default";
   const localStorageKey = `luxe_housekeeping_tasks_${hotelId}`;
+  const staffKey = `luxe_housekeeping_staff_${hotelId}`;
 
   const loadData = useCallback(async () => {
     try {
       const res: any = await getManagerRooms();
       const roomsList = res?.data || [];
       setRooms(roomsList);
+      
+      // Load Staff Directory from LocalStorage (multi-tenant scoped)
+      let currentStaff: string[] = [];
+      const storedStaff = localStorage.getItem(staffKey);
+      if (storedStaff) {
+        currentStaff = JSON.parse(storedStaff);
+        setStaffList(currentStaff);
+      } else {
+        const defaultStaff = ["Maria Santos", "James Okafor", "Priya Nair", "Carlos Reyes", "Aisha Patel", "Tom Nguyen"];
+        currentStaff = defaultStaff;
+        setStaffList(defaultStaff);
+        localStorage.setItem(staffKey, JSON.stringify(defaultStaff));
+      }
+
       if (roomsList.length > 0 && !form.roomNumber) {
-        setForm((f) => ({ ...f, roomNumber: roomsList[0].roomNumber }));
+        setForm((f) => ({
+          ...f,
+          roomNumber: roomsList[0].roomNumber,
+          assignedTo: currentStaff[0] || ""
+        }));
       }
       
       const stored = localStorage.getItem(localStorageKey);
@@ -78,7 +99,7 @@ export default function Housekeeping() {
               id: "1",
               roomNumber: roomsList[0].roomNumber,
               type: "Cleaning",
-              assignedTo: "Maria Santos",
+              assignedTo: currentStaff[0] || "Maria Santos",
               status: "In Progress",
               priority: "Medium",
               createdAt: new Date().toISOString(),
@@ -87,7 +108,7 @@ export default function Housekeeping() {
               id: "2",
               roomNumber: roomsList[Math.min(1, roomsList.length - 1)].roomNumber,
               type: "Maintenance",
-              assignedTo: "Tom Nguyen",
+              assignedTo: currentStaff[Math.min(5, currentStaff.length - 1)] || "Tom Nguyen",
               status: "Pending",
               priority: "High",
               notes: "AC unit requires service",
@@ -106,7 +127,7 @@ export default function Housekeeping() {
     } finally {
       setLoading(false);
     }
-  }, [localStorageKey, form.roomNumber]);
+  }, [localStorageKey, staffKey, form.roomNumber]);
 
   useEffect(() => {
     loadData();
@@ -121,11 +142,12 @@ export default function Housekeeping() {
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     const targetRoomNumber = form.roomNumber || (rooms[0]?.roomNumber || "");
+    const targetAssignedTo = form.assignedTo || (staffList[0] || "Unassigned");
     const newTask: Task = {
       id:         Date.now().toString(),
       roomNumber: targetRoomNumber,
       type:       form.type,
-      assignedTo: form.assignedTo,
+      assignedTo: targetAssignedTo,
       status:     "Pending",
       priority:   form.priority,
       notes:      form.notes,
@@ -145,11 +167,42 @@ export default function Housekeeping() {
     }
 
     setLiveLog((prev) => [
-      { id: Date.now().toString(), msg: `Room #${targetRoomNumber.replace(/^[a-z]+-/i, "")} ${form.type} assigned to ${form.assignedTo}`, time: "just now" },
+      { id: Date.now().toString(), msg: `Room #${targetRoomNumber.replace(/^[a-z]+-/i, "")} ${form.type} assigned to ${targetAssignedTo}`, time: "just now" },
       ...prev.slice(0, 9),
     ]);
     setShowAdd(false);
-    setForm({ ...emptyForm, roomNumber: rooms[0]?.roomNumber || "" });
+    setForm({
+      roomNumber: rooms[0]?.roomNumber || "",
+      type: "Cleaning" as TaskType,
+      assignedTo: staffList[0] || "",
+      priority: "Medium" as Task["priority"],
+      notes: ""
+    });
+  };
+
+  const handleAddStaff = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newStaffName.trim()) return;
+    const cleanName = newStaffName.trim();
+    if (staffList.includes(cleanName)) return;
+    const updated = [...staffList, cleanName];
+    setStaffList(updated);
+    localStorage.setItem(staffKey, JSON.stringify(updated));
+    setNewStaffName("");
+    setLiveLog((prev) => [
+      { id: Date.now().toString(), msg: `New housekeeper "${cleanName}" added to the staff directory.`, time: "just now" },
+      ...prev.slice(0, 9),
+    ]);
+  };
+
+  const handleRemoveStaff = (nameToRemove: string) => {
+    const updated = staffList.filter((s) => s !== nameToRemove);
+    setStaffList(updated);
+    localStorage.setItem(staffKey, JSON.stringify(updated));
+    setLiveLog((prev) => [
+      { id: Date.now().toString(), msg: `Housekeeper "${nameToRemove}" removed from the directory.`, time: "just now" },
+      ...prev.slice(0, 9),
+    ]);
   };
 
   const updateStatus = async (id: string, status: TaskStatus) => {
@@ -193,10 +246,16 @@ export default function Housekeeping() {
           <h1 className="text-xl font-bold text-bright">Housekeeping</h1>
           <p className="text-sm text-dim mt-0.5">Staff tasks & room status management</p>
         </div>
-        <button onClick={() => setShowAdd(true)}
-          className="flex items-center gap-2 bg-primary text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-primary-dark transition-colors">
-          <Plus className="w-4 h-4" /> Assign Task
-        </button>
+        <div className="flex items-center gap-3">
+          <button onClick={() => setShowStaffModal(true)}
+            className="flex items-center gap-2 bg-white/5 border border-white/10 text-bright px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-white/10 transition-colors">
+            <Users className="w-4 h-4 text-gold" /> Manage Staff
+          </button>
+          <button onClick={() => setShowAdd(true)}
+            className="flex items-center gap-2 bg-primary text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-primary-dark transition-colors">
+            <Plus className="w-4 h-4" /> Assign Task
+          </button>
+        </div>
       </div>
 
       {/* Summary cards */}
@@ -233,7 +292,7 @@ export default function Housekeeping() {
             <select value={filterStaff} onChange={(e) => setFilterStaff(e.target.value)}
               className="glass-select rounded-xl px-3 py-2 text-sm outline-none">
               <option value="All">All Staff</option>
-              {STAFF.map((s) => <option key={s}>{s}</option>)}
+              {staffList.map((s) => <option key={s}>{s}</option>)}
             </select>
           </div>
 
@@ -343,7 +402,7 @@ export default function Housekeeping() {
             <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1.5">Assign To *</label>
             <select value={form.assignedTo} onChange={(e) => setForm({ ...form, assignedTo: e.target.value })}
               className="w-full border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-gold bg-white/5 text-bright">
-              {STAFF.map((s) => <option key={s} className="bg-neutral-900 text-bright">{s}</option>)}
+              {staffList.map((s) => <option key={s} className="bg-neutral-900 text-bright">{s}</option>)}
             </select>
           </div>
           <div>
@@ -366,6 +425,49 @@ export default function Housekeeping() {
             Assign Task
           </button>
         </form>
+      </Drawer>
+
+      {/* Manage Staff Drawer */}
+      <Drawer isOpen={showStaffModal} onClose={() => setShowStaffModal(false)} title="Manage Housekeeping Staff" width="w-[420px]">
+        <div className="space-y-5">
+          {/* Add Staff Form */}
+          <form onSubmit={handleAddStaff} className="flex gap-2">
+            <input
+              type="text"
+              placeholder="New Housekeeper Name..."
+              value={newStaffName}
+              onChange={(e) => setNewStaffName(e.target.value)}
+              className="flex-1 border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-gold bg-white/5 text-bright"
+              required
+            />
+            <button type="submit" className="bg-gold text-dark px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-gold/90 transition-all flex items-center gap-1 shrink-0">
+              <Plus className="w-4.5 h-4.5" /> Add
+            </button>
+          </form>
+
+          {/* Staff List */}
+          <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1">
+            <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-2">Active Housekeepers Directory</label>
+            {staffList.length === 0 ? (
+              <p className="text-xs text-dim text-center py-6">No housekeepers added yet.</p>
+            ) : staffList.map((s) => (
+              <div key={s} className="flex items-center justify-between bg-white/5 border border-white/5 p-3 rounded-xl hover:bg-white/10 transition-all">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-gold/10 grid place-items-center"><User className="w-4 h-4 text-gold" /></div>
+                  <span className="text-sm font-medium text-bright">{s}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleRemoveStaff(s)}
+                  className="text-dim hover:text-ruby p-1.5 rounded-lg hover:bg-white/5 transition-all"
+                  title="Remove Housekeeper"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
       </Drawer>
     </ManagerLayout>
   );
