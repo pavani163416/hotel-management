@@ -5,7 +5,7 @@ const isProd = process.env.NODE_ENV === "production";
 // ── General API limiter ───────────────────────────────────
 export const apiLimiter = rateLimit({
   windowMs: Number(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000,
-  max:      Number(process.env.RATE_LIMIT_MAX)        || (isProd ? 100 : 1000),
+  max:      Number(process.env.RATE_LIMIT_MAX)        || (isProd ? 1000 : 5000),
   standardHeaders: true,
   legacyHeaders:   false,
   // Skip rate limiting for promo/validate — it has its own dedicated limiter
@@ -20,7 +20,7 @@ export const apiLimiter = rateLimit({
 // ── Auth limiter — login endpoints ────────────────────────
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,          // 15 minutes
-  max:      isProd ? 50 : 100,        // 50 attempts in prod (raised for testing)
+  max:      isProd ? 200 : 500,        // increased for testing
   standardHeaders: true,
   legacyHeaders:   false,
   skipSuccessfulRequests: true,       // only count failures
