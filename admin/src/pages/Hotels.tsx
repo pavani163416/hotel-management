@@ -259,16 +259,15 @@ export default function Hotels() {
 
         // Register manager in backend
         try {
-          await fetch(`${API}/admin/users`, {
+          await fetch(`${API}/admin/managers`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               name:              `${form.name} Manager`,
               email,
               password,
-              role:              "Manager",
-              assignedHotelId:   hotelId,
-              assignedHotelName: form.name,
+              hotelId,
+              hotelName:         form.name,
               isActive:          true,
             }),
           });
