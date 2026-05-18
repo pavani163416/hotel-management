@@ -141,6 +141,9 @@ class BookingProvider extends ChangeNotifier {
       status: 'Confirmed',
       totalAmount: total,
       imageUrl: _currentHotel!.imageUrl,
+      guestName: _leadGuest['name']?.isNotEmpty == true ? _leadGuest['name'] : 'Guest',
+      roomNumber: '101',
+      createdAt: DateTime.now(),
     );
     
     _bookings.insert(0, newBooking); // Add to history
@@ -191,6 +194,9 @@ class BookingProvider extends ChangeNotifier {
           status: 'Cancelled',
           totalAmount: old.totalAmount,
           imageUrl: old.imageUrl,
+          guestName: old.guestName,
+          roomNumber: old.roomNumber,
+          createdAt: old.createdAt,
         );
         _isLoading = false;
         notifyListeners();
@@ -219,6 +225,9 @@ class BookingProvider extends ChangeNotifier {
             status: 'Cancelled',
             totalAmount: old.totalAmount,
             imageUrl: old.imageUrl,
+            guestName: old.guestName,
+            roomNumber: old.roomNumber,
+            createdAt: old.createdAt,
           );
           notifyListeners();
           return true;
