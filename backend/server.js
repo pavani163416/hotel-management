@@ -6,6 +6,7 @@ import morgan           from "morgan";
 import mongoSanitize    from "express-mongo-sanitize";
 import { createServer } from "http";
 import { Server as SocketIOServer } from "socket.io";
+import { WebSocketServer } from "ws";
 import jwt              from "jsonwebtoken";
 import { initWebSocket } from "./routes/wsRoutes.js";
 
@@ -229,7 +230,7 @@ const io = new SocketIOServer(httpServer, {
   maxHttpBufferSize: 1e7,
   cookie: false,
   serveClient: false,
-  wsEngine: require("ws"),
+  wsEngine: WebSocketServer,
   cors: {
     origin:      allowedOrigins,
     methods:     ["GET", "POST"],
