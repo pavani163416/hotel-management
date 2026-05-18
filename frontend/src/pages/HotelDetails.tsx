@@ -163,63 +163,64 @@ const HotelDetails = () => {
                 No rooms are currently available for this hotel. Please check back later or select another property.
               </div>
             ) : (
-              <div className="border border-border rounded-2xl overflow-hidden bg-card">
-                <div className="hidden md:grid grid-cols-[2fr_2fr_1fr_auto] bg-primary text-primary-foreground text-xs uppercase tracking-wider font-semibold">
-                  <div className="p-4">Room Type</div><div className="p-4">Key Features</div><div className="p-4 text-right">Daily Price</div><div className="p-4">Action</div>
-                </div>
-                {hotel.rooms.map((r) => (
-                  <div key={r.id} className="grid md:grid-cols-[2fr_2fr_1fr_auto] gap-4 p-5 border-t border-border first:border-t-0 items-center">
-                  <div>
-                    <h4 className="font-semibold text-primary">{r.name}</h4>
-                    <p className="text-xs text-muted-foreground mt-1 flex items-center gap-3">
-                      <span className="flex items-center gap-1"><BedDouble className="w-3.5 h-3.5" /> {r.bed}</span>
-                      <span className="flex items-center gap-1"><Users className="w-3.5 h-3.5" /> {r.capacity}</span>
-                    </p>
+              <>
+                <div className="border border-border rounded-2xl overflow-hidden bg-card">
+                  <div className="hidden md:grid grid-cols-[2fr_2fr_1fr_auto] bg-primary text-primary-foreground text-xs uppercase tracking-wider font-semibold">
+                    <div className="p-4">Room Type</div><div className="p-4">Key Features</div><div className="p-4 text-right">Daily Price</div><div className="p-4">Action</div>
                   </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {r.features.map((f) => (
-                      <span key={f} className="text-xs px-2 py-1 rounded bg-secondary text-primary font-medium flex items-center gap-1">
-                        {amenityIcon(f)}
-                        {f}
-                      </span>
-                    ))}
-                  </div>
-                  <div className="md:text-right">
-                    <p className="font-display text-xl font-bold text-primary">${r.price}</p>
-                    <p className="text-xs text-muted-foreground">per night</p>
-                  </div>
-                  <div className="flex flex-col items-stretch gap-1 md:min-w-[140px]">
-                    <button onClick={() => select(r.id)} disabled={r.available === 0 || roomStatus[r.id]?.checking}
-                      className="bg-accent hover:bg-accent/90 disabled:bg-secondary disabled:text-muted-foreground disabled:cursor-not-allowed text-accent-foreground px-4 py-2.5 rounded-lg font-semibold text-sm transition-base flex items-center justify-center gap-1.5">
-                      {roomStatus[r.id]?.checking ? (
-                        <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Checking...</>
-                      ) : r.available === 0 ? "Sold Out" : (
-                        <>{!user && <LogIn className="w-3.5 h-3.5" />}Select Room</>
-                      )}
-                    </button>
-                    {/* Availability error for this specific room */}
-                    {roomStatus[r.id]?.error && (
-                      <div className="flex items-start gap-1.5 mt-1 p-2 bg-destructive/10 border border-destructive/20 rounded-lg">
-                        <AlertCircle className="w-3.5 h-3.5 text-destructive shrink-0 mt-0.5" />
-                        <p className="text-[11px] text-destructive leading-tight">{roomStatus[r.id].error}</p>
+                  {hotel.rooms.map((r) => (
+                    <div key={r.id} className="grid md:grid-cols-[2fr_2fr_1fr_auto] gap-4 p-5 border-t border-border first:border-t-0 items-center">
+                      <div>
+                        <h4 className="font-semibold text-primary">{r.name}</h4>
+                        <p className="text-xs text-muted-foreground mt-1 flex items-center gap-3">
+                          <span className="flex items-center gap-1"><BedDouble className="w-3.5 h-3.5" /> {r.bed}</span>
+                          <span className="flex items-center gap-1"><Users className="w-3.5 h-3.5" /> {r.capacity}</span>
+                        </p>
                       </div>
-                    )}
-                    {!roomStatus[r.id]?.error && r.available > 0 && r.available <= 3 && (
-                      <span className="text-[11px] text-accent text-center font-medium">Only {r.available} left</span>
-                    )}
-                    {r.available > 0 && !user && <span className="text-[11px] text-muted-foreground text-center">Sign in to book</span>}
-                  </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {r.features.map((f) => (
+                          <span key={f} className="text-xs px-2 py-1 rounded bg-secondary text-primary font-medium flex items-center gap-1">
+                            {amenityIcon(f)}
+                            {f}
+                          </span>
+                        ))}
+                      </div>
+                      <div className="md:text-right">
+                        <p className="font-display text-xl font-bold text-primary">${r.price}</p>
+                        <p className="text-xs text-muted-foreground">per night</p>
+                      </div>
+                      <div className="flex flex-col items-stretch gap-1 md:min-w-[140px]">
+                        <button onClick={() => select(r.id)} disabled={r.available === 0 || roomStatus[r.id]?.checking}
+                          className="bg-accent hover:bg-accent/90 disabled:bg-secondary disabled:text-muted-foreground disabled:cursor-not-allowed text-accent-foreground px-4 py-2.5 rounded-lg font-semibold text-sm transition-base flex items-center justify-center gap-1.5">
+                          {roomStatus[r.id]?.checking ? (
+                            <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Checking...</>
+                          ) : r.available === 0 ? "Sold Out" : (
+                            <>{!user && <LogIn className="w-3.5 h-3.5" />}Select Room</>
+                          )}
+                        </button>
+                        {/* Availability error for this specific room */}
+                        {roomStatus[r.id]?.error && (
+                          <div className="flex items-start gap-1.5 mt-1 p-2 bg-destructive/10 border border-destructive/20 rounded-lg">
+                            <AlertCircle className="w-3.5 h-3.5 text-destructive shrink-0 mt-0.5" />
+                            <p className="text-[11px] text-destructive leading-tight">{roomStatus[r.id].error}</p>
+                          </div>
+                        )}
+                        {!roomStatus[r.id]?.error && r.available > 0 && r.available <= 3 && (
+                          <span className="text-[11px] text-accent text-center font-medium">Only {r.available} left</span>
+                        )}
+                        {r.available > 0 && !user && <span className="text-[11px] text-muted-foreground text-center">Sign in to book</span>}
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-            <div className="mt-10 p-6 bg-secondary/50 rounded-2xl">
-              <h3 className="font-display text-xl font-bold mb-2">About this property</h3>
-              <p className="text-muted-foreground leading-relaxed">{hotel.description}</p>
-            </div>
-          </div>
-        )}
-
-        {tab === "amenities" && (
+                <div className="mt-10 p-6 bg-secondary/50 rounded-2xl">
+                  <h3 className="font-display text-xl font-bold mb-2">About this property</h3>
+                  <p className="text-muted-foreground leading-relaxed">{hotel.description}</p>
+                </div>
+              </>
+             )}
+           </div>
+         )}
           <div className="mt-8 grid sm:grid-cols-2 md:grid-cols-3 gap-3">
             {hotel.amenities.map((a) => (
               <div key={a} className="flex items-center gap-3 p-4 border border-border rounded-xl bg-card">
