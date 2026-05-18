@@ -84,18 +84,17 @@ export const createBooking = async (req, res, next) => {
     }
 
     if (room.status !== "Available") {
-      // Auto-recover: if the room is Booked but checkout has passed, reset it
+      // If the room is Booked, only block dates that overlap an active booking.
       if (room.status === "Booked") {
         const activeBooking = await Booking.findOne({
           room: room._id,
           status: { $in: ["Confirmed", "CheckedIn"] },
-          checkOut: { $gt: new Date() },
+          checkIn:  { $lt: new Date(checkOut) },
+          checkOut: { $gt: new Date(checkIn) },
         }).session(session);
 
         if (!activeBooking) {
-          // No active future booking — safe to reset and allow this booking
-          room.status = "Available";
-          await room.save({ session });
+          // No overlap for the requested stay — allow this booking.
         } else {
           await session.abortTransaction();
           return res.status(409).json({

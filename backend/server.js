@@ -74,6 +74,7 @@ const rawOrigins = (process.env.CLIENT_ORIGIN || "").split(",").map((o) => o.tri
 
 // Always-allowed origins (Vercel deployments + local dev)
 const allowedOrigins = [
+  "https://hotel-mgnt.vercel.app",
   "https://luxestay-frontend.vercel.app",
   "https://luxestay-admin.vercel.app",
   "http://localhost:5173", "http://127.0.0.1:5173",
@@ -100,6 +101,14 @@ const corsOptions = {
   methods:        ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
   credentials:    true,
+};
+
+const socketCorsOrigin = (origin, callback) => {
+  if (!origin) return callback(null, true);
+  if (allowedOrigins.includes(origin)) return callback(null, true);
+  if (origin.startsWith("http://localhost:") || origin.startsWith("http://127.0.0.1:")) return callback(null, true);
+  if (origin.endsWith(".vercel.app")) return callback(null, true);
+  callback(new Error("Socket.IO CORS not allowed: " + origin));
 };
 
 // Handle preflight for all routes FIRST — before any other middleware
@@ -232,7 +241,7 @@ const io = new SocketIOServer(httpServer, {
   serveClient: false,
   wsEngine: WebSocketServer,
   cors: {
-    origin:      allowedOrigins,
+    origin:      socketCorsOrigin,
     methods:     ["GET", "POST"],
     credentials: true,
     allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Upgrade"],

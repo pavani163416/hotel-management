@@ -271,6 +271,14 @@ export const BookingProvider = ({ children }: { children: ReactNode }) => {
 
     // Always do an immediate fetch on mount so hotels load even before SSE connects
     fetchHotels();
+    if (import.meta.env.PROD) {
+      startPolling();
+      return () => {
+        destroyed = true;
+        stopPolling();
+        if (reconnectTimer) clearTimeout(reconnectTimer);
+      };
+    }
     connect();
 
     return () => {
