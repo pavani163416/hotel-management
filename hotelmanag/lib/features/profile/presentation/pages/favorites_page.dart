@@ -34,15 +34,11 @@ class FavoritesPage extends StatelessWidget {
             if (favorites.isEmpty)
               _buildEmptyState(context)
             else
-              ListView.separated(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: favorites.length,
-                separatorBuilder: (context, index) => const SizedBox(height: 16),
-                itemBuilder: (context, index) {
-                  final hotel = favorites[index];
-                  return _buildFavoriteCard(context, hotel);
-                },
+              Column(
+                children: favorites.map((hotel) => Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: _buildFavoriteCard(context, hotel),
+                )).toList(),
               ),
             const SizedBox(height: 100),
           ],
@@ -99,6 +95,8 @@ class FavoritesPage extends StatelessWidget {
                 width: 120,
                 height: 120,
                 fit: BoxFit.cover,
+                memCacheWidth: 240,
+                memCacheHeight: 240,
               ),
             ),
             Expanded(

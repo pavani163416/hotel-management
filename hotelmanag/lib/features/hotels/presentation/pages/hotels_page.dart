@@ -26,6 +26,7 @@ class _HotelsPageState extends State<HotelsPage> {
   @override
   Widget build(BuildContext context) {
     return MainLayout(
+      isScrollable: false,
       child: LayoutBuilder(
         builder: (context, constraints) {
           final isWide = constraints.maxWidth > 1000;
@@ -346,7 +347,14 @@ class _HotelsPageState extends State<HotelsPage> {
             children: [
               ClipRRect(
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                child: CachedNetworkImage(imageUrl: hotel.imageUrl, height: 140, width: double.infinity, fit: BoxFit.cover),
+                child: CachedNetworkImage(
+                  imageUrl: hotel.imageUrl,
+                  height: 140,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                  memCacheWidth: 400,
+                  memCacheHeight: 280,
+                ),
               ),
               Positioned(top: 10, left: 10, child: _buildBadge('TOP DEAL', isDark ? const Color(0xFF253040) : const Color(0xFFF7FAFC))),
               Positioned(top: 10, right: 10, child: _buildBadge('-20%', Colors.black.withOpacity(0.5), textColor: Colors.white)),
@@ -544,7 +552,14 @@ class _HotelsPageState extends State<HotelsPage> {
         children: [
           Stack(
             children: [
-              CachedNetworkImage(imageUrl: hotel.imageUrl, width: 280, height: 180, fit: BoxFit.cover),
+              CachedNetworkImage(
+                imageUrl: hotel.imageUrl,
+                width: 280,
+                height: 180,
+                fit: BoxFit.cover,
+                memCacheWidth: 500,
+                memCacheHeight: 350,
+              ),
               Positioned(top: 12, left: 12, child: _buildBadge('TOP DEAL', isDark ? const Color(0xFF253040) : const Color(0xFFE5E0D8))),
             ],
           ),
@@ -643,7 +658,14 @@ class _HotelsPageState extends State<HotelsPage> {
           children: [
             Stack(
               children: [
-                CachedNetworkImage(imageUrl: hotel.imageUrl, height: 200, width: double.infinity, fit: BoxFit.cover),
+                CachedNetworkImage(
+                  imageUrl: hotel.imageUrl,
+                  height: 200,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                  memCacheWidth: 500,
+                  memCacheHeight: 350,
+                ),
                 Positioned(top: 12, left: 12, child: _buildBadge('TOP DEAL', isDark ? const Color(0xFF253040) : const Color(0xFFE5E0D8))),
               ],
             ),

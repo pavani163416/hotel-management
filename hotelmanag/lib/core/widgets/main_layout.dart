@@ -10,6 +10,7 @@ class MainLayout extends StatelessWidget {
   final bool showNavbar;
   final bool showAppBar;
   final bool showBottomNav;
+  final bool isScrollable;
 
   const MainLayout({
     super.key,
@@ -17,6 +18,7 @@ class MainLayout extends StatelessWidget {
     this.showNavbar = true,
     this.showAppBar = false,
     this.showBottomNav = true,
+    this.isScrollable = true,
   });
 
   @override
@@ -40,13 +42,15 @@ class MainLayout extends StatelessWidget {
             stops: [0.7, 1.0],
           ),
         ),
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              child,
-            ],
-          ),
-        ),
+        child: isScrollable
+            ? SingleChildScrollView(
+                child: Column(
+                  children: [
+                    child,
+                  ],
+                ),
+              )
+            : child,
       ),
       bottomNavigationBar: (showNavbar && showBottomNav) ? _buildBottomNav(context) : null,
       floatingActionButton: Navigator.of(context).canPop()

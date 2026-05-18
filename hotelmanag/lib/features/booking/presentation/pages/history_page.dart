@@ -64,11 +64,8 @@ class _HistoryPageState extends State<HistoryPage> {
                     return _buildEmptyState();
                   }
 
-                  return ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: filteredBookings.length,
-                    itemBuilder: (context, index) => BookingListItem(booking: filteredBookings[index]),
+                  return Column(
+                    children: filteredBookings.map((booking) => BookingListItem(booking: booking)).toList(),
                   );
                 },
               ),
@@ -162,6 +159,8 @@ class BookingListItem extends StatelessWidget {
             child: CachedNetworkImage(
               imageUrl: booking.imageUrl ?? 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=400',
               fit: BoxFit.cover,
+              memCacheWidth: 320,
+              memCacheHeight: 240,
             ),
           ),
           Expanded(
@@ -261,6 +260,8 @@ class BookingListItem extends StatelessWidget {
               height: 160,
               width: double.infinity,
               fit: BoxFit.cover,
+              memCacheWidth: 400,
+              memCacheHeight: 240,
             ),
             Positioned(
               top: 12,
@@ -458,6 +459,8 @@ class BookingListItem extends StatelessWidget {
                       height: 180,
                       width: double.infinity,
                       fit: BoxFit.cover,
+                      memCacheWidth: 600,
+                      memCacheHeight: 360,
                     ),
                   ),
                   Positioned(

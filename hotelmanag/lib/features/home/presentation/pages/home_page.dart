@@ -281,6 +281,8 @@ class _HomePageState extends State<HomePage> {
           child: CachedNetworkImage(
             imageUrl: 'https://images.unsplash.com/photo-1571896349842-33c89424de2d?q=80&w=1600',
             fit: BoxFit.cover,
+            memCacheWidth: 1000,
+            memCacheHeight: 700,
             placeholder: (context, url) => Container(color: AppTheme.primaryColor),
           ),
         ),
@@ -614,85 +616,85 @@ class _HomePageState extends State<HomePage> {
             if (items.isEmpty) {
               return const SizedBox.shrink();
             }
-            return ListView.separated(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
+            return Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-              itemCount: items.length,
-              separatorBuilder: (context, index) => const SizedBox(height: 16),
-              itemBuilder: (context, index) {
-                final item = items[index];
-                return InkWell(
-                  onTap: () => context.push('/hotel/${item.id}'),
-                  child: Container(
-                    height: 120,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4)),
-                      ],
-                    ),
-                    child: Row(
-                      children: [
-                        Hero(
-                          tag: 'hotel_image_rec_${item.id}',
-                          child: ClipRRect(
-                            borderRadius: const BorderRadius.horizontal(left: Radius.circular(20)),
-                            child: CachedNetworkImage(
-                              imageUrl: item.imageUrl,
-                              width: 120,
-                              height: 120,
-                              fit: BoxFit.cover,
-                              memCacheWidth: 240,
-                              memCacheHeight: 240,
-                              placeholder: (context, url) => Shimmer.fromColors(
-                                baseColor: Colors.grey[300]!,
-                                highlightColor: Colors.grey[100]!,
-                                child: Container(color: Colors.white),
+              child: Column(
+                children: items.map((item) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: InkWell(
+                      onTap: () => context.push('/hotel/${item.id}'),
+                      child: Container(
+                        height: 120,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4)),
+                          ],
+                        ),
+                        child: Row(
+                          children: [
+                            Hero(
+                              tag: 'hotel_image_rec_${item.id}',
+                              child: ClipRRect(
+                                borderRadius: const BorderRadius.horizontal(left: Radius.circular(20)),
+                                child: CachedNetworkImage(
+                                  imageUrl: item.imageUrl,
+                                  width: 120,
+                                  height: 120,
+                                  fit: BoxFit.cover,
+                                  memCacheWidth: 240,
+                                  memCacheHeight: 240,
+                                  placeholder: (context, url) => Shimmer.fromColors(
+                                    baseColor: Colors.grey[300]!,
+                                    highlightColor: Colors.grey[100]!,
+                                    child: Container(color: Colors.white),
+                                  ),
+                                ),
                               ),
                             ),
-                          ),
-                        ),
-                        Expanded(
-                          child: Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppTheme.primaryColor)),
-                                const SizedBox(height: 4),
-                                Row(
+                            Expanded(
+                              child: Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    Icon(LucideIcons.mapPin, size: 12, color: Colors.grey[400]),
-                                    const SizedBox(width: 4),
-                                    Text(item.location, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
-                                  ],
-                                ),
-                                const SizedBox(height: 12),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text('\$${item.pricePerNight}/night', style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+                                    Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppTheme.primaryColor)),
+                                    const SizedBox(height: 4),
                                     Row(
                                       children: [
-                                        const Icon(LucideIcons.star, size: 12, color: AppTheme.accentColor, fill: 1),
+                                        Icon(LucideIcons.mapPin, size: 12, color: Colors.grey[400]),
                                         const SizedBox(width: 4),
-                                        Text(item.rating.toString(), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                                        Text(item.location, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 12),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text('\$${item.pricePerNight}/night', style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+                                        Row(
+                                          children: [
+                                            const Icon(LucideIcons.star, size: 12, color: AppTheme.accentColor, fill: 1),
+                                            const SizedBox(width: 4),
+                                            Text(item.rating.toString(), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                                          ],
+                                        ),
                                       ],
                                     ),
                                   ],
                                 ),
-                              ],
+                              ),
                             ),
-                          ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
-                  ),
-                );
-              },
+                  );
+                }).toList(),
+              ),
             );
           },
         ),

@@ -112,6 +112,8 @@ class _BookingPageState extends State<BookingPage> {
               height: 250,
               width: double.infinity,
               fit: BoxFit.cover,
+              memCacheWidth: 600,
+              memCacheHeight: 380,
             ),
           ),
           
