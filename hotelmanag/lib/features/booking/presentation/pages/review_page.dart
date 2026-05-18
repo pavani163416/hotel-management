@@ -20,6 +20,14 @@ class _ReviewPageState extends State<ReviewPage> {
   final _promoController = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    _promoController.addListener(() {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
   void dispose() {
     _promoController.dispose();
     super.dispose();
@@ -379,10 +387,12 @@ class _ReviewPageState extends State<ReviewPage> {
   }
 
   Widget _buildPromoChip(String code, BookingProvider provider) {
-    bool isApplied = provider.appliedPromoCode == code;
+    bool isApplied = provider.appliedPromoCode == code || _promoController.text == code;
     return GestureDetector(
       onTap: () {
-        provider.applyPromoCode(code);
+        setState(() {
+          _promoController.text = code;
+        });
       },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -395,7 +405,7 @@ class _ReviewPageState extends State<ReviewPage> {
           code,
           style: TextStyle(
             fontSize: 10,
-            color: isApplied ? AppTheme.primaryColor.withOpacity(0.3) : AppTheme.primaryColor.withOpacity(0.6),
+            color: isApplied ? AppTheme.primaryColor : AppTheme.primaryColor.withOpacity(0.6),
             fontWeight: FontWeight.bold,
           ),
         ),
