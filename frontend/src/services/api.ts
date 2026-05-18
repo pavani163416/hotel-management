@@ -31,6 +31,7 @@ export default api;
 export interface CreateBookingPayload {
   roomId?: string;
   roomNumber?: string;
+  hotelId?: string;
   roomTypeId?: string;
   guest: {
     name: string;

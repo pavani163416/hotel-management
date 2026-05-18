@@ -7,7 +7,7 @@ import {
 import Layout from "@/components/Layout";
 import Stepper from "@/components/Stepper";
 import { useBooking, calcNights, Booking } from "@/context/BookingContext";
-import { createBooking, getRoomByNumber } from "@/services/api";
+import { createBooking } from "@/services/api";
 
 type Method = "card" | "upi" | "netbanking";
 
@@ -87,18 +87,12 @@ const Payment = () => {
         return;
       }
 
-      const roomExists = await getRoomByNumber(selectedRoom.id);
-      if (!roomExists) {
-        setError("This room is not registered in the backend database. Please select a different room or contact support.");
-        setProcessing(false);
-        return;
-      }
-
       let mongoBookingId: string | null = null;
       try {
         const response = await createBooking({
           roomId:         selectedRoom.id,
           roomNumber:     selectedRoom.id,
+          hotelId:        selectedHotel.id,
           guest:          { name: guest.name, email: user?.email || guest.email, phone: guest.phone, city: "" },
           checkIn:        search.checkIn,
           checkOut:       search.checkOut,

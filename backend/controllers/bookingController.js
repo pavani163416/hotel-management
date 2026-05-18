@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import Booking from "../models/Booking.js";
 import Room from "../models/Room.js";
+import Hotel from "../models/Hotel.js";
 import Guest from "../models/Guest.js";
 import AdditionalGuest from "../models/AdditionalGuest.js";
 import CancellationRefund from "../models/CancellationRefund.js";
@@ -9,6 +10,57 @@ import { broadcastBookingUpdate } from "../routes/wsRoutes.js";
 import { sendBookingConfirmation, sendCancellationEmail } from "../utils/emailService.js";
 import { sendNotification } from "../utils/notificationService.js";
 import logger from "../utils/logger.js";
+
+const inferBackendRoomType = (name = "") => {
+  const normalized = String(name).toLowerCase();
+  if (normalized.includes("penthouse")) return "Penthouse";
+  if (normalized.includes("suite")) return "Suite";
+  if (normalized.includes("villa")) return "Villa";
+  if (normalized.includes("deluxe")) return "Deluxe";
+  return "Standard";
+};
+
+const getOrCreateRoomFromHotelDefinition = async ({ identifier, hotelId, hotelName, price, description, capacity, bed, features, hotelImage }) => {
+  if (!identifier) return null;
+
+  let hotel = null;
+  if (hotelId) hotel = await Hotel.findOne({ hotelId: hotelId, isActive: true });
+  if (!hotel && hotelName) hotel = await Hotel.findOne({ name: hotelName, isActive: true });
+  if (!hotel) hotel = await Hotel.findOne({ "rooms.id": identifier, isActive: true });
+  if (!hotel) return null;
+
+  const roomDef = hotel.rooms.find((room) => room.id === identifier || room.name === identifier);
+  if (!roomDef) return null;
+
+  const existingRoom = await Room.findOne({ roomNumber: roomDef.id });
+  if (existingRoom) return existingRoom;
+
+  const roomType = inferBackendRoomType(roomDef.name);
+  const bedType = /queen/i.test(roomDef.bed)
+    ? "Queen"
+    : /king/i.test(roomDef.bed)
+      ? "King"
+      : /single/i.test(roomDef.bed)
+        ? "Single"
+        : /twin/i.test(roomDef.bed)
+          ? "Twin"
+          : "King";
+
+  return await Room.create({
+    hotelId:       hotel._id,
+    hotelStringId: hotel.hotelId,
+    roomNumber:    roomDef.id,
+    type:          roomType,
+    description:   roomDef.description || description || "",
+    pricePerNight: roomDef.price || price || 500,
+    capacity:      roomDef.capacity || capacity || 2,
+    bedType,
+    amenities:     roomDef.features || features || [],
+    images:        hotelImage ? [hotelImage] : [],
+    status:        (roomDef.available ?? 1) > 0 ? "Available" : "Booked",
+    isActive:      true,
+  });
+};
 
 // ─────────────────────────────────────────────────────────
 // POST /api/bookings
@@ -76,10 +128,24 @@ export const createBooking = async (req, res, next) => {
     logger.debug(`Room found: ${room ? room.roomNumber + " (" + room.status + ")" : "NOT FOUND"}`);
 
     if (!room) {
+      room = await getOrCreateRoomFromHotelDefinition({
+        identifier:   roomId || roomNumber,
+        hotelId:      req.body.hotelId,
+        hotelName:    req.body.hotelName,
+        price:        pricePerNight,
+        description:  guestData?.description || "",
+        capacity:     guestData?.capacity,
+        bed:          guestData?.bed,
+        features:     guestData?.features,
+        hotelImage:   req.body.hotelImage || null,
+      });
+    }
+
+    if (!room) {
       await session.abortTransaction();
       return res.status(404).json({
         success: false,
-        message: `Room "${roomId}" not found. Run: cd backend && node utils/seedRooms.js`,
+        message: `Room "${roomId || roomNumber}" not found. Run: cd backend && node utils/seedRooms.js`,
       });
     }
 

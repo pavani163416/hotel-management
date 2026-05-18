@@ -9,6 +9,7 @@ import {
 import { validateRoom, validateRoomStatus } from "../middleware/validators.js";
 import Booking from "../models/Booking.js";
 import Room   from "../models/Room.js";
+import Hotel  from "../models/Hotel.js";
 import mongoose from "mongoose";
 
 const router = express.Router();
@@ -31,6 +32,16 @@ router.post("/availability", async (req, res) => {
     }
 
     if (!room) {
+      const hotel = await Hotel.findOne({ "rooms.id": roomId, isActive: true });
+      if (hotel) {
+        const embedded = hotel.rooms.find((r) => r.id === roomId);
+        if (embedded) {
+          if ((embedded.available ?? 1) <= 0) {
+            return res.json({ available: false, message: "This room is currently unavailable." });
+          }
+          return res.json({ available: true });
+        }
+      }
       return res.json({ available: true }); // room not in DB yet — allow
     }
 
