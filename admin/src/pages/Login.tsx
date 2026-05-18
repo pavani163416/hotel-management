@@ -158,8 +158,15 @@ export default function Login() {
                 }}>
                 <Building2 className="w-7 h-7 text-gold" />
               </div>
-              <h1 className="text-xl font-bold text-bright">Sign in to Platform</h1>
-              <p className="text-sm text-dim mt-1 text-center">LuxeStay Multi-Hotel Platform Management</p>
+              <h1 className="text-xl font-bold text-bright">
+                {resetMode ? "Reset Password" : "Sign in to Platform"}
+              </h1>
+              <p className="text-sm text-dim mt-1 text-center">
+                {resetMode 
+                  ? "Enter your email to receive a password reset link" 
+                  : "LuxeStay Multi-Hotel Platform Management"
+                }
+              </p>
             </div>
 
             {resetMode ? (
