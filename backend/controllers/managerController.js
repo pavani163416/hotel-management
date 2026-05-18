@@ -14,6 +14,8 @@ import Hotel      from "../models/Hotel.js";
 import AdditionalGuest from "../models/AdditionalGuest.js";
 import PriceRequest    from "../models/PriceRequest.js";
 import FunctionHall    from "../models/FunctionHall.js";
+import Housekeeper     from "../models/Housekeeper.js";
+import Task            from "../models/Task.js";
 import { sendNotification } from "../utils/notificationService.js";
 import logger from "../utils/logger.js";
 
@@ -417,5 +419,98 @@ export const getManagerPriceRequests = async (req, res, next) => {
       .populate("createdBy", "name email")
       .sort({ createdAt:-1 });
     res.status(200).json({ success:true, count:requests.length, data:requests });
+  } catch (err) { next(err); }
+};
+
+// ── GET /api/manager/staff ───────────────────────────────
+export const getManagerStaff = async (req, res, next) => {
+  try {
+    const staff = await Housekeeper.find({ hotelStringId: req.scopedHotelId, isActive: true });
+    res.status(200).json({ success: true, count: staff.length, data: staff });
+  } catch (err) { next(err); }
+};
+
+// ── POST /api/manager/staff ──────────────────────────────
+export const createManagerStaff = async (req, res, next) => {
+  try {
+    const { name } = req.body;
+    if (!name) return res.status(400).json({ success: false, message: "Staff name is required" });
+    const existing = await Housekeeper.findOne({ name, hotelStringId: req.scopedHotelId, isActive: true });
+    if (existing) return res.status(400).json({ success: false, message: "Staff with this name already exists" });
+    const staff = await Housekeeper.create({
+      name, hotelStringId: req.scopedHotelId, hotelName: req.scopedHotelName
+    });
+    res.status(201).json({ success: true, data: staff });
+  } catch (err) { next(err); }
+};
+
+// ── DELETE /api/manager/staff/:id ────────────────────────
+export const deleteManagerStaff = async (req, res, next) => {
+  try {
+    const staff = await Housekeeper.findOne({ _id: req.params.id, hotelStringId: req.scopedHotelId });
+    if (!staff) return res.status(404).json({ success: false, message: "Staff not found" });
+    staff.isActive = false;
+    await staff.save();
+    res.status(200).json({ success: true, message: "Staff deactivated" });
+  } catch (err) { next(err); }
+};
+
+// ── GET /api/manager/tasks ───────────────────────────────
+export const getManagerTasks = async (req, res, next) => {
+  try {
+    const tasks = await Task.find({ hotelStringId: req.scopedHotelId })
+      .populate("assignedTo", "name")
+      .sort({ createdAt: -1 });
+    res.status(200).json({ success: true, count: tasks.length, data: tasks });
+  } catch (err) { next(err); }
+};
+
+// ── POST /api/manager/tasks ──────────────────────────────
+export const createManagerTask = async (req, res, next) => {
+  try {
+    const { roomNumber, type, assignedTo, priority, notes } = req.body;
+    const task = await Task.create({
+      roomNumber, type, assignedTo, priority, notes,
+      hotelStringId: req.scopedHotelId, hotelName: req.scopedHotelName
+    });
+    
+    // Auto-update room to maintenance if type is Maintenance
+    if (type === "Maintenance") {
+      const roomDoc = await Room.findOne({ roomNumber, hotelStringId: req.scopedHotelId });
+      if (roomDoc) {
+        roomDoc.status = "Maintenance";
+        await roomDoc.save();
+        const io = req.app.get("io");
+        if (io) io.emit("roomStatusUpdate", { roomId: roomDoc._id, roomNumber, status: "Maintenance", hotelId: req.scopedHotelId });
+      }
+    }
+    
+    res.status(201).json({ success: true, data: task });
+  } catch (err) { next(err); }
+};
+
+// ── PUT /api/manager/tasks/:id ───────────────────────────
+export const updateManagerTask = async (req, res, next) => {
+  try {
+    const task = await Task.findOne({ _id: req.params.id, hotelStringId: req.scopedHotelId });
+    if (!task) return res.status(404).json({ success: false, message: "Task not found" });
+    
+    const { status } = req.body;
+    if (status) task.status = status;
+    if (status === "Completed" && !task.completedAt) task.completedAt = new Date();
+    await task.save();
+
+    // If completed, release the room
+    if (status === "Completed") {
+      const roomDoc = await Room.findOne({ roomNumber: task.roomNumber, hotelStringId: req.scopedHotelId });
+      if (roomDoc && roomDoc.status !== "Booked") {
+        roomDoc.status = "Available";
+        await roomDoc.save();
+        const io = req.app.get("io");
+        if (io) io.emit("roomStatusUpdate", { roomId: roomDoc._id, roomNumber: roomDoc.roomNumber, status: "Available", hotelId: req.scopedHotelId });
+      }
+    }
+
+    res.status(200).json({ success: true, data: task });
   } catch (err) { next(err); }
 };

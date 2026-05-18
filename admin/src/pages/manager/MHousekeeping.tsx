@@ -5,16 +5,21 @@ import {
 } from "lucide-react";
 import ManagerLayout from "@/components/ManagerLayout";
 import Drawer from "@/components/Drawer";
-import { getManagerRooms, updateManagerRoom } from "@/services/api";
+import { 
+  getManagerRooms, updateManagerRoom,
+  getManagerStaff, createManagerStaff, deleteManagerStaff,
+  getManagerTasks, createManagerTask, updateManagerTask
+} from "@/services/api";
 
 type TaskStatus = "Pending" | "In Progress" | "Completed" | "Blocked";
 type TaskType   = "Cleaning" | "Maintenance" | "Inspection" | "Turndown";
 
 type Task = {
   id: string;
+  _id?: string;
   roomNumber: string;
   type: TaskType;
-  assignedTo: string;
+  assignedTo: any;
   status: TaskStatus;
   priority: "High" | "Medium" | "Low";
   notes?: string;
@@ -34,7 +39,7 @@ const typeIcon: Record<TaskType, React.ReactNode> = {
 export default function Housekeeping() {
   const [rooms, setRooms]       = useState<any[]>([]);
   const [tasks, setTasks]       = useState<Task[]>([]);
-  const [staffList, setStaffList] = useState<string[]>([]);
+  const [staffList, setStaffList] = useState<any[]>([]);
   const [loading, setLoading]   = useState(true);
   
   const [showAdd, setShowAdd]   = useState(false);
@@ -64,70 +69,35 @@ export default function Housekeeping() {
 
   const loadData = useCallback(async () => {
     try {
-      const res: any = await getManagerRooms();
-      const roomsList = res?.data || [];
+      const [roomsRes, staffRes, tasksRes] = await Promise.all([
+        getManagerRooms(),
+        getManagerStaff(),
+        getManagerTasks()
+      ]);
+
+      const roomsList = roomsRes?.data || [];
+      const staffData = staffRes?.data || [];
+      const tasksData = tasksRes?.data || [];
+
       setRooms(roomsList);
-      
-      // Load Staff Directory from LocalStorage (multi-tenant scoped)
-      let currentStaff: string[] = [];
-      const storedStaff = localStorage.getItem(staffKey);
-      if (storedStaff) {
-        currentStaff = JSON.parse(storedStaff);
-        setStaffList(currentStaff);
-      } else {
-        const defaultStaff = ["Maria Santos", "James Okafor", "Priya Nair", "Carlos Reyes", "Aisha Patel", "Tom Nguyen"];
-        currentStaff = defaultStaff;
-        setStaffList(defaultStaff);
-        localStorage.setItem(staffKey, JSON.stringify(defaultStaff));
-      }
+      setStaffList(staffData);
+      setTasks(tasksData.map((t: any) => ({ ...t, id: t._id })));
 
       if (roomsList.length > 0 && !form.roomNumber) {
         setForm((f) => ({
           ...f,
           roomNumber: roomsList[0].roomNumber,
-          assignedTo: currentStaff[0] || ""
+          assignedTo: staffData.length > 0 ? staffData[0]._id : ""
         }));
-      }
-      
-      const stored = localStorage.getItem(localStorageKey);
-      if (stored) {
-        setTasks(JSON.parse(stored));
-      } else {
-        if (roomsList.length > 0) {
-          const seeded: Task[] = [
-            {
-              id: "1",
-              roomNumber: roomsList[0].roomNumber,
-              type: "Cleaning",
-              assignedTo: currentStaff[0] || "Maria Santos",
-              status: "In Progress",
-              priority: "Medium",
-              createdAt: new Date().toISOString(),
-            },
-            {
-              id: "2",
-              roomNumber: roomsList[Math.min(1, roomsList.length - 1)].roomNumber,
-              type: "Maintenance",
-              assignedTo: currentStaff[Math.min(5, currentStaff.length - 1)] || "Tom Nguyen",
-              status: "Pending",
-              priority: "High",
-              notes: "AC unit requires service",
-              createdAt: new Date().toISOString(),
-            }
-          ];
-          setTasks(seeded);
-          localStorage.setItem(localStorageKey, JSON.stringify(seeded));
-        } else {
-          setTasks([]);
-        }
       }
     } catch {
       setRooms([]);
+      setStaffList([]);
       setTasks([]);
     } finally {
       setLoading(false);
     }
-  }, [localStorageKey, staffKey, form.roomNumber]);
+  }, [form.roomNumber]);
 
   useEffect(() => {
     loadData();
@@ -135,100 +105,91 @@ export default function Housekeeping() {
 
   const filtered = tasks.filter((t) => {
     const matchStatus = filterStatus === "All" || t.status === filterStatus;
-    const matchStaff  = filterStaff  === "All" || t.assignedTo === filterStaff;
+    const matchStaff  = filterStaff  === "All" || t.assignedTo?.name === filterStaff || t.assignedTo === filterStaff;
     return matchStatus && matchStaff;
   });
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     const targetRoomNumber = form.roomNumber || (rooms[0]?.roomNumber || "");
-    const targetAssignedTo = form.assignedTo || (staffList[0] || "Unassigned");
-    const newTask: Task = {
-      id:         Date.now().toString(),
-      roomNumber: targetRoomNumber,
-      type:       form.type,
-      assignedTo: targetAssignedTo,
-      status:     "Pending",
-      priority:   form.priority,
-      notes:      form.notes,
-      createdAt:  new Date().toISOString(),
-    };
-    const updatedTasks = [newTask, ...tasks];
-    setTasks(updatedTasks);
-    localStorage.setItem(localStorageKey, JSON.stringify(updatedTasks));
-
-    if (form.type === "Maintenance") {
-      const roomDoc = rooms.find((r) => r.roomNumber === targetRoomNumber);
-      if (roomDoc) {
-        try {
-          await updateManagerRoom(roomDoc._id, { status: "Maintenance" });
-        } catch { /* silent */ }
-      }
+    const targetAssignedTo = form.assignedTo || (staffList[0]?._id || "");
+    
+    try {
+      const res: any = await createManagerTask({
+        roomNumber: targetRoomNumber,
+        type: form.type,
+        assignedTo: targetAssignedTo,
+        priority: form.priority,
+        notes: form.notes
+      });
+      
+      const createdTask = res.data;
+      const staffMember = staffList.find(s => s._id === targetAssignedTo);
+      const newTask = { ...createdTask, id: createdTask._id, assignedTo: staffMember || targetAssignedTo };
+      
+      setTasks([newTask, ...tasks]);
+      setLiveLog((prev) => [
+        { id: Date.now().toString(), msg: `Room #${targetRoomNumber.replace(/^[a-z]+-/i, "")} ${form.type} assigned to ${staffMember?.name || "Unassigned"}`, time: "just now" },
+        ...prev.slice(0, 9),
+      ]);
+      setShowAdd(false);
+      setForm({
+        roomNumber: rooms[0]?.roomNumber || "",
+        type: "Cleaning" as TaskType,
+        assignedTo: staffList[0]?._id || "",
+        priority: "Medium" as Task["priority"],
+        notes: ""
+      });
+    } catch (err) {
+      console.error(err);
     }
-
-    setLiveLog((prev) => [
-      { id: Date.now().toString(), msg: `Room #${targetRoomNumber.replace(/^[a-z]+-/i, "")} ${form.type} assigned to ${targetAssignedTo}`, time: "just now" },
-      ...prev.slice(0, 9),
-    ]);
-    setShowAdd(false);
-    setForm({
-      roomNumber: rooms[0]?.roomNumber || "",
-      type: "Cleaning" as TaskType,
-      assignedTo: staffList[0] || "",
-      priority: "Medium" as Task["priority"],
-      notes: ""
-    });
   };
 
-  const handleAddStaff = (e: React.FormEvent) => {
+  const handleAddStaff = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newStaffName.trim()) return;
     const cleanName = newStaffName.trim();
-    if (staffList.includes(cleanName)) return;
-    const updated = [...staffList, cleanName];
-    setStaffList(updated);
-    localStorage.setItem(staffKey, JSON.stringify(updated));
-    setNewStaffName("");
-    setLiveLog((prev) => [
-      { id: Date.now().toString(), msg: `New housekeeper "${cleanName}" added to the staff directory.`, time: "just now" },
-      ...prev.slice(0, 9),
-    ]);
+    if (staffList.some(s => s.name === cleanName)) return;
+    
+    try {
+      const res: any = await createManagerStaff({ name: cleanName });
+      setStaffList([...staffList, res.data]);
+      setNewStaffName("");
+      setLiveLog((prev) => [
+        { id: Date.now().toString(), msg: `New housekeeper "${cleanName}" added. PIN: ${res.data.pin}`, time: "just now" },
+        ...prev.slice(0, 9),
+      ]);
+    } catch (err) { console.error(err); }
   };
 
-  const handleRemoveStaff = (nameToRemove: string) => {
-    const updated = staffList.filter((s) => s !== nameToRemove);
-    setStaffList(updated);
-    localStorage.setItem(staffKey, JSON.stringify(updated));
-    setLiveLog((prev) => [
-      { id: Date.now().toString(), msg: `Housekeeper "${nameToRemove}" removed from the directory.`, time: "just now" },
-      ...prev.slice(0, 9),
-    ]);
+  const handleRemoveStaff = async (idToRemove: string, name: string) => {
+    try {
+      await deleteManagerStaff(idToRemove);
+      setStaffList(staffList.filter((s) => s._id !== idToRemove));
+      setLiveLog((prev) => [
+        { id: Date.now().toString(), msg: `Housekeeper "${name}" removed.`, time: "just now" },
+        ...prev.slice(0, 9),
+      ]);
+    } catch (err) { console.error(err); }
   };
 
   const updateStatus = async (id: string, status: TaskStatus) => {
-    const updated = tasks.map((t) => t.id === id ? {
-      ...t, status,
-      completedAt: status === "Completed" ? new Date().toISOString() : t.completedAt,
-    } : t);
-    setTasks(updated);
-    localStorage.setItem(localStorageKey, JSON.stringify(updated));
+    try {
+      await updateManagerTask(id, { status });
+      const updated = tasks.map((t) => t.id === id ? {
+        ...t, status,
+        completedAt: status === "Completed" ? new Date().toISOString() : t.completedAt,
+      } : t);
+      setTasks(updated);
 
-    const task = tasks.find((t) => t.id === id);
-    if (task) {
-      if (status === "Completed") {
-        const roomDoc = rooms.find((r) => r.roomNumber === task.roomNumber);
-        if (roomDoc) {
-          try {
-            await updateManagerRoom(roomDoc._id, { status: "Available" });
-          } catch { /* silent */ }
-        }
+      const task = updated.find((t) => t.id === id);
+      if (task) {
+        setLiveLog((prev) => [
+          { id: Date.now().toString(), msg: `Room #${task.roomNumber.replace(/^[a-z]+-/i, "")} ${task.type} → ${status} by ${task.assignedTo?.name || "System"}`, time: "just now" },
+          ...prev.slice(0, 9),
+        ]);
       }
-
-      setLiveLog((prev) => [
-        { id: Date.now().toString(), msg: `Room #${task.roomNumber.replace(/^[a-z]+-/i, "")} ${task.type} → ${status} by ${task.assignedTo}`, time: "just now" },
-        ...prev.slice(0, 9),
-      ]);
-    }
+    } catch (err) { console.error(err); }
   };
 
   const counts = {
@@ -292,7 +253,7 @@ export default function Housekeeping() {
             <select value={filterStaff} onChange={(e) => setFilterStaff(e.target.value)}
               className="glass-select rounded-xl px-3 py-2 text-sm outline-none">
               <option value="All">All Staff</option>
-              {staffList.map((s) => <option key={s}>{s}</option>)}
+              {staffList.map((s) => <option key={s._id} value={s.name}>{s.name}</option>)}
             </select>
           </div>
 
@@ -320,7 +281,7 @@ export default function Housekeeping() {
                     )}
                   </div>
                   <div className="flex items-center gap-2.5 text-xs text-dim mb-2.5">
-                    <div className="flex items-center gap-1"><User className="w-3.5 h-3.5" /> {task.assignedTo}</div>
+                    <div className="flex items-center gap-1"><User className="w-3.5 h-3.5" /> {task.assignedTo?.name || "Unassigned"}</div>
                     {task.completedAt && (
                       <span>· Done {new Date(task.completedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
                     )}
@@ -402,7 +363,7 @@ export default function Housekeeping() {
             <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1.5">Assign To *</label>
             <select value={form.assignedTo} onChange={(e) => setForm({ ...form, assignedTo: e.target.value })}
               className="w-full border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-gold bg-white/5 text-bright">
-              {staffList.map((s) => <option key={s} className="bg-neutral-900 text-bright">{s}</option>)}
+              {staffList.map((s) => <option key={s._id} value={s._id} className="bg-neutral-900 text-bright">{s.name}</option>)}
             </select>
           </div>
           <div>

@@ -196,3 +196,13 @@ export const getManagerHalls = () => api.get("/manager/halls");
 export const createManagerHall = (data: Record<string, any>) => api.post("/manager/halls", data);
 export const updateManagerHall = (id: string, data: Record<string, any>) => api.put(`/manager/halls/${id}`, data);
 
+/** Housekeeping Staff endpoints */
+export const getManagerStaff = () => api.get("/manager/staff");
+export const createManagerStaff = (data: { name: string }) => api.post("/manager/staff", data);
+export const deleteManagerStaff = (id: string) => api.delete(`/manager/staff/${id}`);
+
+/** Housekeeping Tasks endpoints */
+export const getManagerTasks = () => api.get("/manager/tasks");
+export const createManagerTask = (data: Record<string, any>) => api.post("/manager/tasks", data);
+export const updateManagerTask = (id: string, data: Record<string, any>) => api.put(`/manager/tasks/${id}`, data);
+

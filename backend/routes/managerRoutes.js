@@ -46,6 +46,12 @@ import {
   updateManagerHall,
   createPriceRequest,
   getManagerPriceRequests,
+  getManagerStaff,
+  createManagerStaff,
+  deleteManagerStaff,
+  getManagerTasks,
+  createManagerTask,
+  updateManagerTask,
 } from "../controllers/managerController.js";
 import { verifyManagerToken, isAssignedManager, scopeToHotel } from "../middleware/managerAuth.js";
 import { authLimiter } from "../middleware/rateLimiter.js";
@@ -87,6 +93,15 @@ router.put("/halls/:id",    ...protect, updateManagerHall);
 // ── Price Requests ────────────────────────────────────────
 router.post("/price-requests", ...protect, createPriceRequest);
 router.get("/price-requests",  ...protect, getManagerPriceRequests);
+
+// ── Staff & Tasks ─────────────────────────────────────────
+router.get("/staff",          ...protect, getManagerStaff);
+router.post("/staff",         ...protect, createManagerStaff);
+router.delete("/staff/:id",   ...protect, deleteManagerStaff);
+
+router.get("/tasks",          ...protect, getManagerTasks);
+router.post("/tasks",         ...protect, createManagerTask);
+router.put("/tasks/:id",      ...protect, updateManagerTask);
 
 // ── Hotel access guard (for hotel switcher) ───────────────
 router.get("/hotel/:hotelId", ...protect, isAssignedManager, (req, res) => {
