@@ -24,13 +24,35 @@ class _PaymentPageState extends State<PaymentPage> {
   String _selectedIdType = 'Aadhaar Card';
   String? _selectedBank;
 
-  // Track field inputs to support robust validation and simulated declines
-  String _cardNumber = '';
-  String _upiId = '';
-  String _cardHolderName = '';
-  String _expiry = '';
-  String _cvv = '';
-  String _idNumber = '';
+  // Track field inputs using persistent controllers to avoid state loss during rebuilds
+  late final TextEditingController _cardNumberController;
+  late final TextEditingController _upiIdController;
+  late final TextEditingController _cardHolderController;
+  late final TextEditingController _expiryController;
+  late final TextEditingController _cvvController;
+  late final TextEditingController _idNumberController;
+
+  @override
+  void initState() {
+    super.initState();
+    _cardNumberController = TextEditingController();
+    _upiIdController = TextEditingController();
+    _cardHolderController = TextEditingController();
+    _expiryController = TextEditingController();
+    _cvvController = TextEditingController();
+    _idNumberController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _cardNumberController.dispose();
+    _upiIdController.dispose();
+    _cardHolderController.dispose();
+    _expiryController.dispose();
+    _cvvController.dispose();
+    _idNumberController.dispose();
+    super.dispose();
+  }
 
   void _processPayment(BookingProvider provider) {
     bool isIdValid = _idFormKey.currentState!.validate();
@@ -45,8 +67,9 @@ class _PaymentPageState extends State<PaymentPage> {
     }
 
     if (isIdValid && isPaymentValid) {
+      final cardNumber = _cardNumberController.text.trim();
       // Handle simulated payment failure tip
-      if (_selectedMethod == 'card' && _cardNumber.trim().endsWith('0000')) {
+      if (_selectedMethod == 'card' && cardNumber.endsWith('0000')) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Payment Declined: Simulated transaction failure.'), 
@@ -219,7 +242,7 @@ class _PaymentPageState extends State<PaymentPage> {
           _buildTextField(
             _selectedIdType == 'Aadhaar Card' ? 'XXXX XXXX XXXX' : 'Enter your $_selectedIdType number', 
             required: true,
-            onChanged: (v) => _idNumber = v,
+            controller: _idNumberController,
           ),
           const SizedBox(height: 12),
           Row(
@@ -312,17 +335,17 @@ class _PaymentPageState extends State<PaymentPage> {
         children: [
           _buildLabel('CARD NUMBER *'),
           const SizedBox(height: 8),
-          _buildTextField('1234 5678 9012 3456', required: true, onChanged: (v) => _cardNumber = v),
+          _buildTextField('1234 5678 9012 3456', required: true, controller: _cardNumberController),
           const SizedBox(height: 24),
           _buildLabel('CARDHOLDER NAME *'),
           const SizedBox(height: 8),
-          _buildTextField('John Doe', required: true, onChanged: (v) => _cardHolderName = v),
+          _buildTextField('John Doe', required: true, controller: _cardHolderController),
           const SizedBox(height: 24),
           Row(
             children: [
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('EXPIRY *'), const SizedBox(height: 8), _buildTextField('MM/YY', required: true, onChanged: (v) => _expiry = v)])),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('EXPIRY *'), const SizedBox(height: 8), _buildTextField('MM/YY', required: true, controller: _expiryController)])),
               const SizedBox(width: 16),
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('CVV *'), const SizedBox(height: 8), _buildTextField('123', required: true, onChanged: (v) => _cvv = v)])),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('CVV *'), const SizedBox(height: 8), _buildTextField('123', required: true, controller: _cvvController)])),
             ],
           ),
           const SizedBox(height: 32),
@@ -344,7 +367,7 @@ class _PaymentPageState extends State<PaymentPage> {
         children: [
           _buildLabel('UPI ID *'),
           const SizedBox(height: 8),
-          _buildTextField('yourname@bank', required: true, onChanged: (v) => _upiId = v),
+          _buildTextField('yourname@bank', required: true, controller: _upiIdController),
           const SizedBox(height: 32),
           _buildPayButton(provider),
           const SizedBox(height: 16),
@@ -395,15 +418,17 @@ class _PaymentPageState extends State<PaymentPage> {
   }
 
   Widget _buildPayButton(BookingProvider provider) {
+    final isDark = Theme.of(context).colorScheme.brightness == Brightness.dark;
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
         onPressed: () => _processPayment(provider),
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF7E8A9A),
-          foregroundColor: Colors.white,
+          backgroundColor: isDark ? const Color(0xFFEAE5DC) : const Color(0xFF454F5E),
+          foregroundColor: isDark ? const Color(0xFF19222E) : Colors.white,
           padding: const EdgeInsets.symmetric(vertical: 20),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          elevation: 2,
         ),
         child: Text('Pay \$${NumberFormat("#,###").format(provider.total)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
       ),
@@ -461,10 +486,10 @@ class _PaymentPageState extends State<PaymentPage> {
     return Text(text, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.primaryColor.withOpacity(0.5), letterSpacing: 0.5));
   }
 
-  Widget _buildTextField(String hint, {bool required = false, ValueChanged<String>? onChanged}) {
+  Widget _buildTextField(String hint, {bool required = false, TextEditingController? controller}) {
     return TextFormField(
       key: ValueKey(hint), // Forces Flutter to preserve unique state per textfield hint
-      onChanged: onChanged,
+      controller: controller,
       validator: (value) {
         if (required && (value == null || value.isEmpty)) {
           return 'This field is required';
