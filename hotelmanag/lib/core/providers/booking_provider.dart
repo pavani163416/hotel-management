@@ -152,9 +152,6 @@ class BookingProvider extends ChangeNotifier {
 
   // --- History Logic ---
   Future<void> fetchMyBookings() async {
-    // If we have local bookings, don't overwrite them for now to keep the "real data" the user just entered
-    if (_bookings.isNotEmpty) return;
-    
     _isLoading = true;
     _error = null;
     notifyListeners();
