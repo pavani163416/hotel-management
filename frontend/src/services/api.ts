@@ -87,9 +87,15 @@ export const getRooms = async (params?: {
   type?: string;
   minPrice?: number;
   maxPrice?: number;
+  roomNumber?: string;
 }) => {
   const { data } = await api.get("/rooms", { params });
   return data;
+};
+
+export const getRoomByNumber = async (roomNumber: string) => {
+  const { data } = await api.get("/rooms", { params: { roomNumber } });
+  return Array.isArray(data?.data) && data.data.length > 0 ? data.data[0] : null;
 };
 
 /** PATCH /api/rooms/:id — update room status */
