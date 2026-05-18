@@ -4,9 +4,11 @@ const BACKEND_URL = import.meta.env.VITE_API_URL
   ? import.meta.env.VITE_API_URL.replace("/api", "")
   : "http://localhost:5000";
 
+const transports = import.meta.env.PROD ? ["polling"] : ["websocket", "polling"];
+
 const socket = io(BACKEND_URL, {
   path: "/socket.io/",
-  transports: ["websocket", "polling"],
+  transports,
   reconnection: true,
   reconnectionAttempts: 10,
   reconnectionDelay: 1000,

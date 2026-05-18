@@ -63,9 +63,13 @@ import("./models/Booking.js").then(async ({ default: Booking }) => {
 
 const app = express();
 
+const isProd     = process.env.NODE_ENV === "production";
+if (isProd) {
+  app.set("trust proxy", true);
+}
+
 // ── CORS ─────────────────────────────────────────────────
 const rawOrigins = (process.env.CLIENT_ORIGIN || "").split(",").map((o) => o.trim()).filter(Boolean);
-const isProd     = process.env.NODE_ENV === "production";
 
 // Always-allowed origins (Vercel deployments + local dev)
 const allowedOrigins = [
@@ -127,18 +131,28 @@ app.use(helmet({
 
 // ── Force HTTPS redirect in production ───────────────────
 // Railway terminates TLS and sets x-forwarded-proto.
-// Skip redirect for health check paths so Railway can probe the service.
+// Skip redirect for health check and WebSocket paths.
 if (isProd) {
   app.use((req, res, next) => {
-    // Skip redirect for health check, WebSocket, and Socket.IO paths
-    if (req.path === "/" || req.path === "/api/health" || req.path.startsWith("/socket.io") || req.path.startsWith("/ws")) return next();
-    if (req.headers["x-forwarded-proto"] && req.headers["x-forwarded-proto"] !== "https") {
+    // Skip redirect for root, health check, Socket.IO, WS upgrade, and preflight requests
+    const upgradeHeader = req.headers["upgrade"]?.toLowerCase();
+    if (
+      req.path === "/" ||
+      req.path === "/api/health" ||
+      req.path.startsWith("/socket.io") ||
+      req.path.startsWith("/ws") ||
+      upgradeHeader === "websocket" ||
+      req.method === "OPTIONS"
+    ) {
+      return next();
+    }
+
+    const proto = req.headers["x-forwarded-proto"];
+    if (proto && proto !== "https") {
       return res.redirect(301, `https://${req.headers.host}${req.url}`);
     }
     next();
   });
-  // Trust proxy headers for Socket.IO (Railway sets these)
-  app.set("trust proxy", ["loopback", "linklocal", "uniquelocal"]);
 }
 
 // ── Body parsing — limit payload size ────────────────────
@@ -209,18 +223,18 @@ const httpServer = createServer(app);
 const io = new SocketIOServer(httpServer, {
   path: "/socket.io/",
   transports: ["polling", "websocket"],  // Polling FIRST for Railway compatibility
-  upgrade: true,
+  allowUpgrades: true,
   pingInterval: 30000,
   pingTimeout: 60000,
   maxHttpBufferSize: 1e7,
   cookie: false,
   serveClient: false,
-  connectTimeout: 45000,
+  wsEngine: require("ws"),
   cors: {
     origin:      allowedOrigins,
     methods:     ["GET", "POST"],
     credentials: true,
-    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Upgrade"],
     exposedHeaders: ["Content-Length"],
   },
 });
