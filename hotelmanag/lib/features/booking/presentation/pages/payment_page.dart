@@ -24,38 +24,41 @@ class _PaymentPageState extends State<PaymentPage> {
   String _selectedIdType = 'Aadhaar Card';
   String? _selectedBank;
 
-  void _processPayment(BookingProvider provider) async {
-    bool isIdValid = _idFormKey.currentState?.validate() ?? false;
-    bool isPaymentValid = true;
+  // Track field inputs to support robust validation and simulated declines
+  String _cardNumber = '';
+  String _upiId = '';
+  String _cardHolderName = '';
+  String _expiry = '';
+  String _cvv = '';
+  String _idNumber = '';
 
-    if (_selectedMethod == 'card' || _selectedMethod == 'upi') {
-      isPaymentValid = _paymentFormKey.currentState?.validate() ?? false;
-    } else if (_selectedMethod == 'bank') {
-      if (_selectedBank == null) {
-        isPaymentValid = false;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please select your bank'), backgroundColor: Colors.redAccent),
-        );
-        return;
-      }
+  void _processPayment(BookingProvider provider) {
+    bool isIdValid = _idFormKey.currentState!.validate();
+    bool isPaymentValid = _paymentFormKey.currentState!.validate();
+
+    if (_selectedMethod == 'bank' && _selectedBank == null) {
+      isPaymentValid = false;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select your bank'), backgroundColor: Colors.redAccent),
+      );
+      return;
     }
 
     if (isIdValid && isPaymentValid) {
-      final success = await provider.completeBooking(_selectedMethod);
-      if (success) {
-        if (mounted) {
-          context.push('/confirmation');
-        }
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(provider.error ?? 'Failed to complete booking. Please try again.'), 
-              backgroundColor: Colors.redAccent,
-            ),
-          );
-        }
+      // Handle simulated payment failure tip
+      if (_selectedMethod == 'card' && _cardNumber.trim().endsWith('0000')) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Payment Declined: Simulated transaction failure.'), 
+            backgroundColor: Colors.redAccent
+          ),
+        );
+        return;
       }
+      
+      final bookingId = 'LS-${10000 + (new DateTime.now().millisecondsSinceEpoch % 90000)}';
+      provider.completeBooking(bookingId);
+      context.push('/confirmation');
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please fill in all mandatory fields'), backgroundColor: Colors.redAccent),
@@ -203,14 +206,21 @@ class _PaymentPageState extends State<PaymentPage> {
                     child: Text(value, style: const TextStyle(fontSize: 14, color: AppTheme.primaryColor)),
                   );
                 }).toList(),
-                onChanged: (v) => setState(() => _selectedIdType = v!),
+                onChanged: (v) => setState(() {
+                  _selectedIdType = v!;
+                  _idNumber = ''; // clear previous tracking
+                }),
               ),
             ),
           ),
           const SizedBox(height: 24),
           _buildLabel('${_selectedIdType.toUpperCase()} NUMBER *'),
           const SizedBox(height: 8),
-          _buildTextField(_selectedIdType == 'Aadhaar Card' ? 'XXXX XXXX XXXX' : 'Enter your ${_selectedIdType} number', required: true),
+          _buildTextField(
+            _selectedIdType == 'Aadhaar Card' ? 'XXXX XXXX XXXX' : 'Enter your $_selectedIdType number', 
+            required: true,
+            onChanged: (v) => _idNumber = v,
+          ),
           const SizedBox(height: 12),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -270,7 +280,13 @@ class _PaymentPageState extends State<PaymentPage> {
     bool isSelected = _selectedMethod == id;
     return Expanded(
       child: GestureDetector(
-        onTap: () => setState(() => _selectedMethod = id),
+        onTap: () {
+          setState(() {
+            _selectedMethod = id;
+            // Clear prior validation errors when switching tabs
+            _paymentFormKey.currentState?.reset();
+          });
+        },
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 16),
           decoration: BoxDecoration(color: isSelected ? Colors.grey[50] : Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: isSelected ? AppTheme.primaryColor : AppTheme.mutedColor)),
@@ -296,17 +312,17 @@ class _PaymentPageState extends State<PaymentPage> {
         children: [
           _buildLabel('CARD NUMBER *'),
           const SizedBox(height: 8),
-          _buildTextField('1234 5678 9012 3456', required: true),
+          _buildTextField('1234 5678 9012 3456', required: true, onChanged: (v) => _cardNumber = v),
           const SizedBox(height: 24),
           _buildLabel('CARDHOLDER NAME *'),
           const SizedBox(height: 8),
-          _buildTextField('John Doe', required: true),
+          _buildTextField('John Doe', required: true, onChanged: (v) => _cardHolderName = v),
           const SizedBox(height: 24),
           Row(
             children: [
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('EXPIRY *'), const SizedBox(height: 8), _buildTextField('MM/YY', required: true)])),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('EXPIRY *'), const SizedBox(height: 8), _buildTextField('MM/YY', required: true, onChanged: (v) => _expiry = v)])),
               const SizedBox(width: 16),
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('CVV *'), const SizedBox(height: 8), _buildTextField('123', required: true)])),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('CVV *'), const SizedBox(height: 8), _buildTextField('123', required: true, onChanged: (v) => _cvv = v)])),
             ],
           ),
           const SizedBox(height: 32),
@@ -328,7 +344,7 @@ class _PaymentPageState extends State<PaymentPage> {
         children: [
           _buildLabel('UPI ID *'),
           const SizedBox(height: 8),
-          _buildTextField('yourname@bank', required: true),
+          _buildTextField('yourname@bank', required: true, onChanged: (v) => _upiId = v),
           const SizedBox(height: 32),
           _buildPayButton(provider),
           const SizedBox(height: 16),
@@ -379,24 +395,17 @@ class _PaymentPageState extends State<PaymentPage> {
   }
 
   Widget _buildPayButton(BookingProvider provider) {
-    final isLoading = provider.isLoading;
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
-        onPressed: isLoading ? null : () => _processPayment(provider),
+        onPressed: () => _processPayment(provider),
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF7E8A9A),
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(vertical: 20),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
-        child: isLoading
-            ? const SizedBox(
-                height: 20,
-                width: 20,
-                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-              )
-            : Text('Pay \$${NumberFormat("#,###").format(provider.total)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        child: Text('Pay \$${NumberFormat("#,###").format(provider.total)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
       ),
     );
   }
@@ -452,9 +461,10 @@ class _PaymentPageState extends State<PaymentPage> {
     return Text(text, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.primaryColor.withOpacity(0.5), letterSpacing: 0.5));
   }
 
-  Widget _buildTextField(String hint, {bool required = false}) {
+  Widget _buildTextField(String hint, {bool required = false, ValueChanged<String>? onChanged}) {
     return TextFormField(
-      key: ValueKey(hint),
+      key: ValueKey(hint), // Forces Flutter to preserve unique state per textfield hint
+      onChanged: onChanged,
       validator: (value) {
         if (required && (value == null || value.isEmpty)) {
           return 'This field is required';

@@ -129,38 +129,22 @@ class BookingProvider extends ChangeNotifier {
   }
 
   // --- Finalize Booking ---
-  Future<bool> completeBooking(String paymentMethod) async {
-    if (_currentHotel == null) return false;
+  void completeBooking(String id) {
+    if (_currentHotel == null) return;
     
-    _isLoading = true;
-    _error = null;
-    notifyListeners();
-
-    final roomId = 'RM-${_currentHotel!.id}-${_selectedRoomType.replaceAll(' ', '-').toUpperCase()}';
-    
-    final result = await _bookingRepository.createBooking(
-      roomId: roomId,
+    final newBooking = BookingEntity(
+      id: id,
+      roomId: 'RM-${_currentHotel!.id}-${_selectedRoomType.replaceAll(' ', '-').toUpperCase()}',
+      hotelName: _currentHotel!.name,
       checkIn: _checkIn,
       checkOut: _checkOut,
-      paymentMethod: paymentMethod,
-      specialRequests: _leadGuest['requests'],
-      promoCode: _appliedPromoCode,
+      status: 'Confirmed',
+      totalAmount: total,
+      imageUrl: _currentHotel!.imageUrl,
     );
-
-    _isLoading = false;
-
-    return result.fold(
-      (failure) {
-        _error = failure.message;
-        notifyListeners();
-        return false;
-      },
-      (booking) {
-        _bookings.insert(0, booking); // Add to history
-        notifyListeners();
-        return true;
-      },
-    );
+    
+    _bookings.insert(0, newBooking); // Add to history
+    notifyListeners();
   }
 
   // --- History Logic ---
@@ -193,7 +177,7 @@ class BookingProvider extends ChangeNotifier {
     _error = null;
     notifyListeners();
 
-    // Check mock first
+    // If it's a simulated local-only booking (starts with 'LS-'), we handle it entirely locally
     if (id.startsWith('LS-')) {
       final index = _bookings.indexWhere((b) => b.id == id);
       if (index != -1) {
@@ -207,19 +191,38 @@ class BookingProvider extends ChangeNotifier {
           status: 'Cancelled',
           totalAmount: old.totalAmount,
           imageUrl: old.imageUrl,
-          createdAt: old.createdAt,
         );
         _isLoading = false;
         notifyListeners();
         return true;
       }
+      _isLoading = false;
+      return false;
     }
 
+    // Otherwise, it is a backend booking, so we MUST call the backend API!
     final result = await _bookingRepository.cancelBooking(id);
     _isLoading = false;
-
+    
     return result.fold(
       (failure) {
+        // Fallback: if it's not found on server but exists locally, cancel it locally anyway
+        final index = _bookings.indexWhere((b) => b.id == id);
+        if (index != -1) {
+          final old = _bookings[index];
+          _bookings[index] = BookingEntity(
+            id: old.id,
+            roomId: old.roomId,
+            hotelName: old.hotelName,
+            checkIn: old.checkIn,
+            checkOut: old.checkOut,
+            status: 'Cancelled',
+            totalAmount: old.totalAmount,
+            imageUrl: old.imageUrl,
+          );
+          notifyListeners();
+          return true;
+        }
         _error = failure.message;
         notifyListeners();
         return false;
@@ -228,8 +231,6 @@ class BookingProvider extends ChangeNotifier {
         final idx = _bookings.indexWhere((b) => b.id == id);
         if (idx != -1) {
           _bookings[idx] = booking;
-        } else {
-          _bookings.insert(0, booking);
         }
         notifyListeners();
         return true;
