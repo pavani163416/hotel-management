@@ -39,6 +39,10 @@ import MHalls         from "@/pages/manager/MHalls";
 import MPricing       from "@/pages/manager/MPricing";
 import MProfile       from "@/pages/manager/MProfile";
 
+// ── Staff pages ───────────────────────────────────────────
+import StaffLogin     from "@/pages/staff/StaffLogin";
+import StaffDashboard from "@/pages/staff/StaffDashboard";
+
 export default function App() {
   return (
     <AdminProvider>
@@ -52,6 +56,11 @@ export default function App() {
                     {/* ── Public ── */}
                     <Route path="/login" element={<Login />} />
                     <Route path="/reset-password" element={<ResetPassword />} />
+                    
+                    {/* ── Staff routes (Mobile First) ── */}
+                    <Route path="/staff/login" element={<StaffLogin />} />
+                    <Route path="/staff/dashboard" element={<StaffDashboard />} />
+                    
                     <Route path="/"      element={<Navigate to="/dashboard" replace />} />
 
                     {/* ── Admin routes (Super Admin / Staff) ── */}
