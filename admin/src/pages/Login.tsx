@@ -98,7 +98,7 @@ export default function Login() {
       });
       const data = await res.json();
       if (res.ok && data.success) {
-        setResetMessage("If an account exists for this email, a reset link has been sent.");
+        setResetMessage("Check your inbox! A password reset link has been sent.");
       } else {
         setResetError(data?.message || "Unable to send password reset email.");
       }
@@ -238,7 +238,7 @@ export default function Login() {
                   <div className="flex items-center justify-between mb-1.5">
                     <label className="text-xs font-semibold text-dim uppercase tracking-wider">Password</label>
                     <button type="button" className="text-xs text-gold transition-colors hover:text-yellow-300 cursor-pointer px-2 py-1 rounded hover:bg-white/5"
-                      onClick={() => { setResetMode(true); setResetEmail(email); setResetMessage(""); setResetError(""); }}>
+                      onClick={(e) => { e.preventDefault(); setResetMode(true); setResetEmail(email); setResetMessage(""); setResetError(""); }}>
                       Forgot password?
                     </button>
                   </div>
