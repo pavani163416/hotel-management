@@ -703,14 +703,19 @@ class _HomePageState extends State<HomePage> {
   void _showLocationPicker(BuildContext context) {
     final hotelProvider = context.read<HotelProvider>();
     final locations = hotelProvider.allHotels.map((h) => h.location).toSet().toList();
+    final isDark = Theme.of(context).colorScheme.brightness == Brightness.dark;
     
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
+      backgroundColor: isDark ? const Color(0xFF253040) : Colors.white,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (context) => StatefulBuilder(
         builder: (context, setModalState) {
+          final filtered = locations
+              .where((l) => l.toLowerCase().contains(_searchController.text.toLowerCase()))
+              .toList();
+
           return DraggableScrollableSheet(
             initialChildSize: 0.7,
             minChildSize: 0.5,
@@ -721,54 +726,124 @@ class _HomePageState extends State<HomePage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Where are you going?', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+                  Text(
+                    'Where are you going?',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
                   const SizedBox(height: 20),
                   TextField(
                     autofocus: true,
+                    controller: _searchController,
+                    style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                     decoration: InputDecoration(
                       hintText: 'Search city or hotel location...',
-                      prefixIcon: const Icon(LucideIcons.search, size: 20),
+                      hintStyle: TextStyle(color: isDark ? Colors.grey[400] : Colors.grey[500]),
+                      prefixIcon: Icon(LucideIcons.search, size: 20, color: Theme.of(context).colorScheme.primary),
                       filled: true,
-                      fillColor: Colors.grey[100],
+                      fillColor: isDark ? const Color(0xFF19222E) : Colors.grey[100],
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
                       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                     ),
                     onChanged: (v) {
-                      setModalState(() {
-                        // filtering is handled by the ListView below
-                      });
+                      setModalState(() {});
                     },
-                    controller: _searchController,
                   ),
                   const SizedBox(height: 24),
-                  const Text('SUGGESTED DESTINATIONS', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 1)),
+                  Text(
+                    'SUGGESTED DESTINATIONS',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.grey[400] : Colors.grey[600],
+                      letterSpacing: 1,
+                    ),
+                  ),
                   const SizedBox(height: 16),
                   Expanded(
-                    child: ListView.separated(
-                      controller: scrollController,
-                      itemCount: locations.where((l) => l.toLowerCase().contains(_searchController.text.toLowerCase())).length,
-                      separatorBuilder: (context, index) => const Divider(height: 1),
-                      itemBuilder: (context, index) {
-                        final filtered = locations.where((l) => l.toLowerCase().contains(_searchController.text.toLowerCase())).toList();
-                        final loc = filtered[index];
-                        return ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          leading: Container(
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(color: AppTheme.primaryColor.withOpacity(0.05), borderRadius: BorderRadius.circular(12)),
-                            child: const Icon(LucideIcons.mapPin, size: 18, color: AppTheme.primaryColor),
+                    child: filtered.isEmpty
+                        ? Center(
+                            child: SingleChildScrollView(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    LucideIcons.mapPinOff,
+                                    size: 56,
+                                    color: Theme.of(context).colorScheme.primary.withOpacity(0.4),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    'Location Not Found',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                      color: Theme.of(context).colorScheme.onSurface,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 32),
+                                    child: Text(
+                                      'We couldn\'t find any listings for "${_searchController.text}". Try searching for popular cities like London, Paris, or Tokyo!',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          )
+                        : ListView.separated(
+                            controller: scrollController,
+                            itemCount: filtered.length,
+                            separatorBuilder: (context, index) => const Divider(height: 1),
+                            itemBuilder: (context, index) {
+                              final loc = filtered[index];
+                              return ListTile(
+                                contentPadding: EdgeInsets.zero,
+                                leading: Container(
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(context).colorScheme.primary.withOpacity(0.05),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Icon(
+                                    LucideIcons.mapPin,
+                                    size: 18,
+                                    color: Theme.of(context).colorScheme.primary,
+                                  ),
+                                ),
+                                title: Text(
+                                  loc,
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 15,
+                                    color: Theme.of(context).colorScheme.onSurface,
+                                  ),
+                                ),
+                                subtitle: Text(
+                                  'Top destination',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                                  ),
+                                ),
+                                onTap: () {
+                                  setState(() {
+                                    _location = loc;
+                                  });
+                                  Navigator.pop(context);
+                                },
+                              );
+                            },
                           ),
-                          title: Text(loc, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
-                          subtitle: const Text('Top destination', style: TextStyle(fontSize: 11, color: Colors.grey)),
-                          onTap: () {
-                            setState(() {
-                              _location = loc;
-                            });
-                            Navigator.pop(context);
-                          },
-                        );
-                      },
-                    ),
                   ),
                 ],
               ),
@@ -779,36 +854,208 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Future<void> _showDatePicker(BuildContext context) async {
-    final range = await showDateRangePicker(
+  void _showDatePicker(BuildContext context) {
+    DateTime tempStart = _dateRange?.start ?? DateTime.now();
+    DateTime tempEnd = _dateRange?.end ?? DateTime.now().add(const Duration(days: 3));
+    final isDark = Theme.of(context).colorScheme.brightness == Brightness.dark;
+    bool selectingStart = true;
+    
+    showModalBottomSheet(
       context: context,
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: AppTheme.primaryColor,
-              onPrimary: Colors.white,
-              surface: Colors.white,
-              onSurface: AppTheme.primaryColor,
-            ),
+      isScrollControlled: true,
+      backgroundColor: isDark ? const Color(0xFF253040) : Colors.white,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) => Container(
+          padding: const EdgeInsets.only(top: 16, left: 24, right: 24, bottom: 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: isDark ? Colors.white24 : Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'Select Stay Dates',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () => setModalState(() => selectingStart = true),
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: selectingStart 
+                            ? Theme.of(context).colorScheme.primary.withOpacity(0.1) 
+                            : Theme.of(context).colorScheme.primary.withOpacity(0.02),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: selectingStart 
+                              ? Theme.of(context).colorScheme.primary 
+                              : Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                            width: selectingStart ? 2 : 1,
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              selectingStart ? 'CHECK-IN (SELECTING)' : 'CHECK-IN',
+                              style: TextStyle(
+                                fontSize: 9,
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              DateFormat('EEE, MMM dd').format(tempStart),
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Icon(
+                    LucideIcons.arrowRight,
+                    color: Theme.of(context).colorScheme.primary.withOpacity(0.5),
+                    size: 16,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () => setModalState(() => selectingStart = false),
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: !selectingStart 
+                            ? Theme.of(context).colorScheme.primary.withOpacity(0.1) 
+                            : Theme.of(context).colorScheme.primary.withOpacity(0.02),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: !selectingStart 
+                              ? Theme.of(context).colorScheme.primary 
+                              : Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                            width: !selectingStart ? 2 : 1,
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              !selectingStart ? 'CHECK-OUT (SELECTING)' : 'CHECK-OUT',
+                              style: TextStyle(
+                                fontSize: 9,
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              DateFormat('EEE, MMM dd').format(tempEnd),
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Theme(
+                data: Theme.of(context).copyWith(
+                  colorScheme: Theme.of(context).colorScheme.copyWith(
+                    primary: Theme.of(context).colorScheme.primary,
+                    onPrimary: Theme.of(context).colorScheme.onPrimary,
+                    surface: isDark ? const Color(0xFF253040) : Colors.white,
+                    onSurface: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+                child: CalendarDatePicker(
+                  key: ValueKey('calendar_${selectingStart}_${tempStart}_${tempEnd}'),
+                  initialDate: selectingStart ? tempStart : tempEnd,
+                  firstDate: selectingStart 
+                    ? DateTime.now().subtract(const Duration(days: 30)) 
+                    : tempStart.add(const Duration(days: 1)),
+                  lastDate: DateTime.now().add(const Duration(days: 365)),
+                  onDateChanged: (date) {
+                    setModalState(() {
+                      if (selectingStart) {
+                        tempStart = date;
+                        if (tempEnd.isBefore(tempStart) || tempEnd.isAtSameMomentAs(tempStart)) {
+                          tempEnd = tempStart.add(const Duration(days: 2));
+                        }
+                        selectingStart = false;
+                      } else {
+                        if (date.isAfter(tempStart)) {
+                          tempEnd = date;
+                        }
+                      }
+                    });
+                  },
+                ),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: ElevatedButton(
+                  onPressed: () {
+                    setState(() {
+                      _dateRange = DateTimeRange(start: tempStart, end: tempEnd);
+                    });
+                    Navigator.pop(context);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    elevation: 0,
+                  ),
+                  child: const Text(
+                    'Confirm Stay Dates',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                ),
+              ),
+            ],
           ),
-          child: child!,
-        );
-      },
+        ),
+      ),
     );
-    if (range != null) {
-      setState(() {
-        _dateRange = range;
-      });
-    }
   }
 
   void _showGuestPicker(BuildContext context) {
+    final isDark = Theme.of(context).colorScheme.brightness == Brightness.dark;
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: isDark ? const Color(0xFF253040) : Colors.white,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (context) => StatefulBuilder(
         builder: (context, setModalState) => Container(
@@ -817,32 +1064,59 @@ class _HomePageState extends State<HomePage> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('How many guests?', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+              Text(
+                'How many guests?', 
+                style: TextStyle(
+                  fontSize: 22, 
+                  fontWeight: FontWeight.bold, 
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
               const SizedBox(height: 32),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Column(
+                  Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Guests', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                      Text('Number of people in stay', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                      Text(
+                        'Guests', 
+                        style: TextStyle(
+                          fontSize: 16, 
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
+                      Text(
+                        'Number of people in stay', 
+                        style: TextStyle(
+                          fontSize: 12, 
+                          color: isDark ? Colors.grey[400] : Colors.grey,
+                        ),
+                      ),
                     ],
                   ),
                   Row(
                     children: [
                       IconButton(
-                        icon: const Icon(LucideIcons.minusCircle, color: AppTheme.primaryColor),
+                        icon: Icon(LucideIcons.minusCircle, color: Theme.of(context).colorScheme.primary),
                         onPressed: _guests > 1 ? () {
                           setModalState(() => _guests--);
                           setState(() {});
                         } : null,
                       ),
                       const SizedBox(width: 12),
-                      Text('$_guests', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      Text(
+                        '$_guests', 
+                        style: TextStyle(
+                          fontSize: 18, 
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
                       const SizedBox(width: 12),
                       IconButton(
-                        icon: const Icon(LucideIcons.plusCircle, color: AppTheme.primaryColor),
+                        icon: Icon(LucideIcons.plusCircle, color: Theme.of(context).colorScheme.primary),
                         onPressed: _guests < 10 ? () {
                           setModalState(() => _guests++);
                           setState(() {});
@@ -858,8 +1132,8 @@ class _HomePageState extends State<HomePage> {
                 child: ElevatedButton(
                   onPressed: () => Navigator.pop(context),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryColor,
-                    foregroundColor: Colors.white,
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   ),

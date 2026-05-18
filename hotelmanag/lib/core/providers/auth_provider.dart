@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'dart:convert';
 import '../../features/auth/domain/repositories/auth_repository.dart';
 import '../../features/auth/domain/entities/user_entity.dart';
 import '../../features/auth/data/models/user_model.dart';
@@ -71,6 +72,18 @@ class AuthProvider extends ChangeNotifier {
     
     if (token == null || token.isEmpty) return false;
 
+    // Load cached user data if it exists for instant startup
+    final userDataString = prefs.getString('user_data');
+    if (userDataString != null && userDataString.isNotEmpty) {
+      try {
+        final userData = jsonDecode(userDataString) as Map<String, dynamic>;
+        _user = UserModel.fromJson(userData);
+        notifyListeners();
+      } catch (e) {
+        debugPrint('Error parsing cached user: $e');
+      }
+    }
+
     _isLoading = true;
     notifyListeners();
 
@@ -78,13 +91,32 @@ class AuthProvider extends ChangeNotifier {
     
     return result.fold(
       (failure) async {
-        await prefs.remove(AppConstants.tokenKey);
-        _isLoading = false;
-        notifyListeners();
-        return false;
+        // If it's an explicit auth failure (Unauthorized/Expired), clear the session.
+        // Otherwise, keep the cached session so they are not logged out when offline/poor connection.
+        final errorMsg = failure.message.toLowerCase();
+        final isAuthFailure = errorMsg.contains('unauthorized') || 
+                              errorMsg.contains('token') ||
+                              errorMsg.contains('invalid') ||
+                              errorMsg.contains('expired');
+        
+        if (isAuthFailure) {
+          await prefs.remove(AppConstants.tokenKey);
+          await prefs.remove('user_data');
+          _user = null;
+          _isLoading = false;
+          notifyListeners();
+          return false;
+        } else {
+          // Network issue / server unreachable — allow them to continue with cached session
+          _isLoading = false;
+          notifyListeners();
+          return _user != null;
+        }
       },
-      (user) {
+      (user) async {
         _user = user;
+        // Update local cache
+        await _saveAuthData(user, null);
         _isLoading = false;
         notifyListeners();
         return true;
@@ -96,6 +128,7 @@ class AuthProvider extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(AppConstants.tokenKey);
     await prefs.remove('user_favorites'); // Clear favorites on logout
+    await prefs.remove('user_data'); // Clear cached user details
     await GoogleSignIn().signOut(); // Also sign out from Google
     _user = null;
     notifyListeners();
@@ -265,7 +298,59 @@ class AuthProvider extends ChangeNotifier {
     if (token != null) {
       await prefs.setString(AppConstants.tokenKey, token);
     }
-    // We only save the token for now as getMe fetches the user on startup.
-    // However, keeping _user in memory is enough for the current session.
+
+    // Set onboarding complete as user is logged in
+    await prefs.setBool(AppConstants.onboardingKey, true);
+
+    // Save user entity to cache
+    try {
+      final userModel = UserModel(
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        city: user.city,
+        profileImage: user.profileImage,
+        coverImage: user.coverImage,
+        paymentMethods: user.paymentMethods.map((pm) {
+          if (pm is PaymentMethodModel) return pm;
+          return PaymentMethodModel(
+            type: pm.type,
+            brand: pm.brand,
+            last4: pm.last4,
+            expiry: pm.expiry,
+            upiId: pm.upiId,
+            bankName: pm.bankName,
+            isDefault: pm.isDefault,
+          );
+        }).toList(),
+      );
+      final userJson = jsonEncode(userModel.toJson());
+      await prefs.setString('user_data', userJson);
+    } catch (e) {
+      debugPrint('Error caching user data: $e');
+    }
+  }
+
+  Future<bool> changePassword(String oldPassword, String newPassword) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    final result = await _authRepository.changePassword(oldPassword, newPassword);
+
+    return result.fold(
+      (failure) {
+        _error = failure.message;
+        _isLoading = false;
+        notifyListeners();
+        return false;
+      },
+      (success) {
+        _isLoading = false;
+        notifyListeners();
+        return success;
+      },
+    );
   }
 }

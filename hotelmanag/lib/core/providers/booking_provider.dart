@@ -14,6 +14,8 @@ class BookingProvider extends ChangeNotifier {
   DateTime _checkIn = DateTime.now().add(const Duration(days: 7));
   DateTime _checkOut = DateTime.now().add(const Duration(days: 10));
   int _guests = 2;
+  String _selectedRoomType = 'Deluxe King Room';
+  double _selectedRoomPrice = 0.0;
   
   Map<String, String> _leadGuest = {
     'name': '',
@@ -46,6 +48,8 @@ class BookingProvider extends ChangeNotifier {
   DateTime get checkIn => _checkIn;
   DateTime get checkOut => _checkOut;
   int get guests => _guests;
+  String get selectedRoomType => _selectedRoomType;
+  double get selectedRoomPrice => _selectedRoomPrice;
   Map<String, String> get leadGuest => _leadGuest;
   List<Map<String, String>> get additionalAdults => _additionalAdults;
   List<Map<String, String>> get children => _children;
@@ -53,7 +57,7 @@ class BookingProvider extends ChangeNotifier {
   double get discountAmount => _discountAmount;
 
   int get nights => _checkOut.difference(_checkIn).inDays;
-  double get subtotal => (_currentHotel?.pricePerNight ?? 0) * nights;
+  double get subtotal => (_selectedRoomPrice > 0 ? _selectedRoomPrice : (_currentHotel?.pricePerNight ?? 0)) * nights;
   double get serviceFee => (subtotal - _discountAmount) * 0.05;
   double get taxes => (subtotal - _discountAmount) * 0.08;
   double get total => (subtotal - _discountAmount) + serviceFee + taxes;
@@ -61,11 +65,23 @@ class BookingProvider extends ChangeNotifier {
   // Setters
   void startBooking(HotelEntity hotel) {
     _currentHotel = hotel;
+    _selectedRoomType = 'Deluxe King Room';
+    _selectedRoomPrice = hotel.pricePerNight;
     _appliedPromoCode = null;
     _discountAmount = 0.0;
     _leadGuest = {'name': '', 'email': '', 'phone': '', 'requests': ''};
     _additionalAdults = [];
     _children = [];
+    notifyListeners();
+  }
+
+  void selectRoom(String type, double price) {
+    _selectedRoomType = type;
+    _selectedRoomPrice = price;
+    // Reapply promo code if active
+    if (_appliedPromoCode != null) {
+      _discountAmount = subtotal * _validPromos[_appliedPromoCode]!;
+    }
     notifyListeners();
   }
 
@@ -118,7 +134,7 @@ class BookingProvider extends ChangeNotifier {
     
     final newBooking = BookingEntity(
       id: id,
-      roomId: 'RM-${_currentHotel!.id}-STD',
+      roomId: 'RM-${_currentHotel!.id}-${_selectedRoomType.replaceAll(' ', '-').toUpperCase()}',
       hotelName: _currentHotel!.name,
       checkIn: _checkIn,
       checkOut: _checkOut,

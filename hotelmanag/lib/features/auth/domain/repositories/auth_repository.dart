@@ -24,4 +24,5 @@ abstract class AuthRepository {
     String? bankName,
     bool isDefault = false,
   });
+  Future<Either<Failure, bool>> changePassword(String oldPassword, String newPassword);
 }

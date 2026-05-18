@@ -143,7 +143,20 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 40),
                           child: ElevatedButton(
-                            onPressed: () => context.go('/onboarding'),
+                            onPressed: () async {
+                              final auth = Provider.of<AuthProvider>(context, listen: false);
+                              if (auth.isAuthenticated) {
+                                context.go('/');
+                              } else {
+                                final prefs = await SharedPreferences.getInstance();
+                                final hasSeenOnboarding = prefs.getBool(AppConstants.onboardingKey) ?? false;
+                                if (hasSeenOnboarding) {
+                                  context.go('/welcome');
+                                } else {
+                                  context.go('/onboarding');
+                                }
+                              }
+                            },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFFD4A373),
                               foregroundColor: Colors.white,

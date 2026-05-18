@@ -622,6 +622,47 @@ router.patch("/profile", verifyCustomerToken, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// ── POST /api/auth/change-password ─────────────────────────
+router.post("/change-password", verifyCustomerToken, async (req, res, next) => {
+  try {
+    const { oldPassword, newPassword } = req.body;
+
+    if (!oldPassword || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "Old password and new password are required.",
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: "New password must be at least 6 characters.",
+      });
+    }
+
+    const user = await User.findById(req.customer.id).select("+passwordHash");
+    if (!user || !user.passwordHash) {
+      return res.status(404).json({ success: false, message: "User not found." });
+    }
+
+    const valid = await bcrypt.compare(oldPassword, user.passwordHash);
+    if (!valid) {
+      return res.status(400).json({ success: false, message: "Incorrect old password." });
+    }
+
+    user.passwordHash = await bcrypt.hash(newPassword, 12);
+    await user.save();
+
+    logger.info("Customer changed password", { email: user.email });
+
+    return res.status(200).json({
+      success: true,
+      message: "Password updated successfully.",
+    });
+  } catch (err) { next(err); }
+});
+
 // ── POST /api/auth/payment-methods ────────────────────────
 router.post("/payment-methods", verifyCustomerToken, async (req, res, next) => {
   try {

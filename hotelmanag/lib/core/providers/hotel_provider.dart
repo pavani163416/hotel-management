@@ -15,6 +15,7 @@ class HotelProvider extends ChangeNotifier {
   double _minRating = 0;
   List<String> _selectedAmenities = [];
   String _searchQuery = '';
+  String _sortBy = 'Top Rated';
 
   HotelProvider(this._hotelRepository);
 
@@ -27,6 +28,7 @@ class HotelProvider extends ChangeNotifier {
   String get propertyType => _propertyType;
   double get minRating => _minRating;
   List<String> get selectedAmenities => _selectedAmenities;
+  String get sortBy => _sortBy;
 
   Future<void> fetchHotels() async {
     _isLoading = true;
@@ -79,12 +81,18 @@ class HotelProvider extends ChangeNotifier {
     _applyFilters();
   }
 
+  void updateSortBy(String option) {
+    _sortBy = option;
+    _applyFilters();
+  }
+
   void clearFilters() {
     _priceRange = const RangeValues(0, 5000);
     _propertyType = 'Any';
     _minRating = 0;
     _selectedAmenities = [];
     _searchQuery = '';
+    _sortBy = 'Top Rated';
     _applyFilters();
   }
 
@@ -94,7 +102,24 @@ class HotelProvider extends ChangeNotifier {
                             hotel.location.toLowerCase().contains(_searchQuery);
       final matchesPrice = hotel.pricePerNight >= _priceRange.start && 
                            hotel.pricePerNight <= _priceRange.end;
-      final matchesType = _propertyType == 'Any' || hotel.type == _propertyType;
+      
+      bool matchesType = true;
+      if (_propertyType != 'Any') {
+        if (_propertyType == 'Beach') {
+          matchesType = _isBeachHotel(hotel);
+        } else if (_propertyType == 'Mountain') {
+          matchesType = _isMountainHotel(hotel);
+        } else if (_propertyType == 'City') {
+          matchesType = _isCityHotel(hotel);
+        } else if (_propertyType == 'Desert') {
+          matchesType = _isDesertHotel(hotel);
+        } else if (_propertyType == 'Luxury') {
+          matchesType = _isLuxuryHotel(hotel);
+        } else {
+          matchesType = hotel.type == _propertyType;
+        }
+      }
+      
       final matchesRating = hotel.rating >= _minRating;
       
       final matchesAmenities = _selectedAmenities.isEmpty || 
@@ -102,6 +127,95 @@ class HotelProvider extends ChangeNotifier {
       
       return matchesSearch && matchesPrice && matchesType && matchesRating && matchesAmenities;
     }).toList();
+
+    // Apply Sorting
+    if (_sortBy == 'Price: Low to High') {
+      _filteredHotels.sort((a, b) => a.pricePerNight.compareTo(b.pricePerNight));
+    } else if (_sortBy == 'Price: High to Low') {
+      _filteredHotels.sort((a, b) => b.pricePerNight.compareTo(a.pricePerNight));
+    } else {
+      // Default to "Top Rated"
+      _filteredHotels.sort((a, b) => b.rating.compareTo(a.rating));
+    }
+
     notifyListeners();
+  }
+
+  bool _isBeachHotel(HotelEntity hotel) {
+    final searchStr = '${hotel.name} ${hotel.location} ${hotel.description} ${hotel.type} ${hotel.amenities.join(' ')}'.toLowerCase();
+    return searchStr.contains('beach') ||
+           searchStr.contains('coast') ||
+           searchStr.contains('sea') ||
+           searchStr.contains('ocean') ||
+           searchStr.contains('surf') ||
+           searchStr.contains('sand') ||
+           searchStr.contains('island') ||
+           searchStr.contains('maldives') ||
+           searchStr.contains('bali') ||
+           searchStr.contains('tropical') ||
+           searchStr.contains('shore') ||
+           searchStr.contains('waterfront') ||
+           searchStr.contains('palm') ||
+           hotel.type.toLowerCase() == 'resort';
+  }
+
+  bool _isMountainHotel(HotelEntity hotel) {
+    final searchStr = '${hotel.name} ${hotel.location} ${hotel.description} ${hotel.type} ${hotel.amenities.join(' ')}'.toLowerCase();
+    return searchStr.contains('mountain') ||
+           searchStr.contains('hill') ||
+           searchStr.contains('alps') ||
+           searchStr.contains('peak') ||
+           searchStr.contains('summit') ||
+           searchStr.contains('highland') ||
+           searchStr.contains('snow') ||
+           searchStr.contains('ski') ||
+           searchStr.contains('forest') ||
+           searchStr.contains('wood') ||
+           searchStr.contains('nature') ||
+           searchStr.contains('valley') ||
+           searchStr.contains('ridge');
+  }
+
+  bool _isCityHotel(HotelEntity hotel) {
+    final searchStr = '${hotel.name} ${hotel.location} ${hotel.description} ${hotel.type} ${hotel.amenities.join(' ')}'.toLowerCase();
+    return searchStr.contains('city') ||
+           searchStr.contains('downtown') ||
+           searchStr.contains('urban') ||
+           searchStr.contains('metropolis') ||
+           searchStr.contains('tower') ||
+           searchStr.contains('plaza') ||
+           searchStr.contains('london') ||
+           searchStr.contains('paris') ||
+           searchStr.contains('tokyo') ||
+           searchStr.contains('york') ||
+           searchStr.contains('boulevard') ||
+           searchStr.contains('center') ||
+           hotel.type.toLowerCase() == 'hotel';
+  }
+
+  bool _isDesertHotel(HotelEntity hotel) {
+    final searchStr = '${hotel.name} ${hotel.location} ${hotel.description} ${hotel.type} ${hotel.amenities.join(' ')}'.toLowerCase();
+    return searchStr.contains('desert') ||
+           searchStr.contains('dune') ||
+           searchStr.contains('oasis') ||
+           searchStr.contains('safari') ||
+           searchStr.contains('canyon') ||
+           searchStr.contains('dubai') ||
+           searchStr.contains('sahara') ||
+           searchStr.contains('sun');
+  }
+
+  bool _isLuxuryHotel(HotelEntity hotel) {
+    final searchStr = '${hotel.name} ${hotel.location} ${hotel.description} ${hotel.type} ${hotel.amenities.join(' ')}'.toLowerCase();
+    return hotel.pricePerNight > 300 ||
+           searchStr.contains('luxury') ||
+           searchStr.contains('spa') ||
+           searchStr.contains('boutique') ||
+           searchStr.contains('premium') ||
+           searchStr.contains('royal') ||
+           searchStr.contains('grand') ||
+           searchStr.contains('star') ||
+           hotel.type.toLowerCase() == 'villa' ||
+           hotel.type.toLowerCase() == 'suite';
   }
 }

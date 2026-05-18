@@ -10,6 +10,9 @@ class BookingModel extends BookingEntity {
     required super.status,
     required super.totalAmount,
     super.imageUrl,
+    super.guestName,
+    super.roomNumber,
+    super.createdAt,
   });
 
   factory BookingModel.fromJson(Map<String, dynamic> json) {
@@ -22,6 +25,9 @@ class BookingModel extends BookingEntity {
       status: json['status'] ?? 'Confirmed',
       totalAmount: (json['totalAmount'] ?? 0).toDouble(),
       imageUrl: json['imageUrl'] ?? json['hotel']?['imageUrl'],
+      guestName: json['guestSnapshot']?['name'] ?? json['guest']?['name'] ?? 'Guest',
+      roomNumber: json['room']?['roomNumber'] ?? json['roomId'] ?? '',
+      createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
     );
   }
 
@@ -35,6 +41,9 @@ class BookingModel extends BookingEntity {
       'status': status,
       'totalAmount': totalAmount,
       'imageUrl': imageUrl,
+      'guestName': guestName,
+      'roomNumber': roomNumber,
+      'createdAt': createdAt?.toIso8601String(),
     };
   }
 }

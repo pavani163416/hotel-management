@@ -9,6 +9,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/main_layout.dart';
 import '../../../../core/widgets/custom_text_field.dart';
 import '../../../../core/providers/auth_provider.dart';
+import '../../../../core/providers/theme_provider.dart';
 import '../../../../core/utils/performance_utils.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -114,6 +115,8 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    _currentTheme = themeProvider.themeModeName;
     return MainLayout(
       child: Column(
         children: [
@@ -171,6 +174,10 @@ class _ProfilePageState extends State<ProfilePage> {
                   _currentTheme,
                   onTap: () => _showThemePicker(context),
                 ),
+                const SizedBox(height: 32),
+                _buildSectionTitle('Support & Help'),
+                const SizedBox(height: 16),
+                _buildCustomerSupportCard(context),
                 const SizedBox(height: 24),
                 _buildLogoutButton(),
                 const SizedBox(height: 120),
@@ -179,6 +186,115 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildCustomerSupportCard(BuildContext context) {
+    final isDark = Theme.of(context).colorScheme.brightness == Brightness.dark;
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF253040) : Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+        border: Border.all(
+          color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  LucideIcons.phoneCall,
+                  size: 20,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Customer Support',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
+                    Text(
+                      '24/7 Dedicated Concierge Care',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          const Divider(),
+          const SizedBox(height: 16),
+          _buildSupportInfoRow(context, LucideIcons.userCheck, 'Admin Name', 'Alex Rivera (Chief Concierge)'),
+          const SizedBox(height: 12),
+          _buildSupportInfoRow(context, LucideIcons.phone, 'Support Phone', '+1 (800) 555-0199'),
+          const SizedBox(height: 12),
+          _buildSupportInfoRow(context, LucideIcons.mail, 'Support Email', 'concierge@luxestay.com'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSupportInfoRow(BuildContext context, IconData icon, String label, String value) {
+    return Row(
+      children: [
+        Icon(
+          icon,
+          size: 16,
+          color: Theme.of(context).colorScheme.primary.withOpacity(0.7),
+        ),
+        const SizedBox(width: 12),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              label.toUpperCase(),
+              style: TextStyle(
+                fontSize: 8,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+                letterSpacing: 1,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 
@@ -293,7 +409,7 @@ class _ProfilePageState extends State<ProfilePage> {
                               child: Container(
                                 padding: const EdgeInsets.all(8),
                                 decoration: BoxDecoration(
-                                  color: AppTheme.primaryColor,
+                                  color: Theme.of(context).colorScheme.primary,
                                   shape: BoxShape.circle,
                                   border: Border.all(color: Colors.white, width: 2),
                                 ),
@@ -308,10 +424,10 @@ class _ProfilePageState extends State<ProfilePage> {
                   const SizedBox(height: 12),
                   Text(
                     displayName,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      color: AppTheme.primaryColor,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -320,11 +436,11 @@ class _ProfilePageState extends State<ProfilePage> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.start,
                     children: [
-                      const Icon(LucideIcons.mapPin, size: 12, color: AppTheme.primaryColor),
+                      Icon(LucideIcons.mapPin, size: 12, color: Theme.of(context).colorScheme.primary),
                       const SizedBox(width: 4),
                       Text(
                         displayCity,
-                        style: TextStyle(color: AppTheme.primaryColor.withOpacity(0.7), fontSize: 13),
+                        style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7), fontSize: 13),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -463,7 +579,7 @@ class _ProfilePageState extends State<ProfilePage> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).colorScheme.brightness == Brightness.dark ? const Color(0xFF253040) : Colors.white,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (context) => Padding(
         padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom, top: 24, left: 24, right: 24),
@@ -471,7 +587,7 @@ class _ProfilePageState extends State<ProfilePage> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Personal Information', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+            Text('Personal Information', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
             const SizedBox(height: 24),
             CustomTextField(label: 'Full Name', hint: 'Alex Johnson', prefixIcon: LucideIcons.user, controller: _nameController),
             const SizedBox(height: 16),
@@ -491,21 +607,21 @@ class _ProfilePageState extends State<ProfilePage> {
     final languages = ['English (US)', 'Spanish', 'French', 'German', 'Chinese'];
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).colorScheme.brightness == Brightness.dark ? const Color(0xFF253040) : Colors.white,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (context) => Container(
         padding: const EdgeInsets.symmetric(vertical: 24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-              child: Text('Select Language', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+              child: Text('Select Language', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
             ),
             const Divider(),
             ...languages.map((lang) => ListTile(
-                  title: Text(lang),
-                  trailing: _currentLanguage == lang ? const Icon(LucideIcons.check, color: AppTheme.primaryColor) : null,
+                  title: Text(lang, style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+                  trailing: _currentLanguage == lang ? Icon(LucideIcons.check, color: Theme.of(context).colorScheme.primary) : null,
                   onTap: () {
                     setState(() => _currentLanguage = lang);
                     Navigator.pop(context);
@@ -522,23 +638,24 @@ class _ProfilePageState extends State<ProfilePage> {
     final themes = ['Light', 'Dark', 'System Default'];
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).colorScheme.brightness == Brightness.dark ? const Color(0xFF253040) : Colors.white,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (context) => Container(
         padding: const EdgeInsets.symmetric(vertical: 24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-              child: Text('Select Theme', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+              child: Text('Select Theme', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
             ),
             const Divider(),
             ...themes.map((theme) => ListTile(
-                  title: Text(theme),
-                  trailing: _currentTheme == theme ? const Icon(LucideIcons.check, color: AppTheme.primaryColor) : null,
+                  title: Text(theme, style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+                  trailing: _currentTheme == theme ? Icon(LucideIcons.check, color: Theme.of(context).colorScheme.primary) : null,
                   onTap: () {
                     setState(() => _currentTheme = theme);
+                    Provider.of<ThemeProvider>(context, listen: false).setTheme(theme);
                     Navigator.pop(context);
                   },
                 )),
@@ -552,7 +669,7 @@ class _ProfilePageState extends State<ProfilePage> {
   void _showPaymentMethods(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).colorScheme.brightness == Brightness.dark ? const Color(0xFF253040) : Colors.white,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (context) => Consumer<AuthProvider>(
@@ -565,7 +682,7 @@ class _ProfilePageState extends State<ProfilePage> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Payment Methods', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+                Text('Payment Methods', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
                 const SizedBox(height: 24),
                 if (paymentMethods.isEmpty)
                   Padding(
@@ -607,7 +724,7 @@ class _ProfilePageState extends State<ProfilePage> {
   void _showSecurity(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).colorScheme.brightness == Brightness.dark ? const Color(0xFF253040) : Colors.white,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (context) => Container(
         padding: const EdgeInsets.all(24),
@@ -615,13 +732,135 @@ class _ProfilePageState extends State<ProfilePage> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Security Settings', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+            Text('Security Settings', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
             const SizedBox(height: 24),
-            _buildSettingItem(LucideIcons.lock, 'Change Password', 'Update your password regularly', onTap: () => _showFeedback(context, 'Change Password')),
-            _buildSettingItem(LucideIcons.fingerprint, 'Biometric Login', 'Use FaceID or Fingerprint', onTap: () => _showFeedback(context, 'Biometric Login')),
-            _buildSettingItem(LucideIcons.shieldCheck, 'Two-Factor Auth', 'Secure your account with 2FA', onTap: () => _showFeedback(context, 'Two-Factor Auth')),
+            _buildSettingItem(LucideIcons.lock, 'Change Password', 'Update your password regularly', onTap: () {
+              Navigator.pop(context);
+              _showChangePasswordDialog(context);
+            }),
             const SizedBox(height: 32),
           ],
+        ),
+      ),
+    );
+  }
+
+  void _showChangePasswordDialog(BuildContext context) {
+    final oldPasswordController = TextEditingController();
+    final newPasswordController = TextEditingController();
+    final confirmPasswordController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Theme.of(context).colorScheme.brightness == Brightness.dark ? const Color(0xFF253040) : Colors.white,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) => Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom + 32,
+            top: 32,
+            left: 24,
+            right: 24,
+          ),
+          child: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Change Password',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
+                ),
+                const SizedBox(height: 24),
+                CustomTextField(
+                  label: 'Old Password',
+                  hint: 'Enter old password',
+                  obscureText: true,
+                  prefixIcon: LucideIcons.lock,
+                  controller: oldPasswordController,
+                  validator: (val) {
+                    if (val == null || val.isEmpty) return 'Old password is required';
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                CustomTextField(
+                  label: 'New Password',
+                  hint: 'Enter new password (min. 6 characters)',
+                  obscureText: true,
+                  prefixIcon: LucideIcons.lock,
+                  controller: newPasswordController,
+                  validator: (val) {
+                    if (val == null || val.isEmpty) return 'New password is required';
+                    if (val.length < 6) return 'Password must be at least 6 characters';
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                CustomTextField(
+                  label: 'Confirm New Password',
+                  hint: 'Confirm your new password',
+                  obscureText: true,
+                  prefixIcon: LucideIcons.lock,
+                  controller: confirmPasswordController,
+                  validator: (val) {
+                    if (val != newPasswordController.text) return 'Passwords do not match';
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 32),
+                Consumer<AuthProvider>(
+                  builder: (context, auth, _) => SizedBox(
+                    width: double.infinity,
+                    height: 56,
+                    child: ElevatedButton(
+                      onPressed: auth.isLoading
+                          ? null
+                          : () async {
+                              if (formKey.currentState?.validate() ?? false) {
+                                final success = await auth.changePassword(
+                                  oldPasswordController.text,
+                                  newPasswordController.text,
+                                );
+                                if (context.mounted) {
+                                  if (success) {
+                                    Navigator.pop(context);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Password updated successfully!'),
+                                        behavior: SnackBarBehavior.floating,
+                                        backgroundColor: Colors.green,
+                                      ),
+                                    );
+                                  } else {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(auth.error ?? 'Failed to update password'),
+                                        behavior: SnackBarBehavior.floating,
+                                        backgroundColor: Colors.red,
+                                      ),
+                                    );
+                                  }
+                                }
+                              }
+                            },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Theme.of(context).colorScheme.primary,
+                        foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      ),
+                      child: auth.isLoading
+                          ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                          : const Text('Update Password', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -630,21 +869,44 @@ class _ProfilePageState extends State<ProfilePage> {
   void _showNotifications(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).colorScheme.brightness == Brightness.dark ? const Color(0xFF253040) : Colors.white,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Notifications', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
-            const SizedBox(height: 24),
-            _buildNotificationSwitch('Push Notifications', 'Alerts about your bookings', _pushNotifications, (val) => setState(() => _pushNotifications = val)),
-            _buildNotificationSwitch('Email Updates', 'Invoices and receipts', _emailUpdates, (val) => setState(() => _emailUpdates = val)),
-            _buildNotificationSwitch('Promotions', 'Exclusive deals and offers', _promotions, (val) => setState(() => _promotions = val)),
-            const SizedBox(height: 32),
-          ],
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) => Container(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Notifications', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+              const SizedBox(height: 24),
+              _buildNotificationSwitch(
+                'Push Notifications', 
+                'Alerts about your bookings', 
+                _pushNotifications, 
+                (val) => setModalState(() {
+                  setState(() => _pushNotifications = val);
+                }),
+              ),
+              _buildNotificationSwitch(
+                'Email Updates', 
+                'Invoices and receipts', 
+                _emailUpdates, 
+                (val) => setModalState(() {
+                  setState(() => _emailUpdates = val);
+                }),
+              ),
+              _buildNotificationSwitch(
+                'Promotions', 
+                'Exclusive deals and offers', 
+                _promotions, 
+                (val) => setModalState(() {
+                  setState(() => _promotions = val);
+                }),
+              ),
+              const SizedBox(height: 32),
+            ],
+          ),
         ),
       ),
     );
@@ -654,9 +916,9 @@ class _ProfilePageState extends State<ProfilePage> {
     return SwitchListTile(
       value: value,
       onChanged: onChanged,
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-      subtitle: Text(subtitle, style: TextStyle(fontSize: 12, color: Colors.grey[500])),
-      activeColor: AppTheme.primaryColor,
+      title: Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Theme.of(context).colorScheme.onSurface)),
+      subtitle: Text(subtitle, style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
+      activeColor: Theme.of(context).colorScheme.primary,
       contentPadding: EdgeInsets.zero,
     );
   }
@@ -674,14 +936,15 @@ class _ProfilePageState extends State<ProfilePage> {
         icon = LucideIcons.creditCard;
     }
 
+    final isDark = Theme.of(context).colorScheme.brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: isDefault ? AppTheme.primaryColor : Colors.grey[200]!),
+        color: isDark ? const Color(0xFF19222E) : Colors.white,
+        border: Border.all(color: isDefault ? Theme.of(context).colorScheme.primary : Colors.grey[200]!),
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
-          if (isDefault) BoxShadow(color: AppTheme.primaryColor.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4)),
+          if (isDefault) BoxShadow(color: Theme.of(context).colorScheme.primary.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4)),
         ],
       ),
       child: Row(
@@ -689,18 +952,18 @@ class _ProfilePageState extends State<ProfilePage> {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: AppTheme.primaryColor.withOpacity(0.05),
+              color: Theme.of(context).colorScheme.primary.withOpacity(0.05),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(icon, color: AppTheme.primaryColor, size: 20),
+            child: Icon(icon, color: Theme.of(context).colorScheme.primary, size: 20),
           ),
           const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                Text(subtitle, style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+                Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Theme.of(context).colorScheme.onSurface)),
+                Text(subtitle, style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6), fontSize: 12)),
               ],
             ),
           ),
@@ -708,10 +971,10 @@ class _ProfilePageState extends State<ProfilePage> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), 
               decoration: BoxDecoration(
-                color: AppTheme.primaryColor.withOpacity(0.1), 
+                color: Theme.of(context).colorScheme.primary.withOpacity(0.1), 
                 borderRadius: BorderRadius.circular(4)
               ), 
-              child: const Text('DEFAULT', style: TextStyle(color: AppTheme.primaryColor, fontSize: 8, fontWeight: FontWeight.bold))
+              child: Text('DEFAULT', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: 8, fontWeight: FontWeight.bold))
             ),
         ],
       ),
@@ -790,8 +1053,8 @@ class _ProfilePageState extends State<ProfilePage> {
         icon: const Icon(LucideIcons.plus, size: 18),
         label: Text(label),
         style: OutlinedButton.styleFrom(
-          foregroundColor: AppTheme.primaryColor,
-          side: const BorderSide(color: AppTheme.primaryColor),
+          foregroundColor: Theme.of(context).colorScheme.primary,
+          side: BorderSide(color: Theme.of(context).colorScheme.primary),
           padding: const EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         ),
@@ -807,7 +1070,7 @@ class _ProfilePageState extends State<ProfilePage> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).colorScheme.brightness == Brightness.dark ? const Color(0xFF253040) : Colors.white,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (context) => StatefulBuilder(
         builder: (context, setModalState) => Padding(
@@ -821,9 +1084,9 @@ class _ProfilePageState extends State<ProfilePage> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 'Add Payment Method',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
               ),
               const SizedBox(height: 24),
               // Type Selector
@@ -956,8 +1219,8 @@ class _ProfilePageState extends State<ProfilePage> {
                             }
                           },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.primaryColor,
-                      foregroundColor: Colors.white,
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      foregroundColor: Theme.of(context).colorScheme.onPrimary,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                     ),
@@ -976,6 +1239,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Widget _buildTypeTab(String label, String type, StateSetter setModalState) {
     bool isSelected = _selectedPaymentType == type;
+    final isDark = Theme.of(context).colorScheme.brightness == Brightness.dark;
     return Expanded(
       child: GestureDetector(
         onTap: () {
@@ -986,15 +1250,15 @@ class _ProfilePageState extends State<ProfilePage> {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
-            color: isSelected ? AppTheme.primaryColor : Colors.grey[100],
+            color: isSelected ? Theme.of(context).colorScheme.primary : (isDark ? const Color(0xFF19222E) : Colors.grey[100]),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: isSelected ? AppTheme.primaryColor : Colors.grey[200]!),
+            border: Border.all(color: isSelected ? Theme.of(context).colorScheme.primary : (isDark ? Colors.white10 : Colors.grey[200]!)),
           ),
           child: Text(
             label,
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: isSelected ? Colors.white : Colors.grey[600],
+              color: isSelected ? Colors.white : (isDark ? Colors.grey[400] : Colors.grey[600]),
               fontWeight: FontWeight.bold,
               fontSize: 13,
             ),
@@ -1027,7 +1291,7 @@ class _ProfilePageState extends State<ProfilePage> {
   void _showImageUploadOptions(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).colorScheme.brightness == Brightness.dark ? const Color(0xFF253040) : Colors.white,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (context) => Container(
         padding: const EdgeInsets.all(32),
@@ -1038,19 +1302,19 @@ class _ProfilePageState extends State<ProfilePage> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey[200],
+                color: Colors.grey[300],
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
             const SizedBox(height: 24),
-            const Text(
+            Text(
               'Update Profile Photo',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
             ),
             const SizedBox(height: 8),
             Text(
               'Choose a source for your new profile picture',
-              style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+              style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
             ),
             const SizedBox(height: 32),
             Row(
@@ -1072,13 +1336,13 @@ class _ProfilePageState extends State<ProfilePage> {
       leading: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: isDestructive ? Colors.red.withOpacity(0.1) : AppTheme.primaryColor.withOpacity(0.1),
+          color: isDestructive ? Colors.red.withOpacity(0.1) : Theme.of(context).colorScheme.primary.withOpacity(0.1),
           borderRadius: BorderRadius.circular(10),
         ),
-        child: Icon(icon, color: isDestructive ? Colors.red : AppTheme.primaryColor, size: 20),
+        child: Icon(icon, color: isDestructive ? Colors.red : Theme.of(context).colorScheme.primary, size: 20),
       ),
-      title: Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: isDestructive ? Colors.red : AppTheme.primaryColor)),
-      subtitle: Text(subtitle, style: TextStyle(fontSize: 12, color: Colors.grey[500])),
+      title: Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: isDestructive ? Colors.red : Theme.of(context).colorScheme.primary)),
+      subtitle: Text(subtitle, style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
       onTap: () {
         Navigator.pop(context);
         setState(() {
@@ -1107,13 +1371,13 @@ class _ProfilePageState extends State<ProfilePage> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: isDestructive ? Colors.red.withOpacity(0.1) : AppTheme.primaryColor.withOpacity(0.05),
+              color: isDestructive ? Colors.red.withOpacity(0.1) : Theme.of(context).colorScheme.primary.withOpacity(0.05),
               shape: BoxShape.circle,
             ),
-            child: Icon(icon, color: isDestructive ? Colors.red : AppTheme.primaryColor, size: 24),
+            child: Icon(icon, color: isDestructive ? Colors.red : Theme.of(context).colorScheme.primary, size: 24),
           ),
           const SizedBox(height: 8),
-          Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: isDestructive ? Colors.red : AppTheme.primaryColor)),
+          Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: isDestructive ? Colors.red : Theme.of(context).colorScheme.primary)),
         ],
       ),
     );
@@ -1203,16 +1467,16 @@ class _ProfilePageState extends State<ProfilePage> {
   void _showCoverImageOptions(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).colorScheme.brightness == Brightness.dark ? const Color(0xFF253040) : Colors.white,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (context) => Container(
         padding: const EdgeInsets.symmetric(vertical: 24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-              child: Text('Update Cover Photo', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+              child: Text('Update Cover Photo', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
             ),
             const Divider(),
             _buildCoverListTile(context, LucideIcons.camera, 'Camera', 'Capture a new cover image', onTap: () => _pickImage(ImageSource.camera, isProfile: false)),
@@ -1229,13 +1493,13 @@ class _ProfilePageState extends State<ProfilePage> {
       leading: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: AppTheme.primaryColor.withOpacity(0.1),
+          color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
           borderRadius: BorderRadius.circular(10),
         ),
-        child: Icon(icon, color: AppTheme.primaryColor, size: 20),
+        child: Icon(icon, color: Theme.of(context).colorScheme.primary, size: 20),
       ),
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppTheme.primaryColor)),
-      subtitle: Text(subtitle, style: TextStyle(fontSize: 12, color: Colors.grey[500])),
+      title: Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Theme.of(context).colorScheme.primary)),
+      subtitle: Text(subtitle, style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
       onTap: onTap,
     );
   }

@@ -222,7 +222,7 @@ class BookingListItem extends StatelessWidget {
                   Text('\$${NumberFormat("#,###").format(booking.totalAmount)}', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
                   const SizedBox(height: 16),
                   ElevatedButton(
-                    onPressed: () {},
+                    onPressed: () => _showBookingDetails(context),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFFE5E0D8),
                       foregroundColor: AppTheme.primaryColor,
@@ -318,7 +318,7 @@ class BookingListItem extends StatelessWidget {
                         ),
                       const SizedBox(width: 8),
                       ElevatedButton(
-                        onPressed: () {},
+                        onPressed: () => _showBookingDetails(context),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFFE5E0D8),
                           foregroundColor: AppTheme.primaryColor,
@@ -424,6 +424,119 @@ class BookingListItem extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showBookingDetails(BuildContext context) {
+    final df = DateFormat('yyyy-MM-dd');
+    final dateString = '${df.format(booking.checkIn)} — ${df.format(booking.checkOut)}';
+    final nights = booking.checkOut.difference(booking.checkIn).inDays;
+    final createdString = booking.createdAt != null
+        ? DateFormat('MMMM dd, yyyy \'at\' hh:mm a').format(booking.createdAt!)
+        : DateFormat('MMMM dd, yyyy \'at\' hh:mm a').format(DateTime.now());
+
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withOpacity(0.4),
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        backgroundColor: Colors.white,
+        child: Container(
+          width: 400,
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Stack(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: CachedNetworkImage(
+                      imageUrl: booking.imageUrl ?? 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=600',
+                      height: 180,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                  Positioned(
+                    top: 12,
+                    right: 12,
+                    child: InkWell(
+                      onTap: () => Navigator.pop(context),
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white70,
+                        ),
+                        child: const Icon(LucideIcons.x, size: 16, color: Colors.black87),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              Text(
+                booking.hotelName.toLowerCase(),
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.primaryColor,
+                  letterSpacing: -0.5,
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Divider(color: AppTheme.mutedColor, height: 1),
+              _buildDetailRow('Booking ID', '#${booking.id}', isId: true),
+              _buildDetailRow('Guest', booking.guestName ?? 'Guest'),
+              _buildDetailRow('Room', booking.roomNumber ?? booking.roomId),
+              _buildDetailRow('Dates', dateString),
+              _buildDetailRow('Nights', '$nights'),
+              _buildDetailRow('Total Paid', '\$${NumberFormat("#,###").format(booking.totalAmount)}', isBold: true),
+              _buildDetailRow('Status', booking.status),
+              _buildDetailRow('Confirmed At', createdString),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value, {bool isId = false, bool isBold = false}) {
+    return Container(
+      decoration: const BoxDecoration(
+        border: Border(bottom: BorderSide(color: AppTheme.mutedColor, width: 0.5)),
+      ),
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 13,
+              color: Colors.grey[600],
+            ),
+          ),
+          Flexible(
+            child: Text(
+              value,
+              textAlign: TextAlign.end,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: isBold ? FontWeight.bold : FontWeight.w500,
+                color: isId
+                    ? const Color(0xFF2C3E50)
+                    : isBold
+                        ? AppTheme.primaryColor
+                        : Colors.black87,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -1,5 +1,40 @@
 import 'package:equatable/equatable.dart';
 
+class ReviewEntity extends Equatable {
+  final String author;
+  final double rating;
+  final String comment;
+  final String date;
+
+  const ReviewEntity({
+    required this.author,
+    required this.rating,
+    required this.comment,
+    required this.date,
+  });
+
+  factory ReviewEntity.fromJson(Map<String, dynamic> json) {
+    return ReviewEntity(
+      author: json['author'] ?? '',
+      rating: (json['rating'] ?? 0).toDouble(),
+      comment: json['comment'] ?? '',
+      date: json['date'] ?? '',
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'author': author,
+      'rating': rating,
+      'comment': comment,
+      'date': date,
+    };
+  }
+
+  @override
+  List<Object?> get props => [author, rating, comment, date];
+}
+
 class HotelEntity extends Equatable {
   final String id;
   final String name;
@@ -10,6 +45,7 @@ class HotelEntity extends Equatable {
   final String description;
   final String type; // e.g., Hotel, Resort, Villa, Suite
   final List<String> amenities;
+  final List<ReviewEntity> reviews;
 
   const HotelEntity({
     required this.id,
@@ -21,6 +57,7 @@ class HotelEntity extends Equatable {
     required this.description,
     this.type = 'Hotel',
     this.amenities = const [],
+    this.reviews = const [],
   });
 
   Map<String, dynamic> toJson() {
@@ -34,6 +71,7 @@ class HotelEntity extends Equatable {
       'description': description,
       'type': type,
       'amenities': amenities,
+      'reviews': reviews.map((r) => r.toJson()).toList(),
     };
   }
 
@@ -48,9 +86,12 @@ class HotelEntity extends Equatable {
       description: json['description'] ?? '',
       type: json['type'] ?? 'Hotel',
       amenities: List<String>.from(json['amenities'] ?? []),
+      reviews: (json['reviews'] as List? ?? [])
+          .map((r) => ReviewEntity.fromJson(r))
+          .toList(),
     );
   }
 
   @override
-  List<Object?> get props => [id, name, location, rating, pricePerNight, imageUrl, description, type, amenities];
+  List<Object?> get props => [id, name, location, rating, pricePerNight, imageUrl, description, type, amenities, reviews];
 }

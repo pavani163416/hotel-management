@@ -75,8 +75,68 @@ class AppTheme {
 
   // Add dark theme if needed based on frontend css
   static ThemeData get darkTheme {
-    return ThemeData.dark().copyWith(
-      // Implement dark theme based on .dark classes in index.css if desired
+    const Color darkPrimaryColor = Color(0xFFEAE5DC); // Warm Cream/Off-white
+    const Color darkBackgroundColor = Color(0xFF19222E); // Sleek dark navy slate
+    const Color darkSurfaceColor = Color(0xFF253040); // Card slate
+    const Color darkForegroundColor = Color(0xFFFFFDF7);
+
+    return ThemeData(
+      useMaterial3: true,
+      brightness: Brightness.dark,
+      colorScheme: const ColorScheme.dark(
+        primary: darkPrimaryColor,
+        onPrimary: darkBackgroundColor,
+        secondary: accentColor,
+        onSecondary: darkBackgroundColor,
+        surface: darkSurfaceColor,
+        onSurface: darkForegroundColor,
+      ),
+      scaffoldBackgroundColor: darkBackgroundColor,
+      primaryColor: darkPrimaryColor,
+      textSelectionTheme: TextSelectionThemeData(
+        cursorColor: darkPrimaryColor,
+        selectionColor: darkPrimaryColor.withOpacity(0.3),
+        selectionHandleColor: darkPrimaryColor,
+      ),
+      textTheme: GoogleFonts.outfitTextTheme(ThemeData.dark().textTheme).copyWith(
+        displayLarge: GoogleFonts.outfit(
+          color: darkForegroundColor,
+          fontWeight: FontWeight.bold,
+          letterSpacing: -1.5,
+        ),
+        displayMedium: GoogleFonts.outfit(
+          color: darkForegroundColor,
+          fontWeight: FontWeight.bold,
+          letterSpacing: -1.0,
+        ),
+      ),
+      appBarTheme: const AppBarTheme(
+        centerTitle: false,
+        backgroundColor: darkBackgroundColor,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        iconTheme: IconThemeData(color: darkForegroundColor),
+        titleTextStyle: TextStyle(
+          color: darkForegroundColor,
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: darkPrimaryColor,
+          foregroundColor: darkBackgroundColor,
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          textStyle: const TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 14,
+          ),
+        ),
+      ),
     );
   }
 }

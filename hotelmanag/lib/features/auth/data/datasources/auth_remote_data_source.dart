@@ -23,6 +23,7 @@ abstract class AuthRemoteDataSource {
     String? bankName,
     bool isDefault = false,
   });
+  Future<bool> changePassword(String oldPassword, String newPassword);
 }
 
 class AuthResponse {
@@ -150,5 +151,14 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
 
     final List data = response.data['data'];
     return data.map((pm) => PaymentMethodModel.fromJson(pm)).toList();
+  }
+
+  @override
+  Future<bool> changePassword(String oldPassword, String newPassword) async {
+    final response = await _apiService.post('auth/change-password', data: {
+      'oldPassword': oldPassword,
+      'newPassword': newPassword,
+    });
+    return response.data['success'] ?? false;
   }
 }

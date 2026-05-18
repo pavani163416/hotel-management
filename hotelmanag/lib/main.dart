@@ -6,6 +6,7 @@ import 'core/providers/favorites_provider.dart';
 import 'core/providers/auth_provider.dart';
 import 'core/providers/hotel_provider.dart';
 import 'core/providers/booking_provider.dart';
+import 'core/providers/theme_provider.dart';
 import 'dart:ui';
 import 'core/utils/injection_container.dart' as di;
 
@@ -15,6 +16,7 @@ void main() async {
   runApp(
     MultiProvider(
       providers: [
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => FavoritesProvider()),
         ChangeNotifierProvider(create: (_) => di.sl<AuthProvider>()),
         ChangeNotifierProvider(create: (_) => di.sl<HotelProvider>()),
@@ -39,13 +41,14 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
     return MaterialApp.router(
       title: 'HotelManag',
       debugShowCheckedModeBanner: false,
       scrollBehavior: MyScrollBehavior(),
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.system,
+      themeMode: themeProvider.themeMode,
       routerConfig: AppRouter.router,
     );
   }

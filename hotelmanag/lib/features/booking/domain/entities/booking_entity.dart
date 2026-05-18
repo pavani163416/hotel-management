@@ -9,6 +9,9 @@ class BookingEntity extends Equatable {
   final String status;
   final double totalAmount;
   final String? imageUrl;
+  final String? guestName;
+  final String? roomNumber;
+  final DateTime? createdAt;
 
   const BookingEntity({
     required this.id,
@@ -19,8 +22,23 @@ class BookingEntity extends Equatable {
     required this.status,
     required this.totalAmount,
     this.imageUrl,
+    this.guestName,
+    this.roomNumber,
+    this.createdAt,
   });
 
   @override
-  List<Object?> get props => [id, roomId, hotelName, checkIn, checkOut, status, totalAmount, imageUrl];
+  List<Object?> get props => [
+        id,
+        roomId,
+        hotelName,
+        checkIn,
+        checkOut,
+        status,
+        totalAmount,
+        imageUrl,
+        guestName,
+        roomNumber,
+        createdAt,
+      ];
 }

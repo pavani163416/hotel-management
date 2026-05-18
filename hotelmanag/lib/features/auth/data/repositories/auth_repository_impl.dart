@@ -149,4 +149,16 @@ class AuthRepositoryImpl implements AuthRepository {
       return Left(ServerFailure(e.toString()));
     }
   }
+
+  @override
+  Future<Either<Failure, bool>> changePassword(String oldPassword, String newPassword) async {
+    try {
+      final success = await _remoteDataSource.changePassword(oldPassword, newPassword);
+      return Right(success);
+    } on DioException catch (e) {
+      return Left(ServerFailure(e.response?.data['message'] ?? 'Failed to change password'));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
 }
