@@ -32,7 +32,33 @@ function esc(s) {
   }).join("");
 }
 function hotelNameFilter(n) { return n ? { hotelName: new RegExp(esc(n), "i") } : {}; }
-function roomPrefixFilter(id) { return (id && HOTEL_PREFIXES[id]) ? { roomNumber: new RegExp("^" + HOTEL_PREFIXES[id] + "-", "i") } : {}; }
+
+function getHotelPrefix(id, name) {
+  if (HOTEL_PREFIXES[id]) return HOTEL_PREFIXES[id];
+  if (!name) return "room";
+  const clean = name.toLowerCase().replace(/[^a-z0-9\s]/g, "");
+  const words = clean.split(/\s+/).filter(Boolean);
+  if (words.length >= 2) {
+    const mainWord = words[0];
+    if (mainWord.length >= 3) return mainWord.slice(0, 3);
+    return words.map(w => w[0]).join("").slice(0, 4);
+  }
+  return clean.slice(0, 3);
+}
+
+function roomPrefixFilter(id) {
+  if (!id) return {};
+  const prefix = HOTEL_PREFIXES[id];
+  if (prefix) {
+    return {
+      $or: [
+        { hotelStringId: id },
+        { roomNumber: new RegExp("^" + prefix + "-", "i") }
+      ]
+    };
+  }
+  return { hotelStringId: id };
+}
 
 // ── POST /api/manager/login ───────────────────────────────
 export const managerLogin = async (req, res, next) => {
@@ -120,7 +146,7 @@ export const createManagerRoom = async (req, res, next) => {
   try {
     const hotelId = req.scopedHotelId, hotelName = req.scopedHotelName;
     let { roomNumber } = req.body;
-    const prefix = HOTEL_PREFIXES[hotelId];
+    const prefix = getHotelPrefix(hotelId, hotelName);
     if (prefix && roomNumber && !roomNumber.toLowerCase().startsWith(prefix + "-"))
       roomNumber = prefix + "-" + roomNumber;
     const room = await Room.findOneAndUpdate(
@@ -143,9 +169,12 @@ export const updateManagerRoom = async (req, res, next) => {
     const hotelId = req.scopedHotelId;
     const room = await Room.findById(req.params.id);
     if (!room) return res.status(404).json({ success:false, message:"Room not found" });
+    
     const prefix = HOTEL_PREFIXES[hotelId];
-    if (prefix && !room.roomNumber.toLowerCase().startsWith(prefix + "-"))
+    const isOwner = (room.hotelStringId === hotelId) || (prefix && room.roomNumber.toLowerCase().startsWith(prefix + "-"));
+    if (!isOwner)
       return res.status(403).json({ success:false, message:"Unauthorized: You do not have management access to this property.", code:"HOTEL_ACCESS_DENIED" });
+      
     const allowed = ["status","pricePerNight","amenities","description","bedType","capacity","floor","blockedReason","type"];
     const update = {};
     for (const f of allowed) { if (req.body[f] !== undefined) update[f] = req.body[f]; }
@@ -163,9 +192,12 @@ export const deleteManagerRoom = async (req, res, next) => {
     const hotelId = req.scopedHotelId;
     const room = await Room.findById(req.params.id);
     if (!room) return res.status(404).json({ success:false, message:"Room not found" });
+    
     const prefix = HOTEL_PREFIXES[hotelId];
-    if (prefix && !room.roomNumber.toLowerCase().startsWith(prefix + "-"))
+    const isOwner = (room.hotelStringId === hotelId) || (prefix && room.roomNumber.toLowerCase().startsWith(prefix + "-"));
+    if (!isOwner)
       return res.status(403).json({ success:false, message:"Unauthorized: You do not have management access to this property.", code:"HOTEL_ACCESS_DENIED" });
+      
     await Room.findByIdAndUpdate(req.params.id, { isActive:false });
     res.status(200).json({ success:true, message:"Room deactivated successfully" });
   } catch (err) { next(err); }
