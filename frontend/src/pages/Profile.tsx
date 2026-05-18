@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { User, Save, Award, LogOut, Mail, CheckCircle2 } from "lucide-react";
+import { User, Save, LogOut, Mail, CheckCircle2 } from "lucide-react";
 import Layout from "@/components/Layout";
 import { useBooking } from "@/context/BookingContext";
 import { AuthModal } from "@/components/AuthModal";
@@ -56,7 +56,7 @@ const Profile = () => {
         <div className="container py-20 max-w-xl text-center flex flex-col items-center">
           <div className="grid place-items-center w-24 h-24 rounded-full bg-accent/10 text-accent mb-6"><User className="w-10 h-10" /></div>
           <h1 className="font-display text-3xl font-bold mb-4">Account Profile</h1>
-          <p className="text-muted-foreground mb-8">Please log in to view and manage your profile details, loyalty status, and booking history.</p>
+          <p className="text-muted-foreground mb-8">Please log in to view and manage your profile details and booking history.</p>
           <div className="flex items-center gap-4">
             <button onClick={() => openAuth("signin")} className="px-6 py-2.5 text-sm font-semibold rounded-lg bg-accent text-accent-foreground hover:bg-accent/90 transition-base">Sign In</button>
             <button onClick={() => openAuth("signup")} className="px-6 py-2.5 text-sm font-semibold rounded-lg border border-border hover:bg-accent/5 transition-base">Create Account</button>
@@ -66,8 +66,6 @@ const Profile = () => {
       </Layout>
     );
   }
-
-  const completed = bookings.filter((b) => b.status !== "Cancelled").length;
 
   return (
     <Layout>
@@ -79,7 +77,6 @@ const Profile = () => {
             </div>
             <div>
               <h1 className="font-display text-2xl sm:text-3xl font-bold">{user.name}</h1>
-              <span className="inline-block mt-2 bg-accent/15 text-accent px-3 py-1 rounded-md text-xs font-bold uppercase tracking-wider">Platinum Member</span>
               <p className="text-muted-foreground text-sm mt-1">{user.city}</p>
             </div>
           </div>
@@ -105,7 +102,7 @@ const Profile = () => {
           </div>
         </div>
 
-        <div className="grid lg:grid-cols-[1fr_320px] gap-6">
+        <div className="max-w-3xl">
           <form onSubmit={save} className="bg-card border border-border rounded-2xl p-6">
             <h2 className="font-display text-xl font-bold mb-5">Personal Information</h2>
             <div className="grid sm:grid-cols-2 gap-5">
@@ -121,24 +118,6 @@ const Profile = () => {
               {saved && <span className="text-accent text-sm font-medium animate-fade-in">Profile updated!</span>}
             </div>
           </form>
-
-          <aside className="bg-primary text-primary-foreground rounded-2xl p-6">
-            <div className="flex items-center gap-2 mb-3">
-              <Award className="w-5 h-5 text-accent" />
-              <h3 className="font-display text-lg font-bold text-primary-foreground">Loyalty Status</h3>
-            </div>
-            <p className="font-display text-4xl font-bold text-primary-foreground">{2450 + completed * 150}</p>
-            <p className="text-primary-foreground/70 text-sm">Points</p>
-            <div className="mt-4 h-2 bg-primary-foreground/15 rounded-full overflow-hidden">
-              <div className="h-full bg-accent rounded-full" style={{ width: "78%" }} />
-            </div>
-            <p className="text-primary-foreground/80 text-xs mt-2">550 points to <span className="text-accent font-semibold">Diamond Status</span></p>
-            <div className="mt-6 pt-6 border-t border-primary-foreground/15 space-y-3 text-sm">
-              <Stat label="Completed Bookings" value={String(completed)} />
-              <Stat label="Member Since" value="Feb 2024" />
-              <Stat label="Preferred Region" value="Europe" />
-            </div>
-          </aside>
         </div>
       </div>
       <style>{`.input{width:100%;padding:.6rem 1rem;border:1px solid hsl(var(--border));border-radius:.5rem;outline:none;font-size:.875rem;background:transparent;color:hsl(var(--primary))}.input:focus{border-color:hsl(var(--accent))}`}</style>
@@ -154,9 +133,6 @@ const Profile = () => {
 
 const Field = ({ label, children }: { label: string; children: React.ReactNode }) => (
   <label className="block"><span className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">{label}</span><div className="mt-1.5">{children}</div></label>
-);
-const Stat = ({ label, value }: { label: string; value: string }) => (
-  <div className="flex justify-between"><span className="text-primary-foreground/70">{label}</span><span className="font-semibold text-primary-foreground">{value}</span></div>
 );
 
 export default Profile;
