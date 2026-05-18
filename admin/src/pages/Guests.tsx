@@ -69,7 +69,10 @@ export default function Guests() {
     apiGetGuests()
       .then((r: any) => {
         if (seq !== fetchSeq.current || controller.signal.aborted) return;
-        setBackendGuests(Array.isArray(r?.data) ? r.data : []);
+        const guestsWithBookings = Array.isArray(r?.data)
+          ? r.data.filter((g: any) => Array.isArray(g?.bookings) && g.bookings.length > 0)
+          : [];
+        setBackendGuests(guestsWithBookings);
       })
       .catch(() => {
         if (seq !== fetchSeq.current || controller.signal.aborted) return;

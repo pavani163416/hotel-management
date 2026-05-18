@@ -151,7 +151,11 @@ export const BookingsProvider = ({ children }: { children: ReactNode }) => {
           : [];
         // Always replace state with fresh data — even empty array clears stale
         if (seq !== fetchSeq.current) return;
-        setBookings(raw.map(mapBackend));
+        setBookings(
+          raw
+            .filter((b) => b?._id || b?.id || b?.bookingRef)
+            .map(mapBackend)
+        );
       })
       .catch((err) => {
         if (err.name === "AbortError") return; // intentional cancel — ignore

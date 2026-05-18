@@ -32,10 +32,12 @@ export const getAllGuests = async (req, res, next) => {
       return json;
     }));
 
+    const bookedGuests = enriched.filter((g) => Array.isArray(g.bookings) && g.bookings.length > 0);
+
     res.status(200).json({
       success: true,
-      count: enriched.length,
-      data: enriched,
+      count: bookedGuests.length,
+      data: bookedGuests,
     });
   } catch (error) {
     next(error);
