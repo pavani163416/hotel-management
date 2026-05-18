@@ -5,7 +5,7 @@ import {
 import {
   CalendarCheck, DollarSign, LogIn, LogOut,
   AlertTriangle, Bell, RefreshCw, ArrowRight,
-  Star, Wrench, CheckCircle2, Clock,
+  Star, Wrench, CheckCircle2, Clock, ShieldAlert,
 } from "lucide-react";
 import ManagerLayout from "@/components/ManagerLayout";
 import StatusBadge from "@/components/StatusBadge";
@@ -126,7 +126,7 @@ export default function Dashboard() {
         manager:    "vip",
         booking:    "booking",
         system:     "maintenance",
-        assistance: "housekeeping",
+        assistance: "assistance",
         price:      "payment",
       };
       const priority = data.type === "manager" ? "high" : "medium";
@@ -174,7 +174,7 @@ export default function Dashboard() {
   const alertIcon: Record<string, React.ReactNode> = {
     maintenance:  <Wrench className="w-4 h-4" style={{ color: "#f59e0b" }} />,
     vip:          <Star className="w-4 h-4" style={{ color: "#d4a843" }} />,
-    housekeeping: <CheckCircle2 className="w-4 h-4" style={{ color: "#10b981" }} />,
+    assistance:   <ShieldAlert className="w-4 h-4" style={{ color: "#10b981" }} />,
     payment:      <DollarSign className="w-4 h-4" style={{ color: "#c0392b" }} />,
     booking:      <CalendarCheck className="w-4 h-4" style={{ color: "#d4a843" }} />,
   };
@@ -466,7 +466,7 @@ export default function Dashboard() {
                   {alertIcon[alertDetail.type] || <Bell className="w-4 h-4 text-dim" />}
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-bright capitalize">{alertDetail.type?.replace("vip","Admin Alert").replace("housekeeping","Housekeeping").replace("maintenance","Maintenance").replace("payment","Payment").replace("booking","Booking")} Alert</p>
+                  <p className="text-sm font-bold text-bright capitalize">{alertDetail.type?.replace("vip","Admin Alert").replace("assistance","Assistance").replace("maintenance","Maintenance").replace("payment","Payment").replace("booking","Booking")} Alert</p>
                   <p className="text-xs text-dim">{alertDetail.time}</p>
                 </div>
               </div>
