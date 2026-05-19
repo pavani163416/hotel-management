@@ -87,7 +87,7 @@ export const managerLogin = async (req, res, next) => {
       id: manager._id, name: manager.name, email: manager.email, role: manager.role,
       assignedHotelId: manager.assignedHotelId || null,
       assignedHotelName: manager.assignedHotelName || null,
-      hotelObjectId: manager.hotelObjectId || null,
+      hotelObjectId: manager.hotelObjectId ? String(manager.hotelObjectId) : null,
     };
     const token = jwt.sign(payload, getSecret(), { expiresIn: JWT_EXPIRES });
     res.status(200).json({ success:true, message:"Login successful", data:{ ...payload, token } });

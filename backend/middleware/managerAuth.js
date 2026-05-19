@@ -94,8 +94,9 @@ export const isAssignedManager = (req, res, next) => {
 // ── scopeToHotel ──────────────────────────────────────────
 export const scopeToHotel = (req, res, next) => {
   if (req.manager?.role === "Manager" && req.manager?.assignedHotelId) {
-    req.scopedHotelId   = req.manager.assignedHotelId;
-    req.scopedHotelName = req.manager.assignedHotelName;
+    req.scopedHotelId       = req.manager.assignedHotelId;
+    req.scopedHotelName     = req.manager.assignedHotelName;
+    req.scopedHotelObjectId = req.manager.hotelObjectId || null;
   }
   next();
 };
