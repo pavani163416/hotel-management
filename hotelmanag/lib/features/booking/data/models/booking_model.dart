@@ -22,32 +22,60 @@ class BookingModel extends BookingEntity {
     super.nights,
   });
 
+  static DateTime _parseDate(dynamic dateStr, {required DateTime fallback}) {
+    if (dateStr == null) return fallback;
+    try {
+      return DateTime.parse(dateStr.toString());
+    } catch (_) {
+      return fallback;
+    }
+  }
+
+  static String? _parseMapField(dynamic object, String key) {
+    if (object is Map) {
+      return object[key]?.toString();
+    }
+    return null;
+  }
+
   factory BookingModel.fromJson(Map<String, dynamic> json) {
+    final checkInDate = _parseDate(json['checkIn'], fallback: DateTime.now());
+    final checkOutDate = _parseDate(json['checkOut'], fallback: DateTime.now().add(const Duration(days: 3)));
+    final createdDate = json['createdAt'] != null ? _parseDate(json['createdAt'], fallback: DateTime.now()) : null;
+
+    final hotelMapName = json['hotelId'] is Map ? json['hotelId']['name']?.toString() : null;
+    final hotelObjName = json['hotel'] is Map ? json['hotel']['name']?.toString() : null;
+
+    final hotelImage = json['hotelId'] is Map ? (json['hotelId']['image'] ?? json['hotelId']['imageUrl'])?.toString() : null;
+    final roomImages = json['room'] is Map && json['room']['images'] is List && (json['room']['images'] as List).isNotEmpty
+        ? json['room']['images'][0]?.toString()
+        : null;
+
     return BookingModel(
-      id: json['id'] ?? json['_id'] ?? '',
-      roomId: json['roomId'] ?? '',
-      hotelName: json['hotelName'] ?? (json['hotelId'] is Map ? json['hotelId']['name'] : null) ?? json['hotel']?['name'] ?? '',
-      checkIn: DateTime.parse(json['checkIn']),
-      checkOut: DateTime.parse(json['checkOut']),
-      status: json['status'] ?? 'Confirmed',
+      id: json['id']?.toString() ?? json['_id']?.toString() ?? '',
+      roomId: json['roomId']?.toString() ?? '',
+      hotelName: json['hotelName']?.toString() ?? hotelMapName ?? hotelObjName ?? '',
+      checkIn: checkInDate,
+      checkOut: checkOutDate,
+      status: json['status']?.toString() ?? 'Confirmed',
       totalAmount: (json['totalAmount'] ?? 0).toDouble(),
-      imageUrl: (json['hotelId'] is Map ? json['hotelId']['image'] ?? json['hotelId']['imageUrl'] : null) ??
-          json['imageUrl'] ??
-          json['hotel']?['imageUrl'] ??
-          json['hotel']?['image'] ??
-          (json['room']?['images'] != null && (json['room']['images'] as List).isNotEmpty 
-              ? json['room']['images'][0] 
-              : null),
-      guestName: json['guestSnapshot']?['name'] ?? json['guest']?['name'] ?? 'Guest',
-      roomNumber: json['room']?['roomNumber'] ?? json['roomId'] ?? '',
-      createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
-      city: (json['hotelId'] is Map ? (json['hotelId']['location'] ?? json['hotelId']['city']) : null) ?? json['guestSnapshot']?['city'] ?? json['guest']?['city'],
-      roomType: json['room']?['type'],
-      pricePerNight: json['pricePerNight']?.toDouble() ?? json['room']?['pricePerNight']?.toDouble(),
+      imageUrl: hotelImage ??
+          json['imageUrl']?.toString() ??
+          _parseMapField(json['hotel'], 'imageUrl') ??
+          _parseMapField(json['hotel'], 'image') ??
+          roomImages,
+      guestName: _parseMapField(json['guestSnapshot'], 'name') ?? _parseMapField(json['guest'], 'name') ?? 'Guest',
+      roomNumber: _parseMapField(json['room'], 'roomNumber') ?? json['roomId']?.toString() ?? '',
+      createdAt: createdDate,
+      city: (json['hotelId'] is Map ? (json['hotelId']['location'] ?? json['hotelId']['city'])?.toString() : null) ??
+            _parseMapField(json['guestSnapshot'], 'city') ??
+            _parseMapField(json['guest'], 'city'),
+      roomType: _parseMapField(json['room'], 'type'),
+      pricePerNight: (json['pricePerNight'] ?? json['room']?['pricePerNight'])?.toDouble(),
       taxes: json['taxes']?.toDouble(),
       subtotal: json['subtotal']?.toDouble(),
-      paymentMethod: json['paymentMethod'],
-      nights: json['nights'],
+      paymentMethod: json['paymentMethod']?.toString(),
+      nights: json['nights'] != null ? (json['nights'] as num).toInt() : null,
     );
   }
 
