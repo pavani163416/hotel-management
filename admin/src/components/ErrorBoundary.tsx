@@ -11,9 +11,8 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: { componentStack: string }) {
-    if (import.meta.env.DEV) {
-      console.error("[AdminErrorBoundary]", error, info.componentStack);
-    }
+    // Always log errors so we can capture stack traces in production for debugging.
+    console.error("[AdminErrorBoundary]", error, info.componentStack);
   }
 
   render() {
