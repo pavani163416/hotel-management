@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { X, MapPin, BookOpen, AlertTriangle, Loader2, Clock } from "lucide-react";
+import { X, MapPin, BookOpen, AlertTriangle, Loader2, Clock, Download } from "lucide-react";
+import { downloadBookingReceipt, historyItemToReceipt } from "@/utils/receiptPdf";
 import Layout from "@/components/Layout";
 import { useBooking, Booking } from "@/context/BookingContext";
 import { AuthModal } from "@/components/AuthModal";
@@ -326,11 +327,20 @@ const History = () => {
                 } />
               )}
               {modal.status === "Cancelled" && (
-                <p className="text-xs text-accent mt-2">
-                  Refund of ${modal.total.toLocaleString()} processed to original payment method.
+                <p className="text-xs text-destructive mt-2">
+                  Refund of ${modal.total.toLocaleString()} will be processed to your original payment method.
                 </p>
               )}
             </div>
+            <button
+              type="button"
+              onClick={() => downloadBookingReceipt(historyItemToReceipt(modal))}
+              className="mt-6 w-full border border-border hover:bg-secondary/80 text-primary py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-base">
+              <Download className="w-4 h-4" />
+              {modal.status === "Cancelled"
+                ? "Download Cancellation Receipt (PDF)"
+                : "Download Receipt (PDF)"}
+            </button>
           </div>
         </div>
       )}

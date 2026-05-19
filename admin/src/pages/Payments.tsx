@@ -15,6 +15,12 @@ const methodIcon: Record<string, React.ReactNode> = {
   "Cash":        <Banknote className="w-4 h-4" />,
 };
 
+const formatDateTime = (iso: string) =>
+  new Date(iso).toLocaleString("en-US", {
+    month: "short", day: "numeric", year: "numeric",
+    hour: "2-digit", minute: "2-digit",
+  });
+
 const statusStyle: Record<string, string> = {
   Paid:     "bg-success-light text-success",
   Pending:  "bg-warning-light text-warning",
@@ -55,7 +61,7 @@ export default function Payments() {
 
   const handleExport = () => {
     const rows = [
-      ["Transaction ID", "Booking ID", "Guest", "Email", "Hotel", "Room No.", "Room Type", "Check-in", "Check-out", "Nights", "Amount", "Method", "Payment Status", "Paid At"],
+      ["Transaction ID", "Booking ID", "Guest", "Email", "Hotel", "Room No.", "Room Type", "Check-in", "Check-out", "Nights", "Amount", "Method", "Payment Status", "Paid At", "Refunded At"],
       ...payments.map((b) => [
         b.payment!.transactionId, b.id,
         b.guestSnapshot.name, b.guestSnapshot.email,
@@ -63,7 +69,8 @@ export default function Payments() {
         b.checkIn, b.checkOut, b.nights,
         `$${b.totalAmount}`, b.payment!.method,
         b.payment!.status,
-        new Date(b.payment!.paidAt).toLocaleDateString(),
+        formatDateTime(b.payment!.paidAt),
+        b.payment!.refundedAt ? formatDateTime(b.payment!.refundedAt) : "",
       ]),
     ];
     const csv = rows.map((r) => r.join(",")).join("\n");
@@ -129,7 +136,7 @@ export default function Payments() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-border">
-                  {["Transaction ID", "Guest", "Hotel & Room", "Dates", "Amount", "Method", "Status", "Details"].map((h) => (
+                  {["Transaction ID", "Guest", "Hotel & Room", "Dates", "Amount", "Paid At", "Method", "Status", "Details"].map((h) => (
                     <th key={h} className="text-left text-xs font-semibold text-muted uppercase tracking-wider px-5 py-3">{h}</th>
                   ))}
                 </tr>
@@ -137,7 +144,7 @@ export default function Payments() {
               <tbody>
                 {paginated.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="px-5 py-16 text-center text-muted text-sm">
+                    <td colSpan={9} className="px-5 py-16 text-center text-muted text-sm">
                       No payment records found.
                     </td>
                   </tr>
@@ -181,9 +188,16 @@ export default function Payments() {
                     {/* Amount */}
                     <td className="px-5 py-4">
                       <p className="text-sm font-bold text-text-primary">${b.totalAmount.toLocaleString()}</p>
-                      <p className="text-xs text-muted mt-0.5">
-                        {new Date(b.payment!.paidAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                      </p>
+                    </td>
+
+                    {/* Paid At */}
+                    <td className="px-5 py-4">
+                      <p className="text-xs text-text-secondary whitespace-nowrap">{formatDateTime(b.payment!.paidAt)}</p>
+                      {b.payment!.status === "Refunded" && b.payment!.refundedAt && (
+                        <p className="text-xs text-danger mt-1 whitespace-nowrap">
+                          Refunded {formatDateTime(b.payment!.refundedAt)}
+                        </p>
+                      )}
                     </td>
 
                     {/* Method */}
@@ -259,7 +273,10 @@ export default function Payments() {
               {[
                 ["Booking ID",   `#${detail.id}`],
                 ["Payment Method", detail.payment!.method],
-                ["Paid At",      new Date(detail.payment!.paidAt).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })],
+                ["Paid At",      formatDateTime(detail.payment!.paidAt)],
+                ...(detail.payment!.refundedAt
+                  ? [["Refunded At", formatDateTime(detail.payment!.refundedAt)] as [string, string]]
+                  : []),
                 ["Amount",       `$${detail.totalAmount.toLocaleString()}`],
                 ["Guest Name",   detail.guestSnapshot.name],
                 ["Guest Email",  detail.guestSnapshot.email],

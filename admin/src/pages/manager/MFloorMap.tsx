@@ -8,7 +8,7 @@ import Drawer from "@/components/Drawer";
 import Modal from "@/components/Modal";
 import StatusBadge from "@/components/StatusBadge";
 import {
-  getManagerRooms, getManagerBookings,
+  getManagerMapOverview,
   updateManagerRoom, reassignManagerBooking, getRoomBookingHistory,
 } from "@/services/api";
 import { useSocket } from "@/hooks/useSocket";
@@ -22,6 +22,8 @@ type Room = {
   bedType: string;
   floor?: number | string;
   status: "Available" | "Booked" | "Maintenance" | "Blocked" | "Cleaning";
+  displayStatus?: "Available" | "Booked" | "Maintenance" | "Blocked" | "Cleaning";
+  activeBooking?: Booking | null;
   amenities?: string[];
 };
 
@@ -53,8 +55,10 @@ const STATUS_DOT: Record<string, string> = {
 };
 
 export default function FloorMap() {
+  const [mapDate, setMapDate]     = useState(() => new Date().toISOString().slice(0, 10));
   const [rooms, setRooms]       = useState<Room[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [mapStats, setMapStats] = useState({ total: 0, available: 0, booked: 0, maintenance: 0, cleaning: 0, blocked: 0, occupancyPct: 0 });
   const [loading, setLoading]   = useState(true);
   const [selected, setSelected] = useState<Room | null>(null);
   const [filterFloor, setFilterFloor]   = useState("All");
@@ -73,16 +77,16 @@ export default function FloorMap() {
   const [reassigning, setReassigning]         = useState(false);
 
   const load = useCallback(async () => {
+    setLoading(true);
     try {
-      const [rR, bR]: any[] = await Promise.allSettled([
-        getManagerRooms(),
-        getManagerBookings(),
-      ]);
-      if (rR.status === "fulfilled") setRooms(rR.value?.data || []);
-      if (bR.status === "fulfilled") setBookings(bR.value?.data || []);
-    } catch { /* silent */ }
+      const res: any = await getManagerMapOverview({ date: mapDate });
+      const overview = res?.data || {};
+      setRooms(overview.rooms || []);
+      setBookings(overview.bookings || []);
+      setMapStats(overview.stats || { total: 0, available: 0, booked: 0, maintenance: 0, cleaning: 0, blocked: 0, occupancyPct: 0 });
+    } catch { setRooms([]); setBookings([]); }
     setLoading(false);
-  }, []);
+  }, [mapDate]);
 
   const fetchHistory = useCallback(async (roomId: string) => {
     setHistoryLoading(true);
@@ -97,14 +101,17 @@ export default function FloorMap() {
   useSocket("newBooking",       useCallback(() => load(), [load]));
   useSocket("roomStatusUpdate", useCallback(() => load(), [load]));
   useSocket("bookingCheckedIn", useCallback(() => load(), [load]));
-  useSocket("bookingCheckedOut",useCallback(() => load(), [load]));
+  useSocket("bookingCheckedOut", useCallback(() => load(), [load]));
+  useSocket("booking_update",     useCallback(() => load(), [load]));
+
+  const roomStatusOf = (r: Room) => r.displayStatus || r.status;
 
   const floors = Array.from(new Set(rooms.map(r => String(r.floor || "1"))))
     .sort((a, b) => Number(a) - Number(b));
 
   const filtered = rooms.filter(r => {
     const matchFloor  = filterFloor  === "All" || String(r.floor || "1") === filterFloor;
-    const matchStatus = filterStatus === "All" || r.status === filterStatus;
+    const matchStatus = filterStatus === "All" || roomStatusOf(r) === filterStatus;
     return matchFloor && matchStatus;
   });
 
@@ -115,9 +122,10 @@ export default function FloorMap() {
 
   // Find active booking for a room (by roomNumber match)
   const getActiveBooking = (room: Room): Booking | null =>
+    room.activeBooking ||
     bookings.find(b =>
       (b.room?.roomNumber === room.roomNumber || b.room?._id === room._id) &&
-      ["Confirmed", "CheckedIn"].includes(b.status)
+      ["Confirmed", "CheckedIn", "Pending"].includes(b.status)
     ) || null;
 
   const handleStatusChange = async (status: string) => {
@@ -159,19 +167,17 @@ export default function FloorMap() {
   };
 
   const stats = {
-    available:   rooms.filter(r => r.status === "Available").length,
-    booked:      rooms.filter(r => r.status === "Booked").length,
-    maintenance: rooms.filter(r => r.status === "Maintenance").length,
-    cleaning:    rooms.filter(r => r.status === "Cleaning").length,
-    blocked:     rooms.filter(r => r.status === "Blocked").length,
+    available:   mapStats.available,
+    booked:      mapStats.booked,
+    maintenance: mapStats.maintenance,
+    cleaning:    mapStats.cleaning,
+    blocked:     mapStats.blocked,
   };
-  const occupancyPct = rooms.length
-    ? Math.round((stats.booked / rooms.length) * 100)
-    : 0;
+  const occupancyPct = mapStats.occupancyPct;
 
   const selectedBooking = selected ? getActiveBooking(selected) : null;
   const availableForReassign = rooms.filter(r =>
-    r._id !== selected?._id && r.status === "Available"
+    r._id !== selected?._id && roomStatusOf(r) === "Available"
   );
 
   return (
@@ -182,6 +188,12 @@ export default function FloorMap() {
           <h1 className="text-xl font-bold text-bright">Live Floor Map</h1>
           <p className="text-sm text-dim mt-0.5">Interactive room status and allocation</p>
         </div>
+        <input
+          type="date"
+          value={mapDate}
+          onChange={(e) => { setMapDate(e.target.value); setSelected(null); }}
+          className="px-3 py-2 border border-white/10 rounded-xl text-sm outline-none bg-white/5 text-bright"
+        />
         <button onClick={() => load()}
           className="flex items-center gap-2 px-4 py-2 border border-white/10 rounded-xl text-sm text-soft hover:text-bright hover:bg-white/5 transition-colors">
           <RefreshCw className="w-4 h-4" /> Refresh
@@ -251,7 +263,7 @@ export default function FloorMap() {
           {floors.map(floor => {
             const floorRooms = groupedByFloor[floor] || [];
             if (floorRooms.length === 0) return null;
-            const floorBooked = floorRooms.filter(r => r.status === "Booked").length;
+            const floorBooked = floorRooms.filter(r => roomStatusOf(r) === "Booked").length;
             return (
               <div key={floor} className="glass-card rounded-2xl border border-white/10 overflow-hidden">
                 <div className="flex items-center justify-between px-5 py-3 border-b border-white/5">
@@ -265,10 +277,10 @@ export default function FloorMap() {
                       <button
                         key={room._id}
                         onClick={() => setSelected(room)}
-                        title={`${room.roomNumber} — ${room.type} — ${room.status}${booking ? `\n${booking.guestSnapshot.name}` : ""}`}
+                        title={`${room.roomNumber} — ${room.type} — ${roomStatusOf(room)}${booking ? `\n${booking.guestSnapshot?.name || ""}` : ""}`}
                         className={`relative aspect-square rounded-xl flex flex-col items-center justify-center
                           text-white font-semibold text-[10px] transition-all shadow-sm
-                          ${STATUS_COLORS[room.status] || "bg-white/10"}
+                          ${STATUS_COLORS[roomStatusOf(room)] || "bg-white/10"}
                           ${selected?._id === room._id ? "ring-2 ring-gold scale-105" : ""}
                         `}
                       >

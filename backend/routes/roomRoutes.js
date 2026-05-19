@@ -5,7 +5,9 @@ import {
   createRoom,
   updateRoomStatus,
   deleteRoom,
+  getMapOverview,
 } from "../controllers/roomController.js";
+import { countAvailableRooms } from "../services/roomAllocationService.js";
 import { validateRoom, validateRoomStatus } from "../middleware/validators.js";
 import Booking from "../models/Booking.js";
 import Room   from "../models/Room.js";
@@ -22,34 +24,26 @@ const router = express.Router();
 // ─────────────────────────────────────────────────────────
 router.get("/available-count", async (req, res) => {
   try {
-    const { hotelStringId, roomType, checkIn, checkOut } = req.query;
+    const { hotelStringId, roomType, roomTypeId, checkIn, checkOut } = req.query;
     if (!checkIn || !checkOut) {
       return res.json({ success: true, available: null });
     }
 
-    const roomFilter = { isActive: true, status: { $nin: ["Maintenance", "Blocked", "Inactive"] } };
-    if (hotelStringId) roomFilter.hotelStringId = hotelStringId;
-    if (roomType)      roomFilter.type = roomType;
-
-    const allRooms = await Room.find(roomFilter).select("_id").lean();
-    if (allRooms.length === 0) return res.json({ success: true, available: 0 });
-
-    const roomIds = allRooms.map(r => r._id);
-
-    // Find rooms that ARE booked in the overlap window
-    const overlappingBookings = await Booking.distinct("room", {
-      room:    { $in: roomIds },
-      status:  { $in: ["Confirmed", "CheckedIn"] },
-      checkIn:  { $lt: new Date(checkOut) },
-      checkOut: { $gt: new Date(checkIn) },
+    const { available, total } = await countAvailableRooms({
+      hotelStringId,
+      roomTypeId: roomTypeId || roomType,
+      type: roomType,
+      checkIn,
+      checkOut,
     });
 
-    const available = roomIds.length - overlappingBookings.length;
-    return res.json({ success: true, available: Math.max(0, available), total: roomIds.length });
+    return res.json({ success: true, available, total });
   } catch {
     return res.json({ success: true, available: null });
   }
 });
+
+router.get("/map-overview", getMapOverview);
 
 // ─────────────────────────────────────────────────────────
 // GET /api/rooms/booking-history/:roomId
@@ -111,21 +105,18 @@ router.post("/availability", async (req, res) => {
       return res.json({ available: false, message: "This room is currently under maintenance." });
     }
 
-    if (room.status === "Booked") {
-      // Check if there's an active booking that overlaps with requested dates
-      const overlap = await Booking.findOne({
-        room:   room._id,
-        status: { $in: ["Confirmed", "CheckedIn"] },
-        checkIn:  { $lt: new Date(checkOut) },
-        checkOut: { $gt: new Date(checkIn) },
-      });
+    const overlap = await Booking.findOne({
+      room:   room._id,
+      status: { $in: ["Confirmed", "CheckedIn", "Pending"] },
+      checkIn:  { $lt: new Date(checkOut) },
+      checkOut: { $gt: new Date(checkIn) },
+    });
 
-      if (overlap) {
-        return res.json({
-          available: false,
-          message: `Room is occupied until ${overlap.checkOut.toISOString().slice(0, 10)}. Please choose different dates or another room.`,
-        });
-      }
+    if (overlap) {
+      return res.json({
+        available: false,
+        message: `Room is occupied until ${overlap.checkOut.toISOString().slice(0, 10)}. Please choose different dates or another room.`,
+      });
     }
 
     return res.json({ available: true });

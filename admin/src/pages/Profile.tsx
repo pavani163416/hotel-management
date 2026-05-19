@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, User, Mail, Shield, Edit2, Save, X, KeyRound } from "lucide-react";
+import PasswordInput from "@/components/PasswordInput";
 import AdminLayout from "@/components/AdminLayout";
 import Topbar from "@/components/Topbar";
 import { useAdmin } from "@/context/AdminContext";
@@ -154,10 +155,9 @@ export default function Profile() {
             ].map(({ label, key }) => (
               <div key={key}>
                 <label className="text-xs font-semibold text-muted uppercase tracking-wider block mb-1.5">{label}</label>
-                <input
-                  type="password"
+                <PasswordInput
                   value={pwForm[key as keyof typeof pwForm]}
-                  onChange={(e) => setPwForm({ ...pwForm, [key]: e.target.value })}
+                  onChange={(e) => setPwForm({ ...pwForm, [key]: (e.target as HTMLInputElement).value })}
                   placeholder="••••••••"
                   className="w-full border border-border rounded-lg px-3 py-2.5 text-sm outline-none focus:border-primary transition-colors"
                 />

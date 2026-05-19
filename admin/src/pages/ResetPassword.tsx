@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Lock, Mail, Shield } from "lucide-react";
+import PasswordInput from "@/components/PasswordInput";
 import { resetPassword } from "@/services/api";
 
 export default function ResetPassword() {
@@ -89,7 +90,7 @@ export default function ResetPassword() {
                 <label className="block text-xs font-semibold text-dim uppercase tracking-wider mb-1.5">New Password</label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-dim" />
-                  <input type="password" value={password} onChange={(e) => setPassword(e.target.value)}
+                  <PasswordInput value={password} onChange={(e) => setPassword((e.target as HTMLInputElement).value)}
                     placeholder="••••••••"
                     className="w-full rounded-xl px-12 py-3 bg-slate-950/70 text-white border border-white/10 outline-none"
                   />
@@ -98,7 +99,7 @@ export default function ResetPassword() {
 
               <div>
                 <label className="block text-xs font-semibold text-dim uppercase tracking-wider mb-1.5">Confirm Password</label>
-                <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
+                <PasswordInput value={confirmPassword} onChange={(e) => setConfirmPassword((e.target as HTMLInputElement).value)}
                   placeholder="Repeat your password"
                   className="w-full rounded-xl px-4 py-3 bg-slate-950/70 text-white border border-white/10 outline-none"
                 />

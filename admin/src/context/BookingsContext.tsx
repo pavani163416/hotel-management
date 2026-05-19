@@ -7,6 +7,7 @@ export type Payment = {
   transactionId: string;
   method: "Credit Card" | "UPI" | "Bank Transfer" | "Cash";
   paidAt: string;
+  refundedAt?: string;
   status: "Paid" | "Pending" | "Refunded" | "Failed";
 };
 
@@ -47,10 +48,7 @@ type BookingsCtx = {
 
 const Ctx = createContext<BookingsCtx | null>(null);
 
-try {
-  localStorage.removeItem("luxe_bookings");
-  localStorage.removeItem("bookings");
-} catch {}
+// Avoid clearing bookings cache automatically; let the app refresh from the API.
 
 function mapBackend(b: any): Booking {
   const nights = b.nights ??
@@ -64,16 +62,28 @@ function mapBackend(b: any): Booking {
   };
   const method: Payment["method"] = methodMap[b.paymentMethod] || "Credit Card";
 
-  const payment: Payment | undefined =
+  const transactionId = b.bookingRef
+    ? `TXN-${b.bookingRef}`
+    : `TXN-${String(b._id || b.id).slice(-8).toUpperCase()}`;
+  const paidAt = b.createdAt || new Date().toISOString();
+
+  const payment: Payment =
     b.status === "Cancelled"
-      ? undefined
-      : {
-          transactionId: b.bookingRef
-            ? `TXN-${b.bookingRef}`
-            : `TXN-${String(b._id || b.id).slice(-8).toUpperCase()}`,
+      ? {
+          transactionId,
           method,
-          paidAt: b.createdAt || new Date().toISOString(),
-          status: b.status === "Confirmed" || b.status === "Completed" ? "Paid" : "Pending",
+          paidAt,
+          refundedAt: b.cancelledAt || paidAt,
+          status: "Refunded",
+        }
+      : {
+          transactionId,
+          method,
+          paidAt,
+          status:
+            b.status === "Confirmed" || b.status === "Completed" || b.status === "CheckedIn" || b.status === "CheckedOut"
+              ? "Paid"
+              : "Pending",
         };
 
   return {
@@ -133,7 +143,7 @@ export const BookingsProvider = ({ children }: { children: ReactNode }) => {
     setLoading(true);
 
     const token = localStorage.getItem("luxe_admin_token");
-    fetch(`${API}/bookings`, {
+    fetch(`${API}/bookings?limit=500`, {
       headers: {
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
@@ -226,12 +236,20 @@ export const BookingsProvider = ({ children }: { children: ReactNode }) => {
     setBookings((prev) =>
       prev.map((b) => {
         if (b.id !== id) return b;
-        const payment: Payment | undefined =
+        const payment: Payment =
           status === "Cancelled"
-            ? b.payment ? { ...b.payment, status: "Refunded" } : undefined
+            ? {
+                ...(b.payment ?? {
+                  transactionId: `TXN-${b.id}`,
+                  method: "Credit Card" as const,
+                  paidAt: b.createdAt,
+                }),
+                status: "Refunded",
+                refundedAt: new Date().toISOString(),
+              }
             : status === "Completed"
-            ? b.payment ? { ...b.payment, status: "Paid" } : makePayment(status, new Date().toISOString())
-            : b.payment;
+            ? { ...(b.payment ?? makePayment("Confirmed", b.createdAt)!), status: "Paid" }
+            : b.payment ?? makePayment(status, b.createdAt)!;
         return { ...b, status, payment };
       })
     );
