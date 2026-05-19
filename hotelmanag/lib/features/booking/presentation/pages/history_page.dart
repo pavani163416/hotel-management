@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/main_layout.dart';
 import '../../../../core/providers/booking_provider.dart';
+import '../../../../core/providers/hotel_provider.dart';
+import '../../../../shared/domain/entities/hotel_entity.dart';
 import '../../domain/entities/booking_entity.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
@@ -127,6 +129,20 @@ class BookingListItem extends StatelessWidget {
   final BookingEntity booking;
   const BookingListItem({super.key, required this.booking});
 
+  String _getBookingImageUrl(BuildContext context, BookingEntity booking) {
+    try {
+      final hotelProvider = Provider.of<HotelProvider>(context, listen: false);
+      final matchedHotel = hotelProvider.allHotels.cast<HotelEntity?>().firstWhere(
+        (h) => h != null && (h.name.toLowerCase() == booking.hotelName.toLowerCase() || h.id == booking.imageUrl),
+        orElse: () => null,
+      );
+      if (matchedHotel != null) {
+        return matchedHotel.imageUrl;
+      }
+    } catch (_) {}
+    return booking.imageUrl ?? 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=400';
+  }
+
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
@@ -157,7 +173,7 @@ class BookingListItem extends StatelessWidget {
           SizedBox(
             width: 160,
             child: CachedNetworkImage(
-              imageUrl: booking.imageUrl ?? 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=400',
+              imageUrl: _getBookingImageUrl(context, booking),
               fit: BoxFit.cover,
               memCacheWidth: 320,
               memCacheHeight: 240,
@@ -178,7 +194,7 @@ class BookingListItem extends StatelessWidget {
                     children: [
                       Icon(LucideIcons.mapPin, size: 10, color: Colors.grey[400]),
                       const SizedBox(width: 4),
-                      Text('guntur', style: TextStyle(fontSize: 11, color: Colors.grey[400])),
+                      Text(booking.city?.isNotEmpty == true ? booking.city! : 'Unknown City', style: TextStyle(fontSize: 11, color: Colors.grey[400])),
                     ],
                   ),
                   const SizedBox(height: 24),
@@ -201,10 +217,11 @@ class BookingListItem extends StatelessWidget {
                   const SizedBox(height: 8),
                   _buildStatusBadge(booking.status),
                   const SizedBox(height: 8),
-                  Text(
-                    'Booked ${DateFormat('MMM dd, yyyy').format(DateTime.now())}',
-                    style: TextStyle(fontSize: 9, color: Colors.grey[400]),
-                  ),
+                  if (booking.createdAt != null)
+                    Text(
+                      'Booked ${DateFormat('MMM dd, yyyy').format(booking.createdAt!)}',
+                      style: TextStyle(fontSize: 9, color: Colors.grey[400]),
+                    ),
                 ],
               ),
             ),
@@ -256,7 +273,7 @@ class BookingListItem extends StatelessWidget {
         Stack(
           children: [
             CachedNetworkImage(
-              imageUrl: booking.imageUrl ?? 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=400',
+              imageUrl: _getBookingImageUrl(context, booking),
               height: 160,
               width: double.infinity,
               fit: BoxFit.cover,
@@ -285,7 +302,7 @@ class BookingListItem extends StatelessWidget {
                         _buildLabel('PROPERTY'),
                         const SizedBox(height: 4),
                         Text(booking.hotelName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppTheme.primaryColor), maxLines: 1, overflow: TextOverflow.ellipsis),
-                        Text('guntur', style: TextStyle(fontSize: 11, color: Colors.grey[400])),
+                        Text(booking.city?.isNotEmpty == true ? booking.city! : 'Unknown City', style: TextStyle(fontSize: 11, color: Colors.grey[400])),
                       ],
                     ),
                   ),
@@ -446,16 +463,17 @@ class BookingListItem extends StatelessWidget {
         child: Container(
           width: 400,
           padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
               Stack(
                 children: [
                   ClipRRect(
                     borderRadius: BorderRadius.circular(16),
                     child: CachedNetworkImage(
-                      imageUrl: booking.imageUrl ?? 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=600',
+                      imageUrl: _getBookingImageUrl(context, booking),
                       height: 180,
                       width: double.infinity,
                       fit: BoxFit.cover,
@@ -482,7 +500,7 @@ class BookingListItem extends StatelessWidget {
               ),
               const SizedBox(height: 20),
               Text(
-                booking.hotelName.toLowerCase(),
+                booking.hotelName,
                 style: const TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
@@ -494,9 +512,12 @@ class BookingListItem extends StatelessWidget {
               const Divider(color: AppTheme.mutedColor, height: 1),
               _buildDetailRow('Booking ID', '#${booking.id}', isId: true),
               _buildDetailRow('Guest', booking.guestName ?? 'Guest'),
-              _buildDetailRow('Room', booking.roomNumber ?? booking.roomId),
+              _buildDetailRow('Room', '${booking.roomType ?? 'Room'} (${booking.roomNumber ?? booking.roomId})'),
+              if (booking.paymentMethod != null) _buildDetailRow('Payment', booking.paymentMethod!.toUpperCase()),
               _buildDetailRow('Dates', dateString),
-              _buildDetailRow('Nights', '$nights'),
+              _buildDetailRow('Nights', '${booking.nights ?? nights}'),
+              if (booking.subtotal != null) _buildDetailRow('Subtotal', '\$${NumberFormat("#,###").format(booking.subtotal)}'),
+              if (booking.taxes != null) _buildDetailRow('Taxes & Fees', '\$${NumberFormat("#,###").format(booking.taxes)}'),
               _buildDetailRow('Total Paid', '\$${NumberFormat("#,###").format(booking.totalAmount)}', isBold: true),
               _buildDetailRow('Status', booking.status),
               _buildDetailRow('Confirmed At', createdString),
@@ -504,7 +525,8 @@ class BookingListItem extends StatelessWidget {
           ),
         ),
       ),
-    );
+    ),
+  );
   }
 
   Widget _buildDetailRow(String label, String value, {bool isId = false, bool isBold = false}) {

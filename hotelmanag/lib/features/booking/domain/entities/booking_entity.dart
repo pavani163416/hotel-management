@@ -12,6 +12,13 @@ class BookingEntity extends Equatable {
   final String? guestName;
   final String? roomNumber;
   final DateTime? createdAt;
+  final String? city;
+  final String? roomType;
+  final double? pricePerNight;
+  final double? taxes;
+  final double? subtotal;
+  final String? paymentMethod;
+  final int? nights;
 
   const BookingEntity({
     required this.id,
@@ -25,7 +32,56 @@ class BookingEntity extends Equatable {
     this.guestName,
     this.roomNumber,
     this.createdAt,
+    this.city,
+    this.roomType,
+    this.pricePerNight,
+    this.taxes,
+    this.subtotal,
+    this.paymentMethod,
+    this.nights,
   });
+
+  BookingEntity copyWith({
+    String? id,
+    String? roomId,
+    String? hotelName,
+    DateTime? checkIn,
+    DateTime? checkOut,
+    String? status,
+    double? totalAmount,
+    String? imageUrl,
+    String? guestName,
+    String? roomNumber,
+    DateTime? createdAt,
+    String? city,
+    String? roomType,
+    double? pricePerNight,
+    double? taxes,
+    double? subtotal,
+    String? paymentMethod,
+    int? nights,
+  }) {
+    return BookingEntity(
+      id: id ?? this.id,
+      roomId: roomId ?? this.roomId,
+      hotelName: hotelName ?? this.hotelName,
+      checkIn: checkIn ?? this.checkIn,
+      checkOut: checkOut ?? this.checkOut,
+      status: status ?? this.status,
+      totalAmount: totalAmount ?? this.totalAmount,
+      imageUrl: imageUrl ?? this.imageUrl,
+      guestName: guestName ?? this.guestName,
+      roomNumber: roomNumber ?? this.roomNumber,
+      createdAt: createdAt ?? this.createdAt,
+      city: city ?? this.city,
+      roomType: roomType ?? this.roomType,
+      pricePerNight: pricePerNight ?? this.pricePerNight,
+      taxes: taxes ?? this.taxes,
+      subtotal: subtotal ?? this.subtotal,
+      paymentMethod: paymentMethod ?? this.paymentMethod,
+      nights: nights ?? this.nights,
+    );
+  }
 
   @override
   List<Object?> get props => [
@@ -40,5 +96,12 @@ class BookingEntity extends Equatable {
         guestName,
         roomNumber,
         createdAt,
+        city,
+        roomType,
+        pricePerNight,
+        taxes,
+        subtotal,
+        paymentMethod,
+        nights,
       ];
 }

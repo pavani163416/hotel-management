@@ -111,7 +111,7 @@ const HotelDetails = () => {
     nav("/booking");
   };
 
-  const handleSubmitReview = async (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!reviewName.trim() || !reviewText.trim()) {
       setErr("Please fill in your name and review.");
@@ -263,8 +263,10 @@ const HotelDetails = () => {
                 <div key={i} className="border border-border rounded-xl p-5 bg-card">
                   <div className="flex items-center justify-between mb-2">
                     <p className="font-semibold text-primary">{r.author}</p>
-                    <div className="flex items-center gap-1 text-sm">
-                      {[...Array(r.rating)].map((_, k) => <Star key={k} className="w-3.5 h-3.5 fill-accent text-accent" />)}
+                    <div className="flex items-center gap-0.5">
+                      {[1, 2, 3, 4, 5].map((n) => (
+                        <Star key={n} className={`w-3.5 h-3.5 ${n <= r.rating ? "fill-accent text-accent" : "text-muted-foreground/30 fill-none"}`} />
+                      ))}
                     </div>
                   </div>
                   <p className="text-muted-foreground text-sm">{r.comment}</p>
@@ -276,10 +278,10 @@ const HotelDetails = () => {
               <h3 className="font-display text-lg font-bold">Write a Review</h3>
               <input value={reviewName} onChange={(e) => setReviewName(e.target.value)} placeholder="Your name"
                 className="w-full px-4 py-2.5 border border-border rounded-lg outline-none focus:border-accent text-sm" />
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1.5">
                 {[1, 2, 3, 4, 5].map((n) => (
-                  <button type="button" key={n} onClick={() => setReviewRating(n)}>
-                    <Star className={`w-6 h-6 ${n <= reviewRating ? "fill-accent text-accent" : "text-border"}`} />
+                  <button type="button" key={n} onClick={() => setReviewRating(n)} className="focus:outline-none">
+                    <Star className={`w-6 h-6 transition-base ${n <= reviewRating ? "fill-accent text-accent" : "text-muted-foreground/30 fill-none"}`} />
                   </button>
                 ))}
               </div>

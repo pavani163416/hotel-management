@@ -54,7 +54,8 @@ class _PaymentPageState extends State<PaymentPage> {
     super.dispose();
   }
 
-  void _processPayment(BookingProvider provider) {
+  Future<void> _processPayment(BookingProvider provider) async {
+    if (provider.isLoading) return;
     bool isIdValid = _idFormKey.currentState!.validate();
     bool isPaymentValid = _paymentFormKey.currentState!.validate();
 
@@ -79,9 +80,86 @@ class _PaymentPageState extends State<PaymentPage> {
         return;
       }
       
-      final bookingId = 'LS-${10000 + (new DateTime.now().millisecondsSinceEpoch % 90000)}';
-      provider.completeBooking(bookingId);
-      context.push('/confirmation');
+      final success = await provider.completeBooking(_selectedMethod);
+      if (success) {
+        if (mounted) context.push('/confirmation');
+      } else {
+        if (mounted) {
+          final errorMsg = provider.error ?? 'Booking failed';
+          if (errorMsg.toLowerCase().contains('booked') || 
+              errorMsg.toLowerCase().contains('occupied') || 
+              errorMsg.toLowerCase().contains('dates')) {
+            showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder: (context) => AlertDialog(
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                backgroundColor: Colors.white,
+                title: const Row(
+                  children: [
+                    Icon(Icons.calendar_today_outlined, color: Colors.redAccent, size: 24),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Dates Already Booked',
+                        style: TextStyle(
+                          fontFamily: 'Serif',
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.primaryColor,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                content: Text(
+                  '$errorMsg\n\nWould you like to change your booking dates or select a different room type?',
+                  style: const TextStyle(fontSize: 14, color: AppTheme.primaryColor),
+                ),
+                actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                actions: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.primaryColor,
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
+                        onPressed: () {
+                          Navigator.pop(context); // Close dialog
+                          context.go('/booking'); // Navigate back to date selection step
+                        },
+                        child: const Text('Change Dates', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                      ),
+                      const SizedBox(height: 8),
+                      OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppTheme.primaryColor,
+                          side: const BorderSide(color: AppTheme.primaryColor),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
+                        onPressed: () {
+                          Navigator.pop(context); // Close dialog
+                          context.go('/hotels'); // Navigate to hotels list page to choose another room
+                        },
+                        child: const Text('Select Different Room', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            );
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(errorMsg), backgroundColor: Colors.redAccent),
+            );
+          }
+        }
+      }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please fill in all mandatory fields'), backgroundColor: Colors.redAccent),
@@ -422,7 +500,7 @@ class _PaymentPageState extends State<PaymentPage> {
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
-        onPressed: () => _processPayment(provider),
+        onPressed: provider.isLoading ? null : () => _processPayment(provider),
         style: ElevatedButton.styleFrom(
           backgroundColor: isDark ? const Color(0xFFEAE5DC) : const Color(0xFF454F5E),
           foregroundColor: isDark ? const Color(0xFF19222E) : Colors.white,
@@ -430,7 +508,19 @@ class _PaymentPageState extends State<PaymentPage> {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           elevation: 2,
         ),
-        child: Text('Pay \$${NumberFormat("#,###").format(provider.total)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        child: provider.isLoading
+            ? const SizedBox(
+                height: 20,
+                width: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.grey),
+                ),
+              )
+            : Text(
+                'Pay \$${NumberFormat("#,###").format(provider.total)}',
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
       ),
     );
   }

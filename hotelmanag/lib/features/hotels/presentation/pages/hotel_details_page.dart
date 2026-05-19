@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:shimmer/shimmer.dart';
 import '../../../../core/providers/booking_provider.dart';
+import '../../../../core/providers/auth_provider.dart';
 
 class RoomData {
   final String name;
@@ -38,6 +39,13 @@ class HotelDetailsPage extends StatefulWidget {
 
 class _HotelDetailsPageState extends State<HotelDetailsPage> with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  int _currentMobileImageIndex = 0;
+
+  final _reviewNameController = TextEditingController();
+  final _reviewCommentController = TextEditingController();
+  int _reviewRating = 0;
+  String? _reviewError;
+  bool _isSubmittingReview = false;
 
   @override
   void initState() {
@@ -48,25 +56,39 @@ class _HotelDetailsPageState extends State<HotelDetailsPage> with SingleTickerPr
   @override
   void dispose() {
     _tabController.dispose();
+    _reviewNameController.dispose();
+    _reviewCommentController.dispose();
     super.dispose();
   }
 
   List<String> _getSecondaryImages(HotelEntity hotel) {
-    final seed = hotel.name.hashCode;
-    final pools = [
-      'https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&w=600&q=80',
-      'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=600&q=80',
-      'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=600&q=80',
-    ];
-    final interiors = [
-      'https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=600&q=80',
-      'https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=600&q=80',
-      'https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&w=600&q=80',
-    ];
-    return [
-      pools[seed % pools.length],
-      interiors[(seed + 1) % interiors.length],
-    ];
+    final List<String> list = [];
+    if (hotel.gallery.isNotEmpty) {
+      list.addAll(hotel.gallery);
+    }
+    
+    if (list.length < 2) {
+      final seed = hotel.name.hashCode;
+      final pools = [
+        'https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&w=600&q=80',
+        'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=600&q=80',
+        'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=600&q=80',
+      ];
+      final interiors = [
+        'https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=600&q=80',
+        'https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=600&q=80',
+        'https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&w=600&q=80',
+      ];
+      
+      if (list.isEmpty) {
+        list.add(pools[seed % pools.length]);
+      }
+      if (list.length < 2) {
+        list.add(interiors[(seed + 1) % interiors.length]);
+      }
+    }
+    
+    return list;
   }
 
   @override
@@ -75,7 +97,7 @@ class _HotelDetailsPageState extends State<HotelDetailsPage> with SingleTickerPr
     final isWide = MediaQuery.of(context).size.width > 900;
     
     final hotel = context.select<HotelProvider, HotelEntity>(
-      (p) => p.hotels.cast<HotelEntity>().firstWhere(
+      (p) => p.allHotels.cast<HotelEntity>().firstWhere(
         (h) => h.id == widget.id,
         orElse: () => const HotelEntity(
           id: '',
@@ -143,19 +165,101 @@ class _HotelDetailsPageState extends State<HotelDetailsPage> with SingleTickerPr
   }
 
   Widget _buildGallery(BuildContext context, HotelEntity hotel, bool isWide) {
+    final allImages = [hotel.imageUrl, ...hotel.gallery];
+
     if (!isWide) {
-      return Hero(
-        tag: 'hotel_image_${hotel.id}',
-        child: SizedBox(
-          height: 250,
-          width: double.infinity,
-          child: CachedNetworkImage(
-            imageUrl: hotel.imageUrl,
-            fit: BoxFit.cover,
-            memCacheWidth: 800,
-            memCacheHeight: 500,
-            placeholder: (context, url) => Container(color: Colors.grey[200]),
+      if (allImages.length <= 1) {
+        return Hero(
+          tag: 'hotel_image_${hotel.id}',
+          child: SizedBox(
+            height: 250,
+            width: double.infinity,
+            child: CachedNetworkImage(
+              imageUrl: hotel.imageUrl,
+              fit: BoxFit.cover,
+              memCacheWidth: 800,
+              memCacheHeight: 500,
+              placeholder: (context, url) => Container(color: Colors.grey[200]),
+            ),
           ),
+        );
+      }
+
+      return SizedBox(
+        height: 280,
+        width: double.infinity,
+        child: Stack(
+          children: [
+            PageView.builder(
+              itemCount: allImages.length,
+              onPageChanged: (index) {
+                setState(() {
+                  _currentMobileImageIndex = index;
+                });
+              },
+              itemBuilder: (context, index) {
+                final isFirst = index == 0;
+                final childImage = CachedNetworkImage(
+                  imageUrl: allImages[index],
+                  fit: BoxFit.cover,
+                  memCacheWidth: 800,
+                  memCacheHeight: 560,
+                  placeholder: (context, url) => Container(color: Colors.grey[200]),
+                );
+                
+                if (isFirst) {
+                  return Hero(
+                    tag: 'hotel_image_${hotel.id}',
+                    child: childImage,
+                  );
+                }
+                return childImage;
+              },
+            ),
+            // Page Number Indicator
+            Positioned(
+              bottom: 16,
+              right: 16,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.6),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  '${_currentMobileImageIndex + 1} / ${allImages.length}',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+            // Dots Indicator
+            Positioned(
+              bottom: 16,
+              left: 0,
+              right: 0,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(
+                  allImages.length,
+                  (index) => Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    width: _currentMobileImageIndex == index ? 12 : 6,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      color: _currentMobileImageIndex == index
+                          ? Colors.white
+                          : Colors.white.withOpacity(0.5),
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       );
     }
@@ -297,7 +401,7 @@ class _HotelDetailsPageState extends State<HotelDetailsPage> with SingleTickerPr
 
   Widget _buildTabContent(HotelEntity hotel, bool isWide) {
     return SizedBox(
-      height: 600,
+      height: isWide ? 600 : 780,
       child: TabBarView(
         controller: _tabController,
         children: [
@@ -443,7 +547,8 @@ class _HotelDetailsPageState extends State<HotelDetailsPage> with SingleTickerPr
                               ElevatedButton(
                                 onPressed: () {
                                   final bp = context.read<BookingProvider>();
-                                  bp.startBooking(hotel);
+                                  final ap = context.read<AuthProvider>();
+                                  bp.startBooking(hotel, user: ap.user);
                                   bp.selectRoom(room.name, price.toDouble());
                                   context.push('/booking');
                                 },
@@ -474,7 +579,7 @@ class _HotelDetailsPageState extends State<HotelDetailsPage> with SingleTickerPr
           // Mobile responsive list
           Expanded(
             child: ListView(
-              physics: const NeverScrollableScrollPhysics(),
+              physics: const BouncingScrollPhysics(),
               children: roomList.map((room) {
                 final price = (hotel.pricePerNight * room.priceFactor).toInt();
                 return Container(
@@ -537,7 +642,8 @@ class _HotelDetailsPageState extends State<HotelDetailsPage> with SingleTickerPr
                           ElevatedButton(
                             onPressed: () {
                               final bp = context.read<BookingProvider>();
-                              bp.startBooking(hotel);
+                              final ap = context.read<AuthProvider>();
+                              bp.startBooking(hotel, user: ap.user);
                               bp.selectRoom(room.name, price.toDouble());
                               context.push('/booking');
                             },
@@ -602,44 +708,284 @@ class _HotelDetailsPageState extends State<HotelDetailsPage> with SingleTickerPr
   }
 
   Widget _buildReviewsTab(HotelEntity hotel) {
-    final isDark = Theme.of(context).colorScheme.brightness == Brightness.dark;
-    if (hotel.reviews.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 40),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(LucideIcons.messageSquare, size: 48, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2)),
-              const SizedBox(height: 16),
-              Text(
-                'No reviews yet',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+    final isWide = MediaQuery.of(context).size.width > 900;
+
+    return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
+      padding: const EdgeInsets.only(bottom: 32),
+      child: isWide
+          ? Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: hotel.reviews.isEmpty
+                      ? _buildEmptyReviewsPlaceholder(context)
+                      : Column(
+                          children: hotel.reviews
+                              .map((r) => Padding(
+                                    padding: const EdgeInsets.only(bottom: 16.0),
+                                    child: ReviewCard(review: r),
+                                  ))
+                              .toList(),
+                        ),
                 ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Be the first to share your experience!',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+                const SizedBox(width: 24),
+                SizedBox(
+                  width: 360,
+                  child: _buildWriteReviewCard(hotel),
                 ),
+              ],
+            )
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildWriteReviewCard(hotel),
+                const SizedBox(height: 32),
+                Text(
+                  'Guest Reviews (${hotel.reviews.length})',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.onSurface,
+                    fontFamily: 'Serif',
+                  ),
+                ),
+                const SizedBox(height: 16),
+                if (hotel.reviews.isEmpty)
+                  _buildEmptyReviewsPlaceholder(context)
+                else
+                  Column(
+                    children: hotel.reviews
+                        .map((r) => Padding(
+                              padding: const EdgeInsets.only(bottom: 16.0),
+                              child: ReviewCard(review: r),
+                            ))
+                        .toList(),
+                  ),
+              ],
+            ),
+    );
+  }
+
+  Widget _buildEmptyReviewsPlaceholder(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 40),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(LucideIcons.messageSquare,
+                size: 48,
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2)),
+            const SizedBox(height: 16),
+            Text(
+              'No reviews yet',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
               ),
-            ],
-          ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Be the first to share your experience!',
+              style: TextStyle(
+                fontSize: 13,
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+              ),
+            ),
+          ],
         ),
-      );
+      ),
+    );
+  }
+
+  Widget _buildWriteReviewCard(HotelEntity hotel) {
+    final isDark = Theme.of(context).colorScheme.brightness == Brightness.dark;
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF253040) : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: isDark ? Colors.white10 : AppTheme.mutedColor),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Write a Review',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.onSurface,
+              fontFamily: 'Serif',
+            ),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _reviewNameController,
+            style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 14),
+            decoration: InputDecoration(
+              hintText: 'Your name',
+              hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4)),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: isDark ? Colors.white10 : AppTheme.mutedColor),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: AppTheme.accentColor),
+              ),
+              filled: true,
+              fillColor: isDark ? const Color(0xFF1C2633) : Colors.grey[50],
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: List.generate(5, (index) {
+              final starIndex = index + 1;
+              final isFilled = starIndex <= _reviewRating;
+              return GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _reviewRating = starIndex;
+                  });
+                },
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 8.0),
+                  child: Icon(
+                    LucideIcons.star,
+                    color: isFilled ? AppTheme.accentColor : Colors.grey[400],
+                    size: 24,
+                    fill: isFilled ? 1.0 : 0.0,
+                  ),
+                ),
+              );
+            }),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _reviewCommentController,
+            maxLines: 4,
+            style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 14),
+            decoration: InputDecoration(
+              hintText: 'Share your experience...',
+              hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4)),
+              contentPadding: const EdgeInsets.all(16),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: isDark ? Colors.white10 : AppTheme.mutedColor),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: AppTheme.accentColor),
+              ),
+              filled: true,
+              fillColor: isDark ? const Color(0xFF1C2633) : Colors.grey[50],
+            ),
+          ),
+          if (_reviewError != null) ...[
+            const SizedBox(height: 12),
+            Text(
+              _reviewError!,
+              style: const TextStyle(color: Colors.redAccent, fontSize: 12),
+            ),
+          ],
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: ElevatedButton(
+              onPressed: _isSubmittingReview ? null : () => _submitReview(hotel.id),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF34495E),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 0,
+              ),
+              child: _isSubmittingReview
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : const Text(
+                      'Submit Review',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                    ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _submitReview(String hotelId) async {
+    final name = _reviewNameController.text.trim();
+    final comment = _reviewCommentController.text.trim();
+
+    if (name.isEmpty) {
+      setState(() {
+        _reviewError = 'Please enter your name.';
+      });
+      return;
+    }
+    if (_reviewRating == 0) {
+      setState(() {
+        _reviewError = 'Please select a rating.';
+      });
+      return;
+    }
+    if (comment.isEmpty) {
+      setState(() {
+        _reviewError = 'Please share your experience.';
+      });
+      return;
     }
 
-    return ListView.separated(
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: hotel.reviews.length,
-      separatorBuilder: (context, index) => const SizedBox(height: 16),
-      itemBuilder: (context, index) => ReviewCard(review: hotel.reviews[index]),
+    setState(() {
+      _reviewError = null;
+      _isSubmittingReview = true;
+    });
+
+    final success = await context.read<HotelProvider>().submitReview(
+      hotelId: hotelId,
+      author: name,
+      rating: _reviewRating,
+      comment: comment,
     );
+
+    if (mounted) {
+      setState(() {
+        _isSubmittingReview = false;
+      });
+
+      if (success) {
+        _reviewNameController.clear();
+        _reviewCommentController.clear();
+        setState(() {
+          _reviewRating = 0;
+          _reviewError = null;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Review submitted successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        setState(() {
+          _reviewError = context.read<HotelProvider>().error ?? 'Failed to submit review.';
+        });
+      }
+    }
   }
 }
 

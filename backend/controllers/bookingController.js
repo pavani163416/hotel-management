@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+// Scoped dynamic room resolution and robust date overlap checkers
 import Booking from "../models/Booking.js";
 import Room from "../models/Room.js";
 import Hotel from "../models/Hotel.js";
@@ -17,6 +18,8 @@ const inferBackendRoomType = (name = "") => {
   if (normalized.includes("suite")) return "Suite";
   if (normalized.includes("villa")) return "Villa";
   if (normalized.includes("deluxe")) return "Deluxe";
+  if (normalized.includes("-102") || normalized.includes("_102")) return "Suite";
+  if (normalized.includes("-103") || normalized.includes("_103")) return "Penthouse";
   return "Standard";
 };
 
@@ -29,10 +32,27 @@ const getOrCreateRoomFromHotelDefinition = async ({ identifier, hotelId, hotelNa
   if (!hotel) hotel = await Hotel.findOne({ "rooms.id": identifier, isActive: true });
   if (!hotel) return null;
 
-  const roomDef = hotel.rooms.find((room) => room.id === identifier || room.name === identifier);
-  if (!roomDef) return null;
+  let roomDef = hotel.rooms.find((room) => room.id === identifier || room.name === identifier);
+  if (!roomDef) {
+    const roomType = inferBackendRoomType(identifier);
+    let cap = 2;
+    let bedDesc = "1 King Bed";
+    if (roomType === "Suite") { cap = 3; bedDesc = "1 King Bed + Sofa"; }
+    else if (roomType === "Penthouse") { cap = 4; bedDesc = "2 King Beds"; }
 
-  const existingRoom = await Room.findOne({ roomNumber: roomDef.id });
+    roomDef = {
+      id: identifier,
+      name: `${roomType} Room`,
+      description: `${roomType} room at ${hotel.name}`,
+      price: price || hotel.pricePerNight,
+      capacity: cap,
+      bed: bedDesc,
+      available: 1,
+      features: features || ["WiFi", "AC"]
+    };
+  }
+
+  const existingRoom = await Room.findOne({ roomNumber: roomDef.id, hotelId: hotel._id });
   if (existingRoom) return existingRoom;
 
   const roomType = inferBackendRoomType(roomDef.name);
@@ -96,32 +116,57 @@ export const createBooking = async (req, res, next) => {
       additionalChildren,
     } = req.body;
 
+    // Find correct actualHotel mapping matching hotelId or hotelName from request body
+    let actualHotel = null;
+    if (req.body.hotelId) {
+      if (mongoose.Types.ObjectId.isValid(req.body.hotelId)) {
+        actualHotel = await Hotel.findById(req.body.hotelId).session(session);
+      }
+      if (!actualHotel) {
+        actualHotel = await Hotel.findOne({ hotelId: req.body.hotelId, isActive: true }).session(session);
+      }
+    }
+    if (!actualHotel && req.body.hotelName) {
+      actualHotel = await Hotel.findOne({ name: req.body.hotelName, isActive: true }).session(session);
+    }
+
     // ── 1. Validate room availability ──────────────────
     let room = null;
     logger.debug(`Booking lookup: roomId="${roomId}", roomNumber="${roomNumber}", roomTypeId="${roomTypeId}", price=${pricePerNight}`);
 
+    // Define hotel filter to ensure we scope room lookups to the target hotel
+    const hotelFilter = actualHotel
+      ? {
+          $or: [
+            { hotelId: actualHotel._id },
+            { hotelStringId: actualHotel.hotelId }
+          ]
+        }
+      : {};
+
     if (mongoose.Types.ObjectId.isValid(roomId)) {
-      room = await Room.findById(roomId).session(session);
+      room = await Room.findOne({ _id: roomId, ...hotelFilter }).session(session);
     }
 
     if (!room && roomNumber) {
-      room = await Room.findOne({ roomNumber: String(roomNumber).trim(), isActive: true }).session(session);
+      room = await Room.findOne({ roomNumber: String(roomNumber).trim(), isActive: true, ...hotelFilter }).session(session);
     }
 
     if (!room && roomId) {
-      room = await Room.findOne({ roomNumber: roomId, isActive: true }).session(session);
+      room = await Room.findOne({ roomNumber: roomId, isActive: true, ...hotelFilter }).session(session);
     }
 
     if (!room && roomTypeId && roomTypeId !== roomId) {
-      room = await Room.findOne({ roomNumber: roomTypeId, isActive: true }).session(session);
+      room = await Room.findOne({ roomNumber: roomTypeId, isActive: true, ...hotelFilter }).session(session);
     }
 
-    // Last resort: match by price
+    // Last resort: match by price within the hotel
     if (!room && pricePerNight) {
       room = await Room.findOne({
         isActive: true,
         status: "Available",
         pricePerNight: Number(pricePerNight),
+        ...hotelFilter
       }).session(session);
     }
 
@@ -157,33 +202,28 @@ export const createBooking = async (req, res, next) => {
         message: `This room only accommodates up to ${room.capacity} guest${room.capacity === 1 ? "" : "s"}. You requested ${guestCount}.`,
       });
     }
+    // ── Check if there is an active overlapping booking on this room ──
+    const activeBooking = await Booking.findOne({
+      room: room._id,
+      status: { $in: ["Confirmed", "CheckedIn"] },
+      checkIn:  { $lt: new Date(checkOut) },
+      checkOut: { $gt: new Date(checkIn) },
+    }).session(session);
 
-    if (room.status !== "Available") {
-      // If the room is Booked, only block dates that overlap an active booking.
-      if (room.status === "Booked") {
-        const activeBooking = await Booking.findOne({
-          room: room._id,
-          status: { $in: ["Confirmed", "CheckedIn"] },
-          checkIn:  { $lt: new Date(checkOut) },
-          checkOut: { $gt: new Date(checkIn) },
-        }).session(session);
+    if (activeBooking) {
+      await session.abortTransaction();
+      return res.status(409).json({
+        success: false,
+        message: `Room is currently occupied until ${activeBooking.checkOut.toISOString().slice(0, 10)}. Please choose different dates or another room.`,
+      });
+    }
 
-        if (!activeBooking) {
-          // No overlap for the requested stay — allow this booking.
-        } else {
-          await session.abortTransaction();
-          return res.status(409).json({
-            success: false,
-            message: `Room is currently occupied until ${activeBooking.checkOut.toISOString().slice(0, 10)}. Please choose different dates or another room.`,
-          });
-        }
-      } else {
-        await session.abortTransaction();
-        return res.status(409).json({
-          success: false,
-          message: `Room is currently ${room.status} and cannot be booked`,
-        });
-      }
+    if (room.status === "Maintenance" || room.status === "Blocked") {
+      await session.abortTransaction();
+      return res.status(409).json({
+        success: false,
+        message: `Room is currently ${room.status} and cannot be booked`,
+      });
     }
 
     // ── 2. Upsert guest (find by email or create new) ──
@@ -240,7 +280,7 @@ export const createBooking = async (req, res, next) => {
           hotelName: req.body.hotelName || resolveHotelName(room.roomNumber),
           hotelStringId: room.hotelStringId || null,
           hotelImage,
-          hotelId: room.hotelId || null,
+          hotelId: actualHotel ? actualHotel._id : (room.hotelId || null),
           status: "Confirmed",
         },
       ],

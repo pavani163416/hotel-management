@@ -172,7 +172,7 @@ class _HomePageState extends State<HomePage> {
                 style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
               ),
               TextButton(
-                onPressed: () {},
+                onPressed: () => context.push('/favorites'),
                 child: const Text('View All', style: TextStyle(color: AppTheme.primaryColor, fontWeight: FontWeight.bold)),
               ),
             ],
@@ -189,15 +189,18 @@ class _HomePageState extends State<HomePage> {
             separatorBuilder: (context, index) => const SizedBox(width: 16),
             itemBuilder: (context, index) {
               final item = favorites[index];
-              return Container(
-                width: 220,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 15, offset: const Offset(0, 8)),
-                  ],
-                ),
+              return InkWell(
+                onTap: () => context.push('/hotel/${item.id}'),
+                borderRadius: BorderRadius.circular(20),
+                child: Container(
+                  width: 220,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 15, offset: const Offset(0, 8)),
+                    ],
+                  ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -278,6 +281,7 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ],
                 ),
+              ),
               );
             },
           ),

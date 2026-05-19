@@ -1,4 +1,4 @@
-﻿# Flutter
+# Flutter
 hotelmanag/.dart_tool/
 hotelmanag/.flutter-plugins
 hotelmanag/.flutter-plugins-dependencies
@@ -21,3 +21,10 @@ admin/dist/
 admin/.vercel/
 admin/.env
 # admin/.env.production is committed intentionally (contains only public API URL)
+
+# Node global
+node_modules/
+**/node_modules/
+package-lock.json
+*.log
+.env

@@ -12,6 +12,7 @@ class HotelModel extends HotelEntity {
     super.type,
     super.amenities,
     super.reviews,
+    super.gallery,
   });
 
   factory HotelModel.fromJson(Map<String, dynamic> json) {
@@ -28,6 +29,7 @@ class HotelModel extends HotelEntity {
       reviews: (json['reviews'] as List? ?? [])
           .map((r) => ReviewEntity.fromJson(r))
           .toList(),
+      gallery: List<String>.from(json['gallery'] ?? []),
     );
   }
 
@@ -44,6 +46,7 @@ class HotelModel extends HotelEntity {
       'type': type,
       'amenities': amenities,
       'reviews': reviews.map((r) => r.toJson()).toList(),
+      'gallery': gallery,
     };
   }
 }

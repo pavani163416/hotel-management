@@ -44,7 +44,11 @@ class HotelProvider extends ChangeNotifier {
         notifyListeners();
       },
       (hotels) {
-        _allHotels = hotels;
+        final uniqueMap = <String, HotelEntity>{};
+        for (final hotel in hotels) {
+          uniqueMap[hotel.id] = hotel;
+        }
+        _allHotels = uniqueMap.values.toList();
         _applyFilters();
         _isLoading = false;
         notifyListeners();
@@ -217,5 +221,40 @@ class HotelProvider extends ChangeNotifier {
            searchStr.contains('star') ||
            hotel.type.toLowerCase() == 'villa' ||
            hotel.type.toLowerCase() == 'suite';
+  }
+
+  Future<bool> submitReview({
+    required String hotelId,
+    required String author,
+    required int rating,
+    required String comment,
+  }) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    final result = await _hotelRepository.submitReview(hotelId, author, rating, comment);
+
+    return result.fold(
+      (failure) {
+        _error = failure.message;
+        _isLoading = false;
+        notifyListeners();
+        return false;
+      },
+      (updatedHotel) {
+        final indexAll = _allHotels.indexWhere((h) => h.id == hotelId);
+        if (indexAll != -1) {
+          _allHotels[indexAll] = updatedHotel;
+        }
+        final indexFiltered = _filteredHotels.indexWhere((h) => h.id == hotelId);
+        if (indexFiltered != -1) {
+          _filteredHotels[indexFiltered] = updatedHotel;
+        }
+        _isLoading = false;
+        notifyListeners();
+        return true;
+      },
+    );
   }
 }

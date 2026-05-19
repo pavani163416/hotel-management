@@ -33,4 +33,16 @@ class HotelRepositoryImpl implements HotelRepository {
       return Left(ServerFailure(e.toString()));
     }
   }
+
+  @override
+  Future<Either<Failure, HotelEntity>> submitReview(String hotelId, String author, int rating, String comment) async {
+    try {
+      final hotel = await _remoteDataSource.submitReview(hotelId, author, rating, comment);
+      return Right(hotel);
+    } on DioException catch (e) {
+      return Left(ServerFailure(e.response?.data['message'] ?? 'Failed to submit review'));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
 }

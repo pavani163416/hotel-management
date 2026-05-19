@@ -46,6 +46,7 @@ class HotelEntity extends Equatable {
   final String type; // e.g., Hotel, Resort, Villa, Suite
   final List<String> amenities;
   final List<ReviewEntity> reviews;
+  final List<String> gallery;
 
   const HotelEntity({
     required this.id,
@@ -58,6 +59,7 @@ class HotelEntity extends Equatable {
     this.type = 'Hotel',
     this.amenities = const [],
     this.reviews = const [],
+    this.gallery = const [],
   });
 
   Map<String, dynamic> toJson() {
@@ -72,26 +74,28 @@ class HotelEntity extends Equatable {
       'type': type,
       'amenities': amenities,
       'reviews': reviews.map((r) => r.toJson()).toList(),
+      'gallery': gallery,
     };
   }
 
   factory HotelEntity.fromJson(Map<String, dynamic> json) {
     return HotelEntity(
-      id: json['id'] ?? '',
+      id: json['id'] ?? json['hotelId'] ?? json['_id'] ?? '',
       name: json['name'] ?? '',
-      location: json['location'] ?? '',
+      location: json['location'] ?? json['city'] ?? '',
       rating: (json['rating'] ?? 0).toDouble(),
       pricePerNight: (json['pricePerNight'] ?? 0).toDouble(),
-      imageUrl: json['imageUrl'] ?? '',
+      imageUrl: json['imageUrl'] ?? json['image'] ?? '',
       description: json['description'] ?? '',
       type: json['type'] ?? 'Hotel',
       amenities: List<String>.from(json['amenities'] ?? []),
       reviews: (json['reviews'] as List? ?? [])
           .map((r) => ReviewEntity.fromJson(r))
           .toList(),
+      gallery: List<String>.from(json['gallery'] ?? []),
     );
   }
 
   @override
-  List<Object?> get props => [id, name, location, rating, pricePerNight, imageUrl, description, type, amenities, reviews];
+  List<Object?> get props => [id, name, location, rating, pricePerNight, imageUrl, description, type, amenities, reviews, gallery];
 }

@@ -2,14 +2,7 @@ import 'package:hotelmanag/core/network/api_service.dart';
 import 'package:hotelmanag/features/booking/data/models/booking_model.dart';
 
 abstract class BookingRemoteDataSource {
-  Future<BookingModel> createBooking({
-    required String roomId,
-    required DateTime checkIn,
-    required DateTime checkOut,
-    String? paymentMethod,
-    String? specialRequests,
-    String? promoCode,
-  });
+  Future<BookingModel> createBooking(Map<String, dynamic> data);
   Future<List<BookingModel>> getMyBookings();
   Future<BookingModel> cancelBooking(String id);
 }
@@ -20,22 +13,8 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
   BookingRemoteDataSourceImpl(this._apiService);
 
   @override
-  Future<BookingModel> createBooking({
-    required String roomId,
-    required DateTime checkIn,
-    required DateTime checkOut,
-    String? paymentMethod,
-    String? specialRequests,
-    String? promoCode,
-  }) async {
-    final response = await _apiService.post('bookings', data: {
-      'roomId': roomId,
-      'checkIn': checkIn.toIso8601String(),
-      'checkOut': checkOut.toIso8601String(),
-      'paymentMethod': paymentMethod,
-      'specialRequests': specialRequests,
-      'promoCode': promoCode,
-    });
+  Future<BookingModel> createBooking(Map<String, dynamic> data) async {
+    final response = await _apiService.post('bookings', data: data);
     return BookingModel.fromJson(response.data['data']);
   }
 

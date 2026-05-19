@@ -18,7 +18,6 @@ const roomSchema = new mongoose.Schema(
     roomNumber: {
       type: String,
       required: [true, "Room number is required"],
-      unique: true,
       trim: true,
     },
 
@@ -105,6 +104,7 @@ roomSchema.virtual("isBookable").get(function () {
 
 roomSchema.index({ status: 1, type: 1 });
 roomSchema.index({ hotelId: 1, status: 1 });
+roomSchema.index({ hotelId: 1, roomNumber: 1 }, { unique: true });
 
 const Room = mongoose.model("Room", roomSchema);
 export default Room;

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../features/booking/domain/repositories/booking_repository.dart';
 import '../../features/booking/domain/entities/booking_entity.dart';
 import '../../shared/domain/entities/hotel_entity.dart';
+import '../../features/auth/domain/entities/user_entity.dart';
 
 class BookingProvider extends ChangeNotifier {
   final BookingRepository _bookingRepository;
@@ -63,13 +64,18 @@ class BookingProvider extends ChangeNotifier {
   double get total => (subtotal - _discountAmount) + serviceFee + taxes;
 
   // Setters
-  void startBooking(HotelEntity hotel) {
+  void startBooking(HotelEntity hotel, {UserEntity? user}) {
     _currentHotel = hotel;
     _selectedRoomType = 'Deluxe King Room';
     _selectedRoomPrice = hotel.pricePerNight;
     _appliedPromoCode = null;
     _discountAmount = 0.0;
-    _leadGuest = {'name': '', 'email': '', 'phone': '', 'requests': ''};
+    _leadGuest = {
+      'name': user?.name ?? '',
+      'email': user?.email ?? '',
+      'phone': user?.phone ?? '',
+      'requests': '',
+    };
     _additionalAdults = [];
     _children = [];
     notifyListeners();
@@ -129,25 +135,75 @@ class BookingProvider extends ChangeNotifier {
   }
 
   // --- Finalize Booking ---
-  void completeBooking(String id) {
-    if (_currentHotel == null) return;
+  Future<bool> completeBooking(String paymentMethod) async {
+    if (_currentHotel == null) return false;
     
-    final newBooking = BookingEntity(
-      id: id,
-      roomId: 'RM-${_currentHotel!.id}-${_selectedRoomType.replaceAll(' ', '-').toUpperCase()}',
-      hotelName: _currentHotel!.name,
-      checkIn: _checkIn,
-      checkOut: _checkOut,
-      status: 'Confirmed',
-      totalAmount: total,
-      imageUrl: _currentHotel!.imageUrl,
-      guestName: _leadGuest['name']?.isNotEmpty == true ? _leadGuest['name'] : 'Guest',
-      roomNumber: '101',
-      createdAt: DateTime.now(),
-    );
-    
-    _bookings.insert(0, newBooking); // Add to history
+    _isLoading = true;
+    _error = null;
     notifyListeners();
+
+    final prefixMap = const {
+      'h1': 'hdl', 'h2': 'tas', 'h3': 'cbr',
+      'h4': 'apl', 'h5': 'tgm', 'h6': 'scs',
+    };
+    String prefix = prefixMap[_currentHotel!.id] ?? '';
+    if (prefix.isEmpty) {
+      final cleanName = _currentHotel!.name.toLowerCase().replaceAll(RegExp(r'[^a-z]'), '');
+      prefix = cleanName.length >= 3 ? cleanName.substring(0, 3) : cleanName;
+      if (prefix.isEmpty) prefix = 'hh';
+    }
+
+    String suffix = '101';
+    final normalizedRoomType = _selectedRoomType.toLowerCase();
+    if (normalizedRoomType.contains('suite')) {
+      suffix = '102';
+    } else if (normalizedRoomType.contains('penthouse') || 
+               normalizedRoomType.contains('villa') || 
+               normalizedRoomType.contains('bungalow')) {
+      suffix = '103';
+    }
+    
+    final mappedRoomId = '$prefix-$suffix';
+
+    final data = {
+      'roomId': mappedRoomId,
+      'roomNumber': mappedRoomId,
+      'hotelId': _currentHotel!.id,
+      'hotelName': _currentHotel!.name,
+      'checkIn': _checkIn.toIso8601String(),
+      'checkOut': _checkOut.toIso8601String(),
+      'pricePerNight': _selectedRoomPrice,
+      'subtotal': subtotal,
+      'taxes': taxes,
+      'discount': discountAmount,
+      'totalAmount': total,
+      'promoCode': _appliedPromoCode,
+      'paymentMethod': paymentMethod,
+      'guest': {
+        'name': _leadGuest['name']?.isNotEmpty == true ? _leadGuest['name'] : 'Guest',
+        'email': _leadGuest['email']?.isNotEmpty == true ? _leadGuest['email'] : 'guest@example.com',
+        'phone': _leadGuest['phone']?.isNotEmpty == true ? _leadGuest['phone'] : '9999999999',
+      },
+      'additionalAdults': _additionalAdults,
+      'additionalChildren': _children,
+    };
+
+    final result = await _bookingRepository.createBooking(data);
+
+    return result.fold(
+      (failure) {
+        _error = failure.message;
+        _isLoading = false;
+        notifyListeners();
+        return false;
+      },
+      (booking) {
+        _bookings.insert(0, booking); // Add backend booking
+        _isLoading = false;
+        notifyListeners();
+        return true;
+      }
+    );
   }
 
   // --- History Logic ---
@@ -182,19 +238,7 @@ class BookingProvider extends ChangeNotifier {
       final index = _bookings.indexWhere((b) => b.id == id);
       if (index != -1) {
         final old = _bookings[index];
-        _bookings[index] = BookingEntity(
-          id: old.id,
-          roomId: old.roomId,
-          hotelName: old.hotelName,
-          checkIn: old.checkIn,
-          checkOut: old.checkOut,
-          status: 'Cancelled',
-          totalAmount: old.totalAmount,
-          imageUrl: old.imageUrl,
-          guestName: old.guestName,
-          roomNumber: old.roomNumber,
-          createdAt: old.createdAt,
-        );
+        _bookings[index] = old.copyWith(status: 'Cancelled');
         _isLoading = false;
         notifyListeners();
         return true;
@@ -213,19 +257,7 @@ class BookingProvider extends ChangeNotifier {
         final index = _bookings.indexWhere((b) => b.id == id);
         if (index != -1) {
           final old = _bookings[index];
-          _bookings[index] = BookingEntity(
-            id: old.id,
-            roomId: old.roomId,
-            hotelName: old.hotelName,
-            checkIn: old.checkIn,
-            checkOut: old.checkOut,
-            status: 'Cancelled',
-            totalAmount: old.totalAmount,
-            imageUrl: old.imageUrl,
-            guestName: old.guestName,
-            roomNumber: old.roomNumber,
-            createdAt: old.createdAt,
-          );
+          _bookings[index] = old.copyWith(status: 'Cancelled');
           notifyListeners();
           return true;
         }

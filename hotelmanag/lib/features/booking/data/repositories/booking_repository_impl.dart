@@ -11,23 +11,9 @@ class BookingRepositoryImpl implements BookingRepository {
   BookingRepositoryImpl(this._remoteDataSource);
 
   @override
-  Future<Either<Failure, BookingEntity>> createBooking({
-    required String roomId,
-    required DateTime checkIn,
-    required DateTime checkOut,
-    String? paymentMethod,
-    String? specialRequests,
-    String? promoCode,
-  }) async {
+  Future<Either<Failure, BookingEntity>> createBooking(Map<String, dynamic> data) async {
     try {
-      final booking = await _remoteDataSource.createBooking(
-        roomId: roomId,
-        checkIn: checkIn,
-        checkOut: checkOut,
-        paymentMethod: paymentMethod,
-        specialRequests: specialRequests,
-        promoCode: promoCode,
-      );
+      final booking = await _remoteDataSource.createBooking(data);
       return Right(booking);
     } on DioException catch (e) {
       return Left(ServerFailure(e.response?.data['message'] ?? 'Failed to create booking'));
