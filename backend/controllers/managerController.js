@@ -16,6 +16,12 @@ import PriceRequest    from "../models/PriceRequest.js";
 import FunctionHall    from "../models/FunctionHall.js";
 import { sendNotification } from "../utils/notificationService.js";
 import logger from "../utils/logger.js";
+import {
+  buildOverlapQuery,
+  NON_BOOKABLE_STATUSES,
+  syncRoomLegacyStatus,
+  getHotelMapOverview,
+} from "../services/roomAllocationService.js";
 
 const getSecret = () => {
   const s = process.env.JWT_SECRET;
@@ -207,6 +213,20 @@ export const deleteManagerRoom = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
+// ── GET /api/manager/rooms/map-overview?date=YYYY-MM-DD ───
+export const getManagerMapOverview = async (req, res, next) => {
+  try {
+    const overview = await getHotelMapOverview({
+      hotelStringId: req.scopedHotelId,
+      hotelObjectId: req.scopedHotelObjectId,
+      date: req.query.date || new Date().toISOString().slice(0, 10),
+    });
+    res.status(200).json({ success: true, data: overview });
+  } catch (err) {
+    next(err);
+  }
+};
+
 // ── GET /api/manager/bookings ─────────────────────────────
 export const getManagerBookings = async (req, res, next) => {
   try {
@@ -240,9 +260,11 @@ export const checkInBooking = async (req, res, next) => {
     booking.status = "CheckedIn";
     booking.checkedInAt = new Date();
     await booking.save();
-    await Room.findByIdAndUpdate(booking.room, { status:"Booked" });
     const io = req.app.get("io");
-    if (io) io.emit("bookingCheckedIn", { bookingId:booking._id, hotelName:booking.hotelName });
+    if (io) {
+      io.emit("bookingCheckedIn", { bookingId: booking._id, hotelName: booking.hotelName });
+      io.emit("roomStatusUpdate", { roomId: booking.room, hotelStringId: booking.hotelStringId });
+    }
     sendNotification({
       userId: booking.guest?.email || booking.guestSnapshot?.email,
       role: "customer",
@@ -262,9 +284,12 @@ export const checkOutBooking = async (req, res, next) => {
     booking.status = "CheckedOut";
     booking.checkedOutAt = new Date();
     await booking.save();
-    await Room.findByIdAndUpdate(booking.room, { status:"Available" });
+    await syncRoomLegacyStatus(booking.room);
     const io = req.app.get("io");
-    if (io) io.emit("bookingCheckedOut", { bookingId:booking._id, hotelName:booking.hotelName });
+    if (io) {
+      io.emit("bookingCheckedOut", { bookingId: booking._id, hotelName: booking.hotelName });
+      io.emit("roomStatusUpdate", { roomId: booking.room, hotelStringId: booking.hotelStringId });
+    }
     sendNotification({
       userId: booking.guest?.email || booking.guestSnapshot?.email,
       role: "customer",
@@ -292,7 +317,21 @@ export const createWalkInBooking = async (req, res, next) => {
       await session.abortTransaction();
       return res.status(403).json({ success:false, message:"Room does not belong to your hotel", code:"HOTEL_ACCESS_DENIED" });
     }
-    if (room.status !== "Available") { await session.abortTransaction(); return res.status(409).json({ success:false, message:"Room is currently " + room.status }); }
+    if (NON_BOOKABLE_STATUSES.includes(room.status)) {
+      await session.abortTransaction();
+      return res.status(409).json({ success: false, message: `Room is ${room.status} and cannot be booked` });
+    }
+    const walkOverlap = await Booking.findOne(
+      buildOverlapQuery(checkIn, checkOut, { room: room._id })
+    ).session(session);
+    if (walkOverlap) {
+      await session.abortTransaction();
+      return res.status(409).json({
+        success: false,
+        message: `Room is already booked for these dates (until ${walkOverlap.checkOut.toISOString().slice(0, 10)})`,
+        code: "ROOM_OVERLAP",
+      });
+    }
     let guest = await Guest.findOne({ email: guestData.email }).session(session);
     if (!guest) { [guest] = await Guest.create([{ name:guestData.name, email:guestData.email, phone:guestData.phone, city:guestData.city||"" }], { session }); }
     const [booking] = await Booking.create([{
@@ -307,7 +346,6 @@ export const createWalkInBooking = async (req, res, next) => {
       hotelId: req.scopedHotelObjectId || null,
       status: "CheckedIn", checkedInAt: new Date(), isWalkIn: true,
     }], { session });
-    await Room.findByIdAndUpdate(room._id, { status:"Booked" }, { session });
     await Guest.findByIdAndUpdate(guest._id, { $push:{ bookings:booking._id } }, { session });
     await session.commitTransaction();
     const populated = await Booking.findById(booking._id).populate("room","roomNumber type pricePerNight").populate("guest","name email phone");

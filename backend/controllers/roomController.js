@@ -1,4 +1,5 @@
 import Room from "../models/Room.js";
+import { getHotelMapOverview } from "../services/roomAllocationService.js";
 
 // ─────────────────────────────────────────────────────────
 // GET /api/rooms
@@ -91,7 +92,7 @@ export const updateRoomStatus = async (req, res, next) => {
   try {
     const { status } = req.body;
 
-    const allowedStatuses = ["Available", "Booked", "Maintenance"];
+    const allowedStatuses = ["Available", "Booked", "Maintenance", "Cleaning", "Blocked"];
     if (!allowedStatuses.includes(status)) {
       return res.status(400).json({
         success: false,
@@ -125,6 +126,24 @@ export const updateRoomStatus = async (req, res, next) => {
 // ─────────────────────────────────────────────────────────
 // DELETE /api/rooms/:id  (hard delete)
 // ─────────────────────────────────────────────────────────
+// GET /api/rooms/map-overview?hotelStringId=&date=YYYY-MM-DD
+export const getMapOverview = async (req, res, next) => {
+  try {
+    const { hotelStringId, hotelId, date } = req.query;
+    if (!hotelStringId && !hotelId) {
+      return res.status(400).json({ success: false, message: "hotelStringId or hotelId required" });
+    }
+    const overview = await getHotelMapOverview({
+      hotelStringId,
+      hotelObjectId: hotelId,
+      date: date || new Date().toISOString().slice(0, 10),
+    });
+    res.status(200).json({ success: true, data: overview });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const deleteRoom = async (req, res, next) => {
   try {
     const room = await Room.findByIdAndDelete(req.params.id);

@@ -11,6 +11,12 @@ import { broadcastBookingUpdate } from "../routes/wsRoutes.js";
 import { sendBookingConfirmation, sendCancellationEmail } from "../utils/emailService.js";
 import { sendNotification } from "../utils/notificationService.js";
 import logger from "../utils/logger.js";
+import {
+  findAvailableRoom,
+  buildOverlapQuery,
+  syncRoomLegacyStatus,
+  NON_BOOKABLE_STATUSES,
+} from "../services/roomAllocationService.js";
 
 const inferBackendRoomType = (name = "") => {
   const normalized = String(name).toLowerCase();
@@ -70,6 +76,7 @@ const getOrCreateRoomFromHotelDefinition = async ({ identifier, hotelId, hotelNa
     hotelId:       hotel._id,
     hotelStringId: hotel.hotelId,
     roomNumber:    roomDef.id,
+    roomTypeId:    roomDef.id,
     type:          roomType,
     description:   roomDef.description || description || "",
     pricePerNight: roomDef.price || price || 500,
@@ -130,51 +137,23 @@ export const createBooking = async (req, res, next) => {
       actualHotel = await Hotel.findOne({ name: req.body.hotelName, isActive: true }).session(session);
     }
 
-    // ── 1. Validate room availability ──────────────────
-    let room = null;
+    // ── 1. Auto-assign available physical room (date-based inventory) ──
     logger.debug(`Booking lookup: roomId="${roomId}", roomNumber="${roomNumber}", roomTypeId="${roomTypeId}", price=${pricePerNight}`);
 
-    // Define hotel filter to ensure we scope room lookups to the target hotel
-    const hotelFilter = actualHotel
-      ? {
-          $or: [
-            { hotelId: actualHotel._id },
-            { hotelStringId: actualHotel.hotelId }
-          ]
-        }
-      : {};
-
-    if (mongoose.Types.ObjectId.isValid(roomId)) {
-      room = await Room.findOne({ _id: roomId, ...hotelFilter }).session(session);
-    }
-
-    if (!room && roomNumber) {
-      room = await Room.findOne({ roomNumber: String(roomNumber).trim(), isActive: true, ...hotelFilter }).session(session);
-    }
-
-    if (!room && roomId) {
-      room = await Room.findOne({ roomNumber: roomId, isActive: true, ...hotelFilter }).session(session);
-    }
-
-    if (!room && roomTypeId && roomTypeId !== roomId) {
-      room = await Room.findOne({ roomNumber: roomTypeId, isActive: true, ...hotelFilter }).session(session);
-    }
-
-    // Last resort: match by price within the hotel
-    if (!room && pricePerNight) {
-      room = await Room.findOne({
-        isActive: true,
-        status: "Available",
-        pricePerNight: Number(pricePerNight),
-        ...hotelFilter
-      }).session(session);
-    }
-
-    logger.debug(`Room found: ${room ? room.roomNumber + " (" + room.status + ")" : "NOT FOUND"}`);
+    let room = await findAvailableRoom({
+      hotelObjectId:  actualHotel?._id,
+      hotelStringId:  actualHotel?.hotelId || req.body.hotelId,
+      roomId,
+      roomNumber,
+      roomTypeId:     roomTypeId || roomId || roomNumber,
+      pricePerNight,
+      checkIn,
+      checkOut,
+    });
 
     if (!room) {
-      room = await getOrCreateRoomFromHotelDefinition({
-        identifier:   roomId || roomNumber,
+      await getOrCreateRoomFromHotelDefinition({
+        identifier:   roomTypeId || roomId || roomNumber,
         hotelId:      req.body.hotelId,
         hotelName:    req.body.hotelName,
         price:        pricePerNight,
@@ -184,13 +163,24 @@ export const createBooking = async (req, res, next) => {
         features:     guestData?.features,
         hotelImage:   req.body.hotelImage || null,
       });
+      room = await findAvailableRoom({
+        hotelObjectId: actualHotel?._id,
+        hotelStringId: actualHotel?.hotelId || req.body.hotelId,
+        roomId,
+        roomNumber,
+        roomTypeId:    roomTypeId || roomId || roomNumber,
+        pricePerNight,
+        checkIn,
+        checkOut,
+      });
     }
 
     if (!room) {
       await session.abortTransaction();
-      return res.status(404).json({
+      return res.status(409).json({
         success: false,
-        message: `Room "${roomId || roomNumber}" not found. Run: cd backend && node utils/seedRooms.js`,
+        message: "No Rooms Available for the selected dates. Please choose different dates or another room type.",
+        code: "NO_ROOMS_AVAILABLE",
       });
     }
 
@@ -202,19 +192,16 @@ export const createBooking = async (req, res, next) => {
         message: `This room only accommodates up to ${room.capacity} guest${room.capacity === 1 ? "" : "s"}. You requested ${guestCount}.`,
       });
     }
-    // ── Check if there is an active overlapping booking on this room ──
-    const activeBooking = await Booking.findOne({
-      room: room._id,
-      status: { $in: ["Confirmed", "CheckedIn"] },
-      checkIn:  { $lt: new Date(checkOut) },
-      checkOut: { $gt: new Date(checkIn) },
-    }).session(session);
 
+    const activeBooking = await Booking.findOne(
+      buildOverlapQuery(checkIn, checkOut, { room: room._id })
+    ).session(session);
     if (activeBooking) {
       await session.abortTransaction();
       return res.status(409).json({
         success: false,
         message: `This room is already booked for these dates! (Occupied until ${activeBooking.checkOut.toISOString().slice(0, 10)})`,
+        code: "ROOM_OVERLAP",
       });
     }
 
@@ -240,7 +227,7 @@ export const createBooking = async (req, res, next) => {
       }
     }
 
-    if (room.status === "Maintenance" || room.status === "Blocked") {
+    if (NON_BOOKABLE_STATUSES.includes(room.status)) {
       await session.abortTransaction();
       return res.status(409).json({
         success: false,
@@ -308,14 +295,7 @@ export const createBooking = async (req, res, next) => {
       { session }
     );
 
-    // ── 4. Mark room as Booked ─────────────────────────
-    await Room.findByIdAndUpdate(
-      room._id,
-      { status: "Booked" },
-      { session }
-    );
-
-    // ── 5. Link booking to guest ───────────────────────
+    // ── 4. Link booking to guest (availability = booking dates, not room.status) ──
     await Guest.findByIdAndUpdate(
       guest._id,
       { $push: { bookings: booking._id } },
@@ -325,13 +305,13 @@ export const createBooking = async (req, res, next) => {
     // ── Commit everything ──────────────────────────────
     await session.commitTransaction();
 
-    // ── Auto-reset rooms with past checkout dates (background cleanup) ──
+    // ── Auto-reset legacy Booked flags for past checkouts (background) ──
     Booking.find({
       status: { $in: ["Confirmed", "CheckedIn"] },
       checkOut: { $lt: new Date() },
     }).then(async (pastBookings) => {
       for (const pb of pastBookings) {
-        await Room.findByIdAndUpdate(pb.room, { status: "Available" }).catch(() => {});
+        await syncRoomLegacyStatus(pb.room).catch(() => {});
         await Booking.findByIdAndUpdate(pb._id, { status: "CheckedOut" }).catch(() => {});
       }
     }).catch(() => {});
@@ -406,6 +386,12 @@ export const createBooking = async (req, res, next) => {
         status: "Confirmed",
         createdAt: new Date().toISOString(),
       });
+      io.emit("roomStatusUpdate", {
+        roomId: room._id,
+        roomNumber: room.roomNumber,
+        hotelStringId: room.hotelStringId,
+      });
+      io.emit("booking_update", { _id: booking._id, status: "Confirmed", roomId: room._id });
     }
 
     // Send confirmation email
@@ -563,14 +549,15 @@ export const cancelBooking = async (req, res, next) => {
     booking.cancellationReason = req.body.reason || "Cancelled by guest";
     await booking.save({ session });
 
-    // Free the room
-    await Room.findByIdAndUpdate(
-      booking.room,
-      { status: "Available" },
-      { session }
-    );
-
     await session.commitTransaction();
+
+    await syncRoomLegacyStatus(booking.room);
+
+    const io = req.app?.get?.("io");
+    if (io) {
+      io.emit("roomStatusUpdate", { roomId: booking.room, hotelStringId: booking.hotelStringId });
+      io.emit("booking_update", { _id: booking._id, status: "Cancelled" });
+    }
 
     // ── Create CancellationRefund record ──────────────
     const populatedForRefund = await Booking.findById(booking._id)

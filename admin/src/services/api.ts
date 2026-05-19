@@ -162,6 +162,10 @@ export const checkOutManagerBooking = (id: string) =>
 export const getManagerRooms = (params?: Record<string, any>) =>
   api.get("/manager/rooms", { params });
 
+/** GET /api/manager/rooms/map-overview — floor map for manager's hotel only */
+export const getManagerMapOverview = (params?: { date?: string }) =>
+  api.get("/manager/rooms/map-overview", { params });
+
 /** POST /api/manager/rooms — create a room scoped to the manager's hotel */
 export const createManagerRoom = (data: Record<string, any>) =>
   api.post("/manager/rooms", data);
@@ -203,6 +207,10 @@ export const getRoomAvailability = (roomId: string, checkIn: string, checkOut: s
   api.get(`/manager/rooms/${roomId}/availability`, { params: { checkIn, checkOut } });
 
 // Admin hotel map — uses admin-scoped room/booking endpoints
+/** GET /api/rooms/map-overview — admin hotel floor map with date-based occupancy */
+export const getHotelMapOverview = (params: { hotelStringId: string; date?: string }) =>
+  api.get("/rooms/map-overview", { params });
+
 export const getAdminRooms = (params?: Record<string, any>) => api.get("/rooms", { params });
 export const getAdminBookings = (params?: Record<string, any>) => api.get("/bookings", { params });
 export const updateAdminRoom = (id: string, data: Record<string, any>) => api.patch(`/rooms/${id}`, data);

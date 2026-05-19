@@ -21,6 +21,14 @@ const roomSchema = new mongoose.Schema(
       trim: true,
     },
 
+    /** Links to embedded hotel.rooms[].id (room type SKU) — used for auto-assignment */
+    roomTypeId: {
+      type: String,
+      trim: true,
+      default: null,
+      index: true,
+    },
+
     type: {
       type: String,
       enum: {
@@ -105,6 +113,7 @@ roomSchema.virtual("isBookable").get(function () {
 roomSchema.index({ status: 1, type: 1 });
 roomSchema.index({ hotelId: 1, status: 1 });
 roomSchema.index({ hotelId: 1, roomNumber: 1 }, { unique: true });
+roomSchema.index({ hotelId: 1, roomTypeId: 1 });
 
 const Room = mongoose.model("Room", roomSchema);
 export default Room;

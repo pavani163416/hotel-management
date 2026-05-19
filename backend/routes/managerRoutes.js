@@ -32,6 +32,7 @@ import {
   getManagerDashboard,
   getManagerStats,
   getManagerRooms,
+  getManagerMapOverview,
   createManagerRoom,
   updateManagerRoom,
   deleteManagerRoom,
@@ -66,6 +67,7 @@ router.get("/stats",     ...protect, getManagerStats);
 
 // ── Rooms (full CRUD, hotel-scoped) ──────────────────────
 router.get("/rooms",        ...protect, getManagerRooms);
+router.get("/rooms/map-overview", ...protect, getManagerMapOverview);
 router.post("/rooms",       ...protect, createManagerRoom);
 router.put("/rooms/:id",    ...protect, isAssignedManager, updateManagerRoom);
 router.delete("/rooms/:id", ...protect, isAssignedManager, deleteManagerRoom);

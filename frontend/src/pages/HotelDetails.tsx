@@ -72,6 +72,7 @@ const HotelDetails = () => {
       try {
         const params = new URLSearchParams({
           hotelStringId: hotel.id,
+          roomTypeId: r.id,
           checkIn: search.checkIn,
           checkOut: search.checkOut,
         });
@@ -218,6 +219,15 @@ const HotelDetails = () => {
                           <span className="flex items-center gap-1"><BedDouble className="w-3.5 h-3.5" /> {r.bed}</span>
                           <span className="flex items-center gap-1"><Users className="w-3.5 h-3.5" /> {r.capacity}</span>
                         </p>
+                        {search.checkIn && search.checkOut && availCount[r.id] != null && (
+                          availCount[r.id] === 0 ? (
+                            <p className="text-xs font-semibold text-destructive mt-1">Sold out for selected dates</p>
+                          ) : (availCount[r.id] ?? 0) <= 3 ? (
+                            <p className="text-xs font-semibold text-amber-600 mt-1">
+                              Only {availCount[r.id]} room{(availCount[r.id] ?? 0) !== 1 ? "s" : ""} left
+                            </p>
+                          ) : null
+                        )}
                       </div>
                       <div className="flex flex-wrap gap-1.5">
                         {r.features.map((f) => (
@@ -232,11 +242,11 @@ const HotelDetails = () => {
                         <p className="text-xs text-muted-foreground">per night</p>
                       </div>
                       <div className="flex flex-col items-stretch gap-1 md:min-w-[140px]">
-                        <button onClick={() => select(r.id)} disabled={r.available === 0 || roomStatus[r.id]?.checking}
+                        <button onClick={() => select(r.id)} disabled={r.available === 0 || availCount[r.id] === 0 || roomStatus[r.id]?.checking}
                           className="bg-accent hover:bg-accent/90 disabled:bg-secondary disabled:text-muted-foreground disabled:cursor-not-allowed text-accent-foreground px-4 py-2.5 rounded-lg font-semibold text-sm transition-base flex items-center justify-center gap-1.5">
                           {roomStatus[r.id]?.checking ? (
                             <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Checking...</>
-                          ) : r.available === 0 ? "Currently unavailable" : (
+                          ) : r.available === 0 || availCount[r.id] === 0 ? "Sold out" : (
                             <>{!user && <LogIn className="w-3.5 h-3.5" />}Select Room</>
                           )}
                         </button>
