@@ -368,7 +368,7 @@ class _HotelDetailsPageState extends State<HotelDetailsPage> with SingleTickerPr
             borderRadius: BorderRadius.circular(12),
           ),
           child: Text(
-            '${hotel.rating} (852 reviews)', 
+            '${hotel.rating} (${hotel.reviews.length} reviews)', 
             style: TextStyle(
               fontWeight: FontWeight.bold, 
               color: Theme.of(context).colorScheme.primary,

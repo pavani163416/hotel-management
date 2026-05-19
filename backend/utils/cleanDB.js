@@ -29,8 +29,18 @@ const clean = async () => {
   await Booking.deleteMany({});
   await Guest.deleteMany({});
 
-  console.log("🗑️  Cleared all bookings and guests");
-  console.log("✅  Database is clean — ready for real bookings from the user panel");
+  // ── 2. Clear all dummy reviews and reset ratings on hotels ──
+  const Hotel = (await import("../models/Hotel.js")).default;
+  const hotelResult = await Hotel.updateMany({}, {
+    $set: {
+      reviews: [],
+      reviewCount: 0,
+      rating: 5.0,
+    }
+  });
+
+  console.log(`🗑️  Cleared all bookings, guests, and reset reviews/ratings on ${hotelResult.modifiedCount} hotels.`);
+  console.log("✅  Database is clean — ready for real bookings and reviews from the user panel");
   console.log("\n💡  Rooms are untouched. Run seedRooms.js if you need to re-seed rooms.");
 
   await mongoose.connection.close();

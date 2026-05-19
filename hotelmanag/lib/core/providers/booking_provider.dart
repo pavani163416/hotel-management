@@ -233,34 +233,11 @@ class BookingProvider extends ChangeNotifier {
     _error = null;
     notifyListeners();
 
-    // If it's a simulated local-only booking (starts with 'LS-'), we handle it entirely locally
-    if (id.startsWith('LS-')) {
-      final index = _bookings.indexWhere((b) => b.id == id);
-      if (index != -1) {
-        final old = _bookings[index];
-        _bookings[index] = old.copyWith(status: 'Cancelled');
-        _isLoading = false;
-        notifyListeners();
-        return true;
-      }
-      _isLoading = false;
-      return false;
-    }
-
-    // Otherwise, it is a backend booking, so we MUST call the backend API!
     final result = await _bookingRepository.cancelBooking(id);
     _isLoading = false;
     
     return result.fold(
       (failure) {
-        // Fallback: if it's not found on server but exists locally, cancel it locally anyway
-        final index = _bookings.indexWhere((b) => b.id == id);
-        if (index != -1) {
-          final old = _bookings[index];
-          _bookings[index] = old.copyWith(status: 'Cancelled');
-          notifyListeners();
-          return true;
-        }
         _error = failure.message;
         notifyListeners();
         return false;
