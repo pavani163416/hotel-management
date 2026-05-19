@@ -238,6 +238,7 @@ export const createBooking = async (req, res, next) => {
           paymentMethod: paymentMethod || "card",
           specialRequests: specialRequests || "",
           hotelName: req.body.hotelName || resolveHotelName(room.roomNumber),
+          hotelStringId: room.hotelStringId || null,
           hotelImage,
           hotelId: room.hotelId || null,
           status: "Confirmed",

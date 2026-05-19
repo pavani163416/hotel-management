@@ -31,9 +31,10 @@ function esc(s) {
     return "\\^$.|?*+()[]{}-".indexOf(ch) >= 0 ? "\\" + ch : ch;
   }).join("");
 }
-function hotelScopeFilter(hotelId, hotelName) {
+function hotelScopeFilter(hotelId, hotelName, hotelObjectId) {
   const clauses = [];
   if (hotelId) clauses.push({ hotelStringId: hotelId });
+  if (hotelObjectId) clauses.push({ hotelId: hotelObjectId });
   if (hotelName) clauses.push({ hotelName: new RegExp(esc(hotelName), "i") });
   if (clauses.length === 0) return {};
   return clauses.length === 1 ? clauses[0] : { $or: clauses };
@@ -52,18 +53,15 @@ function getHotelPrefix(id, name) {
   return clean.slice(0, 3);
 }
 
-function roomPrefixFilter(id) {
-  if (!id) return {};
+function roomPrefixFilter(id, hotelObjectId) {
+  if (!id && !hotelObjectId) return {};
   const prefix = HOTEL_PREFIXES[id];
-  if (prefix) {
-    return {
-      $or: [
-        { hotelStringId: id },
-        { roomNumber: new RegExp("^" + prefix + "-", "i") }
-      ]
-    };
-  }
-  return { hotelStringId: id };
+  const clauses = [];
+  if (id) clauses.push({ hotelStringId: id });
+  if (hotelObjectId) clauses.push({ hotelId: hotelObjectId });
+  if (prefix) clauses.push({ roomNumber: new RegExp("^" + prefix + "-", "i") });
+  if (clauses.length === 0) return {};
+  return clauses.length === 1 ? clauses[0] : { $or: clauses };
 }
 
 // ── POST /api/manager/login ───────────────────────────────
@@ -100,8 +98,8 @@ export const managerLogin = async (req, res, next) => {
 export const getManagerDashboard = async (req, res, next) => {
   try {
     const { scopedHotelId: hotelId, scopedHotelName: hotelName } = req;
-    const hf = hotelScopeFilter(hotelId, hotelName);
-    const rf = { isActive:true, ...roomPrefixFilter(hotelId) };
+    const hf = hotelScopeFilter(hotelId, hotelName, req.scopedHotelObjectId);
+    const rf = { isActive:true, ...roomPrefixFilter(hotelId, req.scopedHotelObjectId) };
     const today = new Date(); today.setHours(0,0,0,0);
     const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate()+1);
     const [rooms, totalBookings, todayBookings, revenueAgg, checkedIn] = await Promise.all([
@@ -134,7 +132,7 @@ export const getManagerStats = getManagerDashboard;
 export const getManagerRooms = async (req, res, next) => {
   try {
     const { status, type, minPrice, maxPrice } = req.query;
-    const filter = { isActive:true, ...roomPrefixFilter(req.scopedHotelId) };
+    const filter = { isActive:true, ...roomPrefixFilter(req.scopedHotelId, req.scopedHotelObjectId) };
     if (status) filter.status = status;
     if (type)   filter.type   = type;
     if (minPrice || maxPrice) {
@@ -157,7 +155,7 @@ export const createManagerRoom = async (req, res, next) => {
       roomNumber = prefix + "-" + roomNumber;
     const room = await Room.findOneAndUpdate(
       { roomNumber },
-      { ...req.body, roomNumber, hotelStringId: hotelId },
+      { ...req.body, roomNumber, hotelStringId: hotelId, hotelId: req.scopedHotelObjectId || null },
       { upsert:true, new:true, runValidators:true, setDefaultsOnInsert:true }
     );
     if (hotelId) {
@@ -213,7 +211,7 @@ export const deleteManagerRoom = async (req, res, next) => {
 export const getManagerBookings = async (req, res, next) => {
   try {
     const { status, guestEmail } = req.query;
-    const filter = { ...hotelScopeFilter(req.scopedHotelId, req.scopedHotelName) };
+    const filter = { ...hotelScopeFilter(req.scopedHotelId, req.scopedHotelName, req.scopedHotelObjectId) };
     if (status) filter.status = status;
     if (guestEmail) {
       const guest = await Guest.findOne({ email: guestEmail });
@@ -305,6 +303,8 @@ export const createWalkInBooking = async (req, res, next) => {
       subtotal: subtotal || totalAmount,
       taxes, discount, totalAmount, paymentMethod, specialRequests,
       hotelName: req.scopedHotelName || "",
+      hotelStringId: req.scopedHotelId || null,
+      hotelId: req.scopedHotelObjectId || null,
       status: "CheckedIn", checkedInAt: new Date(), isWalkIn: true,
     }], { session });
     await Room.findByIdAndUpdate(room._id, { status:"Booked" }, { session });
@@ -321,7 +321,7 @@ export const createWalkInBooking = async (req, res, next) => {
 // ── GET /api/manager/guests ───────────────────────────────
 export const getManagerGuests = async (req, res, next) => {
   try {
-    const hf = hotelScopeFilter(req.scopedHotelId, req.scopedHotelName);
+    const hf = hotelScopeFilter(req.scopedHotelId, req.scopedHotelName, req.scopedHotelObjectId);
     const bookings = await Booking.find(hf).select("guest").lean();
     const guestIds = [...new Set(bookings.map(b => b.guest?.toString()).filter(Boolean))];
     const guests = await Guest.find({ _id:{ $in:guestIds } })
@@ -339,7 +339,7 @@ export const getManagerAdditionalGuests = async (req, res, next) => {
     if (email)     filter.leadGuestEmail = email;
     if (bookingId) filter.bookingId      = bookingId;
     if (!bookingId) {
-      const ids = (await Booking.find(hotelScopeFilter(req.scopedHotelId, req.scopedHotelName)).select("_id").lean()).map(b => b._id);
+      const ids = (await Booking.find(hotelScopeFilter(req.scopedHotelId, req.scopedHotelName, req.scopedHotelObjectId)).select("_id").lean()).map(b => b._id);
       filter.bookingId = { $in: ids };
     }
     const records = await AdditionalGuest.find(filter).sort({ createdAt:-1 });
@@ -351,7 +351,8 @@ export const getManagerAdditionalGuests = async (req, res, next) => {
 export const getManagerHalls = async (req, res, next) => {
   try {
     const filter = { isActive:true };
-    if (req.scopedHotelId) filter.hotelStringId = req.scopedHotelId;
+    if (req.scopedHotelId) filter.$or = [{ hotelStringId: req.scopedHotelId }];
+    if (req.scopedHotelObjectId) filter.$or.push({ hotelId: req.scopedHotelObjectId });
     const halls = await FunctionHall.find(filter).sort({ name:1 });
     res.status(200).json({ success:true, count:halls.length, data:halls });
   } catch (err) { next(err); }
@@ -360,7 +361,12 @@ export const getManagerHalls = async (req, res, next) => {
 // ── POST /api/manager/halls ───────────────────────────────
 export const createManagerHall = async (req, res, next) => {
   try {
-    const hall = await FunctionHall.create({ ...req.body, hotelStringId:req.scopedHotelId, hotelName:req.scopedHotelName });
+    const hall = await FunctionHall.create({
+      ...req.body,
+      hotelStringId: req.scopedHotelId,
+      hotelId: req.scopedHotelObjectId || null,
+      hotelName: req.scopedHotelName,
+    });
     res.status(201).json({ success:true, message:"Hall created", data:hall });
   } catch (err) { next(err); }
 };
@@ -398,11 +404,17 @@ export const createPriceRequest = async (req, res, next) => {
     const existing = await PriceRequest.findOne({ roomId, status:"pending" });
     if (existing) return res.status(409).json({ success:false, message:"A pending price request already exists for this room" });
     const pr = await PriceRequest.create({
-      hotelStringId: req.scopedHotelId, hotelName: req.scopedHotelName,
-      roomId, roomNumber: room.roomNumber,
-      createdBy: req.manager.id, createdByName: req.manager.name,
-      currentPrice: room.pricePerNight, requestedPrice: Number(requestedPrice),
-      reason: reason || "", effectiveDate: effectiveDate ? new Date(effectiveDate) : null,
+      hotelStringId: req.scopedHotelId,
+      hotelId: req.scopedHotelObjectId || null,
+      hotelName: req.scopedHotelName,
+      roomId,
+      roomNumber: room.roomNumber,
+      createdBy: req.manager.id,
+      createdByName: req.manager.name,
+      currentPrice: room.pricePerNight,
+      requestedPrice: Number(requestedPrice),
+      reason: reason || "",
+      effectiveDate: effectiveDate ? new Date(effectiveDate) : null,
     });
     sendNotification({
       role: "admin",
@@ -416,7 +428,9 @@ export const createPriceRequest = async (req, res, next) => {
 // ── GET /api/manager/price-requests ──────────────────────
 export const getManagerPriceRequests = async (req, res, next) => {
   try {
-    const filter = { hotelStringId: req.scopedHotelId };
+    const filter = {};
+    if (req.scopedHotelId) filter.$or = [{ hotelStringId: req.scopedHotelId }];
+    if (req.scopedHotelObjectId) filter.$or = [...(filter.$or || []), { hotelId: req.scopedHotelObjectId }];
     if (req.query.status) filter.status = req.query.status;
     const requests = await PriceRequest.find(filter)
       .populate("roomId",    "roomNumber type pricePerNight")
