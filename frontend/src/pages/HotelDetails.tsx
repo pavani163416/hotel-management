@@ -2,7 +2,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { MapPin, Star, Wifi, Coffee, Wind, Users, BedDouble, Check, LogIn, Waves, Trees, Dumbbell, Utensils, Car, ShieldCheck, Flame, Sunset, Snowflake, Bath, Tv, PocketKnife, Sailboat, Baby, PawPrint, Phone, AlertCircle, Loader2 } from "lucide-react";
 import Layout from "@/components/Layout";
 import { useBooking } from "@/context/BookingContext";
-import { useState, useEffect } from "react";
+import { useState, useEffect, type FormEvent } from "react";
 import { AuthModal } from "@/components/AuthModal";
 
 // Map amenity name → lucide icon
@@ -111,7 +111,7 @@ const HotelDetails = () => {
     nav("/booking");
   };
 
-  const submitReview = async (e: React.FormEvent) => {
+  const handleSubmitReview = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!reviewName.trim() || !reviewText.trim()) {
       setErr("Please fill in your name and review.");
@@ -265,7 +265,7 @@ const HotelDetails = () => {
                 </div>
               ))}
             </div>
-            <form onSubmit={submitReview} className="bg-card border border-border rounded-2xl p-6 h-fit space-y-4">
+            <form onSubmit={handleSubmitReview} className="bg-card border border-border rounded-2xl p-6 h-fit space-y-4">
               <h3 className="font-display text-lg font-bold">Write a Review</h3>
               <input value={reviewName} onChange={(e) => setReviewName(e.target.value)} placeholder="Your name"
                 className="w-full px-4 py-2.5 border border-border rounded-lg outline-none focus:border-accent text-sm" />
