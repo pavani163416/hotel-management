@@ -22,7 +22,7 @@ function normalise(b: any) {
     id:         b.id || b._id || "",
     hotelName:  b.hotel?.name  || b.hotelName  || "LuxeStay",
     hotelCity:  b.hotel?.city  || b.hotelCity  || "",
-    hotelImage: b.hotel?.image || "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&q=60",
+    hotelImage: b.room?.images?.[0] || b.hotel?.image || b.hotelImage || "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&q=60",
     hotelLoc:   b.hotel?.location || "",
     checkIn:    b.search?.checkIn  || (b.checkIn  ? new Date(b.checkIn).toISOString().slice(0, 10)  : ""),
     checkOut:   b.search?.checkOut || (b.checkOut ? new Date(b.checkOut).toISOString().slice(0, 10) : ""),
