@@ -232,18 +232,6 @@ const HotelDetails = () => {
                         <p className="text-xs text-muted-foreground">per night</p>
                       </div>
                       <div className="flex flex-col items-stretch gap-1 md:min-w-[140px]">
-                        {/* Live availability badge */}
-                        {search.checkIn && search.checkOut && availCount[r.id] !== undefined && availCount[r.id] !== null && (
-                          <span className={`text-center text-[11px] font-semibold px-2 py-0.5 rounded-full mb-1 ${
-                            availCount[r.id] === 0
-                              ? "bg-destructive/10 text-destructive border border-destructive/20"
-                              : availCount[r.id]! <= 2
-                                ? "bg-amber-50 text-amber-700 border border-amber-200"
-                                : "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                          }`}>
-                            {availCount[r.id] === 0 ? "Sold Out" : availCount[r.id] === 1 ? "Last room!" : `Only ${availCount[r.id]} rooms left`}
-                          </span>
-                        )}
                         <button onClick={() => select(r.id)} disabled={r.available === 0 || roomStatus[r.id]?.checking}
                           className="bg-accent hover:bg-accent/90 disabled:bg-secondary disabled:text-muted-foreground disabled:cursor-not-allowed text-accent-foreground px-4 py-2.5 rounded-lg font-semibold text-sm transition-base flex items-center justify-center gap-1.5">
                           {roomStatus[r.id]?.checking ? (
