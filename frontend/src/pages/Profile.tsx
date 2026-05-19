@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
-import { User, Save, LogOut, Mail, CheckCircle2 } from "lucide-react";
+import { User, Save, LogOut, Mail, CheckCircle2, Key } from "lucide-react";
 import Layout from "@/components/Layout";
 import { useBooking } from "@/context/BookingContext";
 import { AuthModal } from "@/components/AuthModal";
-import { createNotification } from "@/services/api";
+import { createNotification, changePassword } from "@/services/api";
 import { AssistanceModal } from "@/components/AssistanceModal";
 
 const Profile = () => {
@@ -15,6 +15,12 @@ const Profile = () => {
   const [requesting, setRequesting] = useState(false);
   const [requestSuccess, setRequestSuccess] = useState(false);
   const [assistanceOpen, setAssistanceOpen] = useState(false);
+  const [oldPassword, setOldPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [passwordSaved, setPasswordSaved] = useState(false);
+  const [passwordError, setPasswordError] = useState("");
 
   useEffect(() => { if (user) setForm(user); }, [user]);
 
@@ -66,6 +72,37 @@ const Profile = () => {
     setUser(form as any);
     setSaved(true);
     setTimeout(() => setSaved(false), 2200);
+  };
+
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordError("");
+    if (!oldPassword || !newPassword || !confirmPassword) {
+      setPasswordError("Please fill in all password fields.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordError("New password and confirmation do not match.");
+      return;
+    }
+    if (newPassword.length < 6) {
+      setPasswordError("New password must be at least 6 characters.");
+      return;
+    }
+
+    setPasswordLoading(true);
+    try {
+      await changePassword(oldPassword, newPassword);
+      setPasswordSaved(true);
+      setOldPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setTimeout(() => setPasswordSaved(false), 5000);
+    } catch (err: any) {
+      setPasswordError(err.message || "Unable to update password.");
+    } finally {
+      setPasswordLoading(false);
+    }
   };
 
   if (!user) {
@@ -135,6 +172,29 @@ const Profile = () => {
                 <Save className="w-4 h-4" /> Save Changes
               </button>
               {saved && <span className="text-accent text-sm font-medium animate-fade-in">Profile updated!</span>}
+            </div>
+          </form>
+
+          <form onSubmit={handlePasswordChange} className="bg-card border border-border rounded-2xl p-6 mt-6">
+            <div className="flex items-center justify-between mb-5 gap-3">
+              <div>
+                <h2 className="font-display text-xl font-bold">Change Password</h2>
+                <p className="text-sm text-muted-foreground mt-1">Update your account password securely.</p>
+              </div>
+              <Key className="w-6 h-6 text-accent" />
+            </div>
+            <div className="grid sm:grid-cols-2 gap-5">
+              <Field label="Current Password"><input type="password" value={oldPassword} onChange={(e) => setOldPassword(e.target.value)} className="input" autoComplete="current-password" /></Field>
+              <Field label="New Password"><input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="input" autoComplete="new-password" /></Field>
+              <Field label="Confirm New Password"><input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="input" autoComplete="new-password" /></Field>
+            </div>
+            {passwordError && <p className="text-destructive text-sm mt-4">{passwordError}</p>}
+            <div className="flex items-center gap-3 mt-6">
+              <button type="submit" disabled={passwordLoading}
+                className="bg-accent hover:bg-accent/90 text-accent-foreground px-5 py-2.5 rounded-lg font-semibold text-sm flex items-center gap-2 transition-base">
+                <Save className="w-4 h-4" /> {passwordLoading ? "Updating..." : "Change Password"}
+              </button>
+              {passwordSaved && <span className="text-accent text-sm font-medium animate-fade-in">Password updated!</span>}
             </div>
           </form>
         </div>

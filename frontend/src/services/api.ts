@@ -135,6 +135,16 @@ export const markNotificationRead = async (id: string) => {
   return data;
 };
 
+export const changePassword = async (oldPassword: string, newPassword: string) => {
+  const token = localStorage.getItem("luxe_customer_token");
+  const { data } = await api.post(
+    "/auth/change-password",
+    { oldPassword, newPassword },
+    { headers: token ? { Authorization: `Bearer ${token}` } : {} }
+  );
+  return data;
+};
+
 export const createNotification = async (payload: {
   role: string;
   hotelId?: string;
