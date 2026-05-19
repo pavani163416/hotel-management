@@ -754,9 +754,7 @@ router.get("/bookings", verifyCustomerToken, async (req, res, next) => {
         .populate("room", "roomNumber type pricePerNight images hotelStringId")
         .populate("guest", "name email phone")
         .populate("hotelId", "image")
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limit),
+        .sort({ createdAt: -1 }),
       Booking.countDocuments({ guest: guestId }),
     ]);
 
