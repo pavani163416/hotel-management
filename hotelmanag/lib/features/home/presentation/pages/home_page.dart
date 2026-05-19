@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/main_layout.dart';
+import '../../../../core/widgets/notification_modal.dart';
+import '../../../../core/providers/notification_provider.dart';
 import '../../../../core/providers/favorites_provider.dart';
 import '../../../../core/providers/hotel_provider.dart';
 import '../../../../core/providers/auth_provider.dart';
@@ -329,51 +331,93 @@ class _HomePageState extends State<HomePage> {
                 children: [
                   const SizedBox(height: 10),
                   // Welcome Message
-                  InkWell(
-                    onTap: () => context.push('/profile'),
-                    borderRadius: BorderRadius.circular(50),
-                    child: Row(
-                      children: [
-                        Consumer<AuthProvider>(
-                          builder: (context, auth, _) {
-                            final profileImage = auth.user?.profileImage;
-                            final name = auth.user?.name ?? 'Guest';
-                            return Container(
-                              padding: const EdgeInsets.all(2),
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(color: Colors.white, width: 2),
-                              ),
-                              child: CircleAvatar(
-                                radius: 18,
-                                backgroundImage: (profileImage != null && profileImage.isNotEmpty)
-                                    ? CachedNetworkImageProvider(profileImage)
-                                    : CachedNetworkImageProvider('https://ui-avatars.com/api/?name=$name&background=F5E6CA&color=2C3E50') as ImageProvider,
-                              ),
-                            );
-                          },
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      InkWell(
+                        onTap: () => context.push('/profile'),
+                        borderRadius: BorderRadius.circular(50),
+                        child: Row(
+                          children: [
+                            Consumer<AuthProvider>(
+                              builder: (context, auth, _) {
+                                final profileImage = auth.user?.profileImage;
+                                final name = auth.user?.name ?? 'Guest';
+                                return Container(
+                                  padding: const EdgeInsets.all(2),
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: Colors.white, width: 2),
+                                  ),
+                                  child: CircleAvatar(
+                                    radius: 18,
+                                    backgroundImage: (profileImage != null && profileImage.isNotEmpty)
+                                        ? CachedNetworkImageProvider(profileImage)
+                                        : CachedNetworkImageProvider('https://ui-avatars.com/api/?name=$name&background=F5E6CA&color=2C3E50') as ImageProvider,
+                                  ),
+                                );
+                              },
+                            ),
+                            const SizedBox(width: 12),
+                            Consumer<AuthProvider>(
+                              builder: (context, auth, _) {
+                                final name = auth.user?.name ?? 'Guest';
+                                return Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Welcome back,',
+                                      style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 12),
+                                    ),
+                                    Text(
+                                      name,
+                                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                                    ),
+                                  ],
+                                );
+                              },
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 12),
-                        Consumer<AuthProvider>(
-                          builder: (context, auth, _) {
-                            final name = auth.user?.name ?? 'Guest';
-                            return Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Welcome back,',
-                                  style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 12),
+                      ),
+                      Consumer<NotificationProvider>(
+                        builder: (context, provider, child) {
+                          final unreadCount = provider.unreadCount;
+                          return Stack(
+                            children: [
+                              IconButton(
+                                icon: const Icon(LucideIcons.bell, color: Colors.white, size: 24),
+                                onPressed: () {
+                                  showModalBottomSheet(
+                                    context: context,
+                                    isScrollControlled: true,
+                                    backgroundColor: Colors.transparent,
+                                    builder: (context) => const NotificationModal(),
+                                  );
+                                },
+                              ),
+                              if (unreadCount > 0)
+                                Positioned(
+                                  top: 4,
+                                  right: 4,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(4),
+                                    decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                                    child: Text(
+                                      '$unreadCount',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 8,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
                                 ),
-                                Text(
-                                  name,
-                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
-                                ),
-                              ],
-                            );
-                          },
-                        ),
-                      ],
-                    ),
+                            ],
+                          );
+                        },
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 8),
                   // Main Headline
