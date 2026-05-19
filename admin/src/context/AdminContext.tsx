@@ -36,10 +36,11 @@ function loadStoredSession(): { admin: Admin | null; token: string | null } {
   try {
     const token = localStorage.getItem("luxe_admin_token");
     const admin = JSON.parse(localStorage.getItem("luxe_admin") || "null");
+    // If token is missing or expired, keep the stored admin object so cached UI data remains available.
     if (!token || isTokenExpired(token)) {
+      // Clear only the token (session is not authenticated) but preserve `luxe_admin` in localStorage.
       localStorage.removeItem("luxe_admin_token");
-      localStorage.removeItem("luxe_admin");
-      return { admin: null, token: null };
+      return { admin, token: null };
     }
     return { admin, token };
   } catch {

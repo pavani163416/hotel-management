@@ -17,8 +17,8 @@ api.interceptors.response.use(
   (e) => {
     if (e.response?.status === 401) {
       // Token expired or invalid — clear session and redirect
+      // Remove only the token to avoid wiping cached admin data from localStorage.
       localStorage.removeItem("luxe_admin_token");
-      localStorage.removeItem("luxe_admin");
       if (window.location.pathname !== "/login") {
         window.location.href = "/login";
       }
