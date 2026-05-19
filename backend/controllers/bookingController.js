@@ -205,6 +205,16 @@ export const createBooking = async (req, res, next) => {
     }
 
     // ── 3. Create the booking ──────────────────────────
+    let hotelImage = room.images?.[0] || "";
+    if (!hotelImage && room.hotelId) {
+      const hotel = await Hotel.findById(room.hotelId).session(session);
+      hotelImage = hotel?.image || "";
+    }
+    if (!hotelImage && room.hotelStringId) {
+      const hotel = await Hotel.findOne({ hotelId: room.hotelStringId, isActive: true }).session(session);
+      hotelImage = hotel?.image || "";
+    }
+
     const [booking] = await Booking.create(
       [
         {
@@ -228,6 +238,7 @@ export const createBooking = async (req, res, next) => {
           paymentMethod: paymentMethod || "card",
           specialRequests: specialRequests || "",
           hotelName: req.body.hotelName || resolveHotelName(room.roomNumber),
+          hotelImage,
           hotelId: room.hotelId || null,
           status: "Confirmed",
         },
@@ -404,6 +415,7 @@ export const getAllBookings = async (req, res, next) => {
       Booking.find(filter)
         .populate("room",  "roomNumber type pricePerNight images hotelStringId")
         .populate("guest", "name email phone")
+        .populate("hotelId", "image")
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit),
@@ -413,6 +425,7 @@ export const getAllBookings = async (req, res, next) => {
     const data = bookings.map((b) => ({
       ...b.toJSON(),
       hotelName: b.hotelName || resolveHotelName(b.room?.roomNumber || "") || "LuxeStay",
+      hotelImage: b.hotelImage || b.room?.images?.[0] || b.hotelId?.image || "",
     }));
 
     res.status(200).json({
@@ -436,7 +449,8 @@ export const getBookingById = async (req, res, next) => {
   try {
     const booking = await Booking.findById(req.params.id)
       .populate("room", "roomNumber type pricePerNight images amenities")
-      .populate("guest", "name email phone city");
+      .populate("guest", "name email phone city")
+      .populate("hotelId", "image");
 
     if (!booking) {
       return res.status(404).json({
@@ -445,7 +459,10 @@ export const getBookingById = async (req, res, next) => {
       });
     }
 
-    res.status(200).json({ success: true, data: booking });
+    const response = booking.toJSON();
+    response.hotelImage = response.hotelImage || booking.room?.images?.[0] || booking.hotelId?.image || "";
+
+    res.status(200).json({ success: true, data: response });
   } catch (error) {
     next(error);
   }
