@@ -457,7 +457,7 @@ export const getAllBookings = async (req, res, next) => {
   try {
     const { status, guestEmail } = req.query;
     const page  = Math.max(1, parseInt(req.query.page)  || 1);
-    const limit = Math.min(100, parseInt(req.query.limit) || 20);
+    const limit = Math.min(500, parseInt(req.query.limit) || 20);
     const skip  = (page - 1) * limit;
 
     const filter = {};
