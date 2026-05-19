@@ -195,3 +195,14 @@ export const getManagerHalls = () => api.get("/manager/halls");
 export const createManagerHall = (data: Record<string, any>) => api.post("/manager/halls", data);
 export const updateManagerHall = (id: string, data: Record<string, any>) => api.put(`/manager/halls/${id}`, data);
 
+
+export const reassignManagerBooking = (bookingId: string, newRoomId: string) =>
+  api.put(`/manager/bookings/${bookingId}/reassign`, { newRoomId });
+
+export const getRoomAvailability = (roomId: string, checkIn: string, checkOut: string) =>
+  api.get(`/manager/rooms/${roomId}/availability`, { params: { checkIn, checkOut } });
+
+// Admin hotel map — uses admin-scoped room/booking endpoints
+export const getAdminRooms = (params?: Record<string, any>) => api.get("/rooms", { params });
+export const getAdminBookings = (params?: Record<string, any>) => api.get("/bookings", { params });
+export const updateAdminRoom = (id: string, data: Record<string, any>) => api.patch(`/rooms/${id}`, data);

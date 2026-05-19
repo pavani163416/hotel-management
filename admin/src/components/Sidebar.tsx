@@ -1,7 +1,7 @@
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, Hotel, BedDouble, CalendarCheck,
-  Users, BarChart3, Building2, DollarSign, CreditCard, Lightbulb, ArrowLeft, UserCog, Tag, Flame,
+  Users, BarChart3, Building2, DollarSign, CreditCard, Lightbulb, ArrowLeft, UserCog, Tag, Flame, Map,
 } from "lucide-react";
 import { useAdmin } from "@/context/AdminContext";
 
@@ -9,6 +9,7 @@ const links = [
   { to: "/dashboard",     icon: LayoutDashboard, label: "Dashboard" },
   { to: "/hotels",        icon: Hotel,           label: "Hotels" },
   { to: "/rooms",         icon: BedDouble,       label: "Rooms" },
+  { to: "/hotel-map",     icon: Map,             label: "Hotel Map" },
   { to: "/bookings",      icon: CalendarCheck,   label: "Bookings" },
   { to: "/payments",      icon: CreditCard,      label: "Payments" },
   { to: "/guests",        icon: Users,           label: "Guests" },

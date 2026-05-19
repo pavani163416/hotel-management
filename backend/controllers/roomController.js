@@ -6,13 +6,14 @@ import Room from "../models/Room.js";
 // ─────────────────────────────────────────────────────────
 export const getRooms = async (req, res, next) => {
   try {
-    const { status, type, minPrice, maxPrice, roomNumber } = req.query;
+    const { status, type, minPrice, maxPrice, roomNumber, hotelStringId } = req.query;
 
     const filter = { isActive: true };
 
-    if (roomNumber) filter.roomNumber = String(roomNumber).trim();
-    if (status) filter.status = status;
-    if (type) filter.type = type;
+    if (roomNumber)    filter.roomNumber    = String(roomNumber).trim();
+    if (status)        filter.status        = status;
+    if (type)          filter.type          = type;
+    if (hotelStringId) filter.hotelStringId = String(hotelStringId).trim();
     if (minPrice || maxPrice) {
       filter.pricePerNight = {};
       if (minPrice) filter.pricePerNight.$gte = Number(minPrice);

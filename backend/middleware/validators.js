@@ -41,8 +41,8 @@ export const validateRoom = [
 
 export const validateRoomStatus = [
   body("status")
-    .isIn(["Available", "Booked", "Maintenance"])
-    .withMessage("Status must be Available, Booked, or Maintenance"),
+    .isIn(["Available", "Booked", "Maintenance", "Cleaning", "Blocked"])
+    .withMessage("Status must be Available, Booked, Maintenance, Cleaning, or Blocked"),
 
   handleValidation,
 ];

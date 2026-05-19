@@ -14,6 +14,7 @@ import Dashboard  from "@/pages/Dashboard";
 import Hotels     from "@/pages/Hotels";
 import HotelDetail from "@/pages/HotelDetail";
 import Rooms      from "@/pages/Rooms";
+import HotelMap   from "@/pages/HotelMap";
 import Bookings   from "@/pages/Bookings";
 import Payments   from "@/pages/Payments";
 import Guests     from "@/pages/Guests";
@@ -59,6 +60,7 @@ export default function App() {
                     <Route path="/hotels"      element={<ProtectedRoute><Hotels /></ProtectedRoute>} />
                     <Route path="/hotel/:id"   element={<ProtectedRoute><HotelDetail /></ProtectedRoute>} />
                     <Route path="/rooms"       element={<ProtectedRoute><Rooms /></ProtectedRoute>} />
+                    <Route path="/hotel-map"   element={<ProtectedRoute><HotelMap /></ProtectedRoute>} />
                     <Route path="/bookings"    element={<ProtectedRoute><Bookings /></ProtectedRoute>} />
                     <Route path="/payments"    element={<ProtectedRoute><Payments /></ProtectedRoute>} />
                     <Route path="/guests"      element={<ProtectedRoute><Guests /></ProtectedRoute>} />
