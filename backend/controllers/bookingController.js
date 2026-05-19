@@ -149,6 +149,15 @@ export const createBooking = async (req, res, next) => {
       });
     }
 
+    const guestCount = Number(req.body.guestCount) || 1 + (additionalAdults?.length || 0) + (additionalChildren?.length || 0);
+    if (room.capacity && guestCount > room.capacity) {
+      await session.abortTransaction();
+      return res.status(422).json({
+        success: false,
+        message: `This room only accommodates up to ${room.capacity} guest${room.capacity === 1 ? "" : "s"}. You requested ${guestCount}.`,
+      });
+    }
+
     if (room.status !== "Available") {
       // If the room is Booked, only block dates that overlap an active booking.
       if (room.status === "Booked") {

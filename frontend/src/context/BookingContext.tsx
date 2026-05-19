@@ -13,8 +13,12 @@ function mapHotel(h: any): Hotel {
     description: h.description || "",
     image: h.image || "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&q=80",
     gallery: h.gallery?.length ? h.gallery : [h.image || "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&q=80"],
-    rating: h.rating || 4.5,
-    reviewCount: h.reviewCount || 0,
+    reviewCount: typeof h.reviewCount === "number" ? h.reviewCount : (Array.isArray(h.reviews) ? h.reviews.length : 0),
+    rating: typeof h.rating === "number"
+      ? h.rating
+      : (Array.isArray(h.reviews) && h.reviews.length > 0
+          ? Number((h.reviews.reduce((sum: number, r: any) => sum + (r.rating || 0), 0) / h.reviews.length).toFixed(1))
+          : 4.5),
     pricePerNight: h.pricePerNight || 500,
     originalPrice: h.originalPrice,
     discountPct: h.discountPct,

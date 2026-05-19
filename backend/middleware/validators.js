@@ -85,6 +85,11 @@ export const validateBooking = [
       return true;
     }),
 
+  body("guestCount")
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage("Guest count must be at least 1"),
+
   body("totalAmount")
     .isFloat({ min: 0 })
     .withMessage("Total amount must be a non-negative number"),

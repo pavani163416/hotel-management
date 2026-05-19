@@ -14,6 +14,13 @@ const Booking = () => {
 
   const nights = calcNights(search.checkIn, search.checkOut);
   const subtotal = selectedRoom.price * nights;
+  const maxGuests = Math.max(1, selectedRoom.capacity || 1);
+
+  useEffect(() => {
+    if (search.guests > maxGuests) {
+      setSearch({ ...search, guests: maxGuests });
+    }
+  }, [maxGuests, search, setSearch]);
 
   const adjustNights = (delta: number) => {
     const checkOut = new Date(search.checkOut);
@@ -85,11 +92,13 @@ const Booking = () => {
                     <Minus className="w-3 h-3" />
                   </button>
                   <span className="text-sm text-muted-foreground w-16 text-center">{search.guests} guest{search.guests !== 1 ? "s" : ""}</span>
-                  <button onClick={() => setSearch({ ...search, guests: search.guests + 1 })}
-                    className="w-7 h-7 rounded-full border border-border flex items-center justify-center hover:bg-secondary transition-base">
+                  <button onClick={() => setSearch({ ...search, guests: Math.min(maxGuests, search.guests + 1) })}
+                    disabled={search.guests >= maxGuests}
+                    className="w-7 h-7 rounded-full border border-border flex items-center justify-center hover:bg-secondary disabled:opacity-40 disabled:cursor-not-allowed transition-base">
                     <Plus className="w-3 h-3" />
                   </button>
                 </div>
+                <p className="text-xs text-muted-foreground mt-2">Maximum {maxGuests} guest{maxGuests !== 1 ? "s" : ""} for this room.</p>
               </div>
             </div>
             <div className="flex items-center justify-between">

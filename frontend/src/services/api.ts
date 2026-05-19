@@ -46,6 +46,7 @@ export interface CreateBookingPayload {
   taxes: number;
   discount: number;
   totalAmount: number;
+  guestCount?: number;
   promoCode?: string;
   paymentMethod: "card" | "upi" | "netbanking";
   specialRequests?: string;

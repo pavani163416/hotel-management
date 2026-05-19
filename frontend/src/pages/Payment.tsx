@@ -81,6 +81,12 @@ const Payment = () => {
     setProcessing(true);
 
     try {
+      if (search.guests > (selectedRoom.capacity || 999)) {
+        setError(`This room only accommodates up to ${selectedRoom.capacity || 1} guests.`);
+        setProcessing(false);
+        return;
+      }
+
       if (selectedRoom.id === "default") {
         setError("No valid room selected. Please choose a booking-ready room and try again.");
         setProcessing(false);
@@ -93,6 +99,7 @@ const Payment = () => {
           roomId:         selectedRoom.id,
           roomNumber:     selectedRoom.id,
           hotelId:        selectedHotel.id,
+          guestCount:     search.guests,
           guest:          { name: guest.name, email: user?.email || guest.email, phone: guest.phone, city: "" },
           checkIn:        search.checkIn,
           checkOut:       search.checkOut,
