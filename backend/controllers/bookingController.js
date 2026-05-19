@@ -219,7 +219,7 @@ export const createBooking = async (req, res, next) => {
     }
 
     // ── Check if this guest already has an overlapping booking ──
-    let normalizedEmail = guestData?.email?.toLowerCase().trim();
+    const normalizedEmail = guestData?.email?.toLowerCase().trim() || guestData?.email;
     if (normalizedEmail) {
       const existingGuest = await Guest.findOne({ email: normalizedEmail }).session(session);
       if (existingGuest) {
@@ -249,7 +249,6 @@ export const createBooking = async (req, res, next) => {
     }
 
     // ── 2. Upsert guest (find by email or create new) ──
-    normalizedEmail = guestData.email?.toLowerCase().trim() || guestData.email;
     let guest = await Guest.findOne({ email: normalizedEmail }).session(session);
 
     if (!guest) {
