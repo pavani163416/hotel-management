@@ -33,7 +33,7 @@ const amenityIcon = (name: string) => {
 const HotelDetails = () => {
   const { id } = useParams();
   const nav = useNavigate();
-  const { hotels, user, search, setSelectedHotel, setSelectedRoom, reviews, addReview } = useBooking();
+  const { hotels, user, search, setSelectedHotel, setSelectedRoom, submitReview } = useBooking();
   const hotel = hotels.find((h) => h.id === id);
   const [tab, setTab] = useState<"rooms" | "amenities" | "reviews">("rooms");
   const [reviewText, setReviewText] = useState("");
@@ -64,7 +64,7 @@ const HotelDetails = () => {
 
   if (!hotel) return <Layout><div className="container py-20 text-center">Hotel not found</div></Layout>;
 
-  const allReviews = [...(reviews[hotel.id] || []), ...hotel.reviews];
+  const allReviews = hotel.reviews;
 
   const select = async (roomId: string) => {
     const room = hotel.rooms.find((r) => r.id === roomId);
@@ -111,11 +111,25 @@ const HotelDetails = () => {
     nav("/booking");
   };
 
-  const submitReview = (e: React.FormEvent) => {
+  const submitReview = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!reviewName.trim() || !reviewText.trim()) { setErr("Please fill in your name and review."); return; }
-    addReview(hotel.id, { author: reviewName, rating: reviewRating, comment: reviewText });
-    setReviewName(""); setReviewText(""); setErr("");
+    if (!reviewName.trim() || !reviewText.trim()) {
+      setErr("Please fill in your name and review.");
+      return;
+    }
+
+    try {
+      setErr("");
+      await submitReview(hotel.id, {
+        author: reviewName,
+        rating: reviewRating,
+        comment: reviewText,
+      });
+      setReviewName("");
+      setReviewText("");
+    } catch (error: any) {
+      setErr(error.message || "Could not submit review. Please try again.");
+    }
   };
 
   return (

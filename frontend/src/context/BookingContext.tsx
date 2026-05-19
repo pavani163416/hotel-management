@@ -1,5 +1,4 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
-import { HOTELS } from "@/data/hotels";
 import type { Hotel, Room } from "@/data/hotels";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
@@ -131,8 +130,7 @@ type Ctx = {
   cancelBooking: (id: string) => void;
   user: UserProfile | null;
   setUser: (u: UserProfile | null) => void;
-  reviews: Record<string, { author: string; rating: number; comment: string; date: string }[]>;
-  addReview: (hotelId: string, r: { author: string; rating: number; comment: string }) => void;
+  submitReview: (hotelId: string, review: { author: string; rating: number; comment: string }) => Promise<void>;
 };
 
 const BookingCtx = createContext<Ctx | null>(null);
@@ -167,16 +165,9 @@ export const BookingProvider = ({ children }: { children: ReactNode }) => {
       return raw && raw !== "null" ? JSON.parse(raw) : null;
     } catch { return null; }
   });
-  const [reviews, setReviews] = useState<Record<string, any[]>>(() => {
-    try {
-      const raw = localStorage.getItem("luxe_reviews");
-      return raw ? JSON.parse(raw) : {};
-    } catch { return {}; }
-  });
 
   useEffect(() => { localStorage.setItem("luxe_bookings", JSON.stringify(bookings)); }, [bookings]);
   useEffect(() => { localStorage.setItem("luxe_user", JSON.stringify(user)); }, [user]);
-  useEffect(() => { localStorage.setItem("luxe_reviews", JSON.stringify(reviews)); }, [reviews]);
 
   // Real-time hotel updates via SSE with auto-reconnect, polling fallback
   useEffect(() => {
@@ -189,18 +180,7 @@ export const BookingProvider = ({ children }: { children: ReactNode }) => {
     const applyHotels = (data: any[]) => {
       // MongoDB/API is the source of truth. Empty array means no active hotels.
       if (Array.isArray(data)) {
-        const mapped = data.map(h => {
-          const hotel = mapHotel(h);
-          // If the DB has no reviews, inject the dummy ones from our local data for demo purposes
-          if (hotel.reviews.length === 0) {
-            const local = HOTELS.find((lh) => lh.id === hotel.id);
-            if (local && local.reviews.length > 0) {
-              hotel.reviews = local.reviews;
-              hotel.reviewCount = Math.max(hotel.reviewCount, local.reviewCount);
-            }
-          }
-          return hotel;
-        });
+        const mapped = data.map((h) => mapHotel(h));
         setHotels(mapped);
         localStorage.setItem(HOTEL_CACHE_KEY, JSON.stringify(mapped));
       }
@@ -323,17 +303,35 @@ export const BookingProvider = ({ children }: { children: ReactNode }) => {
   const cancelBooking = (id: string) =>
     setBookings((prev) => prev.map((b) => (b.id === id ? { ...b, status: "Cancelled" as const } : b)));
 
-  const addReview = (hotelId: string, r: { author: string; rating: number; comment: string }) =>
-    setReviews((prev) => ({
-      ...prev,
-      [hotelId]: [{ ...r, date: "Just now" }, ...(prev[hotelId] || [])],
-    }));
+  const submitReview = async (
+    hotelId: string,
+    review: { author: string; rating: number; comment: string }
+  ) => {
+    const base = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+    const response = await fetch(`${base}/hotels/${hotelId}/reviews`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(review),
+    });
+
+    const json = await response.json();
+    if (!response.ok || !json.success) {
+      throw new Error(json.message || "Failed to submit review.");
+    }
+
+    const updatedHotel = mapHotel(json.data);
+    setHotels((prev) => {
+      const next = prev.map((h) => (h.id === updatedHotel.id ? updatedHotel : h));
+      localStorage.setItem(HOTEL_CACHE_KEY, JSON.stringify(next));
+      return next;
+    });
+  };
 
   return (
     <BookingCtx.Provider value={{
       hotels, search, setSearch, selectedHotel, setSelectedHotel,
       selectedRoom, setSelectedRoom, guest, setGuest, promo, applyPromo,
-      bookings, addBooking, cancelBooking, user, setUser, reviews, addReview,
+      bookings, addBooking, cancelBooking, user, setUser, submitReview,
     }}>
       {children}
     </BookingCtx.Provider>

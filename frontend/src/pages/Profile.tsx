@@ -20,9 +20,27 @@ const Profile = () => {
 
   const openAuth = (mode: "signin" | "signup") => { setAuthMode(mode); setAuthOpen(true); };
 
+  const normalizeDate = (value?: string) => {
+    if (!value) return null;
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return null;
+    date.setHours(0, 0, 0, 0);
+    return date;
+  };
+
+  const bookingIsActiveToday = (booking: any) => {
+    const checkIn = normalizeDate(booking.checkIn || booking.search?.checkIn);
+    const checkOut = normalizeDate(booking.checkOut || booking.search?.checkOut);
+    if (!checkIn || !checkOut) return false;
+    const today = normalizeDate(new Date().toISOString().slice(0, 10));
+    return checkIn <= today && today <= checkOut;
+  };
+
+  const hasActiveStay = bookings.some((b) => (b.status === "Confirmed" || b.status === "CheckedIn") && bookingIsActiveToday(b));
+
   const handleRequestAssistance = async (requirement: string) => {
-    if (!user) return;
-    const activeBooking = bookings.find((b) => b.status === "Confirmed") || bookings[0];
+    if (!user || !hasActiveStay) return;
+    const activeBooking = bookings.find((b) => (b.status === "Confirmed" || b.status === "CheckedIn") && bookingIsActiveToday(b)) || bookings[0];
     const hotelId = activeBooking?.hotel?.id || selectedHotel?.id;
 
     setRequesting(true);
@@ -82,13 +100,14 @@ const Profile = () => {
           </div>
           <div className="flex items-center gap-3">
             <button
-              onClick={() => setAssistanceOpen(true)}
-              disabled={requesting || requestSuccess}
+              onClick={() => hasActiveStay && setAssistanceOpen(true)}
+              disabled={requesting || requestSuccess || !hasActiveStay}
+              title={!hasActiveStay ? "Assistance is available only during your stay" : undefined}
               className={`flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg transition-all ${
                 requestSuccess 
                   ? "bg-green-500/10 text-green-600 border border-green-500/20" 
                   : "bg-accent/10 text-accent hover:bg-accent/20 border border-accent/20"
-              }`}
+              } ${!hasActiveStay ? "opacity-50 cursor-not-allowed" : ""}`}
             >
               {requestSuccess ? (
                 <><CheckCircle2 className="w-4 h-4" /> Sent!</>

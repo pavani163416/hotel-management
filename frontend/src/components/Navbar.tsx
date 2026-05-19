@@ -150,9 +150,24 @@ const Navbar = () => {
       setRequesting(false);
     }
   };
+
+  const normalizeDate = (value?: string) => {
+    if (!value) return null;
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return null;
+    date.setHours(0, 0, 0, 0);
+    return date;
+  };
+
+  const bookingIsActiveToday = (booking: any) => {
+    const checkIn = normalizeDate(booking.checkIn || booking.search?.checkIn);
+    const checkOut = normalizeDate(booking.checkOut || booking.search?.checkOut);
+    if (!checkIn || !checkOut) return false;
+    const today = normalizeDate(new Date().toISOString().slice(0, 10));
+    return checkIn <= today && today <= checkOut;
+  };
+
   const unreadCount = notifications.filter((n) => !n.isRead).length;
-  // Only allow assistance if user has an active (Confirmed or CheckedIn) booking
-  const hasActiveBooking = bookings.some((b) => b.status === "Confirmed" || b.status === "CheckedIn");
 
   useEffect(() => {
     if (!user?.email) {
@@ -172,13 +187,13 @@ const Navbar = () => {
     fetch(`${base}/bookings?guestEmail=${encodeURIComponent(user.email)}&limit=20`, { headers })
       .then((r) => r.json())
       .then((d) => {
-        const active = (d?.data || []).some(
-          (b: any) => b.status === "Confirmed" || b.status === "CheckedIn"
+        const active = (d?.data || []).some((b: any) =>
+          (b.status === "Confirmed" || b.status === "CheckedIn") && bookingIsActiveToday(b)
         );
-        setHasActiveStay(active || bookings.some((b) => b.status === "Confirmed" || b.status === "CheckedIn"));
+        setHasActiveStay(active || bookings.some((b) => (b.status === "Confirmed" || b.status === "CheckedIn") && bookingIsActiveToday(b)));
       })
       .catch(() => {
-        setHasActiveStay(bookings.some((b) => b.status === "Confirmed" || b.status === "CheckedIn"));
+        setHasActiveStay(bookings.some((b) => (b.status === "Confirmed" || b.status === "CheckedIn") && bookingIsActiveToday(b)));
       });
 
     const onNotification = (data: NotificationItem) => {
@@ -189,7 +204,7 @@ const Navbar = () => {
     return () => {
       socket.off("notification", onNotification);
     };
-  }, [user?.email]);
+  }, [user?.email, bookings]);
 
   const openNotification = (n: NotificationItem) => {
     if (!n.isRead) {

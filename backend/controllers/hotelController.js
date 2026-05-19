@@ -99,6 +99,40 @@ export const getHotelById = async (req, res, next) => {
   }
 };
 
+// POST /api/hotels/:id/reviews
+export const addReviewToHotel = async (req, res, next) => {
+  try {
+    const { author, rating, comment } = req.body;
+    if (!author || !rating || !comment) {
+      return res.status(422).json({ success: false, message: "author, rating and comment are required." });
+    }
+
+    const hotel = await Hotel.findOne({ hotelId: req.params.id, isActive: true });
+    if (!hotel) {
+      return res.status(404).json({ success: false, message: "Hotel not found" });
+    }
+
+    const numericRating = Number(rating);
+    const review = {
+      author: String(author).trim(),
+      rating: numericRating,
+      comment: String(comment).trim(),
+      date: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+    };
+
+    hotel.reviews.push(review);
+    hotel.reviewCount = (hotel.reviewCount || 0) + 1;
+    const totalRating = (hotel.rating || 0) * ((hotel.reviewCount || 1) - 1) + numericRating;
+    hotel.rating = Number((totalRating / hotel.reviewCount).toFixed(1));
+    await hotel.save();
+
+    broadcastHotels();
+    res.status(201).json({ success: true, message: "Review added", data: hotel });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // POST /api/hotels (admin only)
 export const createHotel = async (req, res, next) => {
   try {
