@@ -351,8 +351,19 @@ router.post("/login", authLimiter, async (req, res, next) => {
     user.lastLogin = new Date();
     await user.save();
 
-    // Ensure guest record is linked
-    if (!user.guestId) {
+    // Ensure guest record is linked and actually exists
+    let guestIdValid = false;
+    if (user.guestId) {
+      const guestExists = await Guest.findById(user.guestId);
+      if (guestExists) {
+        guestIdValid = true;
+      } else {
+        user.guestId = undefined; // Reset stale guestId
+        await user.save();
+      }
+    }
+
+    if (!user.guestId || !guestIdValid) {
       let guest = await Guest.findOne({ email: normalEmail });
       if (!guest) {
         // Create guest record if it doesn't exist
@@ -718,7 +729,15 @@ router.get("/bookings", verifyCustomerToken, async (req, res, next) => {
     // Use guestId from token to find bookings
     let guestId = req.customer.guestId;
     
-    // If guestId is missing from token, try to find guest by email
+    // Validate that the guest record actually exists to resolve stale tokens after a DB clear
+    if (guestId) {
+      const guestExists = await Guest.findById(guestId);
+      if (!guestExists) {
+        guestId = null;
+      }
+    }
+    
+    // If guestId is missing or stale, try to find guest by email
     if (!guestId && req.customer.email) {
       const guest = await Guest.findOne({ email: req.customer.email.toLowerCase() });
       if (guest) {
