@@ -10,6 +10,7 @@
 
 import jwt    from "jsonwebtoken";
 import logger from "../utils/logger.js";
+import Hotel  from "../models/Hotel.js";
 
 const getSecret = () => {
   const secret = process.env.JWT_SECRET;
@@ -92,11 +93,16 @@ export const isAssignedManager = (req, res, next) => {
 };
 
 // ── scopeToHotel ──────────────────────────────────────────
-export const scopeToHotel = (req, res, next) => {
+export const scopeToHotel = async (req, res, next) => {
   if (req.manager?.role === "Manager" && req.manager?.assignedHotelId) {
     req.scopedHotelId       = req.manager.assignedHotelId;
     req.scopedHotelName     = req.manager.assignedHotelName;
     req.scopedHotelObjectId = req.manager.hotelObjectId || null;
+
+    if (!req.scopedHotelObjectId) {
+      const hotel = await Hotel.findOne({ hotelId: req.manager.assignedHotelId }).select("_id").lean();
+      if (hotel) req.scopedHotelObjectId = hotel._id;
+    }
   }
   next();
 };
