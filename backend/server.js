@@ -62,6 +62,62 @@ import("./models/Booking.js").then(async ({ default: Booking }) => {
   } catch { /* non-blocking */ }
 }).catch(() => {});
 
+// ── Startup: sync hotel embedded rooms → standalone Room collection ──────────
+// Ensures every room visible in the admin panel is also visible in the manager
+// panel. Runs on every startup — safe to re-run (upserts, never duplicates).
+import("./models/Hotel.js").then(async ({ default: Hotel }) => {
+  const Room = (await import("./models/Room.js")).default;
+  const BED_TYPE_MAP = {
+    "1 King Bed": "King", "2 King Beds": "King", "King": "King",
+    "1 Queen Bed": "Queen", "Queen": "Queen",
+    "2 Twin Beds": "Twin", "Twin": "Twin",
+    "1 King Bed + Sofa": "King",
+    "Single": "Single", "Double": "Double",
+  };
+  try {
+    const hotels = await Hotel.find({ isActive: true }).lean();
+    let synced = 0;
+    for (const hotel of hotels) {
+      if (!hotel.rooms?.length) continue;
+      for (const embRoom of hotel.rooms) {
+        if (!embRoom.id) continue;
+        const nameLower = (embRoom.name || "").toLowerCase();
+        let type = "Standard";
+        if (nameLower.includes("suite"))      type = "Suite";
+        else if (nameLower.includes("deluxe")) type = "Deluxe";
+        else if (nameLower.includes("penthouse")) type = "Penthouse";
+        else if (nameLower.includes("villa"))  type = "Villa";
+        const bedType = BED_TYPE_MAP[embRoom.bed] || "King";
+        await Room.findOneAndUpdate(
+          { roomNumber: embRoom.id },
+          {
+            $setOnInsert: {
+              roomNumber:    embRoom.id,
+              type,
+              description:   embRoom.description || `${embRoom.name} at ${hotel.name}`,
+              pricePerNight: embRoom.price || 0,
+              capacity:      embRoom.capacity || 2,
+              bedType,
+              amenities:     embRoom.features || [],
+              status:        (embRoom.available ?? 1) > 0 ? "Available" : "Booked",
+              isActive:      true,
+            },
+            $set: {
+              hotelStringId: hotel.hotelId,
+              hotelId:       hotel._id,
+            },
+          },
+          { upsert: true, new: true }
+        );
+        synced++;
+      }
+    }
+    if (synced) logger.info(`Startup sync: ensured ${synced} hotel room(s) in standalone collection`);
+  } catch (err) {
+    logger.warn("Startup room sync failed (non-blocking)", { error: err.message });
+  }
+}).catch(() => {});
+
 const app = express();
 
 const isProd     = process.env.NODE_ENV === "production";
