@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   CreditCard, Smartphone, Building2, Lock,
-  AlertCircle, Loader2, CheckCircle2, ShieldCheck, Info,
+  AlertCircle, Loader2, ShieldCheck, Info,
 } from "lucide-react";
 import Layout from "@/components/Layout";
 import Stepper from "@/components/Stepper";
@@ -33,7 +33,6 @@ const Payment = () => {
   const [govtId, setGovtId]         = useState("");
   const [error, setError]           = useState("");
   const [processing, setProcessing] = useState(false);
-  const [savedToDb, setSavedToDb]   = useState(false);
 
   useEffect(() => {
     if (!selectedHotel || !selectedRoom || !guest) nav("/hotels");
@@ -117,7 +116,6 @@ const Payment = () => {
           hotelName:      selectedHotel.name,
         });
         mongoBookingId = response.data._id;
-        setSavedToDb(true);
       } catch (bookingErr: any) {
         // Surface real errors (room unavailable, etc.) — don't silently proceed
         const msg = bookingErr?.message || "";
@@ -127,7 +125,6 @@ const Payment = () => {
           return;
         }
         // Network/server error — still proceed with local booking so user isn't stuck
-        setSavedToDb(false);
       }
 
       const booking: Booking = {
@@ -155,13 +152,6 @@ const Payment = () => {
         <p className="text-muted-foreground mb-8 flex items-center gap-1.5">
           <Lock className="w-4 h-4" /> Secure 256-bit SSL encrypted
         </p>
-
-        {savedToDb && (
-          <div className="mb-6 flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-xl text-green-700 text-sm">
-            <CheckCircle2 className="w-4 h-4 shrink-0" />
-            Booking saved to database — your reservation is secured.
-          </div>
-        )}
 
         <div className="grid lg:grid-cols-[1fr_380px] gap-8">
           <form onSubmit={pay} className="space-y-6">
@@ -302,20 +292,6 @@ const Payment = () => {
             <div className="flex justify-between items-end pt-4 mt-4 border-t border-border">
               <span className="font-semibold">Total</span>
               <span className="font-display text-2xl font-bold text-primary">${total.toLocaleString()}</span>
-            </div>
-            <div className="mt-5 pt-5 border-t border-border">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-                Saved to Database on Payment
-              </p>
-              <ul className="space-y-1.5 text-xs text-muted-foreground">
-                <li className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-accent shrink-0" /> Guest profile (name, email, phone)</li>
-                <li className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-accent shrink-0" />
-                  {guest.adults?.length ? `${guest.adults.length} additional adult(s)` : "Lead guest only"}
-                </li>
-                {guest.children?.length ? <li className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-accent shrink-0" /> {guest.children.length} child(ren)</li> : null}
-                <li className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-accent shrink-0" /> Booking dates & pricing</li>
-                <li className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-accent shrink-0" /> Room marked as Booked</li>
-              </ul>
             </div>
           </aside>
         </div>
