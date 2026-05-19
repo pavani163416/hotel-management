@@ -7,6 +7,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/main_layout.dart';
 import '../../../../core/widgets/stepper_widget.dart';
 import '../../../../core/providers/booking_provider.dart';
+import '../../../../core/providers/notification_provider.dart';
 
 class PaymentPage extends StatefulWidget {
   const PaymentPage({super.key});
@@ -82,7 +83,15 @@ class _PaymentPageState extends State<PaymentPage> {
       
       final success = await provider.completeBooking(_selectedMethod);
       if (success) {
-        if (mounted) context.push('/confirmation');
+        if (mounted) {
+          try {
+            context.read<NotificationProvider>().addNotification(
+              'Your booking is confirmed',
+              isCancelled: false,
+            );
+          } catch (_) {}
+          context.push('/confirmation');
+        }
       } else {
         if (mounted) {
           final errorMsg = provider.error ?? 'Booking failed';

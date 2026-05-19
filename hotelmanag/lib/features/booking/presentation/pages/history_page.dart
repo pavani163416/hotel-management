@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/main_layout.dart';
 import '../../../../core/providers/booking_provider.dart';
+import '../../../../core/providers/notification_provider.dart';
 import '../../../../core/providers/hotel_provider.dart';
 import '../../../../shared/domain/entities/hotel_entity.dart';
 import '../../domain/entities/booking_entity.dart';
@@ -425,9 +426,15 @@ class BookingListItem extends StatelessWidget {
             ElevatedButton(
               onPressed: selectedReason == null ? null : () async {
                 Navigator.pop(context);
-                await context.read<BookingProvider>().cancelBooking(booking.id);
-                if (context.mounted) {
-                   ScaffoldMessenger.of(context).showSnackBar(
+                final success = await context.read<BookingProvider>().cancelBooking(booking.id);
+                if (success && context.mounted) {
+                  try {
+                    context.read<NotificationProvider>().addNotification(
+                      'Your booking has been cancelled',
+                      isCancelled: true,
+                    );
+                  } catch (_) {}
+                  ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Booking cancelled successfully'), behavior: SnackBarBehavior.floating),
                   );
                 }

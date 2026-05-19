@@ -4,6 +4,8 @@ import 'package:lucide_icons/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 import '../theme/app_theme.dart';
 import 'notification_modal.dart';
+import '../providers/notification_provider.dart';
+import 'package:provider/provider.dart';
 
 class MainLayout extends StatelessWidget {
   final Widget child;
@@ -83,29 +85,42 @@ class MainLayout extends StatelessWidget {
         ),
       ),
       actions: [
-        Stack(
-          children: [
-            IconButton(
-              icon: const Icon(LucideIcons.bell, color: AppTheme.primaryColor, size: 22),
-              onPressed: () {
-                showModalBottomSheet(
-                  context: context,
-                  isScrollControlled: true,
-                  backgroundColor: Colors.transparent,
-                  builder: (context) => const NotificationModal(),
-                );
-              },
-            ),
-            Positioned(
-              top: 8,
-              right: 8,
-              child: Container(
-                padding: const EdgeInsets.all(4),
-                decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
-                child: const Text('2', style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold)),
-              ),
-            ),
-          ],
+        Consumer<NotificationProvider>(
+          builder: (context, provider, child) {
+            final unreadCount = provider.unreadCount;
+            return Stack(
+              children: [
+                IconButton(
+                  icon: const Icon(LucideIcons.bell, color: AppTheme.primaryColor, size: 22),
+                  onPressed: () {
+                    showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.transparent,
+                      builder: (context) => const NotificationModal(),
+                    );
+                  },
+                ),
+                if (unreadCount > 0)
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                      child: Text(
+                        '$unreadCount',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 8,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            );
+          },
         ),
         IconButton(
           icon: const Icon(LucideIcons.user, color: AppTheme.primaryColor, size: 22),

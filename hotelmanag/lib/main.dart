@@ -10,6 +10,8 @@ import 'core/providers/theme_provider.dart';
 import 'dart:ui';
 import 'core/utils/injection_container.dart' as di;
 
+import 'core/providers/notification_provider.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await di.init();
@@ -21,6 +23,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => di.sl<AuthProvider>()),
         ChangeNotifierProvider(create: (_) => di.sl<HotelProvider>()),
         ChangeNotifierProvider(create: (_) => di.sl<BookingProvider>()),
+        ChangeNotifierProvider(create: (_) => NotificationProvider()),
       ],
       child: const MyApp(),
     ),
