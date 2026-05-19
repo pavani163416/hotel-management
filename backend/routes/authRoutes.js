@@ -734,19 +734,25 @@ router.get("/bookings", verifyCustomerToken, async (req, res, next) => {
       Booking.find({ guest: guestId })
         .populate("room", "roomNumber type pricePerNight images hotelStringId")
         .populate("guest", "name email phone")
+        .populate("hotelId", "image")
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit),
       Booking.countDocuments({ guest: guestId }),
     ]);
 
+    const data = bookings.map((b) => ({
+      ...b.toJSON(),
+      hotelImage: b.hotelImage || b.room?.images?.[0] || b.hotelId?.image || "",
+    }));
+
     res.json({
       success: true,
-      count:   bookings.length,
+      count:   data.length,
       total,
       page,
       pages:   Math.ceil(total / limit),
-      data:    bookings,
+      data,
     });
   } catch (err) { next(err); }
 });
