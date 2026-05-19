@@ -389,75 +389,98 @@ router.patch("/cancellations/:id", protect, async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-// ── One-time migration: tag rooms with hotelStringId ─────
+// ── One-time migration: sync hotel embedded rooms → standalone Room collection ─
 // POST /api/admin/migrate/fix-room-hotel-ids
-// Call once after deploy to fix existing rooms that have no hotelStringId set.
+// Fixes two problems:
+//   1. Tags existing standalone rooms with correct hotelStringId
+//   2. Syncs hotel embedded rooms into the standalone Room collection
 router.post("/migrate/fix-room-hotel-ids", protect, async (req, res, next) => {
   try {
-    const KNOWN_PREFIXES = {
-      hdl: "h1", tas: "h2", cbr: "h3", apl: "h4",
-      tgm: "h5", scs: "h6", swg: "h7",
+    const BED_TYPE_MAP = {
+      "1 King Bed": "King", "2 King Beds": "King", "King": "King",
+      "1 Queen Bed": "Queen", "Queen": "Queen",
+      "2 Twin Beds": "Twin", "Twin": "Twin",
+      "1 King Bed + Sofa": "King",
+      "Single": "Single", "Double": "Double",
     };
 
-    // Build prefix → { hotelStringId, hotelObjectId } map from DB hotels
     const hotels = await Hotel.find({}).lean();
-    const prefixMap = {};
+    let synced = 0, tagged = 0, skipped = 0;
+    const report = [];
 
-    // Seed known prefixes
-    for (const [prefix, hotelId] of Object.entries(KNOWN_PREFIXES)) {
-      const hotel = hotels.find((h) => h.hotelId === hotelId);
-      prefixMap[prefix] = { hotelStringId: hotelId, hotelObjectId: hotel?._id || null };
-    }
-
-    // Derive prefixes for all hotels (including unknown ones like swagruha)
     for (const hotel of hotels) {
+      // ── Step 1: Sync embedded rooms → standalone Room collection ──
+      if (hotel.rooms && hotel.rooms.length > 0) {
+        for (const embRoom of hotel.rooms) {
+          const roomNumber = embRoom.id;
+          if (!roomNumber) continue;
+
+          const existing = await Room.findOne({ roomNumber }).lean();
+          if (existing) {
+            // Just ensure hotelStringId is set
+            if (existing.hotelStringId !== hotel.hotelId) {
+              await Room.updateOne({ roomNumber }, { $set: { hotelStringId: hotel.hotelId, hotelId: hotel._id } });
+              tagged++;
+            } else {
+              skipped++;
+            }
+            continue;
+          }
+
+          // Derive type from room name
+          const nameLower = (embRoom.name || "").toLowerCase();
+          let type = "Standard";
+          if (nameLower.includes("suite")) type = "Suite";
+          else if (nameLower.includes("deluxe")) type = "Deluxe";
+          else if (nameLower.includes("penthouse")) type = "Penthouse";
+          else if (nameLower.includes("villa")) type = "Villa";
+
+          const bedRaw = embRoom.bed || "King";
+          const bedType = BED_TYPE_MAP[bedRaw] || "King";
+
+          await Room.create({
+            roomNumber,
+            type,
+            description:   embRoom.description || `${embRoom.name} at ${hotel.name}`,
+            pricePerNight: embRoom.price || 0,
+            capacity:      embRoom.capacity || 2,
+            bedType,
+            amenities:     embRoom.features || [],
+            status:        (embRoom.available ?? 1) > 0 ? "Available" : "Booked",
+            isActive:      true,
+            hotelStringId: hotel.hotelId,
+            hotelId:       hotel._id,
+          });
+          synced++;
+          report.push(`Created: ${roomNumber} → ${hotel.name} (${hotel.hotelId})`);
+        }
+      }
+
+      // ── Step 2: Tag existing standalone rooms by prefix ──
       const clean = hotel.name.toLowerCase().replace(/[^a-z0-9\s]/g, "");
       const words = clean.split(/\s+/).filter(Boolean);
       let prefix;
-      if (words.length >= 2 && words[0].length >= 3) {
-        prefix = words[0].slice(0, 3);
-      } else if (words.length >= 2) {
-        prefix = words.map((w) => w[0]).join("").slice(0, 4);
-      } else {
-        prefix = clean.slice(0, 3);
-      }
-      if (!prefixMap[prefix]) {
-        prefixMap[prefix] = { hotelStringId: hotel.hotelId, hotelObjectId: hotel._id };
+      if (words.length >= 2 && words[0].length >= 3) prefix = words[0].slice(0, 3);
+      else if (words.length >= 2) prefix = words.map((w) => w[0]).join("").slice(0, 4);
+      else prefix = clean.slice(0, 3);
+
+      const prefixRooms = await Room.find({
+        roomNumber: new RegExp(`^${prefix}-`, "i"),
+        hotelStringId: { $ne: hotel.hotelId },
+      }).lean();
+
+      for (const room of prefixRooms) {
+        await Room.updateOne({ _id: room._id }, { $set: { hotelStringId: hotel.hotelId, hotelId: hotel._id } });
+        tagged++;
+        report.push(`Tagged: ${room.roomNumber} → ${hotel.hotelId}`);
       }
     }
 
-    // Fetch all rooms
-    const rooms = await Room.find({}).lean();
-    let updated = 0, skipped = 0, unmatched = 0;
-    const unmatchedRooms = [];
-
-    for (const room of rooms) {
-      const match = room.roomNumber?.match(/^([a-z]+)-/i);
-      if (!match) { unmatched++; unmatchedRooms.push(room.roomNumber); continue; }
-
-      const prefix = match[1].toLowerCase();
-      const hotelInfo = prefixMap[prefix];
-
-      if (!hotelInfo) {
-        unmatched++;
-        unmatchedRooms.push(room.roomNumber);
-        continue;
-      }
-
-      if (room.hotelStringId === hotelInfo.hotelStringId) { skipped++; continue; }
-
-      const updateData = { hotelStringId: hotelInfo.hotelStringId };
-      if (hotelInfo.hotelObjectId) updateData.hotelId = hotelInfo.hotelObjectId;
-
-      await Room.updateOne({ _id: room._id }, { $set: updateData });
-      updated++;
-    }
-
-    logger.info("Room hotel ID migration complete", { updated, skipped, unmatched });
+    logger.info("Room migration complete", { synced, tagged, skipped });
     res.json({
       success: true,
-      message: `Migration complete. Updated: ${updated}, Already correct: ${skipped}, Unmatched: ${unmatched}`,
-      data: { updated, skipped, unmatched, unmatchedRooms },
+      message: `Done. Synced from hotel: ${synced}, Tagged by prefix: ${tagged}, Already correct: ${skipped}`,
+      data: { synced, tagged, skipped, report },
     });
   } catch (e) { next(e); }
 });
