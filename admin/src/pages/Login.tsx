@@ -18,6 +18,8 @@ export default function Login() {
   const [resetError, setResetError] = useState("");
   const [resetLoading, setResetLoading] = useState(false);
 
+  const supportEmail = import.meta.env.VITE_SUPPORT_EMAIL || "admin@luxestay.com";
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -304,11 +306,13 @@ export default function Login() {
             <div className="mt-6 text-center">
               <p className="text-xs text-dim">
                 Need technical assistance?{" "}
-                <button className="text-gold transition-colors"
+                <a className="text-gold transition-colors"
+                  href={`mailto:${supportEmail}?subject=Support%20Request%20for%20LuxeStay%20Admin&body=Hello%20System%20Admin,%0D%0A%0D%0AI%20need%20help%20with%20the%20LuxeStay%20Admin%20portal.%20Please%20contact%20me%20at%20this%20address.%0D%0A%0D%0AThanks,%0D%0A`}
                   onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = "#e8c96a"}
-                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = "#d4a843"}>
+                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = "#d4a843"}
+                >
                   Contact System Admin
-                </button>
+                </a>
               </p>
             </div>
           </div>
