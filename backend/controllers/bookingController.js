@@ -214,8 +214,30 @@ export const createBooking = async (req, res, next) => {
       await session.abortTransaction();
       return res.status(409).json({
         success: false,
-        message: `Room is currently occupied until ${activeBooking.checkOut.toISOString().slice(0, 10)}. Please choose different dates or another room.`,
+        message: `This room is already booked for these dates! (Occupied until ${activeBooking.checkOut.toISOString().slice(0, 10)})`,
       });
+    }
+
+    // ── Check if this guest already has an overlapping booking ──
+    const normalizedEmail = guestData?.email?.toLowerCase().trim();
+    if (normalizedEmail) {
+      const existingGuest = await Guest.findOne({ email: normalizedEmail }).session(session);
+      if (existingGuest) {
+        const guestOverlappingBooking = await Booking.findOne({
+          guest: existingGuest._id,
+          status: { $in: ["Confirmed", "CheckedIn"] },
+          checkIn:  { $lt: new Date(checkOut) },
+          checkOut: { $gt: new Date(checkIn) },
+        }).session(session);
+
+        if (guestOverlappingBooking) {
+          await session.abortTransaction();
+          return res.status(409).json({
+            success: false,
+            message: `You have already booked a room for these dates!`,
+          });
+        }
+      }
     }
 
     if (room.status === "Maintenance" || room.status === "Blocked") {
