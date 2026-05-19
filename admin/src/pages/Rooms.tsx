@@ -178,6 +178,7 @@ export default function Rooms() {
       amenities:     features,
       status:        "Available",
       floor:         Number(form.floor) || 1,
+      hotelStringId: selectedHotelId,   // link room to hotel for manager panel scoping
     };
 
     try {

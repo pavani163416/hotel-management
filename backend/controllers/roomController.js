@@ -55,13 +55,20 @@ export const getRoomById = async (req, res, next) => {
 // ─────────────────────────────────────────────────────────
 // POST /api/rooms
 // Creates a new room or upserts if roomNumber already exists
+// Accepts optional hotelStringId and hotelId to link room to a hotel
 // ─────────────────────────────────────────────────────────
 export const createRoom = async (req, res, next) => {
   try {
+    const { roomNumber, hotelStringId, hotelId, ...rest } = req.body;
+
+    const updateData = { ...rest };
+    if (hotelStringId !== undefined) updateData.hotelStringId = hotelStringId;
+    if (hotelId !== undefined)       updateData.hotelId       = hotelId;
+
     // Use upsert so re-adding the same room doesn't fail with duplicate key
     const room = await Room.findOneAndUpdate(
-      { roomNumber: req.body.roomNumber },
-      req.body,
+      { roomNumber },
+      { ...updateData, roomNumber },
       { upsert: true, new: true, runValidators: true, setDefaultsOnInsert: true }
     );
 

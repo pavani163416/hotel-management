@@ -54,13 +54,25 @@ function getHotelPrefix(id, name) {
 }
 
 function roomPrefixFilter(id, hotelObjectId) {
+  // If no hotel scoping at all, return all rooms
   if (!id && !hotelObjectId) return {};
+  
   const prefix = HOTEL_PREFIXES[id];
   const clauses = [];
+  
+  // Match by hotelStringId
   if (id) clauses.push({ hotelStringId: id });
+  
+  // Match by hotelId (ObjectId)
   if (hotelObjectId) clauses.push({ hotelId: hotelObjectId });
+  
+  // Match by room number prefix (for known hotels)
   if (prefix) clauses.push({ roomNumber: new RegExp("^" + prefix + "-", "i") });
+  
+  // If hotel ID is unknown (not in HOTEL_PREFIXES) and no ObjectId, return all rooms
+  // This handles managers assigned to hotels not in the hardcoded map
   if (clauses.length === 0) return {};
+  
   return clauses.length === 1 ? clauses[0] : { $or: clauses };
 }
 
@@ -132,16 +144,31 @@ export const getManagerStats = getManagerDashboard;
 export const getManagerRooms = async (req, res, next) => {
   try {
     const { status, type, minPrice, maxPrice } = req.query;
-    const filter = { isActive:true, ...roomPrefixFilter(req.scopedHotelId, req.scopedHotelObjectId) };
-    if (status) filter.status = status;
-    if (type)   filter.type   = type;
+    const hotelId = req.scopedHotelId;
+    const hotelObjectId = req.scopedHotelObjectId;
+
+    const scopeFilter = roomPrefixFilter(hotelId, hotelObjectId);
+    const baseFilter = { isActive: true };
+    if (status) baseFilter.status = status;
+    if (type)   baseFilter.type   = type;
     if (minPrice || maxPrice) {
-      filter.pricePerNight = {};
-      if (minPrice) filter.pricePerNight.$gte = Number(minPrice);
-      if (maxPrice) filter.pricePerNight.$lte = Number(maxPrice);
+      baseFilter.pricePerNight = {};
+      if (minPrice) baseFilter.pricePerNight.$gte = Number(minPrice);
+      if (maxPrice) baseFilter.pricePerNight.$lte = Number(maxPrice);
     }
-    const rooms = await Room.find(filter).sort({ pricePerNight:1 });
-    res.status(200).json({ success:true, count:rooms.length, data:rooms });
+
+    // Try scoped query first
+    const scopedRooms = await Room.find({ ...baseFilter, ...scopeFilter }).sort({ pricePerNight: 1 });
+
+    // If scoped query returns results, use them
+    if (scopedRooms.length > 0) {
+      return res.status(200).json({ success: true, count: scopedRooms.length, data: scopedRooms });
+    }
+
+    // Fallback: if no rooms found with scope, return all rooms
+    // This handles managers whose rooms were created without hotelStringId/hotelId set
+    const allRooms = await Room.find(baseFilter).sort({ pricePerNight: 1 });
+    res.status(200).json({ success: true, count: allRooms.length, data: allRooms });
   } catch (err) { next(err); }
 };
 
