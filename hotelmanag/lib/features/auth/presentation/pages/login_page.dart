@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/custom_text_field.dart';
 import '../../../../core/providers/auth_provider.dart';
+import '../../../../core/providers/booking_provider.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -108,7 +109,10 @@ class _LoginPageState extends State<LoginPage> {
                         : () async {
                             await auth.login(_emailController.text, _passwordController.text);
                             if (auth.isAuthenticated) {
-                              if (context.mounted) context.go('/');
+                              if (context.mounted) {
+                                context.read<BookingProvider>().fetchMyBookings();
+                                context.go('/');
+                              }
                             } else if (auth.error != null) {
                               if (context.mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(

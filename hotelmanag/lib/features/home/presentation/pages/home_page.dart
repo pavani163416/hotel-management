@@ -33,7 +33,10 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(() => context.read<HotelProvider>().fetchHotels());
+    Future.microtask(() {
+      context.read<HotelProvider>().fetchHotels();
+      context.read<BookingProvider>().fetchMyBookings();
+    });
   }
 
   @override
