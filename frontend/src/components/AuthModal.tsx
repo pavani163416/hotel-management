@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useBooking } from "@/context/BookingContext";
 import { Loader2, Smartphone } from "lucide-react";
+import PasswordInput from "@/components/PasswordInput";
 import api from "@/services/api";
 
 type AuthModalProps = {
@@ -203,7 +204,7 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
             </div>
             <div className="space-y-2">
               <label className="block text-sm font-medium">Password</label>
-              <input type="password" value={password} onChange={e => setPassword(e.target.value)}
+              <PasswordInput value={password} onChange={e => setPassword((e.target as HTMLInputElement).value)}
                 className="w-full px-4 py-2 border border-border rounded-lg outline-none focus:ring-2 focus:ring-primary focus:border-primary"
                 placeholder="••••••••" autoComplete="current-password" />
             </div>
@@ -235,7 +236,7 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
             </div>
             <div className="space-y-2">
               <label className="block text-sm font-medium">Password <span className="text-destructive">*</span></label>
-              <input type="password" value={password} onChange={e => setPassword(e.target.value)}
+              <PasswordInput value={password} onChange={e => setPassword((e.target as HTMLInputElement).value)}
                 className="w-full px-4 py-2 border border-border rounded-lg outline-none focus:border-accent"
                 placeholder="Min. 6 characters" autoComplete="new-password" />
             </div>

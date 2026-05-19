@@ -47,10 +47,7 @@ type BookingsCtx = {
 
 const Ctx = createContext<BookingsCtx | null>(null);
 
-try {
-  localStorage.removeItem("luxe_bookings");
-  localStorage.removeItem("bookings");
-} catch {}
+// Avoid clearing bookings cache automatically; let the app refresh from the API.
 
 function mapBackend(b: any): Booking {
   const nights = b.nights ??

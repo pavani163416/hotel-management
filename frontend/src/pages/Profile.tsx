@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { User, Save, LogOut, Mail, CheckCircle2, Key } from "lucide-react";
+import PasswordInput from "@/components/PasswordInput";
 import Layout from "@/components/Layout";
 import { useBooking } from "@/context/BookingContext";
 import { AuthModal } from "@/components/AuthModal";
@@ -184,9 +185,9 @@ const Profile = () => {
               <Key className="w-6 h-6 text-accent" />
             </div>
             <div className="grid sm:grid-cols-2 gap-5">
-              <Field label="Current Password"><input type="password" value={oldPassword} onChange={(e) => setOldPassword(e.target.value)} className="input" autoComplete="current-password" /></Field>
-              <Field label="New Password"><input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="input" autoComplete="new-password" /></Field>
-              <Field label="Confirm New Password"><input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="input" autoComplete="new-password" /></Field>
+              <Field label="Current Password"><PasswordInput value={oldPassword} onChange={(e) => setOldPassword((e.target as HTMLInputElement).value)} className="input" autoComplete="current-password" /></Field>
+              <Field label="New Password"><PasswordInput value={newPassword} onChange={(e) => setNewPassword((e.target as HTMLInputElement).value)} className="input" autoComplete="new-password" /></Field>
+              <Field label="Confirm New Password"><PasswordInput value={confirmPassword} onChange={(e) => setConfirmPassword((e.target as HTMLInputElement).value)} className="input" autoComplete="new-password" /></Field>
             </div>
             {passwordError && <p className="text-destructive text-sm mt-4">{passwordError}</p>}
             <div className="flex items-center gap-3 mt-6">

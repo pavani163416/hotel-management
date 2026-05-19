@@ -19,8 +19,7 @@ type RoomsCtx = {
 
 const Ctx = createContext<RoomsCtx | null>(null);
 
-// Clear any stale dummy data that may have been saved to localStorage previously
-try { localStorage.removeItem("luxe_rooms"); } catch {}
+// Previously this cleared a legacy localStorage cache. Avoid removing cached data automatically.
 
 export const RoomsProvider = ({ children }: { children: ReactNode }) => {
   // Start empty — Rooms.tsx fetches real data from the API directly.

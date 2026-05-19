@@ -242,7 +242,7 @@ const Payment = () => {
                       <input value={card.expiry} onChange={(e) => setCard({ ...card, expiry: e.target.value })} placeholder="MM/YY" className="input" />
                     </Field>
                     <Field label="CVV">
-                      <input type="password" value={card.cvv} onChange={(e) => setCard({ ...card, cvv: e.target.value })} placeholder="123" className="input" />
+                      <PasswordInput value={card.cvv} onChange={(e) => setCard({ ...card, cvv: (e.target as HTMLInputElement).value })} placeholder="123" className="input" />
                     </Field>
                   </div>
                 </>

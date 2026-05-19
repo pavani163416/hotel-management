@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import PasswordInput from "@/components/PasswordInput";
 import { Search, Plus, Edit2, Trash2, X, Loader2, UserCheck, UserX, Building2, Bell, Send } from "lucide-react";
 import AdminLayout from "@/components/AdminLayout";
 import Topbar from "@/components/Topbar";
@@ -481,11 +482,10 @@ export default function Managers() {
             <label className="block text-sm font-medium text-gray-300 mb-1">
               Password {editTarget ? "(leave blank to keep current)" : "*"}
             </label>
-            <input
-              type="password"
+            <PasswordInput
               required={!editTarget}
               value={form.password}
-              onChange={(e) => setForm({ ...form, password: e.target.value })}
+              onChange={(e) => setForm({ ...form, password: (e.target as HTMLInputElement).value })}
               className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-gray-200 focus:outline-none focus:border-amber-500"
               placeholder={editTarget ? "••••••••" : "Enter password"}
             />
