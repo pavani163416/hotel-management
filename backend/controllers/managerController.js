@@ -351,8 +351,10 @@ export const getManagerAdditionalGuests = async (req, res, next) => {
 export const getManagerHalls = async (req, res, next) => {
   try {
     const filter = { isActive:true };
-    if (req.scopedHotelId) filter.$or = [{ hotelStringId: req.scopedHotelId }];
-    if (req.scopedHotelObjectId) filter.$or.push({ hotelId: req.scopedHotelObjectId });
+    const orClauses = [];
+    if (req.scopedHotelId)       orClauses.push({ hotelStringId: req.scopedHotelId });
+    if (req.scopedHotelObjectId) orClauses.push({ hotelId: req.scopedHotelObjectId });
+    if (orClauses.length) filter.$or = orClauses;
     const halls = await FunctionHall.find(filter).sort({ name:1 });
     res.status(200).json({ success:true, count:halls.length, data:halls });
   } catch (err) { next(err); }
@@ -429,8 +431,10 @@ export const createPriceRequest = async (req, res, next) => {
 export const getManagerPriceRequests = async (req, res, next) => {
   try {
     const filter = {};
-    if (req.scopedHotelId) filter.$or = [{ hotelStringId: req.scopedHotelId }];
-    if (req.scopedHotelObjectId) filter.$or = [...(filter.$or || []), { hotelId: req.scopedHotelObjectId }];
+    const orClauses = [];
+    if (req.scopedHotelId)       orClauses.push({ hotelStringId: req.scopedHotelId });
+    if (req.scopedHotelObjectId) orClauses.push({ hotelId: req.scopedHotelObjectId });
+    if (orClauses.length) filter.$or = orClauses;
     if (req.query.status) filter.status = req.query.status;
     const requests = await PriceRequest.find(filter)
       .populate("roomId",    "roomNumber type pricePerNight")

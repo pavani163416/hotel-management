@@ -5,9 +5,9 @@ dist-ssr
 
 # Environment files — never commit secrets
 .env
-.env.production
 .env.local
 .env.*.local
+# .env.production is committed intentionally (contains only public API URL)
 
 .DS_Store
 *.suo

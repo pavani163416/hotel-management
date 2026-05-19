@@ -20,4 +20,4 @@ admin/node_modules/
 admin/dist/
 admin/.vercel/
 admin/.env
-admin/.env.production
+# admin/.env.production is committed intentionally (contains only public API URL)
