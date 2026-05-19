@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import {
-  BedDouble, User, Phone, Calendar, Wrench,
-  ArrowRightLeft, Check, AlertCircle, RefreshCw, X,
+  BedDouble, Phone, Calendar, Wrench,
+  ArrowRightLeft, Check, AlertCircle, RefreshCw, History,
 } from "lucide-react";
 import ManagerLayout from "@/components/ManagerLayout";
 import Drawer from "@/components/Drawer";
@@ -9,7 +9,7 @@ import Modal from "@/components/Modal";
 import StatusBadge from "@/components/StatusBadge";
 import {
   getManagerRooms, getManagerBookings,
-  updateManagerRoom, reassignManagerBooking,
+  updateManagerRoom, reassignManagerBooking, getRoomBookingHistory,
 } from "@/services/api";
 import { useSocket } from "@/hooks/useSocket";
 
@@ -61,6 +61,9 @@ export default function FloorMap() {
   const [filterStatus, setFilterStatus] = useState("All");
   const [saving, setSaving]     = useState(false);
   const [saveMsg, setSaveMsg]   = useState("");
+  const [drawerTab, setDrawerTab] = useState<"info" | "history">("info");
+  const [history, setHistory]     = useState<any[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
 
   // Reassign modal
   const [reassignOpen, setReassignOpen]       = useState(false);
@@ -79,6 +82,15 @@ export default function FloorMap() {
       if (bR.status === "fulfilled") setBookings(bR.value?.data || []);
     } catch { /* silent */ }
     setLoading(false);
+  }, []);
+
+  const fetchHistory = useCallback(async (roomId: string) => {
+    setHistoryLoading(true);
+    try {
+      const res: any = await getRoomBookingHistory(roomId, 8);
+      setHistory(res?.data || []);
+    } catch { setHistory([]); }
+    setHistoryLoading(false);
   }, []);
 
   useEffect(() => { load(); }, [load]);
@@ -289,7 +301,7 @@ export default function FloorMap() {
       {/* Room Detail Drawer */}
       <Drawer
         isOpen={!!selected}
-        onClose={() => { setSelected(null); setSaveMsg(""); }}
+        onClose={() => { setSelected(null); setSaveMsg(""); setDrawerTab("info"); setHistory([]); }}
         title={`Room #${selected?.roomNumber || ""}`}
         width="w-[420px]"
       >
@@ -297,14 +309,53 @@ export default function FloorMap() {
           const booking = getActiveBooking(selected);
           return (
             <div className="space-y-5">
-              {/* Status */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className={`w-3 h-3 rounded-full ${STATUS_DOT[selected.status] || "bg-slate-400"}`} />
-                  <span className="font-semibold text-sm text-bright">{selected.status}</span>
-                </div>
-                <span className="text-xs text-dim">Floor {selected.floor || "1"}</span>
+              {/* Drawer Tabs */}
+              <div className="flex gap-1 border-b border-white/10">
+                {(["info", "history"] as const).map(t => (
+                  <button key={t} onClick={() => { setDrawerTab(t); if (t === "history" && selected) fetchHistory(selected._id); }}
+                    className={`px-4 py-2 text-xs font-semibold capitalize border-b-2 transition-colors ${
+                      drawerTab === t ? "border-gold text-gold" : "border-transparent text-dim hover:text-bright"
+                    }`}>
+                    {t === "history" ? <span className="flex items-center gap-1"><History className="w-3.5 h-3.5" />History</span> : "Room Info"}
+                  </button>
+                ))}
               </div>
+              {drawerTab === "history" ? (
+                <div>
+                  {historyLoading ? (
+                    <div className="flex justify-center py-10"><div className="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin" /></div>
+                  ) : history.length === 0 ? (
+                    <p className="text-sm text-dim text-center py-10">No booking history found.</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {history.map((b: any, i: number) => (
+                        <div key={i} className="rounded-xl p-3 text-sm space-y-1"
+                          style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                          <div className="flex items-center justify-between">
+                            <span className="font-semibold text-bright">{b.guestSnapshot?.name || "Guest"}</span>
+                            <StatusBadge status={b.status} />
+                          </div>
+                          <p className="text-xs text-dim">{b.guestSnapshot?.email}</p>
+                          <div className="flex items-center gap-2 text-xs text-soft">
+                            <Calendar className="w-3.5 h-3.5 text-gold" />
+                            {new Date(b.checkIn).toLocaleDateString()} → {new Date(b.checkOut).toLocaleDateString()}
+                            {b.nights && <span>({b.nights}n)</span>}
+                          </div>
+                          <p className="text-xs font-semibold text-bright">${b.totalAmount?.toLocaleString()}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className={`w-3 h-3 rounded-full ${STATUS_DOT[selected.status] || "bg-slate-400"}`} />
+                      <span className="font-semibold text-sm text-bright">{selected.status}</span>
+                    </div>
+                    <span className="text-xs text-dim">Floor {selected.floor || "1"}</span>
+                  </div>
 
               {/* Room Info */}
               <section>
@@ -418,6 +469,8 @@ export default function FloorMap() {
                   )}
                 </div>
               </section>
+            </>
+              )}
             </div>
           );
         })()}

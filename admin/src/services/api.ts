@@ -206,3 +206,29 @@ export const getRoomAvailability = (roomId: string, checkIn: string, checkOut: s
 export const getAdminRooms = (params?: Record<string, any>) => api.get("/rooms", { params });
 export const getAdminBookings = (params?: Record<string, any>) => api.get("/bookings", { params });
 export const updateAdminRoom = (id: string, data: Record<string, any>) => api.patch(`/rooms/${id}`, data);
+
+/**
+ * Admin-level booking reassignment (no hotel isolation — cross-hotel capable).
+ * Uses /api/admin/bookings/:id/reassign  { newRoomId }
+ */
+export const adminReassignBooking = (bookingId: string, newRoomId: string) =>
+  api.put(`/admin/bookings/${bookingId}/reassign`, { newRoomId });
+
+/**
+ * Fetch the last N bookings for a specific room — used in Hotel Map drawer history tab.
+ * GET /api/rooms/booking-history/:roomId?limit=5
+ */
+export const getRoomBookingHistory = (roomId: string, limit = 5) =>
+  api.get(`/rooms/booking-history/${roomId}`, { params: { limit } });
+
+/**
+ * Get count of rooms available for given hotel/type/dates.
+ * GET /api/rooms/available-count?hotelStringId=&roomType=&checkIn=&checkOut=
+ * Used by the frontend "Only N rooms left" badge.
+ */
+export const getAvailableRoomCount = (params: {
+  hotelStringId?: string;
+  roomType?: string;
+  checkIn: string;
+  checkOut: string;
+}) => api.get("/rooms/available-count", { params });

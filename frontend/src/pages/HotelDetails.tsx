@@ -48,6 +48,8 @@ const HotelDetails = () => {
   const [pendingRoomId, setPendingRoomId] = useState<string | null>(null);
   // Per-room availability check state: roomId → { checking, error }
   const [roomStatus, setRoomStatus] = useState<Record<string, { checking: boolean; error: string }>>({});
+  // Live available-count per room type: roomId → number | null
+  const [availCount, setAvailCount] = useState<Record<string, number | null>>({})
 
   // When user signs in and there's a pending room → proceed to booking
   useEffect(() => {
@@ -61,6 +63,26 @@ const HotelDetails = () => {
       }
     }
   }, [user, pendingRoomId, hotel, setSelectedHotel, setSelectedRoom, nav]);
+
+  // Fetch live available counts when dates are present
+  useEffect(() => {
+    if (!hotel || !search.checkIn || !search.checkOut) return;
+    const base = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+    hotel.rooms.forEach(async (r) => {
+      try {
+        const params = new URLSearchParams({
+          hotelStringId: hotel.id,
+          checkIn: search.checkIn,
+          checkOut: search.checkOut,
+        });
+        const res = await fetch(`${base}/rooms/available-count?${params}`);
+        const json = await res.json();
+        if (json.success && typeof json.available === "number") {
+          setAvailCount(prev => ({ ...prev, [r.id]: json.available }));
+        }
+      } catch { /* silent */ }
+    });
+  }, [hotel?.id, search.checkIn, search.checkOut]);
 
   if (!hotel) return <Layout><div className="container py-20 text-center">Hotel not found</div></Layout>;
 
@@ -210,6 +232,18 @@ const HotelDetails = () => {
                         <p className="text-xs text-muted-foreground">per night</p>
                       </div>
                       <div className="flex flex-col items-stretch gap-1 md:min-w-[140px]">
+                        {/* Live availability badge */}
+                        {search.checkIn && search.checkOut && availCount[r.id] !== undefined && availCount[r.id] !== null && (
+                          <span className={`text-center text-[11px] font-semibold px-2 py-0.5 rounded-full mb-1 ${
+                            availCount[r.id] === 0
+                              ? "bg-destructive/10 text-destructive border border-destructive/20"
+                              : availCount[r.id]! <= 2
+                                ? "bg-amber-50 text-amber-700 border border-amber-200"
+                                : "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                          }`}>
+                            {availCount[r.id] === 0 ? "Sold Out" : availCount[r.id] === 1 ? "Last room!" : `Only ${availCount[r.id]} rooms left`}
+                          </span>
+                        )}
                         <button onClick={() => select(r.id)} disabled={r.available === 0 || roomStatus[r.id]?.checking}
                           className="bg-accent hover:bg-accent/90 disabled:bg-secondary disabled:text-muted-foreground disabled:cursor-not-allowed text-accent-foreground px-4 py-2.5 rounded-lg font-semibold text-sm transition-base flex items-center justify-center gap-1.5">
                           {roomStatus[r.id]?.checking ? (

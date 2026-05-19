@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import {
-  BedDouble, User, Phone, Calendar, Wrench, RefreshCw,
-  ChevronDown, Search, ArrowRightLeft, X, Check, AlertCircle,
+  BedDouble, Phone, Calendar, Wrench, RefreshCw, History,
+  ChevronDown, Search, ArrowRightLeft, Check, AlertCircle,
 } from "lucide-react";
 import AdminLayout from "@/components/AdminLayout";
 import Topbar from "@/components/Topbar";
@@ -9,6 +9,7 @@ import StatusBadge from "@/components/StatusBadge";
 import Drawer from "@/components/Drawer";
 import Modal from "@/components/Modal";
 import { useSocket } from "@/hooks/useSocket";
+import { adminReassignBooking, getRoomBookingHistory } from "@/services/api";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
@@ -66,6 +67,9 @@ export default function HotelMap() {
   const [selected, setSelected]   = useState<Room | null>(null);
   const [saving, setSaving]       = useState(false);
   const [saveMsg, setSaveMsg]     = useState("");
+  const [drawerTab, setDrawerTab] = useState<"info" | "history">("info");
+  const [history, setHistory]     = useState<any[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
 
   // Reassign modal
   const [reassignOpen, setReassignOpen] = useState(false);
@@ -76,6 +80,15 @@ export default function HotelMap() {
 
   const token = localStorage.getItem("luxe_admin_token");
   const authHeaders = { "Content-Type": "application/json", Authorization: `Bearer ${token}` };
+
+  const fetchHistory = useCallback(async (roomId: string) => {
+    setHistoryLoading(true);
+    try {
+      const res: any = await getRoomBookingHistory(roomId, 8);
+      setHistory(res?.data || []);
+    } catch { setHistory([]); }
+    setHistoryLoading(false);
+  }, []);
 
   // Load hotels
   useEffect(() => {
@@ -160,18 +173,14 @@ export default function HotelMap() {
     if (!reassignBooking || !reassignTarget) return;
     setReassigning(true); setReassignError("");
     try {
-      const res = await fetch(`${API}/manager/bookings/${reassignBooking._id}/reassign`, {
-        method: "PUT",
-        headers: authHeaders,
-        body: JSON.stringify({ newRoomId: reassignTarget }),
-      });
-      const data = await res.json();
-      if (data.success) {
+      // Use admin-scoped endpoint (no hotel isolation)
+      const res: any = await adminReassignBooking(reassignBooking._id, reassignTarget);
+      if (res?.success) {
         setReassignOpen(false);
         setSelected(null);
         load();
       } else {
-        setReassignError(data.message || "Reassignment failed");
+        setReassignError(res?.message || "Reassignment failed");
       }
     } catch (e: any) {
       setReassignError(e.message || "Network error");
@@ -338,11 +347,50 @@ export default function HotelMap() {
       </div>
 
       {/* Room Detail Drawer */}
-      <Drawer isOpen={!!selected} onClose={() => { setSelected(null); setSaveMsg(""); }} title={`Room #${selected?.roomNumber || ""}`} width="w-[440px]">
+      <Drawer isOpen={!!selected} onClose={() => { setSelected(null); setSaveMsg(""); setDrawerTab("info"); setHistory([]); }} title={`Room #${selected?.roomNumber || ""}`} width="w-[440px]">
         {selected && (() => {
           const booking = getActiveBooking(selected);
           return (
             <div className="space-y-5">
+              {/* Drawer Tabs */}
+              <div className="flex gap-1 border-b border-border">
+                {(["info", "history"] as const).map(t => (
+                  <button key={t} onClick={() => { setDrawerTab(t); if (t === "history" && selected) fetchHistory(selected._id); }}
+                    className={`px-4 py-2 text-xs font-semibold capitalize border-b-2 transition-colors ${
+                      drawerTab === t ? "border-primary text-primary" : "border-transparent text-muted hover:text-text-primary"
+                    }`}>
+                    {t === "history" ? <span className="flex items-center gap-1"><History className="w-3.5 h-3.5" />History</span> : "Room Info"}
+                  </button>
+                ))}
+              </div>
+              {drawerTab === "history" ? (
+                <div>
+                  {historyLoading ? (
+                    <div className="flex justify-center py-10"><div className="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin" /></div>
+                  ) : history.length === 0 ? (
+                    <p className="text-sm text-muted text-center py-10">No booking history found.</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {history.map((b: any, i: number) => (
+                        <div key={i} className="rounded-xl p-3 bg-surface-2 border border-border text-sm space-y-1">
+                          <div className="flex items-center justify-between">
+                            <span className="font-semibold text-text-primary">{b.guestSnapshot?.name || "Guest"}</span>
+                            <StatusBadge status={b.status} />
+                          </div>
+                          <p className="text-xs text-muted">{b.guestSnapshot?.email}</p>
+                          <div className="flex items-center gap-2 text-xs text-muted">
+                            <Calendar className="w-3.5 h-3.5" />
+                            {new Date(b.checkIn).toLocaleDateString()} → {new Date(b.checkOut).toLocaleDateString()}
+                            {b.nights && <span>({b.nights}n)</span>}
+                          </div>
+                          <p className="text-xs font-semibold text-text-primary">${b.totalAmount?.toLocaleString()}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+              <>
               {/* Status */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -452,6 +500,8 @@ export default function HotelMap() {
                   )}
                 </div>
               </section>
+            </>
+            )}
             </div>
           );
         })()}

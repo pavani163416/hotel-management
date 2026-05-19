@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { AdminProvider } from "@/context/AdminContext";
 import { BookingsProvider } from "@/context/BookingsContext";
 import { HotelsProvider } from "@/context/HotelsContext";
@@ -39,61 +39,71 @@ import MHalls         from "@/pages/manager/MHalls";
 import MPricing       from "@/pages/manager/MPricing";
 import MProfile       from "@/pages/manager/MProfile";
 
+function AuthenticatedProviders({ children }: { children: React.ReactNode }) {
+  return (
+    <BookingsProvider>
+      <HotelsProvider>
+        <RoomsProvider>
+          <GuestsProvider>
+            <VisitorProvider>{children}</VisitorProvider>
+          </GuestsProvider>
+        </RoomsProvider>
+      </HotelsProvider>
+    </BookingsProvider>
+  );
+}
+
 export default function App() {
   return (
     <AdminProvider>
-      <BookingsProvider>
-        <HotelsProvider>
-          <RoomsProvider>
-            <GuestsProvider>
-              <VisitorProvider>
-                <BrowserRouter>
-                  <Routes>
-                    {/* ── Public ── */}
-                    <Route path="/login" element={<Login />} />
-                    <Route path="/reset-password" element={<ResetPassword />} />
-                    
-                    <Route path="/"      element={<Navigate to="/dashboard" replace />} />
+      <BrowserRouter>
+        <Routes>
+          {/* ── Public ── */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
 
-                    {/* ── Admin routes (Super Admin / Staff) ── */}
-                    <Route path="/dashboard"   element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-                    <Route path="/hotels"      element={<ProtectedRoute><Hotels /></ProtectedRoute>} />
-                    <Route path="/hotel/:id"   element={<ProtectedRoute><HotelDetail /></ProtectedRoute>} />
-                    <Route path="/rooms"       element={<ProtectedRoute><Rooms /></ProtectedRoute>} />
-                    <Route path="/hotel-map"   element={<ProtectedRoute><HotelMap /></ProtectedRoute>} />
-                    <Route path="/bookings"    element={<ProtectedRoute><Bookings /></ProtectedRoute>} />
-                    <Route path="/payments"    element={<ProtectedRoute><Payments /></ProtectedRoute>} />
-                    <Route path="/guests"      element={<ProtectedRoute><Guests /></ProtectedRoute>} />
-                    <Route path="/revenue"     element={<ProtectedRoute><Revenue /></ProtectedRoute>} />
-                    <Route path="/analytics"   element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
-                    <Route path="/insights"    element={<ProtectedRoute><Insights /></ProtectedRoute>} />
-                    <Route path="/managers"    element={<ProtectedRoute><Managers /></ProtectedRoute>} />
-                    <Route path="/price-requests" element={<ProtectedRoute><PriceRequests /></ProtectedRoute>} />
-                    <Route path="/coupons"        element={<ProtectedRoute><Coupons /></ProtectedRoute>} />
-                    <Route path="/top-deals"      element={<ProtectedRoute><TopDeals /></ProtectedRoute>} />
-                    <Route path="/amenities"      element={<ProtectedRoute><Amenities /></ProtectedRoute>} />
-                    <Route path="/profile"        element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+          <Route
+            element={
+              <ProtectedRoute>
+                <AuthenticatedProviders>
+                  <Outlet />
+                </AuthenticatedProviders>
+              </ProtectedRoute>
+            }
+          >
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/hotels" element={<Hotels />} />
+            <Route path="/hotel/:id" element={<HotelDetail />} />
+            <Route path="/rooms" element={<Rooms />} />
+            <Route path="/hotel-map" element={<HotelMap />} />
+            <Route path="/bookings" element={<Bookings />} />
+            <Route path="/payments" element={<Payments />} />
+            <Route path="/guests" element={<Guests />} />
+            <Route path="/revenue" element={<Revenue />} />
+            <Route path="/analytics" element={<Analytics />} />
+            <Route path="/insights" element={<Insights />} />
+            <Route path="/managers" element={<Managers />} />
+            <Route path="/price-requests" element={<PriceRequests />} />
+            <Route path="/coupons" element={<Coupons />} />
+            <Route path="/top-deals" element={<TopDeals />} />
+            <Route path="/amenities" element={<Amenities />} />
+            <Route path="/profile" element={<Profile />} />
 
-                    {/* ── Manager routes (role === "Manager") ── */}
-                    <Route path="/m/dashboard"       element={<ProtectedRoute><MDashboard /></ProtectedRoute>} />
-                    <Route path="/m/floor-map"       element={<ProtectedRoute><MFloorMap /></ProtectedRoute>} />
-                    <Route path="/m/bookings"        element={<ProtectedRoute><MBookings /></ProtectedRoute>} />
-                    <Route path="/m/rooms"           element={<ProtectedRoute><MRooms /></ProtectedRoute>} />
-                    <Route path="/m/financials"      element={<ProtectedRoute><MFinancials /></ProtectedRoute>} />
-                    <Route path="/m/hotels-overview" element={<ProtectedRoute><MHotelsOverview /></ProtectedRoute>} />
-                    <Route path="/m/halls"           element={<ProtectedRoute><MHalls /></ProtectedRoute>} />
-                    <Route path="/m/pricing"         element={<ProtectedRoute><MPricing /></ProtectedRoute>} />
-                    <Route path="/m/profile"         element={<ProtectedRoute><MProfile /></ProtectedRoute>} />
+            <Route path="/m/dashboard" element={<MDashboard />} />
+            <Route path="/m/floor-map" element={<MFloorMap />} />
+            <Route path="/m/bookings" element={<MBookings />} />
+            <Route path="/m/rooms" element={<MRooms />} />
+            <Route path="/m/financials" element={<MFinancials />} />
+            <Route path="/m/hotels-overview" element={<MHotelsOverview />} />
+            <Route path="/m/halls" element={<MHalls />} />
+            <Route path="/m/pricing" element={<MPricing />} />
+            <Route path="/m/profile" element={<MProfile />} />
+          </Route>
 
-                    {/* ── Catch-all ── */}
-                    <Route path="*" element={<Navigate to="/dashboard" replace />} />
-                  </Routes>
-                </BrowserRouter>
-              </VisitorProvider>
-            </GuestsProvider>
-          </RoomsProvider>
-        </HotelsProvider>
-      </BookingsProvider>
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        </Routes>
+      </BrowserRouter>
     </AdminProvider>
   );
 }
