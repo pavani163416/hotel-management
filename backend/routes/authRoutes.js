@@ -726,36 +726,40 @@ router.get("/bookings", verifyCustomerToken, async (req, res, next) => {
     const limit = Math.min(50, parseInt(req.query.limit) || 20);
     const skip  = (page - 1) * limit;
 
-    // Use guestId from token to find bookings
-    let guestId = req.customer.guestId;
+    // We want to fetch all bookings associated with this user's email across both website and app!
+    const userEmail = req.customer.email ? req.customer.email.toLowerCase().trim() : "";
     
-    // Validate that the guest record actually exists to resolve stale tokens after a DB clear
-    if (guestId) {
-      const guestExists = await Guest.findById(guestId);
-      if (!guestExists) {
-        guestId = null;
-      }
+    let guestIds = [];
+    if (userEmail) {
+      const matchingGuests = await Guest.find({ email: userEmail });
+      guestIds = matchingGuests.map(g => g._id);
     }
     
-    // If guestId is missing or stale, try to find guest by email
-    if (!guestId && req.customer.email) {
-      const guest = await Guest.findOne({ email: req.customer.email.toLowerCase() });
-      if (guest) {
-        guestId = guest._id;
+    if (req.customer.guestId && mongoose.Types.ObjectId.isValid(req.customer.guestId)) {
+      const tokenGuestId = new mongoose.Types.ObjectId(req.customer.guestId);
+      if (!guestIds.some(id => id.equals(tokenGuestId))) {
+        guestIds.push(tokenGuestId);
       }
     }
-    
-    if (!guestId) {
+
+    if (guestIds.length === 0) {
       return res.json({ success: true, count: 0, total: 0, page, pages: 0, data: [] });
     }
 
+    const filter = {
+      $or: [
+        { guest: { $in: guestIds } },
+        { "guestSnapshot.email": userEmail }
+      ]
+    };
+
     const [bookings, total] = await Promise.all([
-      Booking.find({ guest: guestId })
+      Booking.find(filter)
         .populate("room", "roomNumber type pricePerNight images hotelStringId")
         .populate("guest", "name email phone")
         .populate("hotelId", "image")
         .sort({ createdAt: -1 }),
-      Booking.countDocuments({ guest: guestId }),
+      Booking.countDocuments(filter),
     ]);
 
     const data = bookings.map((b) => ({
