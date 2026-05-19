@@ -27,6 +27,7 @@ migrate_working_dir/
 **/doc/api/
 **/ios/Flutter/.last_build_id
 .dart_tool/
+.flutter-plugins
 .flutter-plugins-dependencies
 .pub-cache/
 .pub/
@@ -43,3 +44,20 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Node & Frontend / Admin Projects
+node_modules/
+**/node_modules/
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.vercel/output/
+admin/node_modules/
+admin/dist/
+admin/.vercel/
+admin/.env
+# admin/.env.production is committed intentionally (contains only public API URL)
+
+Thumbs.db
+package-lock.json
+.env

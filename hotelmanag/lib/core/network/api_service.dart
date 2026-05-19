@@ -21,9 +21,6 @@ class ApiService {
             options.headers['Authorization'] = 'Bearer $token';
           }
           
-          // Bypass localtunnel landing page
-          options.headers['Bypass-Tunnel-Reminder'] = 'true';
-
           debugPrint('API REQUEST[${options.method}] => PATH: ${options.path}');
           debugPrint('DATA: ${options.data}');
           return handler.next(options);
@@ -33,8 +30,9 @@ class ApiService {
           return handler.next(response);
         },
         onError: (DioException e, handler) {
-          debugPrint('API ERROR[${e.response?.statusCode}] => PATH: ${e.requestOptions.path}');
-          debugPrint('ERROR MESSAGE: ${e.response?.data}');
+          debugPrint('API ERROR[${e.response?.statusCode ?? e.type}] => PATH: ${e.requestOptions.path}');
+          debugPrint('ERROR MESSAGE: ${e.response?.data ?? e.message}');
+          debugPrint('ERROR DETAILS: ${e.error}');
           return handler.next(e);
         },
       ),

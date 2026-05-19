@@ -18,15 +18,15 @@ class AuthRepositoryImpl implements AuthRepository {
       return Right((authResponse.user, authResponse.token));
     } on DioException catch (e) {
       String message = 'Login failed';
-      if (e.response?.data is Map) {
-        message = e.response?.data['message'] ?? message;
-      } else if (e.response?.data is String) {
-        message = e.response?.data;
-      }
       
-      if (e.type == DioExceptionType.connectionError || 
-          e.type == DioExceptionType.connectionTimeout ||
-          e.response == null) {
+      if (e.response != null) {
+        if (e.response?.data is Map) {
+          message = e.response?.data['message'] ?? message;
+        } else if (e.response?.data is String) {
+          message = e.response?.data;
+        }
+      } else if (e.type == DioExceptionType.connectionError || 
+                 e.type == DioExceptionType.connectionTimeout) {
         message = 'Cannot reach server at ${AppConstants.apiBaseUrl}. Ensure your phone and PC are on same Wi-Fi and Firewall is off.';
       }
       return Left(ServerFailure(message));
@@ -42,15 +42,15 @@ class AuthRepositoryImpl implements AuthRepository {
       return Right((authResponse.user, authResponse.token));
     } on DioException catch (e) {
       String message = 'Registration failed';
-      if (e.response?.data is Map) {
-        message = e.response?.data['message'] ?? message;
-      } else if (e.response?.data is String) {
-        message = e.response?.data;
-      }
-
-      if (e.type == DioExceptionType.connectionError || 
-          e.type == DioExceptionType.connectionTimeout ||
-          e.response == null) {
+      
+      if (e.response != null) {
+        if (e.response?.data is Map) {
+          message = e.response?.data['message'] ?? message;
+        } else if (e.response?.data is String) {
+          message = e.response?.data;
+        }
+      } else if (e.type == DioExceptionType.connectionError || 
+                 e.type == DioExceptionType.connectionTimeout) {
         message = 'Cannot reach server at ${AppConstants.apiBaseUrl}. Ensure your phone and PC are on same Wi-Fi and Firewall is off.';
       }
       return Left(ServerFailure(message));
