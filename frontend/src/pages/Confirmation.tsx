@@ -1,9 +1,10 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Check, Calendar, Users, ArrowRight } from "lucide-react";
+import { Check, Calendar, Users, ArrowRight, Download } from "lucide-react";
 import Layout from "@/components/Layout";
 import { useBooking } from "@/context/BookingContext";
 import { markSessionConverted } from "@/hooks/use-visitor-tracker";
+import { bookingToReceipt, downloadBookingReceipt } from "@/utils/receiptPdf";
 
 const Confirmation = () => {
   const nav = useNavigate();
@@ -11,7 +12,6 @@ const Confirmation = () => {
   const latest = bookings[0];
 
   useEffect(() => { if (!latest) nav("/"); }, [latest, nav]);
-  // Mark this session as converted in the admin Insights panel
   useEffect(() => { if (latest) markSessionConverted(); }, [latest]);
   if (!latest) return null;
 
@@ -45,15 +45,23 @@ const Confirmation = () => {
             <span className="text-sm text-muted-foreground">Total Paid</span>
             <span className="font-display text-2xl font-bold text-accent">${latest.total.toLocaleString()}</span>
           </div>
-          <div className="mt-8 flex flex-col sm:flex-row gap-3">
-            <button onClick={() => nav("/history")}
-              className="flex-1 bg-accent hover:bg-accent/90 text-accent-foreground py-3.5 rounded-xl font-semibold flex items-center justify-center gap-2 transition-base">
-              Go to History <ArrowRight className="w-4 h-4" />
+          <div className="mt-8 flex flex-col gap-3">
+            <button
+              type="button"
+              onClick={() => downloadBookingReceipt(bookingToReceipt(latest))}
+              className="w-full border border-border hover:bg-secondary/80 text-primary py-3.5 rounded-xl font-semibold flex items-center justify-center gap-2 transition-base">
+              <Download className="w-4 h-4" /> Download Receipt (PDF)
             </button>
-            <button onClick={() => nav("/hotels")}
-              className="flex-1 bg-secondary hover:bg-secondary/80 text-primary py-3.5 rounded-xl font-semibold transition-base">
-              Browse More Hotels
-            </button>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button onClick={() => nav("/history")}
+                className="flex-1 bg-accent hover:bg-accent/90 text-accent-foreground py-3.5 rounded-xl font-semibold flex items-center justify-center gap-2 transition-base">
+                Go to History <ArrowRight className="w-4 h-4" />
+              </button>
+              <button onClick={() => nav("/hotels")}
+                className="flex-1 bg-secondary hover:bg-secondary/80 text-primary py-3.5 rounded-xl font-semibold transition-base">
+                Browse More Hotels
+              </button>
+            </div>
           </div>
         </div>
       </div>
