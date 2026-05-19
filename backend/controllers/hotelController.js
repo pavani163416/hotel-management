@@ -203,7 +203,7 @@ export const addRoomToHotel = async (req, res, next) => {
     // Sync to controller DB room snapshots
     syncRoomSnapshot(req.params.id, hotel.name, req.body).catch(() => {});
 
-    // ── Also upsert into standalone Room collection so manager panel can see it ──
+    // ── Upsert into standalone Room collection so manager panel can see it ──
     const BED_TYPE_MAP = {
       "1 King Bed": "King", "2 King Beds": "King", "King": "King",
       "1 Queen Bed": "Queen", "Queen": "Queen",
@@ -211,30 +211,50 @@ export const addRoomToHotel = async (req, res, next) => {
       "1 King Bed + Sofa": "King",
       "Single": "Single", "Double": "Double",
     };
-    const nameLower = (req.body.name || "").toLowerCase();
-    let type = "Standard";
-    if (nameLower.includes("suite")) type = "Suite";
-    else if (nameLower.includes("deluxe")) type = "Deluxe";
-    else if (nameLower.includes("penthouse")) type = "Penthouse";
-    else if (nameLower.includes("villa")) type = "Villa";
 
-    Room.findOneAndUpdate(
-      { roomNumber: req.body.id },
-      {
-        roomNumber:    req.body.id,
-        type,
-        description:   req.body.description || `${req.body.name} at ${hotel.name}`,
-        pricePerNight: req.body.price || 0,
-        capacity:      req.body.capacity || 2,
-        bedType:       BED_TYPE_MAP[req.body.bed] || "King",
-        amenities:     req.body.features || [],
-        status:        (req.body.available ?? 1) > 0 ? "Available" : "Booked",
-        isActive:      true,
-        hotelStringId: req.params.id,
-        hotelId:       hotel._id,
-      },
-      { upsert: true, new: true, setDefaultsOnInsert: true }
-    ).catch(() => {});
+    const roomId = req.body.id;
+    if (roomId) {
+      // Derive type from name or use explicit type if passed
+      const nameLower = (req.body.name || "").toLowerCase();
+      let type = req.body.type || "Standard";
+      if (!req.body.type) {
+        if (nameLower.includes("suite"))       type = "Suite";
+        else if (nameLower.includes("deluxe")) type = "Deluxe";
+        else if (nameLower.includes("penthouse")) type = "Penthouse";
+        else if (nameLower.includes("villa"))  type = "Villa";
+      }
+      // Validate type against enum
+      const validTypes = ["Deluxe", "Suite", "Standard", "Penthouse", "Villa"];
+      if (!validTypes.includes(type)) type = "Standard";
+
+      const bedRaw = req.body.bedType || req.body.bed || "King";
+      const bedType = BED_TYPE_MAP[bedRaw] || "King";
+      const floorNum = Math.max(1, Number(req.body.floor) || 1);
+
+      Room.findOneAndUpdate(
+        { roomNumber: roomId },
+        {
+          $setOnInsert: { roomNumber: roomId },
+          $set: {
+            type,
+            description:   req.body.description || `${req.body.name} at ${hotel.name}`,
+            pricePerNight: req.body.pricePerNight || req.body.price || 0,
+            capacity:      req.body.capacity || 2,
+            bedType,
+            amenities:     req.body.features || [],
+            status:        (req.body.available ?? 1) > 0 ? "Available" : "Booked",
+            floor:         floorNum,
+            isActive:      true,
+            hotelStringId: req.params.id,
+            hotelId:       hotel._id,
+          },
+        },
+        { upsert: true, new: true, setDefaultsOnInsert: true }
+      ).catch((err) => {
+        // Log but never block the response
+        console.error("Standalone room upsert failed:", err.message);
+      });
+    }
 
     broadcastHotels();
     res.status(201).json({ success: true, message: "Room added to hotel", data: hotel });

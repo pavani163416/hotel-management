@@ -155,8 +155,10 @@ export default function Rooms() {
     };
 
     const features = form.features.split(",").map((f) => f.trim()).filter(Boolean);
+    const floorNum = Math.max(1, Number(form.floor) || 1);
 
     // Payload for Hotel's embedded rooms array (user panel reads this)
+    // addRoomToHotel on the backend also upserts into the standalone Room collection
     const embeddedPayload = {
       id:          autoId,
       name:        form.name,
@@ -166,56 +168,36 @@ export default function Rooms() {
       bed:         form.bed,
       available:   1,
       features,
+      floor:       floorNum,
+      // Extra fields passed through so backend can build the standalone Room doc
+      type:          form.type,
+      bedType:       bedTypeMap[form.bed] || "King",
+      pricePerNight: Number(form.price),
+      hotelStringId: selectedHotelId,
     };
 
-    const standalonePayload = {
-      roomNumber:    autoId,
-      type:          form.type,
-      description:   `${form.name} at ${selectedHotelName}`,
-      pricePerNight: Number(form.price),
-      capacity:      Number(form.capacity),
-      bedType:       bedTypeMap[form.bed] || "King",
-      amenities:     features,
-      status:        "Available",
-      floor:         Number(form.floor) || 1,
-      hotelStringId: selectedHotelId,   // link room to hotel for manager panel scoping
-    };
+    const token = localStorage.getItem("luxe_admin_token");
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (token) headers["Authorization"] = `Bearer ${token}`;
 
     try {
       if (editTarget) {
-        // Update embedded array: delete old + add updated
-        await fetch(`${API}/hotels/${selectedHotelId}/rooms/${editTarget.id}`, { method: "DELETE" });
+        // Update: delete old embedded entry then re-add updated one
+        await fetch(`${API}/hotels/${selectedHotelId}/rooms/${editTarget.id}`, { method: "DELETE", headers });
         await fetch(`${API}/hotels/${selectedHotelId}/rooms`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
+          method: "POST", headers,
           body: JSON.stringify(embeddedPayload),
         });
-        // Update standalone rooms collection
-        await fetch(`${API}/rooms`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...standalonePayload, roomNumber: autoId }),
-        });
       } else {
-        // 1. Add to Hotel's embedded rooms → SSE broadcasts to user panel instantly
+        // Add to Hotel's embedded rooms array
+        // The backend (addRoomToHotel) also upserts into the standalone Room collection
         const hotelRes = await fetch(`${API}/hotels/${selectedHotelId}/rooms`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
+          method: "POST", headers,
           body: JSON.stringify(embeddedPayload),
         });
         if (!hotelRes.ok) {
           const err = await hotelRes.json();
-          console.error("Hotel rooms update failed:", err);
-        }
-        // 2. Save to standalone rooms collection → updates rooms DB
-        const roomRes = await fetch(`${API}/rooms`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(standalonePayload),
-        });
-        if (!roomRes.ok) {
-          const err = await roomRes.json();
-          console.error("Standalone rooms save failed:", err);
+          console.error("Room save failed:", err);
         }
       }
       fetchHotelRooms(selectedHotelId);
