@@ -5,6 +5,12 @@ const API = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 const HOTEL_CACHE_KEY = "luxe_hotels_cache";
 
 function mapHotel(h: any): Hotel {
+  const actualReviews = Array.isArray(h.reviews) ? h.reviews : [];
+  const actualReviewCount = actualReviews.length;
+  const computedRating = actualReviewCount > 0
+    ? Number((actualReviews.reduce((sum: number, r: any) => sum + (r.rating || 0), 0) / actualReviewCount).toFixed(1))
+    : undefined;
+
   return {
     id: h.hotelId,
     name: h.name,
@@ -13,12 +19,10 @@ function mapHotel(h: any): Hotel {
     description: h.description || "",
     image: h.image || "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&q=80",
     gallery: h.gallery?.length ? h.gallery : [h.image || "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&q=80"],
-    reviewCount: typeof h.reviewCount === "number" ? h.reviewCount : (Array.isArray(h.reviews) ? h.reviews.length : 0),
-    rating: typeof h.rating === "number"
-      ? h.rating
-      : (Array.isArray(h.reviews) && h.reviews.length > 0
-          ? Number((h.reviews.reduce((sum: number, r: any) => sum + (r.rating || 0), 0) / h.reviews.length).toFixed(1))
-          : 4.5),
+    reviewCount: actualReviewCount > 0
+      ? actualReviewCount
+      : (typeof h.reviewCount === "number" ? h.reviewCount : 0),
+    rating: typeof h.rating === "number" ? h.rating : computedRating,
     pricePerNight: h.pricePerNight || 500,
     originalPrice: h.originalPrice,
     discountPct: h.discountPct,

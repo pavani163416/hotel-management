@@ -38,16 +38,17 @@ const Hotels = () => {
 
   const filtered = useMemo(() => {
     let list = hotels.filter((h) => {
+      const ratingValue = typeof h.rating === "number" ? h.rating : 0;
       if (search.location && !h.location.toLowerCase().includes(search.location.toLowerCase()) && !h.city.toLowerCase().includes(search.location.toLowerCase())) return false;
       if (h.pricePerNight > maxPrice) return false;
-      if (h.rating < minRating) return false;
+      if (ratingValue < minRating) return false;
       if (amenities.length && !amenities.every((a) => h.amenities.includes(a))) return false;
       if (types.length && (!h.type || !types.includes(h.type))) return false;
       return true;
     });
     if (sort === "price-asc") list = [...list].sort((a, b) => a.pricePerNight - b.pricePerNight);
     if (sort === "price-desc") list = [...list].sort((a, b) => b.pricePerNight - a.pricePerNight);
-    if (sort === "rating") list = [...list].sort((a, b) => b.rating - a.rating);
+    if (sort === "rating") list = [...list].sort((a, b) => (typeof b.rating === "number" ? b.rating : 0) - (typeof a.rating === "number" ? a.rating : 0));
     return list;
   }, [hotels, search.location, maxPrice, minRating, amenities, types, sort]);
 
@@ -251,8 +252,14 @@ const HotelListCard = ({ hotel: h, onView }: { hotel: any; onView: () => void })
           <div className="flex items-start justify-between gap-3">
             <h3 className="font-display text-lg font-bold text-primary">{h.name}</h3>
             <div className="flex items-center gap-1 text-sm font-semibold whitespace-nowrap">
-              <Star className="w-4 h-4 fill-accent text-accent" /> {h.rating}
-              <span className="text-muted-foreground font-normal">({h.reviewCount})</span>
+              {typeof h.rating === "number" ? (
+                <>
+                  <Star className="w-4 h-4 fill-accent text-accent" /> {h.rating}
+                  <span className="text-muted-foreground font-normal">({h.reviewCount})</span>
+                </>
+              ) : (
+                <span className="text-xs text-muted-foreground">No reviews yet</span>
+              )}
             </div>
           </div>
           <p className="text-sm text-muted-foreground flex items-center gap-1"><MapPin className="w-3.5 h-3.5" /> {h.location}</p>
@@ -260,7 +267,6 @@ const HotelListCard = ({ hotel: h, onView }: { hotel: any; onView: () => void })
             {h.amenities.slice(0, 4).map((a: string) => <span key={a} className="text-xs px-2.5 py-1 rounded-md bg-secondary text-brown font-medium">{a}</span>)}
           </div>
           <p className="text-sm text-muted-foreground line-clamp-2">{h.description}</p>
-          {totalAvail > 0 && totalAvail <= 5 && <p className="text-xs text-accent font-semibold">Only {totalAvail} rooms left</p>}
         </div>
         <div className="p-5 border-t md:border-t-0 md:border-l border-border flex md:flex-col items-end md:items-end justify-between md:justify-center gap-3 md:min-w-[170px]">
           <div className="text-right">

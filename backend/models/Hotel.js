@@ -27,7 +27,7 @@ const hotelSchema = new mongoose.Schema(
     description:   { type: String },
     image:         { type: String },
     gallery:       [String],
-    rating:        { type: Number, default: 4.5, min: 1, max: 5 },
+    rating:        { type: Number, min: 1, max: 5 },
     reviewCount:   { type: Number, default: 0 },
     pricePerNight: { type: Number, required: true },
     originalPrice: { type: Number },

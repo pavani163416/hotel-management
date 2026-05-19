@@ -7,9 +7,11 @@ hotelmanag/.pub/
 hotelmanag/build/
 
 # Node
+node_modules/
 frontend/node_modules/
 frontend/dist/
 frontend/.env
+frontend/.vercel/output/
 
 # OS
 .DS_Store

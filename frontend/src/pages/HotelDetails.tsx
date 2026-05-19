@@ -152,9 +152,15 @@ const HotelDetails = () => {
             <p className="text-muted-foreground flex items-center gap-1 mt-1.5"><MapPin className="w-4 h-4" /> {hotel.location}</p>
           </div>
           <div className="flex items-center gap-2 bg-secondary px-3 py-2 rounded-lg">
-            <Star className="w-4 h-4 fill-accent text-accent" />
-            <span className="font-semibold text-primary">{hotel.rating}</span>
-            <span className="text-sm text-muted-foreground">({hotel.reviewCount} reviews)</span>
+            {typeof hotel.rating === "number" && hotel.reviewCount > 0 ? (
+              <>
+                <Star className="w-4 h-4 fill-accent text-accent" />
+                <span className="font-semibold text-primary">{hotel.rating}</span>
+                <span className="text-sm text-muted-foreground">({hotel.reviewCount} reviews)</span>
+              </>
+            ) : (
+              <span className="text-sm text-muted-foreground">No reviews yet</span>
+            )}
           </div>
         </div>
 
@@ -208,7 +214,7 @@ const HotelDetails = () => {
                           className="bg-accent hover:bg-accent/90 disabled:bg-secondary disabled:text-muted-foreground disabled:cursor-not-allowed text-accent-foreground px-4 py-2.5 rounded-lg font-semibold text-sm transition-base flex items-center justify-center gap-1.5">
                           {roomStatus[r.id]?.checking ? (
                             <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Checking...</>
-                          ) : r.available === 0 ? "Sold Out" : (
+                          ) : r.available === 0 ? "Currently unavailable" : (
                             <>{!user && <LogIn className="w-3.5 h-3.5" />}Select Room</>
                           )}
                         </button>
@@ -219,10 +225,11 @@ const HotelDetails = () => {
                             <p className="text-[11px] text-destructive leading-tight">{roomStatus[r.id].error}</p>
                           </div>
                         )}
-                        {!roomStatus[r.id]?.error && r.available > 0 && r.available <= 3 && (
-                          <span className="text-[11px] text-accent text-center font-medium">Only {r.available} left</span>
-                        )}
-                        {r.available > 0 && !user && <span className="text-[11px] text-muted-foreground text-center">Sign in to book</span>}
+                        {r.available === 0 ? (
+                          <div className="mt-2 rounded-2xl border border-warning/20 bg-warning/10 px-3 py-2 text-sm text-warning">
+                            This room type is currently unavailable at this hotel. Please choose another room or check back later.
+                          </div>
+                        ) : (r.available > 0 && !user && <span className="text-[11px] text-muted-foreground text-center">Sign in to book</span>)}
                       </div>
                     </div>
                   ))}

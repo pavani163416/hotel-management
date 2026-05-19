@@ -25,7 +25,7 @@ export type Hotel = {
   description: string;
   image: string;
   gallery: string[];
-  rating: number;
+  rating?: number;
   reviewCount: number;
   pricePerNight: number;
   originalPrice?: number;

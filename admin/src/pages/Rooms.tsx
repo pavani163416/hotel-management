@@ -84,7 +84,7 @@ export default function Rooms() {
           available:   r.available ?? 1,
           features:    r.features || [],
           floor:       r.floor ?? 1,
-          status:      r.available === 0 ? "Booked" : "Available",
+          status:      (r.available ?? 1) === 0 ? "Unavailable" : "Available",
         })));
       })
       .catch(() => setRooms([]))
@@ -104,7 +104,7 @@ export default function Rooms() {
   const stats = {
     total:       rooms.length,
     available:   rooms.filter((r) => r.available > 0).length,
-    booked:      rooms.filter((r) => r.available === 0).length,
+    unavailable: rooms.filter((r) => r.available === 0).length,
     maintenance: 0,
   };
 
@@ -243,6 +243,25 @@ export default function Rooms() {
     }
   };
 
+  const updateHotelRoomAvailability = async (roomId: string, available: number) => {
+    if (!selectedHotelId) return;
+    try {
+      const res = await fetch(`${API}/hotels/${selectedHotelId}/rooms/${roomId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ available }),
+      });
+      if (res.ok) {
+        fetchHotelRooms(selectedHotelId);
+      } else {
+        const err = await res.json();
+        console.error("Failed to update room availability:", err);
+      }
+    } catch (err) {
+      console.error("Failed to update room availability:", err);
+    }
+  };
+
   const handleExport = () => {
     const rows = [
       ["Room ID", "Name", "Floor", "Price/Night", "Capacity", "Bed", "Available", "Features"],
@@ -306,10 +325,10 @@ export default function Rooms() {
 
         {/* ── Stats ── */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <StatsCard title="Total Rooms"  value={stats.total}       icon={<BedDouble    className="w-5 h-5 text-primary" />} iconBg="bg-primary-light" />
-          <StatsCard title="Available"    value={stats.available}   change="Ready" trend="up" icon={<CheckCircle className="w-5 h-5 text-success" />} iconBg="bg-success-light" />
-          <StatsCard title="Booked"       value={stats.booked}      icon={<DollarSign   className="w-5 h-5 text-warning" />} iconBg="bg-warning-light" />
-          <StatsCard title="Maintenance"  value={stats.maintenance} icon={<Wrench       className="w-5 h-5 text-danger"  />} iconBg="bg-danger-light" />
+          <StatsCard title="Total Rooms"    value={stats.total}       icon={<BedDouble    className="w-5 h-5 text-primary" />} iconBg="bg-primary-light" />
+          <StatsCard title="Available"      value={stats.available}   change="Ready" trend="up" icon={<CheckCircle className="w-5 h-5 text-success" />} iconBg="bg-success-light" />
+          <StatsCard title="Unavailable"   value={stats.unavailable} icon={<DollarSign   className="w-5 h-5 text-warning" />} iconBg="bg-warning-light" />
+          <StatsCard title="Maintenance"   value={stats.maintenance} icon={<Wrench       className="w-5 h-5 text-danger"  />} iconBg="bg-danger-light" />
         </div>
 
         {/* ── Rooms Table ── */}
@@ -322,7 +341,7 @@ export default function Rooms() {
                 className="bg-transparent text-sm outline-none w-full placeholder:text-muted" />
               {search && <button onClick={() => setSearch("")}><X className="w-3.5 h-3.5 text-muted" /></button>}
             </div>
-            {["All", "Available", "Booked"].map((s) => (
+            {["All", "Available", "Unavailable"].map((s) => (
               <button key={s} onClick={() => setStatusFilter(s)}
                 className={`text-xs font-semibold px-3 py-1.5 rounded-full transition-colors ${statusFilter === s ? "bg-primary text-white" : "bg-surface-3 text-muted hover:bg-surface-2"}`}>
                 {s}
@@ -365,11 +384,16 @@ export default function Rooms() {
                     <td className="px-5 py-3.5 text-sm text-text-secondary">{r.capacity}</td>
                     <td className="px-5 py-3.5 text-sm text-text-secondary">{r.bed}</td>
                     <td className="px-5 py-3.5">
-                      <StatusBadge status={r.available > 0 ? "Available" : "Booked"} />
+                      <StatusBadge status={r.status} />
                     </td>
                     <td className="px-5 py-3.5 text-xs text-text-secondary">{r.features.join(", ")}</td>
                     <td className="px-5 py-3.5">
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <button onClick={() => updateHotelRoomAvailability(r.id, r.available > 0 ? 0 : 1)}
+                          className="text-xs font-semibold text-primary px-2 py-1 rounded-full border border-primary/20 hover:bg-primary/10 transition-colors"
+                          title={r.available > 0 ? "Mark this room as currently not available" : "Restore room availability"}>
+                          {r.available > 0 ? "Mark Not Available" : "Restore Availability"}
+                        </button>
                         <button onClick={() => openEdit(r)}
                           className="text-muted hover:text-primary transition-colors p-1 rounded hover:bg-primary-light" title="Edit">
                           <Edit2 className="w-4 h-4" />

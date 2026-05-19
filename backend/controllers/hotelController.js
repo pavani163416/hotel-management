@@ -1,4 +1,5 @@
 import Hotel from "../models/Hotel.js";
+import Room from "../models/Room.js";
 import { broadcastHotels } from "../routes/sseRoutes.js";
 import connectAdminDB from "../config/adminDb.js";
 import HotelSnapshotModel from "../models/admin/HotelSnapshot.js";
@@ -224,6 +225,44 @@ export const removeRoomFromHotel = async (req, res, next) => {
 
     broadcastHotels();
     res.status(200).json({ success: true, message: "Room removed from hotel", data: hotel });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// PATCH /api/hotels/:id/rooms/:roomId — update embedded hotel room availability
+export const updateRoomInHotel = async (req, res, next) => {
+  try {
+    const available = req.body.available;
+    if (available === undefined || Number.isNaN(Number(available)) || Number(available) < 0) {
+      return res.status(422).json({ success: false, message: "available must be a non-negative number." });
+    }
+
+    const hotel = await Hotel.findOneAndUpdate(
+      { hotelId: req.params.id, "rooms.id": req.params.roomId },
+      { $set: { "rooms.$.available": Number(available) } },
+      { new: true, runValidators: true }
+    );
+
+    if (!hotel) {
+      return res.status(404).json({ success: false, message: "Hotel or room not found" });
+    }
+
+    const updatedRoom = hotel.rooms.find((r) => r.id === req.params.roomId);
+    if (updatedRoom) {
+      syncRoomSnapshot(req.params.id, hotel.name, updatedRoom).catch(() => {});
+
+      try {
+        await Room.findOneAndUpdate(
+          { roomNumber: req.params.roomId },
+          { status: Number(available) > 0 ? "Available" : "Booked" },
+          { new: true }
+        );
+      } catch {}
+    }
+
+    broadcastHotels();
+    res.status(200).json({ success: true, message: "Room availability updated", data: hotel });
   } catch (error) {
     next(error);
   }

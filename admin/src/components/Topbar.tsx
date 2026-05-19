@@ -155,7 +155,7 @@ export default function Topbar({ searchPlaceholder }: Props) {
             <Hotel className="w-3.5 h-3.5" /> Hotel Switcher
           </button>
           {showHotelSwitcher && (
-            <div className="absolute right-0 top-10 w-64 z-50 overflow-hidden" style={dropdownStyle}>
+            <div className="absolute right-0 top-10 w-64 z-50 overflow-hidden scrollbar-thin" style={{ ...dropdownStyle, maxHeight: "min(320px, calc(100vh - 180px))", overflowY: "auto" }}>
               <div className="px-4 py-2.5" style={dropdownHeaderStyle}>
                 <p className="text-xs font-semibold text-dim uppercase tracking-wider">Select a Property</p>
               </div>

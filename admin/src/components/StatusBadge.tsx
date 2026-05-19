@@ -6,6 +6,7 @@ const map: Record<string, BadgeStyle> = {
   Confirmed:    { bg: "rgba(16,185,129,0.15)",  color: "#10b981", border: "rgba(16,185,129,0.3)"  },
   Active:       { bg: "rgba(16,185,129,0.15)",  color: "#10b981", border: "rgba(16,185,129,0.3)"  },
   Available:    { bg: "rgba(16,185,129,0.15)",  color: "#10b981", border: "rgba(16,185,129,0.3)"  },
+  Unavailable:  { bg: "rgba(245,158,11,0.15)",  color: "#f59e0b", border: "rgba(245,158,11,0.3)"  },
   Approved:     { bg: "rgba(16,185,129,0.15)",  color: "#10b981", border: "rgba(16,185,129,0.3)"  },
   Pending:      { bg: "rgba(245,158,11,0.15)",  color: "#f59e0b", border: "rgba(245,158,11,0.3)"  },
   Maintenance:  { bg: "rgba(245,158,11,0.15)",  color: "#f59e0b", border: "rgba(245,158,11,0.3)"  },
