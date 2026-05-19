@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../utils/audio_helper.dart';
+import '../../features/booking/domain/entities/booking_entity.dart';
 
 class NotificationItem {
   final String id;
@@ -17,69 +18,71 @@ class NotificationItem {
     this.isNew = true,
     this.isCancelled = false,
   });
-
-  NotificationItem copyWith({bool? isNew}) {
-    return NotificationItem(
-      id: id,
-      title: title,
-      type: type,
-      timestamp: timestamp,
-      isNew: isNew ?? this.isNew,
-      isCancelled: isCancelled,
-    );
-  }
 }
 
 class NotificationProvider extends ChangeNotifier {
-  final List<NotificationItem> _notifications = [
-    NotificationItem(
-      id: '1',
-      title: 'Your booking is confirmed',
-      type: 'Booking',
-      timestamp: DateTime.now().subtract(const Duration(minutes: 6)),
-      isNew: true,
-      isCancelled: false,
-    ),
-    NotificationItem(
-      id: '2',
-      title: 'Your booking has been cancelled',
-      type: 'Booking',
-      timestamp: DateTime.now().subtract(const Duration(minutes: 8)),
-      isNew: true,
-      isCancelled: true,
-    ),
-    NotificationItem(
-      id: '3',
-      title: 'Your booking is confirmed',
-      type: 'Booking',
-      timestamp: DateTime.now().subtract(const Duration(minutes: 25)),
-      isNew: false,
-      isCancelled: false,
-    ),
-    NotificationItem(
-      id: '4',
-      title: 'Your booking is confirmed',
-      type: 'Booking',
-      timestamp: DateTime.now().subtract(const Duration(minutes: 42)),
-      isNew: false,
-      isCancelled: false,
-    ),
-  ];
+  final Set<String> _readBookingIds = {};
+  final List<NotificationItem> _liveNotifications = [];
 
-  List<NotificationItem> get notifications => _notifications;
+  // Get combined list of real notifications mapped from backend database bookings
+  List<NotificationItem> getRealNotifications(List<BookingEntity> realBookings) {
+    final List<NotificationItem> items = [];
 
-  int get unreadCount => _notifications.where((n) => n.isNew).length;
+    // 1. Map database bookings to real notifications
+    for (final booking in realBookings) {
+      final isCancelled = booking.status.toLowerCase() == 'cancelled';
+      final hotelName = booking.hotelName;
+      final roomNo = booking.roomNumber ?? '';
+      
+      final title = isCancelled
+          ? 'Your booking for $hotelName (Room $roomNo) has been cancelled.'
+          : 'Your booking for $hotelName (Room $roomNo) is confirmed!';
 
-  void addNotification(String title, {bool isCancelled = false}) {
+      items.add(
+        NotificationItem(
+          id: booking.id,
+          title: title,
+          type: 'Booking',
+          timestamp: booking.createdAt ?? booking.checkIn,
+          isNew: !_readBookingIds.contains(booking.id),
+          isCancelled: isCancelled,
+        ),
+      );
+    }
+
+    // 2. Include active session live notifications if any
+    for (final live in _liveNotifications) {
+      if (!items.any((i) => i.id == live.id)) {
+        items.add(
+          NotificationItem(
+            id: live.id,
+            title: live.title,
+            type: live.type,
+            timestamp: live.timestamp,
+            isNew: !_readBookingIds.contains(live.id),
+            isCancelled: live.isCancelled,
+          ),
+        );
+      }
+    }
+
+    // 3. Sort by newest first
+    items.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+    return items;
+  }
+
+  void addNotification(String title, {bool isCancelled = false, String? bookingId}) {
+    final id = bookingId ?? DateTime.now().millisecondsSinceEpoch.toString();
     final newItem = NotificationItem(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      id: id,
       title: title,
       type: 'Booking',
       timestamp: DateTime.now(),
       isNew: true,
       isCancelled: isCancelled,
     );
-    _notifications.insert(0, newItem);
+    
+    _liveNotifications.insert(0, newItem);
     
     // Play pleasant chime audio chime feedback
     try {
@@ -89,11 +92,9 @@ class NotificationProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void markAllAsRead() {
-    for (int i = 0; i < _notifications.length; i++) {
-      if (_notifications[i].isNew) {
-        _notifications[i] = _notifications[i].copyWith(isNew: false);
-      }
+  void markAllAsRead(List<NotificationItem> items) {
+    for (final item in items) {
+      _readBookingIds.add(item.id);
     }
     notifyListeners();
   }

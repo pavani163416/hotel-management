@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../theme/app_theme.dart';
 import 'notification_modal.dart';
 import '../providers/notification_provider.dart';
+import '../providers/booking_provider.dart';
 import 'package:provider/provider.dart';
 
 class MainLayout extends StatelessWidget {
@@ -85,9 +86,10 @@ class MainLayout extends StatelessWidget {
         ),
       ),
       actions: [
-        Consumer<NotificationProvider>(
-          builder: (context, provider, child) {
-            final unreadCount = provider.unreadCount;
+        Consumer2<NotificationProvider, BookingProvider>(
+          builder: (context, provider, bookingProv, child) {
+            final items = provider.getRealNotifications(bookingProv.bookings);
+            final unreadCount = items.where((i) => i.isNew).length;
             return Stack(
               children: [
                 IconButton(

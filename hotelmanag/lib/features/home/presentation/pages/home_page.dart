@@ -7,6 +7,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/main_layout.dart';
 import '../../../../core/widgets/notification_modal.dart';
 import '../../../../core/providers/notification_provider.dart';
+import '../../../../core/providers/booking_provider.dart';
 import '../../../../core/providers/favorites_provider.dart';
 import '../../../../core/providers/hotel_provider.dart';
 import '../../../../core/providers/auth_provider.dart';
@@ -380,9 +381,10 @@ class _HomePageState extends State<HomePage> {
                           ],
                         ),
                       ),
-                      Consumer<NotificationProvider>(
-                        builder: (context, provider, child) {
-                          final unreadCount = provider.unreadCount;
+                      Consumer2<NotificationProvider, BookingProvider>(
+                        builder: (context, provider, bookingProv, child) {
+                          final items = provider.getRealNotifications(bookingProv.bookings);
+                          final unreadCount = items.where((i) => i.isNew).length;
                           return Stack(
                             children: [
                               IconButton(

@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import '../theme/app_theme.dart';
 import '../providers/notification_provider.dart';
 
+import '../providers/booking_provider.dart';
+
 class NotificationModal extends StatelessWidget {
   const NotificationModal({super.key});
 
@@ -16,10 +18,11 @@ class NotificationModal extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bookings = context.watch<BookingProvider>().bookings;
     return Consumer<NotificationProvider>(
       builder: (context, provider, child) {
-        final items = provider.notifications;
-        final unreadCount = provider.unreadCount;
+        final items = provider.getRealNotifications(bookings);
+        final unreadCount = items.where((i) => i.isNew).length;
 
         return Container(
           padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
@@ -62,7 +65,7 @@ class NotificationModal extends StatelessWidget {
                           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         ),
                         onPressed: () {
-                          provider.markAllAsRead();
+                          provider.markAllAsRead(items);
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
                               content: Text('All notifications marked as read'),
