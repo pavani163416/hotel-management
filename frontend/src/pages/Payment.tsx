@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import Layout from "@/components/Layout";
 import Stepper from "@/components/Stepper";
+import PasswordInput from "@/components/PasswordInput";
 import { useBooking, calcNights, Booking } from "@/context/BookingContext";
 import { createBooking } from "@/services/api";
 
