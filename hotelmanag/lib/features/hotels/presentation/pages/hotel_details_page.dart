@@ -416,31 +416,46 @@ class _HotelDetailsPageState extends State<HotelDetailsPage> with SingleTickerPr
   Widget _buildRoomsTab(BuildContext context, HotelEntity hotel, bool isWide) {
     final isDark = Theme.of(context).colorScheme.brightness == Brightness.dark;
     
-    final roomList = [
-      RoomData(
-        name: 'Deluxe King Room',
-        bedInfo: '1 King Bed',
-        guests: 2,
-        features: const ['WiFi', 'Breakfast', 'AC'],
-        priceFactor: 1.0,
-      ),
-      RoomData(
-        name: 'Executive Suite',
-        bedInfo: '1 King Bed + Sofa',
-        guests: 3,
-        features: const ['WiFi', 'Breakfast', 'Mini Bar'],
-        priceFactor: 1.625,
-        warning: 'Only 2 left',
-      ),
-      RoomData(
-        name: 'Panoramic Penthouse',
-        bedInfo: '2 King Beds',
-        guests: 4,
-        features: const ['Butler', 'Private Spa'],
-        priceFactor: 3.02,
-        warning: 'Only 1 left',
-      ),
-    ];
+    final roomList = hotel.rooms.isEmpty
+        ? [
+            RoomData(
+              name: 'Deluxe King Room',
+              bedInfo: '1 King Bed',
+              guests: 2,
+              features: const ['WiFi', 'Breakfast', 'AC'],
+              priceFactor: 1.0,
+            ),
+            RoomData(
+              name: 'Executive Suite',
+              bedInfo: '1 King Bed + Sofa',
+              guests: 3,
+              features: const ['WiFi', 'Breakfast', 'Mini Bar'],
+              priceFactor: 1.625,
+              warning: 'Only 2 left',
+            ),
+            RoomData(
+              name: 'Panoramic Penthouse',
+              bedInfo: '2 King Beds',
+              guests: 4,
+              features: const ['Butler', 'Private Spa'],
+              priceFactor: 3.02,
+              warning: 'Only 1 left',
+            ),
+          ]
+        : hotel.rooms.map((room) {
+            double priceFactor = 1.0;
+            if (hotel.pricePerNight > 0) {
+              priceFactor = room.price / hotel.pricePerNight;
+            }
+            return RoomData(
+              name: room.name,
+              bedInfo: room.bed.isNotEmpty ? room.bed : '1 King Bed',
+              guests: room.capacity,
+              features: room.features,
+              priceFactor: priceFactor,
+              warning: room.available <= 2 ? 'Only ${room.available} left' : null,
+            );
+          }).toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

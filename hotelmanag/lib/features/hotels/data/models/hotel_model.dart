@@ -12,6 +12,7 @@ class HotelModel extends HotelEntity {
     super.type,
     super.amenities,
     super.reviews,
+    super.rooms,
     super.gallery,
   });
 
@@ -28,6 +29,9 @@ class HotelModel extends HotelEntity {
       amenities: List<String>.from(json['amenities'] ?? []),
       reviews: (json['reviews'] as List? ?? [])
           .map((r) => ReviewEntity.fromJson(r))
+          .toList(),
+      rooms: (json['rooms'] as List? ?? [])
+          .map((r) => RoomEntity.fromJson(r))
           .toList(),
       gallery: List<String>.from(json['gallery'] ?? []),
     );
@@ -46,6 +50,7 @@ class HotelModel extends HotelEntity {
       'type': type,
       'amenities': amenities,
       'reviews': reviews.map((r) => r.toJson()).toList(),
+      'rooms': rooms.map((r) => r.toJson()).toList(),
       'gallery': gallery,
     };
   }
