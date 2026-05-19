@@ -389,4 +389,77 @@ router.patch("/cancellations/:id", protect, async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
+// ── One-time migration: tag rooms with hotelStringId ─────
+// POST /api/admin/migrate/fix-room-hotel-ids
+// Call once after deploy to fix existing rooms that have no hotelStringId set.
+router.post("/migrate/fix-room-hotel-ids", protect, async (req, res, next) => {
+  try {
+    const KNOWN_PREFIXES = {
+      hdl: "h1", tas: "h2", cbr: "h3", apl: "h4",
+      tgm: "h5", scs: "h6", swg: "h7",
+    };
+
+    // Build prefix → { hotelStringId, hotelObjectId } map from DB hotels
+    const hotels = await Hotel.find({}).lean();
+    const prefixMap = {};
+
+    // Seed known prefixes
+    for (const [prefix, hotelId] of Object.entries(KNOWN_PREFIXES)) {
+      const hotel = hotels.find((h) => h.hotelId === hotelId);
+      prefixMap[prefix] = { hotelStringId: hotelId, hotelObjectId: hotel?._id || null };
+    }
+
+    // Derive prefixes for all hotels (including unknown ones like swagruha)
+    for (const hotel of hotels) {
+      const clean = hotel.name.toLowerCase().replace(/[^a-z0-9\s]/g, "");
+      const words = clean.split(/\s+/).filter(Boolean);
+      let prefix;
+      if (words.length >= 2 && words[0].length >= 3) {
+        prefix = words[0].slice(0, 3);
+      } else if (words.length >= 2) {
+        prefix = words.map((w) => w[0]).join("").slice(0, 4);
+      } else {
+        prefix = clean.slice(0, 3);
+      }
+      if (!prefixMap[prefix]) {
+        prefixMap[prefix] = { hotelStringId: hotel.hotelId, hotelObjectId: hotel._id };
+      }
+    }
+
+    // Fetch all rooms
+    const rooms = await Room.find({}).lean();
+    let updated = 0, skipped = 0, unmatched = 0;
+    const unmatchedRooms = [];
+
+    for (const room of rooms) {
+      const match = room.roomNumber?.match(/^([a-z]+)-/i);
+      if (!match) { unmatched++; unmatchedRooms.push(room.roomNumber); continue; }
+
+      const prefix = match[1].toLowerCase();
+      const hotelInfo = prefixMap[prefix];
+
+      if (!hotelInfo) {
+        unmatched++;
+        unmatchedRooms.push(room.roomNumber);
+        continue;
+      }
+
+      if (room.hotelStringId === hotelInfo.hotelStringId) { skipped++; continue; }
+
+      const updateData = { hotelStringId: hotelInfo.hotelStringId };
+      if (hotelInfo.hotelObjectId) updateData.hotelId = hotelInfo.hotelObjectId;
+
+      await Room.updateOne({ _id: room._id }, { $set: updateData });
+      updated++;
+    }
+
+    logger.info("Room hotel ID migration complete", { updated, skipped, unmatched });
+    res.json({
+      success: true,
+      message: `Migration complete. Updated: ${updated}, Already correct: ${skipped}, Unmatched: ${unmatched}`,
+      data: { updated, skipped, unmatched, unmatchedRooms },
+    });
+  } catch (e) { next(e); }
+});
+
 export default router;
