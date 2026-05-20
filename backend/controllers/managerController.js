@@ -39,7 +39,7 @@ function esc(s) {
 }
 function hotelScopeFilter(hotelId, hotelName, hotelObjectId) {
   const clauses = [];
-  if (hotelId) clauses.push({ hotelStringId: hotelId });
+  if (hotelId) clauses.push({ hotelStringId: new RegExp(`^${esc(hotelId)}$`, "i") });
   if (hotelObjectId) clauses.push({ hotelId: hotelObjectId });
   if (hotelName) clauses.push({ hotelName: new RegExp(esc(hotelName), "i") });
   if (clauses.length === 0) return {};
@@ -63,7 +63,7 @@ function roomPrefixFilter(id, hotelObjectId) {
   if (!id && !hotelObjectId) return {};
   const prefix = HOTEL_PREFIXES[id];
   const clauses = [];
-  if (id) clauses.push({ hotelStringId: id });
+  if (id) clauses.push({ hotelStringId: new RegExp(`^${esc(id)}$`, "i") });
   if (hotelObjectId) clauses.push({ hotelId: hotelObjectId });
   if (prefix) clauses.push({ roomNumber: new RegExp("^" + prefix + "-", "i") });
   if (clauses.length === 0) return {};
@@ -181,7 +181,9 @@ export const updateManagerRoom = async (req, res, next) => {
     if (!room) return res.status(404).json({ success:false, message:"Room not found" });
     
     const prefix = HOTEL_PREFIXES[hotelId];
-    const isOwner = (room.hotelStringId === hotelId) || (prefix && room.roomNumber.toLowerCase().startsWith(prefix + "-"));
+    const roomHotelId = String(room.hotelStringId || "").toLowerCase();
+    const assignedHotelId = String(hotelId || "").toLowerCase();
+    const isOwner = (roomHotelId && roomHotelId === assignedHotelId) || (prefix && room.roomNumber.toLowerCase().startsWith(prefix + "-"));
     if (!isOwner)
       return res.status(403).json({ success:false, message:"Unauthorized: You do not have management access to this property.", code:"HOTEL_ACCESS_DENIED" });
       
@@ -204,7 +206,9 @@ export const deleteManagerRoom = async (req, res, next) => {
     if (!room) return res.status(404).json({ success:false, message:"Room not found" });
     
     const prefix = HOTEL_PREFIXES[hotelId];
-    const isOwner = (room.hotelStringId === hotelId) || (prefix && room.roomNumber.toLowerCase().startsWith(prefix + "-"));
+    const roomHotelId = String(room.hotelStringId || "").toLowerCase();
+    const assignedHotelId = String(hotelId || "").toLowerCase();
+    const isOwner = (roomHotelId && roomHotelId === assignedHotelId) || (prefix && room.roomNumber.toLowerCase().startsWith(prefix + "-"));
     if (!isOwner)
       return res.status(403).json({ success:false, message:"Unauthorized: You do not have management access to this property.", code:"HOTEL_ACCESS_DENIED" });
       
