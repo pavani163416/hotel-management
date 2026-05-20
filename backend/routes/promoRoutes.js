@@ -1,11 +1,21 @@
 /**
- * promoRoutes.js
- * POST /api/promo/validate  { code, subtotal, userEmail? }
- *
- * Checks DB coupons first, then falls back to hardcoded codes.
- * Rules:
- *  - WELCOME15 and LUXE10 → first-time bookers only
- *  - VIP20               → always valid
+ * @swagger
+ * tags:
+ *   - name: Promo
+ *     description: Promo code validation endpoints
+ * /api/promo/validate:
+ *   post:
+ *     summary: Validate a promo coupon code
+ *     tags: [Promo]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/PromoValidation'
+ *     responses:
+ *       200:
+ *         description: Promo validation result
  */
 
 import express from "express";

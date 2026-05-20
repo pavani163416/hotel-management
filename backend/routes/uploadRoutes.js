@@ -1,3 +1,42 @@
+/**
+ * @swagger
+ * tags:
+ *   - name: Uploads
+ *     description: Image upload and email test endpoints
+ * /api/upload/image:
+ *   post:
+ *     summary: Upload an image to Cloudinary
+ *     tags: [Uploads]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/UploadImageRequest'
+ *     responses:
+ *       200:
+ *         description: Image uploaded successfully
+ * /api/upload/test-email:
+ *   get:
+ *     summary: Send a test email through Resend
+ *     tags: [Uploads]
+ *     parameters:
+ *       - in: query
+ *         name: to
+ *         schema:
+ *           type: string
+ *           format: email
+ *     responses:
+ *       200:
+ *         description: Test email sent successfully
+ * /api/upload/fix-hotel-names:
+ *   get:
+ *     summary: Fix old bookings with missing hotel names
+ *     tags: [Uploads]
+ *     responses:
+ *       200:
+ *         description: Hotel names fixed
+ */
 import express from "express";
 import { uploadImage } from "../utils/cloudinary.js";
 import { Resend } from "resend";

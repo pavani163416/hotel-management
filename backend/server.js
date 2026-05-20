@@ -30,6 +30,8 @@ import errorHandler     from "./middleware/errorHandler.js";
 import { apiLimiter, bookingLimiter, promoLimiter } from "./middleware/rateLimiter.js";
 import { roomNames, setNotificationIo } from "./utils/notificationService.js";
 import logger           from "./utils/logger.js";
+import swaggerUi        from "swagger-ui-express";
+import swaggerDocument  from "./swagger.js";
 
 // ── Validate required env vars on startup ─────────────────
 // ADMIN_EMAIL and ADMIN_PASSWORD are now stored in the controller DB.
@@ -170,6 +172,10 @@ const socketCorsOrigin = (origin, callback) => {
 // Handle preflight for all routes FIRST — before any other middleware
 app.options("*", cors(corsOptions));
 app.use(cors(corsOptions));
+
+// ── Swagger / API documentation ──────────────────────────
+app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+app.get("/api/docs.json", (req, res) => res.json(swaggerDocument));
 
 // ── Additional headers for WebSocket support ──────────────
 app.use((req, res, next) => {

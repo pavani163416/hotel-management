@@ -1,29 +1,288 @@
 /**
- * managerRoutes.js
- * All routes prefixed with /api/manager
- *
- * Public:
- *   POST /api/manager/login
- *
- * Protected (requires valid manager JWT):
- *   GET  /api/manager/dashboard
- *   GET  /api/manager/stats
- *   GET  /api/manager/rooms
- *   POST /api/manager/rooms
- *   PUT  /api/manager/rooms/:id
- *   DELETE /api/manager/rooms/:id
- *   GET  /api/manager/bookings
- *   PUT  /api/manager/bookings/:id/checkin
- *   PUT  /api/manager/bookings/:id/checkout
- *   POST /api/manager/bookings/walkin
- *   GET  /api/manager/guests
- *   GET  /api/manager/guests/additional
- *   GET  /api/manager/halls
- *   POST /api/manager/halls
- *   PUT  /api/manager/halls/:id
- *   POST /api/manager/price-requests
- *   GET  /api/manager/price-requests
- *   GET  /api/manager/hotel/:hotelId  (access guard)
+ * @swagger
+ * tags:
+ *   - name: Manager
+ *     description: Manager panel endpoints for hotel staff and operations
+ * /api/manager/login:
+ *   post:
+ *     summary: Authenticate a manager and return a JWT
+ *     tags: [Manager]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Manager authenticated successfully
+ * /api/manager/dashboard:
+ *   get:
+ *     summary: Get dashboard summary data for the logged in manager
+ *     tags: [Manager]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Dashboard data returned
+ * /api/manager/stats:
+ *   get:
+ *     summary: Get statistics for the manager's hotel
+ *     tags: [Manager]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Manager stats returned
+ * /api/manager/rooms:
+ *   get:
+ *     summary: List manager-scoped rooms
+ *     tags: [Manager]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Room list returned
+ *   post:
+ *     summary: Create a new room for the manager's hotel
+ *     tags: [Manager]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/ManagerRoom'
+ *     responses:
+ *       201:
+ *         description: Room created successfully
+ * /api/manager/rooms/{id}:
+ *   put:
+ *     summary: Update a room managed by the authenticated manager
+ *     tags: [Manager]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/ManagerRoom'
+ *     responses:
+ *       200:
+ *         description: Room updated successfully
+ *   delete:
+ *     summary: Delete a room managed by the authenticated manager
+ *     tags: [Manager]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Room deleted successfully
+ * /api/manager/rooms/{id}/availability:
+ *   get:
+ *     summary: Check room availability for manager-managed rooms
+ *     tags: [Manager]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - name: checkIn
+ *         in: query
+ *         schema:
+ *           type: string
+ *           format: date
+ *       - name: checkOut
+ *         in: query
+ *         schema:
+ *           type: string
+ *           format: date
+ *     responses:
+ *       200:
+ *         description: Availability status returned
+ * /api/manager/bookings:
+ *   get:
+ *     summary: List bookings for the manager's hotel
+ *     tags: [Manager]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Booking list returned
+ * /api/manager/bookings/{id}/checkin:
+ *   put:
+ *     summary: Mark a booking as checked in
+ *     tags: [Manager]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Booking checked in
+ * /api/manager/bookings/{id}/checkout:
+ *   put:
+ *     summary: Mark a booking as checked out
+ *     tags: [Manager]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Booking checked out
+ * /api/manager/bookings/walkin:
+ *   post:
+ *     summary: Create a walk-in booking for the manager's hotel
+ *     tags: [Manager]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/CreateBooking'
+ *     responses:
+ *       201:
+ *         description: Walk-in booking created
+ * /api/manager/bookings/{id}/reassign:
+ *   put:
+ *     summary: Reassign a booking to another room
+ *     tags: [Manager]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/BillingReassignRequest'
+ *     responses:
+ *       200:
+ *         description: Booking reassigned successfully
+ * /api/manager/guests:
+ *   get:
+ *     summary: Get guests associated with the manager's hotel
+ *     tags: [Manager]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Guest list returned
+ * /api/manager/guests/additional:
+ *   get:
+ *     summary: Get additional guest records for manager hotel
+ *     tags: [Manager]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Additional guests returned
+ * /api/manager/halls:
+ *   get:
+ *     summary: List function halls for manager hotel
+ *     tags: [Manager]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Function halls returned
+ *   post:
+ *     summary: Create a new function hall entry
+ *     tags: [Manager]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               hallType:
+ *                 type: string
+ *               capacity:
+ *                 type: integer
+ *               description:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Function hall created successfully
+ * /api/manager/halls/{id}:
+ *   put:
+ *     summary: Update a function hall by ID
+ *     tags: [Manager]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Function hall updated successfully
+ * /api/manager/price-requests:
+ *   get:
+ *     summary: List price requests for the manager hotel
+ *     tags: [Manager]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Price requests returned
+ *   post:
+ *     summary: Create a price request for a room
+ *     tags: [Manager]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/CreatePriceRequest'
+ *     responses:
+ *       201:
+ *         description: Price request created successfully
  */
 
 import express from "express";

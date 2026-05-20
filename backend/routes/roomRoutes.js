@@ -1,3 +1,81 @@
+/**
+ * @swagger
+ * tags:
+ *   - name: Rooms
+ *     description: Room search, availability and management endpoints
+ * /api/rooms/available-count:
+ *   get:
+ *     summary: Get count of available rooms for query parameters
+ *     tags: [Rooms]
+ *     parameters:
+ *       - in: query
+ *         name: hotelStringId
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: roomType
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: checkIn
+ *         schema:
+ *           type: string
+ *           format: date
+ *       - in: query
+ *         name: checkOut
+ *         schema:
+ *           type: string
+ *           format: date
+ *     responses:
+ *       200:
+ *         description: Availability count returned
+ * /api/rooms/booking-history/{roomId}:
+ *   get:
+ *     summary: Get recent booking history for a room
+ *     tags: [Rooms]
+ *     parameters:
+ *       - name: roomId
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Room booking history returned
+ * /api/rooms/availability:
+ *   post:
+ *     summary: Check if a room is available for given dates
+ *     tags: [Rooms]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/RoomAvailabilityRequest'
+ *     responses:
+ *       200:
+ *         description: Room availability result
+ * /api/rooms/map-overview:
+ *   get:
+ *     summary: Get room map overview data
+ *     tags: [Rooms]
+ *     responses:
+ *       200:
+ *         description: Room map overview returned
+ * /api/rooms/{id}:
+ *   get:
+ *     summary: Get room details by ID
+ *     tags: [Rooms]
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Room details returned
+ */
 import express from "express";
 import {
   getRooms,

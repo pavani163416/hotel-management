@@ -1,3 +1,263 @@
+/**
+ * @swagger
+ * tags:
+ *   - name: Admin
+ *     description: Super-admin endpoints for user, manager, coupon and booking administration
+ * /api/admin/login:
+ *   post:
+ *     summary: Authenticate an admin user
+ *     tags: [Admin]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Admin login successful
+ * /api/admin/stats:
+ *   get:
+ *     summary: Get administrative statistics
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Admin statistics returned
+ * /api/admin/analytics:
+ *   get:
+ *     summary: Get analytics data for the admin panel
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Analytics data returned
+ * /api/admin/users:
+ *   get:
+ *     summary: List admin user accounts
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Admin users returned
+ *   post:
+ *     summary: Create a new admin user
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/User'
+ *     responses:
+ *       201:
+ *         description: Admin user created
+ * /api/admin/users/{id}:
+ *   patch:
+ *     summary: Update an admin user
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Admin user updated
+ * /api/admin/managers:
+ *   get:
+ *     summary: List all managers
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Managers returned
+ *   post:
+ *     summary: Create a new manager account
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Manager'
+ *     responses:
+ *       201:
+ *         description: Manager created
+ * /api/admin/managers/{id}:
+ *   get:
+ *     summary: Get a manager by ID
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Manager returned
+ *   put:
+ *     summary: Update a manager account
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Manager updated
+ *   delete:
+ *     summary: Delete a manager account
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Manager deleted
+ * /api/admin/price-requests:
+ *   get:
+ *     summary: List price requests
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Price requests returned
+ * /api/admin/price-requests/{id}/approve:
+ *   put:
+ *     summary: Approve a price request
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Price request approved
+ * /api/admin/price-requests/{id}/reject:
+ *   put:
+ *     summary: Reject a price request
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Price request rejected
+ * /api/admin/coupons:
+ *   get:
+ *     summary: List coupons
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Coupons returned
+ *   post:
+ *     summary: Create a coupon
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Coupon'
+ *     responses:
+ *       201:
+ *         description: Coupon created
+ * /api/admin/coupons/{id}:
+ *   get:
+ *     summary: Get coupon details by ID
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Coupon returned
+ *   put:
+ *     summary: Update a coupon by ID
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Coupon'
+ *     responses:
+ *       200:
+ *         description: Coupon updated
+ *   delete:
+ *     summary: Delete a coupon by ID
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Coupon deleted
+ * /api/admin/coupons-public:
+ *   get:
+ *     summary: Get public coupons without authentication
+ *     tags: [Admin]
+ *     responses:
+ *       200:
+ *         description: Public coupons returned
+ * /api/admin/cancellations:
+ *   get:
+ *     summary: List cancellations and refunds
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Cancellation list returned
+ * /api/admin/cancellations/{id}:
+ *   get:
+ *     summary: Get cancellation details
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Cancellation details returned
+ *   patch:
+ *     summary: Update a cancellation record
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Cancellation status updated
+ */
 import express  from "express";
 import bcrypt   from "bcryptjs";
 import { adminLogin, getAdminStats, getAdminAnalytics } from "../controllers/adminController.js";

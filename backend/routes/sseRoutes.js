@@ -1,4 +1,17 @@
 /**
+ * @swagger
+ * tags:
+ *   - name: SSE
+ *     description: Server-Sent Events endpoints for hotel updates
+ * /api/sse/hotels:
+ *   get:
+ *     summary: Subscribe to hotel updates via Server-Sent Events
+ *     tags: [SSE]
+ *     responses:
+ *       200:
+ *         description: SSE connection established
+ */
+/**
  * Server-Sent Events — pushes real-time hotel updates to the user panel
  * User panel connects once, backend pushes whenever hotels change
  */

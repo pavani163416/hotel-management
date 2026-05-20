@@ -1,13 +1,188 @@
 /**
- * authRoutes.js — Customer authentication
- *
- * Uses the dedicated `users` collection (User model) for credentials.
- * The `guests` collection remains for booking/profile data only.
- *
- * POST /api/auth/register  — create user account + guest record
- * POST /api/auth/login     — sign in, returns JWT
- * GET  /api/auth/me        — get current user (requires token)
- * GET  /api/auth/bookings  — get bookings for logged-in user
+ * @swagger
+ * tags:
+ *   - name: Auth
+ *     description: Customer authentication and profile endpoints
+ * /api/auth/register:
+ *   post:
+ *     summary: Register a new customer and create a guest profile
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/AuthRegister'
+ *     responses:
+ *       201:
+ *         description: Account created successfully
+ *       400:
+ *         description: Invalid registration payload
+ * /api/auth/login:
+ *   post:
+ *     summary: Authenticate a customer and return a JWT
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/AuthLogin'
+ *     responses:
+ *       200:
+ *         description: Login successful
+ *       401:
+ *         description: Invalid credentials
+ * /api/auth/forgot-password:
+ *   post:
+ *     summary: Request a password reset email
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *     responses:
+ *       200:
+ *         description: Password reset email sent
+ * /api/auth/reset-password:
+ *   post:
+ *     summary: Complete password reset using token
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/PasswordReset'
+ *     responses:
+ *       200:
+ *         description: Password updated
+ * /api/auth/phone/send:
+ *   post:
+ *     summary: Send phone verification OTP
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/PhoneVerify'
+ *     responses:
+ *       200:
+ *         description: OTP sent
+ * /api/auth/phone/verify:
+ *   post:
+ *     summary: Verify phone OTP
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/PhoneVerify'
+ *     responses:
+ *       200:
+ *         description: Phone verified
+ * /api/auth/google:
+ *   post:
+ *     summary: Sign in or register using Google OAuth token
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               idToken:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Google authentication successful
+ * /api/auth/me:
+ *   get:
+ *     summary: Get currently authenticated user profile
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: User profile returned
+ * /api/auth/profile:
+ *   patch:
+ *     summary: Update profile information for the authenticated user
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               phone:
+ *                 type: string
+ *               city:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Profile updated successfully
+ * /api/auth/change-password:
+ *   post:
+ *     summary: Change password for authenticated user
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               currentPassword:
+ *                 type: string
+ *               newPassword:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Password changed successfully
+ * /api/auth/payment-methods:
+ *   post:
+ *     summary: Save a customer payment method (stubbed endpoint)
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               paymentToken:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Payment method saved
+ * /api/auth/bookings:
+ *   get:
+ *     summary: Get bookings for authenticated customer
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Bookings list returned
  */
 
 import express from "express";

@@ -1,12 +1,21 @@
 /**
- * assistanceRoutes.js
- * POST /api/assistance  { hotelId, userId, message }
- *
- * Flow:
- *  1. Find the hotel by hotelId
- *  2. Find the manager assigned to that hotel (Manager.assignedHotelId === hotelId)
- *  3. Store a Notification with role="manager", hotelId, userId, type="assistance"
- *  4. Emit a real-time Socket.IO event to the hotel room so the manager receives it instantly
+ * @swagger
+ * tags:
+ *   - name: Assistance
+ *     description: Hotel assistance request endpoints
+ * /api/assistance:
+ *   post:
+ *     summary: Send an assistance request to the hotel manager
+ *     tags: [Assistance]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/AssistanceRequest'
+ *     responses:
+ *       201:
+ *         description: Assistance request sent successfully
  */
 
 import express from "express";
