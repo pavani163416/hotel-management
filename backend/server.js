@@ -175,7 +175,9 @@ app.use(cors(corsOptions));
 
 // ── Swagger / API documentation ──────────────────────────
 app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+app.get(["/api/docs", "/api/docs/"], (req, res) => swaggerUi.setup(swaggerDocument)(req, res));
 app.get("/api/docs.json", (req, res) => res.json(swaggerDocument));
+app.get("/api/docs/swagger.json", (req, res) => res.json(swaggerDocument));
 
 // ── Additional headers for WebSocket support ──────────────
 app.use((req, res, next) => {
