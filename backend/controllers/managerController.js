@@ -70,6 +70,18 @@ function roomPrefixFilter(id, hotelObjectId) {
   return clauses.length === 1 ? clauses[0] : { $or: clauses };
 }
 
+function bookingBelongsToManagerHotel(booking, manager) {
+  if (!booking || !manager) return false;
+  const assignedHotelId = String(manager.assignedHotelId || "").toLowerCase();
+  const assignedHotelObjectId = String(manager.hotelObjectId || "").toLowerCase();
+  if (assignedHotelId && String(booking.hotelStringId || "").toLowerCase() === assignedHotelId) return true;
+  if (assignedHotelObjectId && String(booking.hotelId || "").toLowerCase() === assignedHotelObjectId) return true;
+  const prefix = HOTEL_PREFIXES[assignedHotelId];
+  const roomNumber = String(booking.room?.roomNumber || "").toLowerCase();
+  if (prefix && roomNumber.startsWith(prefix + "-")) return true;
+  return false;
+}
+
 // ── POST /api/manager/login ───────────────────────────────
 export const managerLogin = async (req, res, next) => {
   try {
@@ -256,9 +268,9 @@ export const checkInBooking = async (req, res, next) => {
   try {
     const booking = await Booking.findById(req.params.id).populate("guest", "email");
     if (!booking) return res.status(404).json({ success:false, message:"Booking not found" });
-    const hn = req.scopedHotelName;
-    if (hn && booking.hotelName && !booking.hotelName.toLowerCase().includes(hn.toLowerCase().slice(0,6)))
+    if (req.manager?.role === "Manager" && !bookingBelongsToManagerHotel(booking, req.manager)) {
       return res.status(403).json({ success:false, message:"Unauthorized: This booking does not belong to your hotel.", code:"HOTEL_ACCESS_DENIED" });
+    }
     if (booking.status === "Cancelled") return res.status(400).json({ success:false, message:"Cannot check in a cancelled booking" });
     if (booking.status === "CheckedIn") return res.status(400).json({ success:false, message:"Guest is already checked in" });
     booking.status = "CheckedIn";
@@ -284,6 +296,9 @@ export const checkOutBooking = async (req, res, next) => {
   try {
     const booking = await Booking.findById(req.params.id).populate("guest", "email");
     if (!booking) return res.status(404).json({ success:false, message:"Booking not found" });
+    if (req.manager?.role === "Manager" && !bookingBelongsToManagerHotel(booking, req.manager)) {
+      return res.status(403).json({ success:false, message:"Unauthorized: This booking does not belong to your hotel.", code:"HOTEL_ACCESS_DENIED" });
+    }
     if (booking.status !== "CheckedIn") return res.status(400).json({ success:false, message:"Guest must be checked in before checking out" });
     booking.status = "CheckedOut";
     booking.checkedOutAt = new Date();

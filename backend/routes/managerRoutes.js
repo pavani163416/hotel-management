@@ -312,6 +312,21 @@ import { authLimiter } from "../middleware/rateLimiter.js";
 import Room    from "../models/Room.js";
 import Booking from "../models/Booking.js";
 
+const HOTEL_PREFIXES = { h1: "hdl", h2: "tas", h3: "cbr", h4: "apl", h5: "tgm", h6: "scs", h7: "swg" };
+
+const roomBelongsToHotel = (room, manager) => {
+  if (!room || !manager) return false;
+  const assignedHotelId = String(manager.assignedHotelId || "").toLowerCase();
+  const assignedHotelObjectId = String(manager.hotelObjectId || "").toLowerCase();
+  const roomHotelId = String(room.hotelStringId || "").toLowerCase();
+  const roomObjectId = String(room.hotelId || "").toLowerCase();
+  if (assignedHotelId && roomHotelId === assignedHotelId) return true;
+  if (assignedHotelObjectId && roomObjectId === assignedHotelObjectId) return true;
+  const prefix = HOTEL_PREFIXES[assignedHotelId];
+  if (prefix && String(room.roomNumber || "").toLowerCase().startsWith(prefix + "-")) return true;
+  return false;
+};
+
 const router = express.Router();
 
 // ── Public ────────────────────────────────────────────────
@@ -333,7 +348,7 @@ router.delete("/rooms/:id", ...protect, isAssignedManager, deleteManagerRoom);
 
 // ── Room availability check (date-based) ─────────────────
 // GET /api/manager/rooms/:id/availability?checkIn=&checkOut=
-router.get("/rooms/:id/availability", ...protect, async (req, res, next) => {
+router.get("/rooms/:id/availability", ...protect, isAssignedManager, async (req, res, next) => {
   try {
     const { checkIn, checkOut } = req.query;
     if (!checkIn || !checkOut) {
@@ -341,6 +356,9 @@ router.get("/rooms/:id/availability", ...protect, async (req, res, next) => {
     }
     const room = await Room.findById(req.params.id);
     if (!room) return res.status(404).json({ success: false, message: "Room not found" });
+    if (req.manager?.role === "Manager" && !roomBelongsToHotel(room, req.manager)) {
+      return res.status(403).json({ success: false, message: "Unauthorized: This room does not belong to your hotel.", code: "HOTEL_ACCESS_DENIED" });
+    }
 
     const overlap = await Booking.findOne({
       room:     room._id,
@@ -359,7 +377,7 @@ router.get("/rooms/:id/availability", ...protect, async (req, res, next) => {
 
 // ── Room reassignment ─────────────────────────────────────
 // PUT /api/manager/bookings/:id/reassign  { newRoomId }
-router.put("/bookings/:id/reassign", ...protect, async (req, res, next) => {
+router.put("/bookings/:id/reassign", ...protect, isAssignedManager, async (req, res, next) => {
   try {
     const { newRoomId } = req.body;
     if (!newRoomId) return res.status(400).json({ success: false, message: "newRoomId is required" });
@@ -369,9 +387,22 @@ router.put("/bookings/:id/reassign", ...protect, async (req, res, next) => {
     if (["Cancelled", "CheckedOut", "Completed"].includes(booking.status)) {
       return res.status(400).json({ success: false, message: "Cannot reassign a completed or cancelled booking" });
     }
+    if (req.manager?.role === "Manager") {
+      const bookingHotelId = String(booking.hotelStringId || "").toLowerCase();
+      const assignedHotelId = String(req.manager.assignedHotelId || "").toLowerCase();
+      const prefix = HOTEL_PREFIXES[assignedHotelId];
+      const bookingRoomNumber = String(booking.room?.roomNumber || "").toLowerCase();
+      const bookingMatchesHotel = bookingHotelId === assignedHotelId || (prefix && bookingRoomNumber.startsWith(prefix + "-"));
+      if (!bookingMatchesHotel) {
+        return res.status(403).json({ success: false, message: "Unauthorized: This booking does not belong to your hotel.", code: "HOTEL_ACCESS_DENIED" });
+      }
+    }
 
     const newRoom = await Room.findById(newRoomId);
     if (!newRoom) return res.status(404).json({ success: false, message: "Target room not found" });
+    if (req.manager?.role === "Manager" && !roomBelongsToHotel(newRoom, req.manager)) {
+      return res.status(403).json({ success: false, message: "Unauthorized: Target room does not belong to your hotel.", code: "HOTEL_ACCESS_DENIED" });
+    }
     if (newRoom.status === "Maintenance" || newRoom.status === "Blocked") {
       return res.status(409).json({ success: false, message: `Room is ${newRoom.status} and cannot be assigned` });
     }
