@@ -16,7 +16,7 @@ import { checkHotelAccess, getNotifications, markNotificationRead } from "@/serv
 
 const TABS = [
   { id: "dashboard",    label: "Dashboard",    icon: LayoutDashboard, path: "/m/dashboard" },
-  { id: "floor-map",    label: "Floor Map",    icon: Map,             path: "/m/floor-map" },
+  { id: "hotel-map",    label: "Hotel Map",    icon: Map,             path: "/m/hotel-map" },
   { id: "bookings",     label: "Bookings",     icon: CalendarCheck,   path: "/m/bookings" },
   { id: "rooms",        label: "Rooms",        icon: BedDouble,       path: "/m/rooms" },
   { id: "financials",   label: "Financials",   icon: DollarSign,      path: "/m/financials" },

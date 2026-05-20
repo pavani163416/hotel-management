@@ -90,7 +90,8 @@ export default function App() {
             <Route path="/profile" element={<Profile />} />
 
             <Route path="/m/dashboard" element={<MDashboard />} />
-            <Route path="/m/floor-map" element={<MFloorMap />} />
+            <Route path="/m/hotel-map" element={<MFloorMap />} />
+            <Route path="/m/floor-map" element={<Navigate to="/m/hotel-map" replace />} />
             <Route path="/m/bookings" element={<MBookings />} />
             <Route path="/m/rooms" element={<MRooms />} />
             <Route path="/m/financials" element={<MFinancials />} />

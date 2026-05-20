@@ -185,7 +185,7 @@ export default function FloorMap() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-xl font-bold text-bright">Live Floor Map</h1>
+          <h1 className="text-xl font-bold text-bright">Hotel Map</h1>
           <p className="text-sm text-dim mt-0.5">Interactive room status and allocation</p>
         </div>
         <input
