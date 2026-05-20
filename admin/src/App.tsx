@@ -100,6 +100,8 @@ export default function App() {
             <Route path="/m/profile" element={<MProfile />} />
           </Route>
 
+          <Route path="/housekeeping" element={<Navigate to="/m/dashboard" replace />} />
+          <Route path="/m/housekeeping" element={<Navigate to="/m/dashboard" replace />} />
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
