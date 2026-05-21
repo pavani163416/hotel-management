@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../features/booking/domain/repositories/booking_repository.dart';
+import '../widgets/notification_popup.dart';
 import '../../features/booking/domain/entities/booking_entity.dart';
 import '../../shared/domain/entities/hotel_entity.dart';
 import '../../features/auth/domain/entities/user_entity.dart';
@@ -257,6 +258,15 @@ class BookingProvider extends ChangeNotifier {
         final idx = _bookings.indexWhere((b) => b.id == id);
         if (idx != -1) {
           _bookings[idx] = booking;
+        }
+        // Show global in-app popup notification for cancellations
+        if (booking.status.toLowerCase() == 'cancelled') {
+          showNotificationPopup(
+            title: 'Booking Cancelled',
+            subtitle: 'Your stay at ${booking.hotelName} has been cancelled.',
+            icon: Icons.cancel_outlined,
+            iconColor: Colors.redAccent,
+          );
         }
         notifyListeners();
         return true;
