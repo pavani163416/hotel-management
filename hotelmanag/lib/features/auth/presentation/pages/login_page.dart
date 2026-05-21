@@ -153,6 +153,8 @@ class _LoginPageState extends State<LoginPage> {
                 onTap: () async {
                   final success = await auth.signInWithGoogle();
                   if (success && context.mounted) {
+                    // Fetch user-specific bookings after social sign-in
+                    context.read<BookingProvider>().fetchMyBookings();
                     context.go('/');
                   } else if (auth.error != null && context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -162,8 +164,6 @@ class _LoginPageState extends State<LoginPage> {
                 },
               ),
             ),
-            const SizedBox(height: 16),
-            _buildSocialButton('Continue with Apple', LucideIcons.apple),
             const SizedBox(height: 32),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
