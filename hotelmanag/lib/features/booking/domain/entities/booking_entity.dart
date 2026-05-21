@@ -19,6 +19,13 @@ class BookingEntity extends Equatable {
   final double? subtotal;
   final String? paymentMethod;
   final int? nights;
+  
+  // Custom Guest Snapshot & Additional Guests info
+  final String? guestId;
+  final String? guestEmail;
+  final String? guestPhone;
+  final List<Map<String, dynamic>>? additionalAdults;
+  final List<Map<String, dynamic>>? additionalChildren;
 
   const BookingEntity({
     required this.id,
@@ -39,6 +46,11 @@ class BookingEntity extends Equatable {
     this.subtotal,
     this.paymentMethod,
     this.nights,
+    this.guestId,
+    this.guestEmail,
+    this.guestPhone,
+    this.additionalAdults,
+    this.additionalChildren,
   });
 
   BookingEntity copyWith({
@@ -60,6 +72,11 @@ class BookingEntity extends Equatable {
     double? subtotal,
     String? paymentMethod,
     int? nights,
+    String? guestId,
+    String? guestEmail,
+    String? guestPhone,
+    List<Map<String, dynamic>>? additionalAdults,
+    List<Map<String, dynamic>>? additionalChildren,
   }) {
     return BookingEntity(
       id: id ?? this.id,
@@ -80,6 +97,11 @@ class BookingEntity extends Equatable {
       subtotal: subtotal ?? this.subtotal,
       paymentMethod: paymentMethod ?? this.paymentMethod,
       nights: nights ?? this.nights,
+      guestId: guestId ?? this.guestId,
+      guestEmail: guestEmail ?? this.guestEmail,
+      guestPhone: guestPhone ?? this.guestPhone,
+      additionalAdults: additionalAdults ?? this.additionalAdults,
+      additionalChildren: additionalChildren ?? this.additionalChildren,
     );
   }
 
@@ -103,5 +125,10 @@ class BookingEntity extends Equatable {
         subtotal,
         paymentMethod,
         nights,
+        guestId,
+        guestEmail,
+        guestPhone,
+        additionalAdults,
+        additionalChildren,
       ];
 }

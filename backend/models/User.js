@@ -60,7 +60,7 @@ const userSchema = new mongoose.Schema(
 
     paymentMethods: [
       {
-        type: { type: String, enum: ['card', 'upi', 'netbanking'], default: 'card' },
+        type: { type: String, enum: ['card', 'upi', 'netbanking', 'debit', 'credit'], default: 'card' },
         brand: String, // For cards
         last4: String, // For cards
         expiry: String, // For cards

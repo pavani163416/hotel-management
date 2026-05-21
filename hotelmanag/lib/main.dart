@@ -7,9 +7,10 @@ import 'core/providers/auth_provider.dart';
 import 'core/providers/hotel_provider.dart';
 import 'core/providers/booking_provider.dart';
 import 'core/providers/theme_provider.dart';
+import 'core/providers/promo_provider.dart';
+import 'core/widgets/notification_popup.dart';
 import 'dart:ui';
 import 'core/utils/injection_container.dart' as di;
-
 import 'core/providers/notification_provider.dart';
 
 void main() async {
@@ -24,6 +25,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => di.sl<HotelProvider>()),
         ChangeNotifierProvider(create: (_) => di.sl<BookingProvider>()),
         ChangeNotifierProvider(create: (_) => NotificationProvider()),
+        ChangeNotifierProvider(create: (_) => di.sl<PromoProvider>()),
       ],
       child: const MyApp(),
     ),
@@ -53,6 +55,10 @@ class MyApp extends StatelessWidget {
       darkTheme: AppTheme.darkTheme,
       themeMode: themeProvider.themeMode,
       routerConfig: AppRouter.router,
+      builder: (context, child) => NotificationPopupOverlay(
+        key: notificationPopupKey,
+        child: child ?? const SizedBox.shrink(),
+      ),
     );
   }
 }

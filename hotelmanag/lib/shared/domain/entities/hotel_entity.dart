@@ -90,11 +90,17 @@ class HotelEntity extends Equatable {
   final String id;
   final String name;
   final String location;
+  final String city;
   final double rating;
+  final int reviewCount;
   final double pricePerNight;
+  final double? originalPrice;
+  final double discountPct;
+  final bool isDeal;
   final String imageUrl;
   final String description;
-  final String type; // e.g., Hotel, Resort, Villa, Suite
+  final String type;
+  final List<double> coords;
   final List<String> amenities;
   final List<ReviewEntity> reviews;
   final List<RoomEntity> rooms;
@@ -104,11 +110,17 @@ class HotelEntity extends Equatable {
     required this.id,
     required this.name,
     required this.location,
+    this.city = '',
     required this.rating,
+    this.reviewCount = 0,
     required this.pricePerNight,
+    this.originalPrice,
+    this.discountPct = 0,
+    this.isDeal = false,
     required this.imageUrl,
     required this.description,
     this.type = 'Hotel',
+    this.coords = const [0.0, 0.0],
     this.amenities = const [],
     this.reviews = const [],
     this.rooms = const [],
@@ -120,11 +132,17 @@ class HotelEntity extends Equatable {
       'id': id,
       'name': name,
       'location': location,
+      'city': city,
       'rating': rating,
+      'reviewCount': reviewCount,
       'pricePerNight': pricePerNight,
+      'originalPrice': originalPrice,
+      'discountPct': discountPct,
+      'isDeal': isDeal,
       'imageUrl': imageUrl,
       'description': description,
       'type': type,
+      'coords': coords,
       'amenities': amenities,
       'reviews': reviews.map((r) => r.toJson()).toList(),
       'rooms': rooms.map((r) => r.toJson()).toList(),
@@ -137,11 +155,17 @@ class HotelEntity extends Equatable {
       id: json['id'] ?? json['hotelId'] ?? json['_id'] ?? '',
       name: json['name'] ?? '',
       location: json['location'] ?? json['city'] ?? '',
+      city: json['city'] ?? json['location'] ?? '',
       rating: (json['rating'] ?? 0).toDouble(),
+      reviewCount: (json['reviewCount'] ?? 0).toInt(),
       pricePerNight: (json['pricePerNight'] ?? 0).toDouble(),
+      originalPrice: json['originalPrice'] != null ? (json['originalPrice'] as num).toDouble() : null,
+      discountPct: (json['discountPct'] ?? 0).toDouble(),
+      isDeal: json['isDeal'] ?? false,
       imageUrl: json['imageUrl'] ?? json['image'] ?? '',
       description: json['description'] ?? '',
       type: json['type'] ?? 'Hotel',
+      coords: (json['coords'] as List?)?.map((e) => (e as num).toDouble()).toList() ?? [0.0, 0.0],
       amenities: List<String>.from(json['amenities'] ?? []),
       reviews: (json['reviews'] as List? ?? [])
           .map((r) => ReviewEntity.fromJson(r))
@@ -154,5 +178,5 @@ class HotelEntity extends Equatable {
   }
 
   @override
-  List<Object?> get props => [id, name, location, rating, pricePerNight, imageUrl, description, type, amenities, reviews, rooms, gallery];
+  List<Object?> get props => [id, name, location, city, rating, reviewCount, pricePerNight, originalPrice, discountPct, isDeal, imageUrl, description, type, coords, amenities, reviews, rooms, gallery];
 }

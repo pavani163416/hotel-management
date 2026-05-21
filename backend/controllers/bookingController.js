@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import jwt from "jsonwebtoken";
 // Scoped dynamic room resolution and robust date overlap checkers
 import Booking from "../models/Booking.js";
 import Room from "../models/Room.js";
@@ -100,6 +101,14 @@ const getOrCreateRoomFromHotelDefinition = async ({ identifier, hotelId, hotelNa
 // All steps run inside a MongoDB session (transaction)
 // ─────────────────────────────────────────────────────────
 export const createBooking = async (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  if (authHeader?.startsWith("Bearer ")) {
+    try {
+      const token = authHeader.split(" ")[1];
+      req.customer = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (e) {}
+  }
+
   const session = await mongoose.startSession();
   session.startTransaction();
 
@@ -175,6 +184,7 @@ export const createBooking = async (req, res, next) => {
       });
     }
 
+    console.log(">>> RESOLVED ROOM:", room?._id, "STATUS:", room?.status);
     if (!room) {
       await session.abortTransaction();
       return res.status(409).json({
@@ -185,6 +195,13 @@ export const createBooking = async (req, res, next) => {
     }
 
     const guestCount = Number(req.body.guestCount) || 1 + (additionalAdults?.length || 0) + (additionalChildren?.length || 0);
+    if (guestCount > 8) {
+      await session.abortTransaction();
+      return res.status(400).json({
+        success: false,
+        message: "Total guest count cannot exceed 8 persons",
+      });
+    }
     if (room.capacity && guestCount > room.capacity) {
       await session.abortTransaction();
       return res.status(422).json({
@@ -205,10 +222,22 @@ export const createBooking = async (req, res, next) => {
       });
     }
 
+    // ── Generate placeholders for missing lead guest fields ──
+    const actualEmail = guestData?.email?.toLowerCase().trim() || "";
+    let normalizedEmail = actualEmail;
+    if (!normalizedEmail) {
+      normalizedEmail = `guest_${Date.now()}_${Math.floor(Math.random() * 1000000)}@placeholder.com`;
+    }
+
+    const actualPhone = guestData?.phone?.trim() || "";
+    let normalizedPhone = actualPhone;
+    if (!normalizedPhone) {
+      normalizedPhone = `+1 (000) 000-0000`;
+    }
+
     // ── Check if this guest already has an overlapping booking ──
-    const normalizedEmail = guestData?.email?.toLowerCase().trim() || guestData?.email;
-    if (normalizedEmail) {
-      const existingGuest = await Guest.findOne({ email: normalizedEmail }).session(session);
+    if (actualEmail) {
+      const existingGuest = await Guest.findOne({ email: actualEmail }).session(session);
       if (existingGuest) {
         const guestOverlappingBooking = await Booking.findOne({
           guest: existingGuest._id,
@@ -227,7 +256,7 @@ export const createBooking = async (req, res, next) => {
       }
     }
 
-    if (NON_BOOKABLE_STATUSES.includes(room.status)) {
+    if (room.status === "Booked" || NON_BOOKABLE_STATUSES.includes(room.status)) {
       await session.abortTransaction();
       return res.status(409).json({
         success: false,
@@ -244,7 +273,7 @@ export const createBooking = async (req, res, next) => {
           {
             name: guestData.name,
             email: normalizedEmail,
-            phone: guestData.phone,
+            phone: normalizedPhone,
             city: guestData.city || "",
           },
         ],
@@ -270,8 +299,9 @@ export const createBooking = async (req, res, next) => {
           guest: guest._id,
           guestSnapshot: {
             name: guestData.name,
-            email: normalizedEmail,
-            phone: guestData.phone,
+            email: actualEmail,
+            phone: actualPhone,
+            id: guestData.id,
           },
           additionalAdults: additionalAdults || [],
           additionalChildren: additionalChildren || [],
@@ -299,6 +329,13 @@ export const createBooking = async (req, res, next) => {
     await Guest.findByIdAndUpdate(
       guest._id,
       { $push: { bookings: booking._id } },
+      { session }
+    );
+
+    // ── 4.5 Mark room status as Booked ──
+    await Room.findByIdAndUpdate(
+      room._id,
+      { status: "Booked" },
       { session }
     );
 
@@ -521,14 +558,18 @@ export const getBookingById = async (req, res, next) => {
 // Cancels a booking and frees the room atomically
 // ─────────────────────────────────────────────────────────
 export const cancelBooking = async (req, res, next) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
+  const authHeader = req.headers.authorization;
+  if (authHeader?.startsWith("Bearer ")) {
+    try {
+      const token = authHeader.split(" ")[1];
+      req.customer = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (e) {}
+  }
 
   try {
-    const booking = await Booking.findById(req.params.id).session(session);
+    const booking = await Booking.findById(req.params.id);
 
     if (!booking) {
-      await session.abortTransaction();
       return res.status(404).json({
         success: false,
         message: "Booking not found",
@@ -536,7 +577,6 @@ export const cancelBooking = async (req, res, next) => {
     }
 
     if (booking.status === "Cancelled") {
-      await session.abortTransaction();
       return res.status(400).json({
         success: false,
         message: "Booking is already cancelled",
@@ -547,9 +587,7 @@ export const cancelBooking = async (req, res, next) => {
     booking.status = "Cancelled";
     booking.cancelledAt = new Date();
     booking.cancellationReason = req.body.reason || "Cancelled by guest";
-    await booking.save({ session });
-
-    await session.commitTransaction();
+    await booking.save();
 
     await syncRoomLegacyStatus(booking.room);
 
@@ -588,24 +626,38 @@ export const cancelBooking = async (req, res, next) => {
       cancellationReason: booking.cancellationReason,
     });
 
-    // Send cancellation email (non-blocking)
+    // Send cancellation email & notification (non-blocking)
     const populatedForEmail = await Booking.findById(booking._id)
       .populate("guest", "name email")
       .populate("room", "hotelStringId hotelId");
-    if (populatedForEmail?.guest) {
-      sendNotification({
-        userId: populatedForEmail.guest.email,
-        role: "customer",
-        message: "Your booking has been cancelled",
-        type: "booking",
-      }).catch(() => {});
-      sendCancellationEmail({
-        to:        populatedForEmail.guest.email,
-        guestName: populatedForEmail.guest.name,
-        hotelName: booking.hotelName || "LuxeStay",
-        bookingRef: `LS-${booking._id.toString().slice(-5).toUpperCase()}`,
-        reason:    booking.cancellationReason,
-      }).catch(() => {});
+    if (populatedForEmail) {
+      const recipientEmails = new Set();
+      if (populatedForEmail.guest?.email && !populatedForEmail.guest.email.includes("@placeholder.com")) {
+        recipientEmails.add(populatedForEmail.guest.email.toLowerCase().trim());
+      }
+      if (booking.guestSnapshot?.email) {
+        recipientEmails.add(booking.guestSnapshot.email.toLowerCase().trim());
+      }
+      if (req.customer?.email) {
+        recipientEmails.add(req.customer.email.toLowerCase().trim());
+      }
+
+      for (const email of recipientEmails) {
+        sendNotification({
+          userId: email,
+          role: "customer",
+          message: `Your booking for ${booking.hotelName || "LuxeStay"} has been cancelled.`,
+          type: "booking",
+        }).catch(() => {});
+
+        sendCancellationEmail({
+          to:        email,
+          guestName: populatedForEmail.guest?.name || booking.guestSnapshot?.name || "Guest",
+          hotelName: booking.hotelName || "LuxeStay",
+          bookingRef: `LS-${booking._id.toString().slice(-5).toUpperCase()}`,
+          reason:    booking.cancellationReason,
+        }).catch(() => {});
+      }
     }
     sendNotification({
       hotelId: populatedForEmail?.room?.hotelStringId || populatedForEmail?.room?.hotelId?.toString() || null,
@@ -620,9 +672,6 @@ export const cancelBooking = async (req, res, next) => {
       data: booking,
     });
   } catch (error) {
-    await session.abortTransaction();
     next(error);
-  } finally {
-    session.endSession();
   }
 };

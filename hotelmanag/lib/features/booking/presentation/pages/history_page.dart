@@ -8,6 +8,7 @@ import '../../../../core/providers/notification_provider.dart';
 import '../../../../core/providers/hotel_provider.dart';
 import '../../../../shared/domain/entities/hotel_entity.dart';
 import '../../domain/entities/booking_entity.dart';
+import '../../../../core/utils/receipt_generator.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -384,6 +385,7 @@ class BookingListItem extends StatelessWidget {
   }
 
   void _showCancelDialog(BuildContext context, BookingEntity booking) {
+    final parentContext = context;
     String? selectedReason;
     final reasons = [
       'Change of plans',
@@ -425,16 +427,15 @@ class BookingListItem extends StatelessWidget {
             ),
             ElevatedButton(
               onPressed: selectedReason == null ? null : () async {
-                Navigator.pop(context);
-                final success = await context.read<BookingProvider>().cancelBooking(booking.id);
-                if (success && context.mounted) {
-                  try {
-                    context.read<NotificationProvider>().addNotification(
-                      'Your booking has been cancelled',
-                      isCancelled: true,
-                    );
-                  } catch (_) {}
-                  ScaffoldMessenger.of(context).showSnackBar(
+                Navigator.pop(parentContext);
+                final success = await parentContext.read<BookingProvider>().cancelBooking(booking.id);
+                if (success && parentContext.mounted) {
+                  parentContext.read<NotificationProvider>().addNotification(
+                    'Booking Cancelled',
+                    subtitle: 'Your stay at ${booking.hotelName} has been cancelled.',
+                    isCancelled: true,
+                  );
+                  ScaffoldMessenger.of(parentContext).showSnackBar(
                     const SnackBar(content: Text('Booking cancelled successfully'), behavior: SnackBarBehavior.floating),
                   );
                 }
@@ -528,6 +529,53 @@ class BookingListItem extends StatelessWidget {
               _buildDetailRow('Total Paid', '\$${NumberFormat("#,###").format(booking.totalAmount)}', isBold: true),
               _buildDetailRow('Status', booking.status),
               _buildDetailRow('Confirmed At', createdString),
+              const SizedBox(height: 20),
+              // ── Download Receipt button ──────────────────
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    final nights = booking.nights ?? booking.checkOut.difference(booking.checkIn).inDays;
+                    final sub = booking.subtotal ?? booking.totalAmount;
+                    final tax = booking.taxes ?? 0;
+                    final disc = (sub + tax - booking.totalAmount).clamp(0.0, sub + tax);
+                    final data = ReceiptData(
+                      bookingId: booking.id,
+                      hotelName: booking.hotelName,
+                      hotelLocation: booking.city ?? '',
+                      guestName: booking.guestName ?? 'Guest',
+                      guestId: booking.guestId,
+                      roomType: booking.roomType ?? 'Room',
+                      roomNumber: booking.roomNumber ?? booking.roomId,
+                      checkIn: booking.checkIn,
+                      checkOut: booking.checkOut,
+                      nights: nights,
+                      guests: 1 + (booking.additionalAdults?.length ?? 0) + (booking.additionalChildren?.length ?? 0),
+                      pricePerNight: booking.pricePerNight ?? 0,
+                      subtotal: sub,
+                      taxes: tax,
+                      discount: disc,
+                      total: booking.totalAmount,
+                      paymentMethod: booking.paymentMethod ?? 'Card',
+                      status: booking.status,
+                      bookedAt: booking.createdAt ?? booking.checkIn,
+                      additionalAdults: booking.additionalAdults ?? const [],
+                      additionalChildren: booking.additionalChildren ?? const [],
+                    );
+                    downloadReceipt(context, data);
+                  },
+                  icon: const Icon(LucideIcons.download, size: 16),
+                  label: const Text('Download Receipt', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primaryColor,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    elevation: 0,
+                  ),
+                ),
+              ),
             ],
           ),
         ),

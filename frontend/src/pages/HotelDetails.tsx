@@ -211,23 +211,39 @@ const HotelDetails = () => {
                   <div className="hidden md:grid grid-cols-[2fr_2fr_1fr_auto] bg-primary text-primary-foreground text-xs uppercase tracking-wider font-semibold">
                     <div className="p-4">Room Type</div><div className="p-4">Key Features</div><div className="p-4 text-right">Daily Price</div><div className="p-4">Action</div>
                   </div>
-                  {hotel.rooms.map((r) => (
-                    <div key={r.id} className="grid md:grid-cols-[2fr_2fr_1fr_auto] gap-4 p-5 border-t border-border first:border-t-0 items-center">
+                  {hotel.rooms.map((r) => {
+                    // Determine sold-out state: either backend says 0 available,
+                    // or the live date-based count came back as 0
+                    const isSoldOut = r.available === 0 || availCount[r.id] === 0;
+                    // Rooms left: prefer live date-based count, fall back to backend field
+                    const roomsLeft: number | null =
+                      availCount[r.id] != null
+                        ? (availCount[r.id] as number)
+                        : r.available > 0
+                        ? r.available
+                        : null;
+                    const isLow = !isSoldOut && roomsLeft != null && roomsLeft <= 3;
+
+                    return (
+                    <div key={r.id} className={`grid md:grid-cols-[2fr_2fr_1fr_auto] gap-4 p-5 border-t border-border first:border-t-0 items-center ${isSoldOut ? "opacity-70" : ""}`}>
                       <div>
                         <h4 className="font-semibold text-primary">{r.name}</h4>
                         <p className="text-xs text-muted-foreground mt-1 flex items-center gap-3">
                           <span className="flex items-center gap-1"><BedDouble className="w-3.5 h-3.5" /> {r.bed}</span>
                           <span className="flex items-center gap-1"><Users className="w-3.5 h-3.5" /> {r.capacity}</span>
                         </p>
-                        {search.checkIn && search.checkOut && availCount[r.id] != null && (
-                          availCount[r.id] === 0 ? (
-                            <p className="text-xs font-semibold text-destructive mt-1">Sold out for selected dates</p>
-                          ) : (availCount[r.id] ?? 0) <= 3 ? (
-                            <p className="text-xs font-semibold text-amber-600 mt-1">
-                              Only {availCount[r.id]} room{(availCount[r.id] ?? 0) !== 1 ? "s" : ""} left
-                            </p>
-                          ) : null
-                        )}
+                        {/* Availability badge — always shown, not just when dates are set */}
+                        {isSoldOut ? (
+                          <p className="text-xs font-semibold text-destructive mt-1.5">
+                            {search.checkIn && search.checkOut
+                              ? "Sold out for selected dates"
+                              : "Currently unavailable"}
+                          </p>
+                        ) : isLow ? (
+                          <p className="text-xs font-semibold text-amber-600 mt-1.5">
+                            Only {roomsLeft} room{roomsLeft !== 1 ? "s" : ""} left
+                          </p>
+                        ) : null}
                       </div>
                       <div className="flex flex-wrap gap-1.5">
                         {r.features.map((f) => (
@@ -242,29 +258,39 @@ const HotelDetails = () => {
                         <p className="text-xs text-muted-foreground">per night</p>
                       </div>
                       <div className="flex flex-col items-stretch gap-1 md:min-w-[140px]">
-                        <button onClick={() => select(r.id)} disabled={r.available === 0 || availCount[r.id] === 0 || roomStatus[r.id]?.checking}
-                          className="bg-accent hover:bg-accent/90 disabled:bg-secondary disabled:text-muted-foreground disabled:cursor-not-allowed text-accent-foreground px-4 py-2.5 rounded-lg font-semibold text-sm transition-base flex items-center justify-center gap-1.5">
-                          {roomStatus[r.id]?.checking ? (
-                            <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Checking...</>
-                          ) : r.available === 0 || availCount[r.id] === 0 ? "Sold out" : (
-                            <>{!user && <LogIn className="w-3.5 h-3.5" />}Select Room</>
-                          )}
-                        </button>
-                        {/* Availability error for this specific room */}
+                        {isSoldOut ? (
+                          /* Sold out button — styled to match screenshot */
+                          <button disabled
+                            className="bg-secondary text-muted-foreground cursor-not-allowed px-4 py-2.5 rounded-lg font-semibold text-sm border border-border">
+                            Sold out
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => select(r.id)}
+                            disabled={roomStatus[r.id]?.checking}
+                            className="bg-accent hover:bg-accent/90 disabled:opacity-60 disabled:cursor-not-allowed text-accent-foreground px-4 py-2.5 rounded-lg font-semibold text-sm transition-base flex items-center justify-center gap-1.5">
+                            {roomStatus[r.id]?.checking ? (
+                              <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Checking...</>
+                            ) : (
+                              <>{!user && <LogIn className="w-3.5 h-3.5" />}Select Room</>
+                            )}
+                          </button>
+                        )}
+                        {/* Date-based availability error */}
                         {roomStatus[r.id]?.error && (
                           <div className="flex items-start gap-1.5 mt-1 p-2 bg-destructive/10 border border-destructive/20 rounded-lg">
                             <AlertCircle className="w-3.5 h-3.5 text-destructive shrink-0 mt-0.5" />
                             <p className="text-[11px] text-destructive leading-tight">{roomStatus[r.id].error}</p>
                           </div>
                         )}
-                        {r.available === 0 ? (
-                          <div className="mt-2 rounded-2xl border border-warning/20 bg-warning/10 px-3 py-2 text-sm text-warning">
-                            This room type is currently unavailable at this hotel. Please choose another room or check back later.
-                          </div>
-                        ) : (r.available > 0 && !user && <span className="text-[11px] text-muted-foreground text-center">Sign in to book</span>)}
+                        {/* Sign-in hint for available rooms */}
+                        {!isSoldOut && !user && (
+                          <span className="text-[11px] text-muted-foreground text-center">Sign in to book</span>
+                        )}
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
                 <div className="mt-10 p-6 bg-secondary/50 rounded-2xl">
                   <h3 className="font-display text-xl font-bold mb-2">About this property</h3>

@@ -251,6 +251,11 @@ app.get("/", (req, res) => {
     message:     "LuxeStay API is live",
     version:     "1.0.0",
     environment: process.env.NODE_ENV,
+    endpoints: {
+      rooms: "/api/rooms",
+      bookings: "/api/bookings",
+      guests: "/api/guests",
+    },
   });
 });
 

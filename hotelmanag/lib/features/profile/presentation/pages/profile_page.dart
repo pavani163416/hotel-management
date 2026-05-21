@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io' as io;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:convert';
+import 'package:flutter/services.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/main_layout.dart';
 import '../../../../core/widgets/custom_text_field.dart';
@@ -46,7 +47,7 @@ class _ProfilePageState extends State<ProfilePage> {
   final TextEditingController _cardNameController = TextEditingController();
   final TextEditingController _upiIdController = TextEditingController();
   final TextEditingController _bankNameController = TextEditingController();
-  String _selectedPaymentType = 'card';
+  String _selectedPaymentType = 'debit';
 
   @override
   void initState() {
@@ -163,14 +164,8 @@ class _ProfilePageState extends State<ProfilePage> {
                 _buildSectionTitle('Preferences'),
                 const SizedBox(height: 16),
                 _buildSettingItem(
-                  LucideIcons.globe,
-                  'Language',
-                  _currentLanguage,
-                  onTap: () => _showLanguagePicker(context),
-                ),
-                _buildSettingItem(
                   LucideIcons.moon,
-                  'Dark Mode',
+                  'Modes & Themes',
                   _currentTheme,
                   onTap: () => _showThemePicker(context),
                 ),
@@ -254,16 +249,44 @@ class _ProfilePageState extends State<ProfilePage> {
           const SizedBox(height: 16),
           _buildSupportInfoRow(context, LucideIcons.userCheck, 'Admin Name', 'Alex Rivera (Chief Concierge)'),
           const SizedBox(height: 12),
-          _buildSupportInfoRow(context, LucideIcons.phone, 'Support Phone', '+1 (800) 555-0199'),
+          _buildSupportInfoRow(
+            context,
+            LucideIcons.phone,
+            'Support Phone',
+            '+1 (800) 555-0199',
+            onLongPress: () {
+              Clipboard.setData(const ClipboardData(text: '+1 (800) 555-0199'));
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Phone number copied to clipboard'),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            },
+          ),
           const SizedBox(height: 12),
-          _buildSupportInfoRow(context, LucideIcons.mail, 'Support Email', 'concierge@luxestay.com'),
+          _buildSupportInfoRow(
+            context,
+            LucideIcons.mail,
+            'Support Email',
+            'concierge@luxestay.com',
+            onLongPress: () {
+              Clipboard.setData(const ClipboardData(text: 'concierge@luxestay.com'));
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Email address copied to clipboard'),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            },
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildSupportInfoRow(BuildContext context, IconData icon, String label, String value) {
-    return Row(
+  Widget _buildSupportInfoRow(BuildContext context, IconData icon, String label, String value, {VoidCallback? onLongPress}) {
+    Widget content = Row(
       children: [
         Icon(
           icon,
@@ -296,6 +319,15 @@ class _ProfilePageState extends State<ProfilePage> {
         ),
       ],
     );
+
+    if (onLongPress != null) {
+      return GestureDetector(
+        onLongPress: onLongPress,
+        behavior: HitTestBehavior.opaque,
+        child: content,
+      );
+    }
+    return content;
   }
 
   Widget _buildHeader() {
@@ -518,40 +550,55 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Widget _buildSectionTitle(String title) {
+    final isDark = Theme.of(context).colorScheme.brightness == Brightness.dark;
     return Text(
       title.toUpperCase(),
       style: TextStyle(
         fontSize: 12,
         fontWeight: FontWeight.bold,
         letterSpacing: 1.5,
-        color: AppTheme.primaryColor.withOpacity(0.4),
+        color: isDark
+            ? const Color(0xFFEAE5DC)   // full-strength cream — clearly visible on dark bg
+            : const Color(0xFF454F5E).withOpacity(0.55),
       ),
     );
   }
 
   Widget _buildSettingItem(IconData icon, String title, String subtitle, {VoidCallback? onTap}) {
+    final isDark = Theme.of(context).colorScheme.brightness == Brightness.dark;
+    final cardColor   = isDark ? const Color(0xFF253040) : Colors.white;
+    final iconBg      = isDark
+        ? const Color(0xFF19222E)
+        : AppTheme.primaryColor.withOpacity(0.05);
+    final iconColor   = isDark ? const Color(0xFFEAE5DC) : AppTheme.primaryColor;
+    final titleColor  = isDark ? const Color(0xFFEAE5DC) : AppTheme.primaryColor;
+    final subColor    = isDark ? const Color(0xFFB0A898) : Colors.grey[500]!;
+    final arrowColor  = isDark ? const Color(0xFF6B7A8D) : Colors.grey[400]!;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cardColor,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4)),
-        ],
+        boxShadow: isDark
+            ? []
+            : [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
         leading: Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: AppTheme.primaryColor.withOpacity(0.05),
+            color: iconBg,
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Icon(icon, size: 20, color: AppTheme.primaryColor),
+          child: Icon(icon, size: 20, color: iconColor),
         ),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-        subtitle: Text(subtitle, style: TextStyle(color: Colors.grey[500], fontSize: 12)),
-        trailing: Icon(LucideIcons.chevronRight, size: 18, color: Colors.grey[400]),
+        title: Text(title,
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: titleColor)),
+        subtitle: Text(subtitle,
+            style: TextStyle(color: subColor, fontSize: 12)),
+        trailing: Icon(LucideIcons.chevronRight, size: 18, color: arrowColor),
         onTap: onTap ??
             () {
               ScaffoldMessenger.of(context).showSnackBar(
@@ -635,32 +682,122 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   void _showThemePicker(BuildContext context) {
-    final themes = ['Light', 'Dark', 'System Default'];
+    // Capture brightness BEFORE the sheet opens — the builder's context
+    // may not reflect the correct theme, causing invisible text in dark mode.
+    final appIsDark =
+        Theme.of(context).colorScheme.brightness == Brightness.dark;
+
+    // Explicit colors — never rely on Theme.of inside the builder
+    final sheetBg     = appIsDark ? const Color(0xFF253040) : Colors.white;
+    final titleColor  = appIsDark ? const Color(0xFFEAE5DC) : const Color(0xFF454F5E);
+    final subColor    = appIsDark ? const Color(0xFFB0A898) : const Color(0xFF8A8A8A);
+    final handleColor = appIsDark ? const Color(0xFF4A5568) : const Color(0xFFDDDDDD);
+    final divColor    = appIsDark ? const Color(0xFF3A4A5C) : const Color(0xFFEEEEEE);
+    final tileBg      = appIsDark ? const Color(0xFF19222E) : const Color(0xFFF5F5F5);
+    final selectedBg  = appIsDark ? const Color(0xFF2E3D50) : const Color(0xFFECEAE4);
+    final checkBg     = appIsDark ? const Color(0xFFEAE5DC) : const Color(0xFF454F5E);
+    final checkIcon   = appIsDark ? const Color(0xFF253040) : Colors.white;
+
+    final themeOptions = [
+      {'label': 'Light',          'value': 'Light',          'icon': LucideIcons.sun,     'sub': 'Always use light appearance'},
+      {'label': 'Dark',           'value': 'Dark',           'icon': LucideIcons.moon,    'sub': 'Always use dark appearance'},
+    ];
+
     showModalBottomSheet(
       context: context,
-      backgroundColor: Theme.of(context).colorScheme.brightness == Brightness.dark ? const Color(0xFF253040) : Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (context) => Container(
-        padding: const EdgeInsets.symmetric(vertical: 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-              child: Text('Select Theme', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
-            ),
-            const Divider(),
-            ...themes.map((theme) => ListTile(
-                  title: Text(theme, style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
-                  trailing: _currentTheme == theme ? Icon(LucideIcons.check, color: Theme.of(context).colorScheme.primary) : null,
+      backgroundColor: sheetBg,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (_) => StatefulBuilder(
+        builder: (ctx, setSheetState) => Container(
+          padding: const EdgeInsets.symmetric(vertical: 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Handle bar
+              Container(
+                width: 40, height: 4,
+                margin: const EdgeInsets.only(bottom: 20),
+                decoration: BoxDecoration(
+                  color: handleColor,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              // Title
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Row(
+                  children: [
+                    Icon(LucideIcons.palette, size: 20, color: titleColor),
+                    const SizedBox(width: 12),
+                    Text('Modes & Themes',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: titleColor)),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 6),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text('Choose how LuxeStay looks to you',
+                      style: TextStyle(fontSize: 12, color: subColor)),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Divider(height: 1, color: divColor),
+              const SizedBox(height: 4),
+              // Options
+              ...themeOptions.map((opt) {
+                final isSelected = _currentTheme == opt['value'];
+                return ListTile(
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 24, vertical: 2),
+                  leading: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: isSelected ? selectedBg : tileBg,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      opt['icon'] as IconData,
+                      size: 20,
+                      color: isSelected ? titleColor : subColor,
+                    ),
+                  ),
+                  title: Text(
+                    opt['label'] as String,
+                    style: TextStyle(
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                      fontSize: 15,
+                      color: titleColor,
+                    ),
+                  ),
+                  subtitle: Text(
+                    opt['sub'] as String,
+                    style: TextStyle(fontSize: 11, color: subColor),
+                  ),
+                  trailing: isSelected
+                      ? Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: checkBg,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(LucideIcons.check, size: 14, color: checkIcon),
+                        )
+                      : null,
                   onTap: () {
-                    setState(() => _currentTheme = theme);
-                    Provider.of<ThemeProvider>(context, listen: false).setTheme(theme);
-                    Navigator.pop(context);
+                    setState(() => _currentTheme = opt['value'] as String);
+                    Provider.of<ThemeProvider>(context, listen: false)
+                        .setTheme(opt['value'] as String);
+                    Navigator.pop(ctx);
                   },
-                )),
-            const SizedBox(height: 16),
-          ],
+                );
+              }),
+              const SizedBox(height: 12),
+            ],
+          ),
         ),
       ),
     );
@@ -776,13 +913,13 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
                 const SizedBox(height: 24),
                 CustomTextField(
-                  label: 'Old Password',
-                  hint: 'Enter old password',
+                  label: 'Current Password',
+                  hint: 'Enter current password',
                   obscureText: true,
                   prefixIcon: LucideIcons.lock,
                   controller: oldPasswordController,
                   validator: (val) {
-                    if (val == null || val.isEmpty) return 'Old password is required';
+                    if (val == null || val.isEmpty) return 'Current password is required';
                     return null;
                   },
                 ),
@@ -867,47 +1004,142 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   void _showNotifications(BuildContext context) {
+    // Local copies so changes inside the modal are isolated until Save is tapped
+    bool localPush = _pushNotifications;
+    bool localEmail = _emailUpdates;
+    bool localPromo = _promotions;
+
     showModalBottomSheet(
       context: context,
-      backgroundColor: Theme.of(context).colorScheme.brightness == Brightness.dark ? const Color(0xFF253040) : Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (context) => StatefulBuilder(
-        builder: (context, setModalState) => Container(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Notifications', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
-              const SizedBox(height: 24),
-              _buildNotificationSwitch(
-                'Push Notifications', 
-                'Alerts about your bookings', 
-                _pushNotifications, 
-                (val) => setModalState(() {
-                  setState(() => _pushNotifications = val);
-                }),
+      backgroundColor: Theme.of(context).colorScheme.brightness == Brightness.dark
+          ? const Color(0xFF253040)
+          : Colors.white,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModalState) {
+          final isDark = Theme.of(ctx).colorScheme.brightness == Brightness.dark;
+
+          Widget notifTile(
+              String title, String subtitle, bool value, ValueChanged<bool> onChanged) {
+            return Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF19222E) : Colors.grey[50],
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                    color: isDark ? Colors.white10 : Colors.grey[200]!),
               ),
-              _buildNotificationSwitch(
-                'Email Updates', 
-                'Invoices and receipts', 
-                _emailUpdates, 
-                (val) => setModalState(() {
-                  setState(() => _emailUpdates = val);
-                }),
+              child: SwitchListTile(
+                value: value,
+                onChanged: (v) => setModalState(() => onChanged(v)),
+                title: Text(title,
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                        color: Theme.of(ctx).colorScheme.onSurface)),
+                subtitle: Text(subtitle,
+                    style: TextStyle(
+                        fontSize: 12,
+                        color: Theme.of(ctx)
+                            .colorScheme
+                            .onSurface
+                            .withOpacity(0.55))),
+                activeColor: Theme.of(ctx).colorScheme.primary,
+                contentPadding: EdgeInsets.zero,
               ),
-              _buildNotificationSwitch(
-                'Promotions', 
-                'Exclusive deals and offers', 
-                _promotions, 
-                (val) => setModalState(() {
-                  setState(() => _promotions = val);
-                }),
-              ),
-              const SizedBox(height: 32),
-            ],
-          ),
-        ),
+            );
+          }
+
+          return SingleChildScrollView(
+            padding: EdgeInsets.fromLTRB(
+              24,
+              24,
+              24,
+              MediaQuery.of(ctx).viewInsets.bottom + 32,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Handle
+                Center(
+                  child: Container(
+                    width: 40, height: 4,
+                    margin: const EdgeInsets.only(bottom: 20),
+                    decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        borderRadius: BorderRadius.circular(2)),
+                  ),
+                ),
+                Row(
+                  children: [
+                    Icon(LucideIcons.bell,
+                        size: 20,
+                        color: Theme.of(ctx).colorScheme.primary),
+                    const SizedBox(width: 12),
+                    Text('Notifications',
+                        style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(ctx).colorScheme.onSurface)),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                notifTile(
+                  'Push Notifications',
+                  'Booking confirmations and alerts',
+                  localPush,
+                  (v) => localPush = v,
+                ),
+                notifTile(
+                  'Email Updates',
+                  'Invoices, receipts and summaries',
+                  localEmail,
+                  (v) => localEmail = v,
+                ),
+                notifTile(
+                  'Promotions',
+                  'Exclusive deals and special offers',
+                  localPromo,
+                  (v) => localPromo = v,
+                ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      setState(() {
+                        _pushNotifications = localPush;
+                        _emailUpdates = localEmail;
+                        _promotions = localPromo;
+                      });
+                      Navigator.pop(ctx);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Notification preferences saved'),
+                          behavior: SnackBarBehavior.floating,
+                          backgroundColor: Colors.green,
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Theme.of(ctx).colorScheme.primary,
+                      foregroundColor: Theme.of(ctx).colorScheme.onPrimary,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16)),
+                    ),
+                    child: const Text('Save Preferences',
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 16)),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
@@ -932,8 +1164,12 @@ class _ProfilePageState extends State<ProfilePage> {
       case 'netbanking':
         icon = LucideIcons.landmark;
         break;
+      case 'credit':
+      case 'debit':
+      case 'card':
       default:
         icon = LucideIcons.creditCard;
+        break;
     }
 
     final isDark = Theme.of(context).colorScheme.brightness == Brightness.dark;
@@ -1064,7 +1300,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   void _showAddPaymentMethodDialog(BuildContext context) {
     setState(() {
-      _selectedPaymentType = 'card';
+      _selectedPaymentType = 'debit';
     });
 
     showModalBottomSheet(
@@ -1089,70 +1325,52 @@ class _ProfilePageState extends State<ProfilePage> {
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
               ),
               const SizedBox(height: 24),
-              // Type Selector
+              // Type Selector (Debit vs Credit)
               Row(
                 children: [
-                  _buildTypeTab('Card', 'card', setModalState),
-                  const SizedBox(width: 8),
-                  _buildTypeTab('UPI', 'upi', setModalState),
-                  const SizedBox(width: 8),
-                  _buildTypeTab('Bank', 'netbanking', setModalState),
+                  _buildRadioTab('Debit Card', 'debit', setModalState),
+                  const SizedBox(width: 16),
+                  _buildRadioTab('Credit Card', 'credit', setModalState),
                 ],
               ),
               const SizedBox(height: 24),
-              if (_selectedPaymentType == 'card') ...[
-                CustomTextField(
-                  label: 'Cardholder Name',
-                  hint: 'John Doe',
-                  prefixIcon: LucideIcons.user,
-                  controller: _cardNameController,
-                ),
-                const SizedBox(height: 16),
-                CustomTextField(
-                  label: 'Card Number',
-                  hint: '0000 0000 0000 0000',
-                  prefixIcon: LucideIcons.creditCard,
-                  keyboardType: TextInputType.number,
-                  controller: _cardNumberController,
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: CustomTextField(
-                        label: 'Expiry',
-                        hint: 'MM/YY',
-                        prefixIcon: LucideIcons.calendar,
-                        controller: _expiryController,
-                      ),
+              CustomTextField(
+                label: _selectedPaymentType == 'credit' ? 'Cardholder Name *' : 'Cardholder Name (Optional)',
+                hint: 'John Doe',
+                prefixIcon: LucideIcons.user,
+                controller: _cardNameController,
+              ),
+              const SizedBox(height: 16),
+              CustomTextField(
+                label: _selectedPaymentType == 'credit' ? 'Card Number *' : 'Card Number (Optional)',
+                hint: '0000 0000 0000 0000',
+                prefixIcon: LucideIcons.creditCard,
+                keyboardType: TextInputType.number,
+                controller: _cardNumberController,
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: CustomTextField(
+                      label: _selectedPaymentType == 'credit' ? 'Expiry *' : 'Expiry (Optional)',
+                      hint: 'MM/YY',
+                      prefixIcon: LucideIcons.calendar,
+                      controller: _expiryController,
                     ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: CustomTextField(
-                        label: 'CVV',
-                        hint: '000',
-                        prefixIcon: LucideIcons.lock,
-                        keyboardType: TextInputType.number,
-                        controller: _cvvController,
-                      ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: CustomTextField(
+                      label: _selectedPaymentType == 'credit' ? 'CVV *' : 'CVV (Optional)',
+                      hint: '000',
+                      prefixIcon: LucideIcons.lock,
+                      keyboardType: TextInputType.number,
+                      controller: _cvvController,
                     ),
-                  ],
-                ),
-              ] else if (_selectedPaymentType == 'upi') ...[
-                CustomTextField(
-                  label: 'UPI ID',
-                  hint: 'user@upi',
-                  prefixIcon: LucideIcons.smartphone,
-                  controller: _upiIdController,
-                ),
-              ] else if (_selectedPaymentType == 'netbanking') ...[
-                CustomTextField(
-                  label: 'Bank Name',
-                  hint: 'Select your bank',
-                  prefixIcon: LucideIcons.landmark,
-                  controller: _bankNameController,
-                ),
-              ],
+                  ),
+                ],
+              ),
               const SizedBox(height: 32),
               Consumer<AuthProvider>(
                 builder: (context, auth, _) => SizedBox(
@@ -1162,34 +1380,49 @@ class _ProfilePageState extends State<ProfilePage> {
                         ? null
                         : () async {
                             bool success = false;
-                            if (_selectedPaymentType == 'card') {
-                              if (_cardNumberController.text.length < 16) {
+                            final cardNo = _cardNumberController.text.replaceAll(' ', '');
+                            final cardName = _cardNameController.text.trim();
+                            final expiry = _expiryController.text.trim();
+                            final cvv = _cvvController.text.trim();
+
+                            if (_selectedPaymentType == 'credit') {
+                              if (cardName.isEmpty) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Invalid card number'), backgroundColor: Colors.red),
+                                  const SnackBar(content: Text('Cardholder name is required for Credit Card'), backgroundColor: Colors.red),
                                 );
                                 return;
                               }
-                              final last4 = _cardNumberController.text.substring(_cardNumberController.text.length - 4);
-                              final brand = _cardNumberController.text.startsWith('4') ? 'Visa' : 'Mastercard';
-                              success = await auth.addPaymentMethod(
-                                type: 'card',
-                                brand: brand,
-                                last4: last4,
-                                expiry: _expiryController.text,
-                              );
-                            } else if (_selectedPaymentType == 'upi') {
-                              if (_upiIdController.text.isEmpty) return;
-                              success = await auth.addPaymentMethod(
-                                type: 'upi',
-                                upiId: _upiIdController.text,
-                              );
-                            } else if (_selectedPaymentType == 'netbanking') {
-                              if (_bankNameController.text.isEmpty) return;
-                              success = await auth.addPaymentMethod(
-                                type: 'netbanking',
-                                bankName: _bankNameController.text,
-                              );
+                              if (cardNo.length < 16) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Invalid card number (must be 16 digits)'), backgroundColor: Colors.red),
+                                );
+                                return;
+                              }
+                              if (expiry.isEmpty || !expiry.contains('/')) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Invalid expiry date (MM/YY)'), backgroundColor: Colors.red),
+                                );
+                                return;
+                              }
+                              if (cvv.length < 3) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Invalid CVV (must be 3 digits)'), backgroundColor: Colors.red),
+                                );
+                                return;
+                              }
                             }
+
+                            // If debit is selected, card fields are optional
+                            final last4Val = cardNo.isNotEmpty ? (cardNo.length >= 4 ? cardNo.substring(cardNo.length - 4) : cardNo) : '0000';
+                            final brandVal = cardNo.isNotEmpty ? (cardNo.startsWith('4') ? 'Visa' : 'Mastercard') : 'Debit';
+                            final expiryVal = expiry.isNotEmpty ? expiry : '12/99';
+
+                            success = await auth.addPaymentMethod(
+                              type: _selectedPaymentType,
+                              brand: brandVal,
+                              last4: last4Val,
+                              expiry: expiryVal,
+                            );
 
                             if (mounted) {
                               if (success) {
@@ -1237,7 +1470,7 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  Widget _buildTypeTab(String label, String type, StateSetter setModalState) {
+  Widget _buildRadioTab(String label, String type, StateSetter setModalState) {
     bool isSelected = _selectedPaymentType == type;
     final isDark = Theme.of(context).colorScheme.brightness == Brightness.dark;
     return Expanded(
@@ -1248,20 +1481,51 @@ class _ProfilePageState extends State<ProfilePage> {
           });
         },
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 12),
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
           decoration: BoxDecoration(
-            color: isSelected ? Theme.of(context).colorScheme.primary : (isDark ? const Color(0xFF19222E) : Colors.grey[100]),
+            color: isSelected ? Theme.of(context).colorScheme.primary.withOpacity(0.05) : Colors.transparent,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: isSelected ? Theme.of(context).colorScheme.primary : (isDark ? Colors.white10 : Colors.grey[200]!)),
-          ),
-          child: Text(
-            label,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: isSelected ? Colors.white : (isDark ? Colors.grey[400] : Colors.grey[600]),
-              fontWeight: FontWeight.bold,
-              fontSize: 13,
+            border: Border.all(
+              color: isSelected ? Theme.of(context).colorScheme.primary : (isDark ? Colors.white10 : Colors.grey[200]!),
+              width: 1.5,
             ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 18,
+                height: 18,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: isSelected ? Theme.of(context).colorScheme.primary : Colors.grey,
+                    width: 2,
+                  ),
+                ),
+                child: isSelected
+                    ? Center(
+                        child: Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                        ),
+                      )
+                    : null,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+              ),
+            ],
           ),
         ),
       ),

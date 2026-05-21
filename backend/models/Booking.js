@@ -19,14 +19,16 @@ const bookingSchema = new mongoose.Schema(
     // (so history stays accurate even if guest updates profile)
     guestSnapshot: {
       name: { type: String, required: true },
-      email: { type: String, required: true },
-      phone: { type: String, required: true },
+      email: { type: String, required: false },
+      phone: { type: String, required: false },
+      id: { type: String, required: true },
     },
 
     // ── Additional guests ────────────────────────────────
     additionalAdults: [
       {
-        name: String,
+        name: { type: String, required: true },
+        id: { type: String, required: true },
         email: String,
         phone: String,
         specialRequests: String,
@@ -35,7 +37,8 @@ const bookingSchema = new mongoose.Schema(
 
     additionalChildren: [
       {
-        name: String,
+        name: { type: String, required: true },
+        id: { type: String, required: true },
         age: Number,
       },
     ],

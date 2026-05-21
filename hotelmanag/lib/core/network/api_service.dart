@@ -8,21 +8,21 @@ class ApiService {
 
   ApiService(this._dio) {
     _dio.options.baseUrl = AppConstants.apiBaseUrl;
-    _dio.options.connectTimeout = const Duration(seconds: 60);
-    _dio.options.receiveTimeout = const Duration(seconds: 60);
-    
+    _dio.options.connectTimeout = const Duration(seconds: 30);
+    _dio.options.receiveTimeout = const Duration(seconds: 30);
+    _dio.options.headers['Content-Type'] = 'application/json';
+
     _dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
           final prefs = await SharedPreferences.getInstance();
           final token = prefs.getString(AppConstants.tokenKey);
-          
+
           if (token != null && token.isNotEmpty) {
             options.headers['Authorization'] = 'Bearer $token';
           }
-          
-          debugPrint('API REQUEST[${options.method}] => PATH: ${options.path}');
-          debugPrint('DATA: ${options.data}');
+
+          debugPrint('API REQUEST[${options.method}] => ${options.baseUrl}${options.path}');
           return handler.next(options);
         },
         onResponse: (response, handler) {
@@ -32,7 +32,20 @@ class ApiService {
         onError: (DioException e, handler) {
           debugPrint('API ERROR[${e.response?.statusCode ?? e.type}] => PATH: ${e.requestOptions.path}');
           debugPrint('ERROR MESSAGE: ${e.response?.data ?? e.message}');
-          debugPrint('ERROR DETAILS: ${e.error}');
+
+          // Convert network/timeout errors into a friendlier DioException
+          if (e.type == DioExceptionType.connectionError ||
+              e.type == DioExceptionType.connectionTimeout ||
+              e.type == DioExceptionType.receiveTimeout) {
+            return handler.next(
+              DioException(
+                requestOptions: e.requestOptions,
+                type: e.type,
+                error: e.error,
+                message: 'Unable to connect to the server. Please check your internet connection.',
+              ),
+            );
+          }
           return handler.next(e);
         },
       ),

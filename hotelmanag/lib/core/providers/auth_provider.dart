@@ -140,10 +140,24 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final GoogleSignIn googleSignIn = GoogleSignIn();
+      // serverClientId is the Web OAuth client ID from Google Cloud Console.
+      // It is required to get an idToken on Android when google-services.json
+      // is not present or when the Web client is used as the backend verifier.
+      const serverClientId =
+          '70312411330-jo6eo462a26qo7gcici4nr1csaoa8v0q.apps.googleusercontent.com';
+
+      final GoogleSignIn googleSignIn = GoogleSignIn(
+        serverClientId: serverClientId,
+        scopes: ['email', 'profile'],
+      );
+
+      // Sign out first to force the account picker to show every time
+      await googleSignIn.signOut();
+
       final GoogleSignInAccount? account = await googleSignIn.signIn();
-      
+
       if (account == null) {
+        // User cancelled the picker
         _isLoading = false;
         notifyListeners();
         return false;
@@ -153,7 +167,8 @@ class AuthProvider extends ChangeNotifier {
       final String? idToken = auth.idToken;
 
       if (idToken == null) {
-        _error = "Could not get ID Token from Google";
+        _error = 'Google sign-in failed: could not obtain ID token. '
+            'Make sure google-services.json is configured for this app.';
         _isLoading = false;
         notifyListeners();
         return false;
@@ -178,7 +193,7 @@ class AuthProvider extends ChangeNotifier {
         },
       );
     } catch (e) {
-      _error = e.toString();
+      _error = 'Google sign-in error: ${e.toString()}';
       _isLoading = false;
       notifyListeners();
       return false;

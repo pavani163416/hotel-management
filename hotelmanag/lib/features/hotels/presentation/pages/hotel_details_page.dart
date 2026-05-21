@@ -10,22 +10,19 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:shimmer/shimmer.dart';
 import '../../../../core/providers/booking_provider.dart';
 import '../../../../core/providers/auth_provider.dart';
+import '../../../../core/providers/favorites_provider.dart';
 
-class RoomData {
-  final String name;
-  final String bedInfo;
-  final int guests;
-  final List<String> features;
-  final double priceFactor;
-  final String? warning;
+class _RoomRow {
+  final RoomEntity room;
+  final int price;
+  final bool isSoldOut;
+  final int availableCount;
 
-  const RoomData({
-    required this.name,
-    required this.bedInfo,
-    required this.guests,
-    required this.features,
-    required this.priceFactor,
-    this.warning,
+  const _RoomRow({
+    required this.room,
+    required this.price,
+    required this.isSoldOut,
+    required this.availableCount,
   });
 }
 
@@ -361,20 +358,47 @@ class _HotelDetailsPageState extends State<HotelDetailsPage> with SingleTickerPr
             ],
           ),
         ),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF253040) : const Color(0xFFE5E0D8).withOpacity(0.7), 
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Text(
-            '${hotel.rating} (${hotel.reviews.length} reviews)', 
-            style: TextStyle(
-              fontWeight: FontWeight.bold, 
-              color: Theme.of(context).colorScheme.primary,
-              fontSize: 12,
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF253040) : const Color(0xFFE5E0D8).withOpacity(0.7), 
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                '${hotel.rating} (${hotel.reviews.length} reviews)', 
+                style: TextStyle(
+                  fontWeight: FontWeight.bold, 
+                  color: Theme.of(context).colorScheme.primary,
+                  fontSize: 12,
+                ),
+              ),
             ),
-          ),
+            const SizedBox(width: 12),
+            Consumer<FavoritesProvider>(
+              builder: (context, provider, child) {
+                final isFav = provider.isFavorite(hotel);
+                return InkWell(
+                  onTap: () => provider.toggleFavorite(hotel),
+                  borderRadius: BorderRadius.circular(50),
+                  child: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: isFav ? Colors.red.withOpacity(0.1) : AppTheme.primaryColor.withOpacity(0.05),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      LucideIcons.heart,
+                      size: 18,
+                      color: isFav ? Colors.red : AppTheme.primaryColor,
+                      fill: isFav ? 1 : 0,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ],
         ),
       ],
     );
@@ -406,7 +430,7 @@ class _HotelDetailsPageState extends State<HotelDetailsPage> with SingleTickerPr
         controller: _tabController,
         children: [
           _buildRoomsTab(context, hotel, isWide),
-          _buildAmenitiesTab(),
+          _buildAmenitiesTab(hotel),
           _buildReviewsTab(hotel),
         ],
       ),
@@ -415,47 +439,53 @@ class _HotelDetailsPageState extends State<HotelDetailsPage> with SingleTickerPr
 
   Widget _buildRoomsTab(BuildContext context, HotelEntity hotel, bool isWide) {
     final isDark = Theme.of(context).colorScheme.brightness == Brightness.dark;
-    
-    final roomList = hotel.rooms.isEmpty
-        ? [
-            RoomData(
-              name: 'Deluxe King Room',
-              bedInfo: '1 King Bed',
-              guests: 2,
-              features: const ['WiFi', 'Breakfast', 'AC'],
-              priceFactor: 1.0,
+
+    // No rooms from backend → clear message, no fake data
+    if (hotel.rooms.isEmpty) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Select Your Room',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.onSurface, fontFamily: 'Serif')),
+          const SizedBox(height: 24),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(32),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF253040) : Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: isDark ? Colors.white10 : AppTheme.mutedColor),
             ),
-            RoomData(
-              name: 'Executive Suite',
-              bedInfo: '1 King Bed + Sofa',
-              guests: 3,
-              features: const ['WiFi', 'Breakfast', 'Mini Bar'],
-              priceFactor: 1.625,
-              warning: 'Only 2 left',
+            child: Column(
+              children: [
+                Icon(LucideIcons.bedDouble, size: 48,
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2)),
+                const SizedBox(height: 16),
+                Text('No Rooms Available',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
+                const SizedBox(height: 8),
+                Text('This hotel has no rooms listed at the moment.\nPlease check back later or choose another property.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 13, height: 1.5,
+                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4))),
+              ],
             ),
-            RoomData(
-              name: 'Panoramic Penthouse',
-              bedInfo: '2 King Beds',
-              guests: 4,
-              features: const ['Butler', 'Private Spa'],
-              priceFactor: 3.02,
-              warning: 'Only 1 left',
-            ),
-          ]
-        : hotel.rooms.map((room) {
-            double priceFactor = 1.0;
-            if (hotel.pricePerNight > 0) {
-              priceFactor = room.price / hotel.pricePerNight;
-            }
-            return RoomData(
-              name: room.name,
-              bedInfo: room.bed.isNotEmpty ? room.bed : '1 King Bed',
-              guests: room.capacity,
-              features: room.features,
-              priceFactor: priceFactor,
-              warning: room.available <= 2 ? 'Only ${room.available} left' : null,
-            );
-          }).toList();
+          ),
+        ],
+      );
+    }
+
+    final roomList = hotel.rooms.map((room) {
+      double priceFactor = hotel.pricePerNight > 0 ? room.price / hotel.pricePerNight : 1.0;
+      return _RoomRow(
+        room: room,
+        price: (hotel.pricePerNight * priceFactor).toInt(),
+        isSoldOut: room.available == 0,
+        availableCount: room.available,
+      );
+    }).toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -495,10 +525,32 @@ class _HotelDetailsPageState extends State<HotelDetailsPage> with SingleTickerPr
                   ),
                 ),
                 // Table Rows
-                ...roomList.map((room) {
-                  final price = (hotel.pricePerNight * room.priceFactor).toInt();
+                ...roomList.map((row) {
+                  // Availability badge widget
+                  Widget badge;
+                  if (row.isSoldOut) {
+                    badge = Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                      decoration: BoxDecoration(color: Colors.red.withOpacity(0.1), borderRadius: BorderRadius.circular(6), border: Border.all(color: Colors.red.withOpacity(0.3))),
+                      child: const Text('Sold Out', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.redAccent)),
+                    );
+                  } else if (row.availableCount <= 3) {
+                    badge = Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                      decoration: BoxDecoration(color: Colors.orange.withOpacity(0.1), borderRadius: BorderRadius.circular(6), border: Border.all(color: Colors.orange.withOpacity(0.3))),
+                      child: Text('Only ${row.availableCount} left', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.orange)),
+                    );
+                  } else {
+                    badge = Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                      decoration: BoxDecoration(color: Colors.green.withOpacity(0.1), borderRadius: BorderRadius.circular(6), border: Border.all(color: Colors.green.withOpacity(0.3))),
+                      child: Text('${row.availableCount} available', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.green)),
+                    );
+                  }
+
                   return Container(
                     decoration: BoxDecoration(
+                      color: row.isSoldOut ? (isDark ? const Color(0xFF1E2A38) : const Color(0xFFF9F9F9)) : null,
                       border: Border(bottom: BorderSide(color: isDark ? Colors.white10 : AppTheme.mutedColor.withOpacity(0.5))),
                     ),
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
@@ -510,19 +562,21 @@ class _HotelDetailsPageState extends State<HotelDetailsPage> with SingleTickerPr
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(room.name, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Theme.of(context).colorScheme.onSurface)),
+                              Text(row.room.name, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: row.isSoldOut ? Theme.of(context).colorScheme.onSurface.withOpacity(0.4) : Theme.of(context).colorScheme.onSurface)),
                               const SizedBox(height: 6),
                               Row(
                                 children: [
                                   Icon(LucideIcons.bedDouble, size: 14, color: Colors.grey[400]),
                                   const SizedBox(width: 4),
-                                  Text(room.bedInfo, style: TextStyle(fontSize: 12, color: isDark ? Colors.grey[400] : Colors.grey[600])),
+                                  Text(row.room.bed.isNotEmpty ? row.room.bed : '1 King Bed', style: TextStyle(fontSize: 12, color: isDark ? Colors.grey[400] : Colors.grey[600])),
                                   const SizedBox(width: 12),
                                   Icon(LucideIcons.users, size: 14, color: Colors.grey[400]),
                                   const SizedBox(width: 4),
-                                  Text('${room.guests}', style: TextStyle(fontSize: 12, color: isDark ? Colors.grey[400] : Colors.grey[600])),
+                                  Text('${row.room.capacity}', style: TextStyle(fontSize: 12, color: isDark ? Colors.grey[400] : Colors.grey[600])),
                                 ],
                               ),
+                              const SizedBox(height: 6),
+                              badge,
                             ],
                           ),
                         ),
@@ -532,12 +586,9 @@ class _HotelDetailsPageState extends State<HotelDetailsPage> with SingleTickerPr
                           child: Wrap(
                             spacing: 6,
                             runSpacing: 6,
-                            children: room.features.map((feat) => Container(
+                            children: row.room.features.map((feat) => Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: isDark ? const Color(0xFF19222E) : const Color(0xFFE5E0D8).withOpacity(0.4),
-                                borderRadius: BorderRadius.circular(6),
-                              ),
+                              decoration: BoxDecoration(color: isDark ? const Color(0xFF19222E) : const Color(0xFFE5E0D8).withOpacity(0.4), borderRadius: BorderRadius.circular(6)),
                               child: Text(feat, style: TextStyle(fontSize: 11, color: isDark ? Colors.grey[300] : Colors.grey[700], fontWeight: FontWeight.w500)),
                             )).toList(),
                           ),
@@ -548,7 +599,7 @@ class _HotelDetailsPageState extends State<HotelDetailsPage> with SingleTickerPr
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
-                              Text('\$$price', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                              Text('\$${row.price}', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: row.isSoldOut ? Theme.of(context).colorScheme.onSurface.withOpacity(0.35) : Theme.of(context).colorScheme.onSurface)),
                               Text('per night', style: TextStyle(fontSize: 11, color: isDark ? Colors.grey[400] : Colors.grey[600])),
                             ],
                           ),
@@ -557,31 +608,29 @@ class _HotelDetailsPageState extends State<HotelDetailsPage> with SingleTickerPr
                         // Action Button
                         Expanded(
                           flex: 2,
-                          child: Column(
-                            children: [
-                              ElevatedButton(
-                                onPressed: () {
-                                  final bp = context.read<BookingProvider>();
-                                  final ap = context.read<AuthProvider>();
-                                  bp.startBooking(hotel, user: ap.user);
-                                  bp.selectRoom(room.name, price.toDouble());
-                                  context.push('/booking');
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: isDark ? const Color(0xFF19222E) : const Color(0xFFE5E0D8),
-                                  foregroundColor: Theme.of(context).colorScheme.primary,
+                          child: row.isSoldOut
+                              ? Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                  elevation: 0,
+                                  decoration: BoxDecoration(color: isDark ? const Color(0xFF2A3545) : const Color(0xFFEEEEEE), borderRadius: BorderRadius.circular(8), border: Border.all(color: isDark ? Colors.white10 : Colors.grey.shade300)),
+                                  child: Text('Sold Out', textAlign: TextAlign.center, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey[500])),
+                                )
+                              : ElevatedButton(
+                                  onPressed: () {
+                                    final bp = context.read<BookingProvider>();
+                                    final ap = context.read<AuthProvider>();
+                                    bp.startBooking(hotel, user: ap.user);
+                                    bp.selectRoom(row.room.name, row.price.toDouble());
+                                    context.push('/booking');
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: isDark ? const Color(0xFF19222E) : const Color(0xFFE5E0D8),
+                                    foregroundColor: Theme.of(context).colorScheme.primary,
+                                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                    elevation: 0,
+                                  ),
+                                  child: const Text('Select Room', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                                 ),
-                                child: const Text('Select Room', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                              ),
-                              if (room.warning != null) ...[
-                                const SizedBox(height: 4),
-                                Text(room.warning!, style: const TextStyle(color: Colors.redAccent, fontSize: 10, fontWeight: FontWeight.bold)),
-                              ]
-                            ],
-                          ),
                         ),
                       ],
                     ),
@@ -595,13 +644,35 @@ class _HotelDetailsPageState extends State<HotelDetailsPage> with SingleTickerPr
           Expanded(
             child: ListView(
               physics: const BouncingScrollPhysics(),
-              children: roomList.map((room) {
-                final price = (hotel.pricePerNight * room.priceFactor).toInt();
+              children: roomList.map((row) {
+                Widget badge;
+                if (row.isSoldOut) {
+                  badge = Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                    decoration: BoxDecoration(color: Colors.red.withOpacity(0.1), borderRadius: BorderRadius.circular(6), border: Border.all(color: Colors.red.withOpacity(0.3))),
+                    child: const Text('Sold Out', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.redAccent)),
+                  );
+                } else if (row.availableCount <= 3) {
+                  badge = Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                    decoration: BoxDecoration(color: Colors.orange.withOpacity(0.1), borderRadius: BorderRadius.circular(6), border: Border.all(color: Colors.orange.withOpacity(0.3))),
+                    child: Text('Only ${row.availableCount} left', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.orange)),
+                  );
+                } else {
+                  badge = Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                    decoration: BoxDecoration(color: Colors.green.withOpacity(0.1), borderRadius: BorderRadius.circular(6), border: Border.all(color: Colors.green.withOpacity(0.3))),
+                    child: Text('${row.availableCount} available', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.green)),
+                  );
+                }
+
                 return Container(
                   margin: const EdgeInsets.only(bottom: 16),
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF253040) : Colors.white,
+                    color: row.isSoldOut
+                        ? (isDark ? const Color(0xFF1E2A38) : const Color(0xFFF5F5F5))
+                        : (isDark ? const Color(0xFF253040) : Colors.white),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(color: isDark ? Colors.white10 : AppTheme.mutedColor),
                   ),
@@ -611,9 +682,16 @@ class _HotelDetailsPageState extends State<HotelDetailsPage> with SingleTickerPr
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(room.name, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Theme.of(context).colorScheme.onSurface)),
-                          if (room.warning != null)
-                            Text(room.warning!, style: const TextStyle(color: Colors.redAccent, fontSize: 11, fontWeight: FontWeight.bold)),
+                          Expanded(
+                            child: Text(row.room.name,
+                                style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                    color: row.isSoldOut
+                                        ? Theme.of(context).colorScheme.onSurface.withOpacity(0.4)
+                                        : Theme.of(context).colorScheme.onSurface)),
+                          ),
+                          badge,
                         ],
                       ),
                       const SizedBox(height: 8),
@@ -621,18 +699,20 @@ class _HotelDetailsPageState extends State<HotelDetailsPage> with SingleTickerPr
                         children: [
                           Icon(LucideIcons.bedDouble, size: 14, color: Colors.grey[400]),
                           const SizedBox(width: 4),
-                          Text(room.bedInfo, style: TextStyle(fontSize: 12, color: isDark ? Colors.grey[400] : Colors.grey[600])),
+                          Text(row.room.bed.isNotEmpty ? row.room.bed : '1 King Bed',
+                              style: TextStyle(fontSize: 12, color: isDark ? Colors.grey[400] : Colors.grey[600])),
                           const SizedBox(width: 16),
                           Icon(LucideIcons.users, size: 14, color: Colors.grey[400]),
                           const SizedBox(width: 4),
-                          Text('${room.guests} Guests', style: TextStyle(fontSize: 12, color: isDark ? Colors.grey[400] : Colors.grey[600])),
+                          Text('${row.room.capacity} Guests',
+                              style: TextStyle(fontSize: 12, color: isDark ? Colors.grey[400] : Colors.grey[600])),
                         ],
                       ),
                       const SizedBox(height: 12),
                       Wrap(
                         spacing: 6,
                         runSpacing: 6,
-                        children: room.features.map((feat) => Container(
+                        children: row.room.features.map((feat) => Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
                             color: isDark ? const Color(0xFF19222E) : const Color(0xFFE5E0D8).withOpacity(0.4),
@@ -650,27 +730,45 @@ class _HotelDetailsPageState extends State<HotelDetailsPage> with SingleTickerPr
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('\$$price', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
-                              Text('per night', style: TextStyle(fontSize: 11, color: isDark ? Colors.grey[400] : Colors.grey[600])),
+                              Text('\$${row.price}',
+                                  style: TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                      color: row.isSoldOut
+                                          ? Theme.of(context).colorScheme.onSurface.withOpacity(0.35)
+                                          : Theme.of(context).colorScheme.onSurface)),
+                              Text('per night',
+                                  style: TextStyle(fontSize: 11, color: isDark ? Colors.grey[400] : Colors.grey[600])),
                             ],
                           ),
-                          ElevatedButton(
-                            onPressed: () {
-                              final bp = context.read<BookingProvider>();
-                              final ap = context.read<AuthProvider>();
-                              bp.startBooking(hotel, user: ap.user);
-                              bp.selectRoom(room.name, price.toDouble());
-                              context.push('/booking');
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: isDark ? const Color(0xFF19222E) : const Color(0xFFE5E0D8),
-                              foregroundColor: Theme.of(context).colorScheme.primary,
-                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                              elevation: 0,
-                            ),
-                            child: const Text('Select Room', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                          ),
+                          row.isSoldOut
+                              ? Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                                  decoration: BoxDecoration(
+                                    color: isDark ? const Color(0xFF2A3545) : const Color(0xFFEEEEEE),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(color: isDark ? Colors.white10 : Colors.grey.shade300),
+                                  ),
+                                  child: Text('Sold Out',
+                                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey[500])),
+                                )
+                              : ElevatedButton(
+                                  onPressed: () {
+                                    final bp = context.read<BookingProvider>();
+                                    final ap = context.read<AuthProvider>();
+                                    bp.startBooking(hotel, user: ap.user);
+                                    bp.selectRoom(row.room.name, row.price.toDouble());
+                                    context.push('/booking');
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: isDark ? const Color(0xFF19222E) : const Color(0xFFE5E0D8),
+                                    foregroundColor: Theme.of(context).colorScheme.primary,
+                                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                    elevation: 0,
+                                  ),
+                                  child: const Text('Select Room', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                                ),
                         ],
                       ),
                     ],
@@ -683,9 +781,11 @@ class _HotelDetailsPageState extends State<HotelDetailsPage> with SingleTickerPr
     );
   }
 
-  Widget _buildAmenitiesTab() {
+  Widget _buildAmenitiesTab(HotelEntity hotel) {
     final isDark = Theme.of(context).colorScheme.brightness == Brightness.dark;
-    final amenities = ['Free WiFi', 'Infinity Pool', 'Spa & Wellness', 'Ocean View', 'Restaurant', 'Airport Shuttle'];
+    final amenities = hotel.amenities.isNotEmpty
+        ? hotel.amenities
+        : ['Free WiFi', 'Infinity Pool', 'Spa & Wellness', 'Ocean View', 'Restaurant', 'Airport Shuttle'];
     return GridView.builder(
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(

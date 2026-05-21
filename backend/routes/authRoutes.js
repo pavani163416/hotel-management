@@ -856,7 +856,7 @@ router.post("/payment-methods", verifyCustomerToken, async (req, res, next) => {
     
     if (!type) return res.status(400).json({ success: false, message: "Type is required." });
 
-    if (type === 'card' && (!brand || !last4 || !expiry)) {
+    if ((type === 'card' || type === 'credit') && (!brand || !last4 || !expiry)) {
       return res.status(400).json({ success: false, message: "Missing card details." });
     }
     if (type === 'upi' && !upiId) {

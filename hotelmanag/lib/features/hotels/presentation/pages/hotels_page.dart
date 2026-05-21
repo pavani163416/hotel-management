@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/main_layout.dart';
 import '../../../../core/providers/hotel_provider.dart';
+import '../../../../core/providers/favorites_provider.dart';
 import '../../../../shared/domain/entities/hotel_entity.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -20,7 +21,13 @@ class _HotelsPageState extends State<HotelsPage> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(() => context.read<HotelProvider>().fetchHotels());
+    // Only fetch if we have no data yet — avoids a loading flash on every navigation
+    Future.microtask(() {
+      final provider = context.read<HotelProvider>();
+      if (provider.allHotels.isEmpty) {
+        provider.fetchHotels();
+      }
+    });
   }
 
   @override
@@ -263,10 +270,15 @@ class _HotelsPageState extends State<HotelsPage> {
   }
 
   Widget _buildTopDeals(BuildContext context, bool isWide) {
-    final provider = context.watch<HotelProvider>();
-    final deals = provider.allHotels.take(3).toList();
+    // Use select so this section only rebuilds when the first 3 hotels change
+    final deals = context.select<HotelProvider, List<HotelEntity>>(
+      (p) => List<HotelEntity>.from(p.allHotels),
+    );
     final isDark = Theme.of(context).colorScheme.brightness == Brightness.dark;
     
+    final topRated = List<HotelEntity>.from(deals);
+    topRated.sort((a, b) => b.rating.compareTo(a.rating));
+
     return Container(
       padding: EdgeInsets.all(isWide ? 24 : 16),
       decoration: BoxDecoration(
@@ -287,10 +299,10 @@ class _HotelsPageState extends State<HotelsPage> {
                     children: [
                       Icon(LucideIcons.flame, size: 16, color: Colors.orange[400]),
                       const SizedBox(width: 8),
-                      Text('Top Deals', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                      Text('Premium', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
                     ],
                   ),
-                  Text('Limited-time premium offers', style: TextStyle(fontSize: 11, color: isDark ? Colors.grey[400] : Colors.grey)),
+                  Text('Top rated hotels for a premium stay', style: TextStyle(fontSize: 11, color: isDark ? Colors.grey[400] : Colors.grey)),
                 ],
               ),
               if (isWide) Row(
@@ -306,7 +318,7 @@ class _HotelsPageState extends State<HotelsPage> {
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
-              children: deals.map((hotel) => _buildDealCard(context, hotel)).toList(),
+              children: topRated.take(3).map((hotel) => _buildDealCard(context, hotel)).toList(),
             ),
           ),
         ],
@@ -332,6 +344,7 @@ class _HotelsPageState extends State<HotelsPage> {
 
   Widget _buildDealCard(BuildContext context, HotelEntity hotel) {
     final isDark = Theme.of(context).colorScheme.brightness == Brightness.dark;
+    final hasDiscount = hotel.discountPct > 0 && hotel.originalPrice != null;
     return Container(
       width: 250,
       margin: const EdgeInsets.only(right: 20),
@@ -356,8 +369,10 @@ class _HotelsPageState extends State<HotelsPage> {
                   memCacheHeight: 280,
                 ),
               ),
-              Positioned(top: 10, left: 10, child: _buildBadge('TOP DEAL', isDark ? const Color(0xFF253040) : const Color(0xFFF7FAFC))),
-              Positioned(top: 10, right: 10, child: _buildBadge('-20%', Colors.black.withOpacity(0.5), textColor: Colors.white)),
+              if (hotel.isDeal)
+                Positioned(top: 10, left: 10, child: _buildBadge('TOP DEAL', isDark ? const Color(0xFF253040) : const Color(0xFFF7FAFC))),
+              if (hasDiscount)
+                Positioned(top: 10, right: 10, child: _buildBadge('-${hotel.discountPct.toInt()}%', Colors.black.withOpacity(0.5), textColor: Colors.white)),
             ],
           ),
           Padding(
@@ -370,22 +385,20 @@ class _HotelsPageState extends State<HotelsPage> {
                   children: [
                     Expanded(
                       child: Text(
-                        hotel.name, 
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Theme.of(context).colorScheme.onSurface), 
-                        maxLines: 1, 
+                        hotel.name,
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Theme.of(context).colorScheme.onSurface),
+                        maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    Row(
-                      children: [
-                        const Icon(LucideIcons.star, size: 10, color: Colors.orange, fill: 1), 
-                        const SizedBox(width: 4), 
-                        Text(
-                          hotel.rating.toString(), 
-                          style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
-                        ),
-                      ],
-                    ),
+                    if (hotel.rating > 0)
+                      Row(
+                        children: [
+                          const Icon(LucideIcons.star, size: 10, color: Colors.orange, fill: 1),
+                          const SizedBox(width: 4),
+                          Text(hotel.rating.toString(), style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                        ],
+                      ),
                   ],
                 ),
                 Text(hotel.location, style: TextStyle(fontSize: 11, color: isDark ? Colors.grey[400] : Colors.grey)),
@@ -396,8 +409,9 @@ class _HotelsPageState extends State<HotelsPage> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                         Text('\$${(hotel.pricePerNight * 1.2).toInt()}', style: TextStyle(fontSize: 9, color: isDark ? Colors.grey[500] : Colors.grey, decoration: TextDecoration.lineThrough)),
-                         Text('\$${hotel.pricePerNight.toInt()}/night', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary)),
+                        if (hasDiscount)
+                          Text('\$${hotel.originalPrice!.toInt()}', style: TextStyle(fontSize: 9, color: isDark ? Colors.grey[500] : Colors.grey, decoration: TextDecoration.lineThrough)),
+                        Text('\$${hotel.pricePerNight.toInt()}/night', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary)),
                       ],
                     ),
                     ElevatedButton(
@@ -529,16 +543,30 @@ class _HotelsPageState extends State<HotelsPage> {
 
   Widget _buildMainList(BuildContext context, bool isWide) {
     final provider = context.watch<HotelProvider>();
-    if (provider.isLoading) return const Center(child: CircularProgressIndicator());
-    return Column(
-      children: provider.hotels.map((hotel) => _buildHotelCard(context, hotel, isWide)).toList(),
+    if (provider.isLoading && provider.hotels.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    final hotels = provider.hotels;
+    if (hotels.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 48),
+        child: Center(child: Text('No hotels found for the selected filters.')),
+      );
+    }
+    // Use ListView.builder for virtualized rendering — only visible cards are built
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: hotels.length,
+      itemBuilder: (context, index) => _buildHotelCard(context, hotels[index], isWide),
     );
   }
 
   Widget _buildHotelCard(BuildContext context, HotelEntity hotel, bool isWide) {
     if (!isWide) return _buildMobileHotelCard(context, hotel);
     final isDark = Theme.of(context).colorScheme.brightness == Brightness.dark;
-    final cardAmenities = hotel.amenities.isNotEmpty ? hotel.amenities.take(4).toList() : const ['Free WiFi', 'Spa', 'Pool', 'Restaurant'];
+    final cardAmenities = hotel.amenities.isNotEmpty ? hotel.amenities.take(4).toList() : <String>[];
+    final hasDiscount = hotel.discountPct > 0 && hotel.originalPrice != null;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 24),
@@ -560,7 +588,8 @@ class _HotelsPageState extends State<HotelsPage> {
                 memCacheWidth: 500,
                 memCacheHeight: 350,
               ),
-              Positioned(top: 12, left: 12, child: _buildBadge('TOP DEAL', isDark ? const Color(0xFF253040) : const Color(0xFFE5E0D8))),
+              if (hotel.isDeal)
+                Positioned(top: 12, left: 12, child: _buildBadge('TOP DEAL', isDark ? const Color(0xFF253040) : const Color(0xFFE5E0D8))),
             ],
           ),
           Expanded(
@@ -572,13 +601,39 @@ class _HotelsPageState extends State<HotelsPage> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(hotel.name, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
-                      Row(
-                        children: [
-                          const Icon(LucideIcons.star, size: 14, color: Colors.orange, fill: 1),
-                          const SizedBox(width: 4),
-                          Text('${hotel.rating} (852)', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
-                        ],
+                      Expanded(
+                        child: Text(hotel.name, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                      ),
+                      if (hotel.rating > 0)
+                        Row(
+                          children: [
+                            const Icon(LucideIcons.star, size: 14, color: Colors.orange, fill: 1),
+                            const SizedBox(width: 4),
+                            Text('${hotel.rating}${hotel.reviewCount > 0 ? ' (${hotel.reviewCount})' : ''}', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                          ],
+                        ),
+                      const SizedBox(width: 10),
+                      Consumer<FavoritesProvider>(
+                        builder: (context, provider, child) {
+                          final isFav = provider.isFavorite(hotel);
+                          return InkWell(
+                            onTap: () => provider.toggleFavorite(hotel),
+                            borderRadius: BorderRadius.circular(50),
+                            child: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: isFav ? Colors.red.withOpacity(0.1) : AppTheme.primaryColor.withOpacity(0.05),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                LucideIcons.heart,
+                                size: 16,
+                                color: isFav ? Colors.red : AppTheme.primaryColor,
+                                fill: isFav ? 1 : 0,
+                              ),
+                            ),
+                          );
+                        },
                       ),
                     ],
                   ),
@@ -589,18 +644,14 @@ class _HotelsPageState extends State<HotelsPage> {
                       Text(hotel.location, style: TextStyle(fontSize: 12, color: isDark ? Colors.grey[400] : Colors.grey[600])),
                     ],
                   ),
-                  const SizedBox(height: 16),
-                  Wrap(
-                    spacing: 8,
-                    children: cardAmenities.map((a) => _buildAmenityChip(a)).toList(),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    hotel.description.isNotEmpty ? hotel.description : 'A timeless masterpiece of French art de vivre, offering panoramic views of the city\'s most iconic landmarks.',
-                    style: TextStyle(fontSize: 12, color: isDark ? Colors.grey[400] : Colors.grey[600], height: 1.5),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
+                  if (cardAmenities.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    Wrap(spacing: 8, children: cardAmenities.map((a) => _buildAmenityChip(a)).toList()),
+                  ],
+                  if (hotel.description.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    Text(hotel.description, style: TextStyle(fontSize: 12, color: isDark ? Colors.grey[400] : Colors.grey[600], height: 1.5), maxLines: 2, overflow: TextOverflow.ellipsis),
+                  ],
                 ],
               ),
             ),
@@ -614,7 +665,8 @@ class _HotelsPageState extends State<HotelsPage> {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text('Starting from', style: TextStyle(fontSize: 11, color: isDark ? Colors.grey[400] : Colors.grey)),
-                Text('\$${(hotel.pricePerNight * 1.25).toInt()}', style: TextStyle(fontSize: 11, color: isDark ? Colors.grey[500] : Colors.grey, decoration: TextDecoration.lineThrough)),
+                if (hasDiscount)
+                  Text('\$${hotel.originalPrice!.toInt()}', style: TextStyle(fontSize: 11, color: isDark ? Colors.grey[500] : Colors.grey, decoration: TextDecoration.lineThrough)),
                 const SizedBox(height: 2),
                 Text('\$${hotel.pricePerNight.toInt()}', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary)),
                 Text('per night', style: TextStyle(fontSize: 11, color: isDark ? Colors.grey[400] : Colors.grey)),
@@ -678,12 +730,36 @@ class _HotelsPageState extends State<HotelsPage> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Expanded(child: Text(hotel.name, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface), maxLines: 1, overflow: TextOverflow.ellipsis)),
-                      Row(
-                        children: [
-                          const Icon(LucideIcons.star, size: 12, color: Colors.orange, fill: 1),
-                          const SizedBox(width: 4),
-                          Text(hotel.rating.toString(), style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
-                        ],
+                      if (hotel.rating > 0)
+                        Row(
+                          children: [
+                            const Icon(LucideIcons.star, size: 12, color: Colors.orange, fill: 1),
+                            const SizedBox(width: 4),
+                            Text(hotel.rating.toString(), style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                          ],
+                        ),
+                      const SizedBox(width: 10),
+                      Consumer<FavoritesProvider>(
+                        builder: (context, provider, child) {
+                          final isFav = provider.isFavorite(hotel);
+                          return InkWell(
+                            onTap: () => provider.toggleFavorite(hotel),
+                            borderRadius: BorderRadius.circular(50),
+                            child: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: isFav ? Colors.red.withOpacity(0.1) : AppTheme.primaryColor.withOpacity(0.05),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                LucideIcons.heart,
+                                size: 16,
+                                color: isFav ? Colors.red : AppTheme.primaryColor,
+                                fill: isFav ? 1 : 0,
+                              ),
+                            ),
+                          );
+                        },
                       ),
                     ],
                   ),

@@ -78,19 +78,23 @@ class _HomePageState extends State<HomePage> {
   Widget _buildTopCities(BuildContext context) {
     return Consumer<HotelProvider>(
       builder: (context, provider, child) {
-        final uniqueCities = provider.allHotels.map((h) => h.location).toSet().take(5).toList();
-        
-        final cityData = uniqueCities.map((city) {
-          String img = 'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?q=80&w=400';
-          if (city.toLowerCase().contains('london')) img = 'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?q=80&w=400';
-          if (city.toLowerCase().contains('paris')) img = 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?q=80&w=400';
-          if (city.toLowerCase().contains('york')) img = 'https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?q=80&w=400';
-          if (city.toLowerCase().contains('tokyo')) img = 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?q=80&w=400';
-          
-          return {'name': city, 'image': img};
-        }).toList();
+        if (provider.allHotels.isEmpty) return const SizedBox.shrink();
 
-        if (cityData.isEmpty) return const SizedBox.shrink();
+        // Group hotels by city — use the first hotel's real image for each city
+        final Map<String, String> cityImageMap = {};
+        for (final hotel in provider.allHotels) {
+          final loc = hotel.city.isNotEmpty ? hotel.city : hotel.location;
+          final cityName = loc.split(',').first.trim();
+          if (cityName.isNotEmpty && !cityImageMap.containsKey(cityName)) {
+            // Use the real hotel image from the backend
+            if (hotel.imageUrl.isNotEmpty) {
+              cityImageMap[cityName] = hotel.imageUrl;
+            }
+          }
+        }
+
+        final cities = cityImageMap.keys.take(6).toList();
+        if (cities.isEmpty) return const SizedBox.shrink();
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -98,7 +102,7 @@ class _HomePageState extends State<HomePage> {
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 24),
               child: Text(
-                'Top Visited Cities',
+                'Explore Destinations',
                 style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
               ),
             ),
@@ -109,13 +113,14 @@ class _HomePageState extends State<HomePage> {
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 scrollDirection: Axis.horizontal,
                 physics: const BouncingScrollPhysics(),
-                itemCount: cityData.length,
-                separatorBuilder: (context, index) => const SizedBox(width: 16),
+                itemCount: cities.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 16),
                 itemBuilder: (context, index) {
-                  final city = cityData[index];
+                  final city = cities[index];
+                  final imageUrl = cityImageMap[city]!;
                   return InkWell(
                     onTap: () {
-                      provider.updateSearch(city['name']!);
+                      provider.updateSearch(city);
                       context.push('/hotels');
                     },
                     child: Column(
@@ -126,12 +131,12 @@ class _HomePageState extends State<HomePage> {
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             boxShadow: [
-                              BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4)),
+                              BoxShadow(color: Colors.black.withOpacity(0.12), blurRadius: 10, offset: const Offset(0, 4)),
                             ],
                           ),
                           child: ClipOval(
                             child: CachedNetworkImage(
-                              imageUrl: city['image']!,
+                              imageUrl: imageUrl,
                               fit: BoxFit.cover,
                               memCacheWidth: 160,
                               memCacheHeight: 160,
@@ -140,11 +145,24 @@ class _HomePageState extends State<HomePage> {
                                 highlightColor: Colors.grey[100]!,
                                 child: Container(color: Colors.white),
                               ),
+                              errorWidget: (_, __, ___) => Container(
+                                color: AppTheme.mutedColor,
+                                child: const Icon(LucideIcons.mapPin, color: AppTheme.primaryColor),
+                              ),
                             ),
                           ),
                         ),
-                        const SizedBox(height: 12),
-                        Text(city['name']!, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                        const SizedBox(height: 10),
+                        SizedBox(
+                          width: 80,
+                          child: Text(
+                            city,
+                            textAlign: TextAlign.center,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                          ),
+                        ),
                       ],
                     ),
                   );
@@ -426,42 +444,44 @@ class _HomePageState extends State<HomePage> {
                   ),
                   const SizedBox(height: 8),
                   // Main Headline
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(24),
-                    child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                      child: Container(
-                        padding: const EdgeInsets.all(16), // Further reduced padding
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(24),
-                          border: Border.all(color: Colors.white.withOpacity(0.2)),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min, // Allow container to shrink
-                          children: [
-                            Text(
-                              'Find Your Next',
-                              style: TextStyle(
-                                color: Colors.white.withOpacity(0.9),
-                                fontSize: 18, // Slightly smaller
-                                fontWeight: FontWeight.w500,
+                  RepaintBoundary(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(24),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                        child: Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(24),
+                            border: Border.all(color: Colors.white.withOpacity(0.2)),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'Find Your Next',
+                                style: TextStyle(
+                                  color: Colors.white.withOpacity(0.9),
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w500,
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 4),
-                            const Text(
-                              'Masterpiece Stay',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 28, // Slightly smaller
-                                fontWeight: FontWeight.bold,
-                                height: 1.1,
+                              const SizedBox(height: 4),
+                              const Text(
+                                'Masterpiece Stay',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.bold,
+                                  height: 1.1,
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 8),
-                            _buildIntegratedSearch(context),
-                          ],
+                              const SizedBox(height: 8),
+                              _buildIntegratedSearch(context),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -694,14 +714,20 @@ class _HomePageState extends State<HomePage> {
             if (provider.isLoading && provider.hotels.isEmpty) {
               return const Center(child: CircularProgressIndicator());
             }
-            final items = provider.hotels.skip(3).take(3).toList();
+            final items = provider.hotels.length > 3
+                ? provider.hotels.skip(3).take(3).toList()
+                : provider.hotels.take(3).toList();
             if (items.isEmpty) {
               return const SizedBox.shrink();
             }
             return Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-              child: Column(
-                children: items.map((item) {
+              child: ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: items.length,
+                itemBuilder: (context, index) {
+                  final item = items[index];
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 16),
                     child: InkWell(
@@ -762,6 +788,29 @@ class _HomePageState extends State<HomePage> {
                                             const Icon(LucideIcons.star, size: 12, color: AppTheme.accentColor, fill: 1),
                                             const SizedBox(width: 4),
                                             Text(item.rating.toString(), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                                            const SizedBox(width: 12),
+                                            Consumer<FavoritesProvider>(
+                                              builder: (context, provider, child) {
+                                                final isFav = provider.isFavorite(item);
+                                                return InkWell(
+                                                  onTap: () => provider.toggleFavorite(item),
+                                                  borderRadius: BorderRadius.circular(50),
+                                                  child: Container(
+                                                    padding: const EdgeInsets.all(8),
+                                                    decoration: BoxDecoration(
+                                                      color: isFav ? Colors.red.withOpacity(0.1) : AppTheme.primaryColor.withOpacity(0.05),
+                                                      shape: BoxShape.circle,
+                                                    ),
+                                                    child: Icon(
+                                                      LucideIcons.heart,
+                                                      size: 16,
+                                                      color: isFav ? Colors.red : AppTheme.primaryColor,
+                                                      fill: isFav ? 1 : 0,
+                                                    ),
+                                                  ),
+                                                );
+                                              },
+                                            ),
                                           ],
                                         ),
                                       ],
@@ -775,7 +824,7 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ),
                   );
-                }).toList(),
+                },
               ),
             );
           },
@@ -1261,7 +1310,7 @@ class _HomePageState extends State<HomePage> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text(
-                'Top Destinations',
+                'Top Deals',
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
@@ -1440,6 +1489,29 @@ class FeaturedCard extends StatelessWidget {
                           const Icon(LucideIcons.star, size: 12, color: AppTheme.accentColor, fill: 1),
                           const SizedBox(width: 4),
                           Text(hotel.rating.toString(), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                          const SizedBox(width: 12),
+                          Consumer<FavoritesProvider>(
+                            builder: (context, provider, child) {
+                              final isFav = provider.isFavorite(hotel);
+                              return InkWell(
+                                onTap: () => provider.toggleFavorite(hotel),
+                                borderRadius: BorderRadius.circular(50),
+                                child: Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: isFav ? Colors.red.withOpacity(0.1) : AppTheme.primaryColor.withOpacity(0.05),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(
+                                    LucideIcons.heart,
+                                    size: 16,
+                                    color: isFav ? Colors.red : AppTheme.primaryColor,
+                                    fill: isFav ? 1 : 0,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
                         ],
                       ),
                     ],
@@ -1453,59 +1525,13 @@ class FeaturedCard extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      RichText(
-                        text: TextSpan(
-                          children: [
-                            TextSpan(text: '\$${hotel.pricePerNight}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
-                            TextSpan(text: ' / night', style: TextStyle(fontSize: 11, color: Colors.grey[500])),
-                          ],
-                        ),
-                      ),
-                       Consumer<FavoritesProvider>(
-                        builder: (context, provider, child) {
-                          final isFav = provider.isFavorite(hotel);
-                          return InkWell(
-                            onTap: () {
-                              if (isFav) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Already in Favorites!'),
-                                    behavior: SnackBarBehavior.floating,
-                                    duration: Duration(seconds: 1),
-                                  ),
-                                );
-                              } else {
-                                provider.toggleFavorite(hotel);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Added to Favorites!'),
-                                    behavior: SnackBarBehavior.floating,
-                                    duration: Duration(seconds: 1),
-                                  ),
-                                );
-                              }
-                            },
-                            borderRadius: BorderRadius.circular(50),
-                            child: Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: isFav ? Colors.red.withOpacity(0.1) : AppTheme.primaryColor.withOpacity(0.05),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                LucideIcons.heart,
-                                size: 16,
-                                color: isFav ? Colors.red : AppTheme.primaryColor,
-                                fill: isFav ? 1 : 0,
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ],
+                  RichText(
+                    text: TextSpan(
+                      children: [
+                        TextSpan(text: '\$${hotel.pricePerNight}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+                        TextSpan(text: ' / night', style: TextStyle(fontSize: 11, color: Colors.grey[500])),
+                      ],
+                    ),
                   ),
                 ],
               ),

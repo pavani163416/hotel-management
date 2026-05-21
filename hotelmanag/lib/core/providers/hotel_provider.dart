@@ -9,6 +9,10 @@ class HotelProvider extends ChangeNotifier {
   bool _isLoading = false;
   String? _error;
 
+  // Cache of pre-built lowercase search strings per hotel id — avoids
+  // rebuilding the concatenated string on every filter/sort call.
+  final Map<String, String> _hotelSearchCache = {};
+
   // Filter State
   RangeValues _priceRange = const RangeValues(0, 5000);
   String _propertyType = 'Any';
@@ -17,7 +21,35 @@ class HotelProvider extends ChangeNotifier {
   String _searchQuery = '';
   String _sortBy = 'Top Rated';
 
-  HotelProvider(this._hotelRepository);
+  HotelProvider(this._hotelRepository) {
+    _loadCachedHotels();
+  }
+
+  /// Load cached hotels immediately on startup so the UI has data
+  /// before the first network response arrives.
+  Future<void> _loadCachedHotels() async {
+    if (_allHotels.isNotEmpty) return;
+    final result = await _hotelRepository.getHotels();
+    result.fold(
+      (_) {}, // silent — errors handled in fetchHotels
+      (hotels) {
+        if (hotels.isEmpty) return;
+        final uniqueMap = <String, HotelEntity>{};
+        for (final hotel in hotels) {
+          uniqueMap[hotel.id] = hotel;
+        }
+        _allHotels = uniqueMap.values.toList();
+        _hotelSearchCache.clear();
+        for (final hotel in _allHotels) {
+          _hotelSearchCache[hotel.id] =
+              '${hotel.name} ${hotel.location} ${hotel.description} ${hotel.type} ${hotel.amenities.join(' ')}'
+                  .toLowerCase();
+        }
+        _applyFilters();
+        notifyListeners();
+      },
+    );
+  }
 
   List<HotelEntity> get hotels => _filteredHotels;
   List<HotelEntity> get allHotels => _allHotels;
@@ -30,16 +62,27 @@ class HotelProvider extends ChangeNotifier {
   List<String> get selectedAmenities => _selectedAmenities;
   String get sortBy => _sortBy;
 
-  Future<void> fetchHotels() async {
-    _isLoading = true;
-    _error = null;
-    notifyListeners();
+  Future<void> fetchHotels({bool silent = false}) async {
+    // If we already have data, do a silent background refresh
+    // so the screen never shows empty while loading
+    if (_allHotels.isNotEmpty) {
+      silent = true;
+    }
+
+    if (!silent) {
+      _isLoading = true;
+      _error = null;
+      notifyListeners();
+    }
 
     final result = await _hotelRepository.getHotels();
 
     result.fold(
       (failure) {
-        _error = failure.message;
+        // Only show error if we have no data to display
+        if (_allHotels.isEmpty) {
+          _error = failure.message;
+        }
         _isLoading = false;
         notifyListeners();
       },
@@ -49,6 +92,14 @@ class HotelProvider extends ChangeNotifier {
           uniqueMap[hotel.id] = hotel;
         }
         _allHotels = uniqueMap.values.toList();
+        // Rebuild search string cache for the new hotel list
+        _hotelSearchCache.clear();
+        for (final hotel in _allHotels) {
+          _hotelSearchCache[hotel.id] =
+              '${hotel.name} ${hotel.location} ${hotel.description} ${hotel.type} ${hotel.amenities.join(' ')}'
+                  .toLowerCase();
+        }
+        _error = null;
         _applyFilters();
         _isLoading = false;
         notifyListeners();
@@ -102,33 +153,34 @@ class HotelProvider extends ChangeNotifier {
 
   void _applyFilters() {
     _filteredHotels = _allHotels.where((hotel) {
-      final matchesSearch = hotel.name.toLowerCase().contains(_searchQuery) || 
-                            hotel.location.toLowerCase().contains(_searchQuery);
-      final matchesPrice = hotel.pricePerNight >= _priceRange.start && 
+      final searchStr = _hotelSearchCache[hotel.id] ?? '';
+      final matchesSearch = searchStr.contains(_searchQuery) ||
+                            hotel.name.toLowerCase().contains(_searchQuery);
+      final matchesPrice = hotel.pricePerNight >= _priceRange.start &&
                            hotel.pricePerNight <= _priceRange.end;
-      
+
       bool matchesType = true;
       if (_propertyType != 'Any') {
         if (_propertyType == 'Beach') {
-          matchesType = _isBeachHotel(hotel);
+          matchesType = _isBeachHotel(hotel, searchStr);
         } else if (_propertyType == 'Mountain') {
-          matchesType = _isMountainHotel(hotel);
+          matchesType = _isMountainHotel(hotel, searchStr);
         } else if (_propertyType == 'City') {
-          matchesType = _isCityHotel(hotel);
+          matchesType = _isCityHotel(hotel, searchStr);
         } else if (_propertyType == 'Desert') {
-          matchesType = _isDesertHotel(hotel);
+          matchesType = _isDesertHotel(hotel, searchStr);
         } else if (_propertyType == 'Luxury') {
-          matchesType = _isLuxuryHotel(hotel);
+          matchesType = _isLuxuryHotel(hotel, searchStr);
         } else {
           matchesType = hotel.type == _propertyType;
         }
       }
-      
+
       final matchesRating = hotel.rating >= _minRating;
-      
-      final matchesAmenities = _selectedAmenities.isEmpty || 
+
+      final matchesAmenities = _selectedAmenities.isEmpty ||
                                _selectedAmenities.every((a) => hotel.amenities.contains(a));
-      
+
       return matchesSearch && matchesPrice && matchesType && matchesRating && matchesAmenities;
     }).toList();
 
@@ -138,15 +190,13 @@ class HotelProvider extends ChangeNotifier {
     } else if (_sortBy == 'Price: High to Low') {
       _filteredHotels.sort((a, b) => b.pricePerNight.compareTo(a.pricePerNight));
     } else {
-      // Default to "Top Rated"
       _filteredHotels.sort((a, b) => b.rating.compareTo(a.rating));
     }
 
     notifyListeners();
   }
 
-  bool _isBeachHotel(HotelEntity hotel) {
-    final searchStr = '${hotel.name} ${hotel.location} ${hotel.description} ${hotel.type} ${hotel.amenities.join(' ')}'.toLowerCase();
+  bool _isBeachHotel(HotelEntity hotel, String searchStr) {
     return searchStr.contains('beach') ||
            searchStr.contains('coast') ||
            searchStr.contains('sea') ||
@@ -163,8 +213,7 @@ class HotelProvider extends ChangeNotifier {
            hotel.type.toLowerCase() == 'resort';
   }
 
-  bool _isMountainHotel(HotelEntity hotel) {
-    final searchStr = '${hotel.name} ${hotel.location} ${hotel.description} ${hotel.type} ${hotel.amenities.join(' ')}'.toLowerCase();
+  bool _isMountainHotel(HotelEntity hotel, String searchStr) {
     return searchStr.contains('mountain') ||
            searchStr.contains('hill') ||
            searchStr.contains('alps') ||
@@ -180,8 +229,7 @@ class HotelProvider extends ChangeNotifier {
            searchStr.contains('ridge');
   }
 
-  bool _isCityHotel(HotelEntity hotel) {
-    final searchStr = '${hotel.name} ${hotel.location} ${hotel.description} ${hotel.type} ${hotel.amenities.join(' ')}'.toLowerCase();
+  bool _isCityHotel(HotelEntity hotel, String searchStr) {
     return searchStr.contains('city') ||
            searchStr.contains('downtown') ||
            searchStr.contains('urban') ||
@@ -197,8 +245,7 @@ class HotelProvider extends ChangeNotifier {
            hotel.type.toLowerCase() == 'hotel';
   }
 
-  bool _isDesertHotel(HotelEntity hotel) {
-    final searchStr = '${hotel.name} ${hotel.location} ${hotel.description} ${hotel.type} ${hotel.amenities.join(' ')}'.toLowerCase();
+  bool _isDesertHotel(HotelEntity hotel, String searchStr) {
     return searchStr.contains('desert') ||
            searchStr.contains('dune') ||
            searchStr.contains('oasis') ||
@@ -209,8 +256,7 @@ class HotelProvider extends ChangeNotifier {
            searchStr.contains('sun');
   }
 
-  bool _isLuxuryHotel(HotelEntity hotel) {
-    final searchStr = '${hotel.name} ${hotel.location} ${hotel.description} ${hotel.type} ${hotel.amenities.join(' ')}'.toLowerCase();
+  bool _isLuxuryHotel(HotelEntity hotel, String searchStr) {
     return hotel.pricePerNight > 300 ||
            searchStr.contains('luxury') ||
            searchStr.contains('spa') ||
@@ -243,6 +289,7 @@ class HotelProvider extends ChangeNotifier {
         return false;
       },
       (updatedHotel) {
+        // Replace the hotel in both lists so reviews appear immediately
         final indexAll = _allHotels.indexWhere((h) => h.id == hotelId);
         if (indexAll != -1) {
           _allHotels[indexAll] = updatedHotel;

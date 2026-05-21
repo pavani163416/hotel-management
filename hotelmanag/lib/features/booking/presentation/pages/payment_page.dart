@@ -57,7 +57,9 @@ class _PaymentPageState extends State<PaymentPage> {
 
   Future<void> _processPayment(BookingProvider provider) async {
     if (provider.isLoading) return;
-    bool isIdValid = _idFormKey.currentState!.validate();
+    final leadId = provider.leadGuest['id']?.trim() ?? '';
+    final hasLeadId = leadId.isNotEmpty;
+    bool isIdValid = hasLeadId ? true : _idFormKey.currentState!.validate();
     bool isPaymentValid = _paymentFormKey.currentState!.validate();
 
     if (_selectedMethod == 'bank' && _selectedBank == null) {
@@ -86,7 +88,8 @@ class _PaymentPageState extends State<PaymentPage> {
         if (mounted) {
           try {
             context.read<NotificationProvider>().addNotification(
-              'Your booking is confirmed',
+              'Booking Confirmed! 🎉',
+              subtitle: 'Your stay at ${context.read<BookingProvider>().currentHotel?.name ?? 'the hotel'} is confirmed.',
               isCancelled: false,
             );
           } catch (_) {}
@@ -267,6 +270,7 @@ class _PaymentPageState extends State<PaymentPage> {
 
   Widget _buildGuestIdentityVerification(BookingProvider provider) {
     final leadName = provider.leadGuest['name'] ?? 'Guest';
+    final leadId = provider.leadGuest['id']?.trim() ?? '';
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
@@ -298,53 +302,77 @@ class _PaymentPageState extends State<PaymentPage> {
             );
           }),
           
-          _buildLabel('ID TYPE *'),
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            decoration: BoxDecoration(
-              border: Border.all(color: AppTheme.mutedColor),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<String>(
-                isExpanded: true,
-                value: _selectedIdType,
-                items: ['Aadhaar Card', 'PAN Card', 'Voter ID', 'Passport'].map((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value, style: const TextStyle(fontSize: 14, color: AppTheme.primaryColor)),
-                  );
-                }).toList(),
-                onChanged: (v) => setState(() {
-                  _selectedIdType = v!;
-                  _idNumberController.clear(); // clear previous tracking
-                }),
+          if (leadId.isNotEmpty) ...[
+            _buildLabel('GOVT ID ON FILE'),
+            const SizedBox(height: 8),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppTheme.mutedColor.withOpacity(0.6)),
+              ),
+              child: Text(
+                leadId,
+                style: const TextStyle(fontSize: 14, color: AppTheme.primaryColor, fontWeight: FontWeight.w600),
               ),
             ),
-          ),
-          const SizedBox(height: 24),
-          _buildLabel('${_selectedIdType.toUpperCase()} NUMBER *'),
-          const SizedBox(height: 8),
-          _buildTextField(
-            _selectedIdType == 'Aadhaar Card' ? 'XXXX XXXX XXXX' : 'Enter your $_selectedIdType number', 
-            required: true,
-            controller: _idNumberController,
-          ),
-          const SizedBox(height: 12),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(LucideIcons.info, size: 12, color: AppTheme.primaryColor.withOpacity(0.4)),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'As per Ministry of Home Affairs guidelines, hotels are required to collect a valid government-issued photo ID at check-in.',
-                  style: TextStyle(fontSize: 10, color: AppTheme.primaryColor.withOpacity(0.4)),
+            const SizedBox(height: 12),
+            Text(
+              'ID already entered in guest details, so no extra Government ID input is required here.',
+              style: TextStyle(fontSize: 10, color: AppTheme.primaryColor.withOpacity(0.6)),
+            ),
+            const SizedBox(height: 12),
+          ] else ...[
+            _buildLabel('ID TYPE *'),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              decoration: BoxDecoration(
+                border: Border.all(color: AppTheme.mutedColor),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<String>(
+                  isExpanded: true,
+                  value: _selectedIdType,
+                  items: ['Aadhaar Card', 'PAN Card', 'Voter ID', 'Passport'].map((String value) {
+                    return DropdownMenuItem<String>(
+                      value: value,
+                      child: Text(value, style: const TextStyle(fontSize: 14, color: AppTheme.primaryColor)),
+                    );
+                  }).toList(),
+                  onChanged: (v) => setState(() {
+                    _selectedIdType = v!;
+                    _idNumberController.clear(); // clear previous tracking
+                  }),
                 ),
               ),
-            ],
-          ),
+            ),
+            const SizedBox(height: 24),
+            _buildLabel('${_selectedIdType.toUpperCase()} NUMBER *'),
+            const SizedBox(height: 8),
+            _buildTextField(
+              _selectedIdType == 'Aadhaar Card' ? 'XXXX XXXX XXXX' : 'Enter your $_selectedIdType number', 
+              required: true,
+              controller: _idNumberController,
+            ),
+            const SizedBox(height: 12),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(LucideIcons.info, size: 12, color: AppTheme.primaryColor.withOpacity(0.4)),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'As per Ministry of Home Affairs guidelines, hotels are required to collect a valid government-issued photo ID at check-in.',
+                    style: TextStyle(fontSize: 10, color: AppTheme.primaryColor.withOpacity(0.4)),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );
@@ -543,7 +571,7 @@ class _PaymentPageState extends State<PaymentPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(hotel.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
-          Text('Standard - ${provider.nights} nights', style: TextStyle(fontSize: 13, color: AppTheme.primaryColor.withOpacity(0.6))),
+          Text('${provider.selectedRoomType} · ${provider.nights} nights', style: TextStyle(fontSize: 13, color: AppTheme.primaryColor.withOpacity(0.6))),
           const SizedBox(height: 24),
           const Divider(color: AppTheme.mutedColor),
           const SizedBox(height: 24),

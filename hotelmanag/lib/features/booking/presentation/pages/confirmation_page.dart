@@ -6,6 +6,8 @@ import 'package:provider/provider.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/main_layout.dart';
 import '../../../../core/providers/booking_provider.dart';
+import '../../../../core/utils/receipt_generator.dart';
+import '../../domain/entities/booking_entity.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
 class ConfirmationPage extends StatelessWidget {
@@ -14,7 +16,6 @@ class ConfirmationPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<BookingProvider>();
-    // Get the latest booking from history
     final latestBooking = provider.bookings.isNotEmpty ? provider.bookings.first : null;
     final hotel = provider.currentHotel;
 
@@ -38,6 +39,7 @@ class ConfirmationPage extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                // ── Success icon ──────────────────────────────
                 Container(
                   padding: const EdgeInsets.all(20),
                   decoration: const BoxDecoration(
@@ -61,14 +63,14 @@ class ConfirmationPage extends StatelessWidget {
                       const TextSpan(text: 'Your reservation at '),
                       TextSpan(text: hotel.name, style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
                       const TextSpan(text: ' is confirmed. Booking ID '),
-                      TextSpan(text: '#${latestBooking.id}', style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+                      TextSpan(text: '#${latestBooking.id.length > 10 ? latestBooking.id.substring(latestBooking.id.length - 10) : latestBooking.id}', style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
                       const TextSpan(text: ' has been saved to your history.'),
                     ],
                   ),
                 ),
                 const SizedBox(height: 32),
-                
-                // Booking ID Card
+
+                // ── Booking ID card ───────────────────────────
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(20),
@@ -85,7 +87,10 @@ class ConfirmationPage extends StatelessWidget {
                           const SizedBox(height: 8),
                           FittedBox(
                             fit: BoxFit.scaleDown,
-                            child: Text('#${latestBooking.id}', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF2D3748))),
+                            child: Text(
+                              '#${latestBooking.id.length > 12 ? latestBooking.id.substring(latestBooking.id.length - 12) : latestBooking.id}',
+                              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF2D3748)),
+                            ),
                           ),
                         ],
                       ),
@@ -100,12 +105,12 @@ class ConfirmationPage extends StatelessWidget {
                     ],
                   ),
                 ),
-                
+
                 const SizedBox(height: 24),
                 const Divider(color: AppTheme.mutedColor),
                 const SizedBox(height: 24),
-                
-                // Hotel Info Row - FIXED FOR OVERFLOW
+
+                // ── Hotel info ────────────────────────────────
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -131,7 +136,7 @@ class ConfirmationPage extends StatelessWidget {
                               const SizedBox(width: 6),
                               Expanded(
                                 child: Text(
-                                  '${DateFormat('MM-dd').format(provider.checkIn)} → ${DateFormat('MM-dd').format(provider.checkOut)} (${provider.nights}n)',
+                                  '${DateFormat('MMM dd').format(provider.checkIn)} → ${DateFormat('MMM dd').format(provider.checkOut)} (${provider.nights}n)',
                                   style: const TextStyle(fontSize: 11, color: Colors.grey),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
@@ -145,7 +150,7 @@ class ConfirmationPage extends StatelessWidget {
                               const Icon(LucideIcons.users, size: 12, color: Colors.grey),
                               const SizedBox(width: 6),
                               Text(
-                                '${provider.guests} guests · Standard',
+                                '${provider.guests} guest${provider.guests != 1 ? 's' : ''} · ${provider.selectedRoomType}',
                                 style: const TextStyle(fontSize: 11, color: Colors.grey),
                               ),
                             ],
@@ -155,62 +160,80 @@ class ConfirmationPage extends StatelessWidget {
                     ),
                   ],
                 ),
-                
+
                 const SizedBox(height: 24),
                 const Divider(color: AppTheme.mutedColor),
                 const SizedBox(height: 24),
-                
-                // Price Paid Row
+
+                // ── Price breakdown ───────────────────────────
+                _priceRow('Subtotal', '\$${NumberFormat("#,###").format(provider.subtotal)}'),
+                _priceRow('Service Fee', '\$${NumberFormat("#,###").format(provider.serviceFee)}'),
+                _priceRow('Taxes', '\$${NumberFormat("#,###").format(provider.taxes)}'),
+                if (provider.discountAmount > 0)
+                  _priceRow('Discount', '-\$${NumberFormat("#,###").format(provider.discountAmount)}', valueColor: Colors.green),
+                const SizedBox(height: 8),
+                const Divider(color: AppTheme.mutedColor),
+                const SizedBox(height: 8),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Total Paid', style: TextStyle(fontSize: 13, color: Colors.grey)),
+                    const Text('Total Paid', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
                     Text(
                       '\$${NumberFormat("#,###").format(provider.total)}',
-                      style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFFCBD5E0)),
+                      style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
                     ),
                   ],
                 ),
-                
-                const SizedBox(height: 40),
-                
-                // Buttons - FIXED FOR OVERFLOW
-                Column(
+
+                const SizedBox(height: 32),
+
+                // ── Download Receipt button ───────────────────
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () => _downloadReceipt(context, provider, latestBooking, hotel.location),
+                    icon: const Icon(LucideIcons.download, size: 18),
+                    label: const Text('Download Receipt', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primaryColor,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      elevation: 0,
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 12),
+
+                // ── Navigation buttons ────────────────────────
+                Row(
                   children: [
-                    SizedBox(
-                      width: double.infinity,
+                    Expanded(
                       child: ElevatedButton(
                         onPressed: () => context.go('/history'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFFE2DED5),
                           foregroundColor: const Color(0xFF2D3748),
-                          padding: const EdgeInsets.symmetric(vertical: 18),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           elevation: 0,
                         ),
-                        child: const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text('Go to History', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                            SizedBox(width: 8),
-                            Icon(LucideIcons.arrowRight, size: 14),
-                          ],
-                        ),
+                        child: const Text('History', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    SizedBox(
-                      width: double.infinity,
+                    const SizedBox(width: 12),
+                    Expanded(
                       child: ElevatedButton(
                         onPressed: () => context.go('/'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFFE2DED5),
                           foregroundColor: const Color(0xFF2D3748),
-                          padding: const EdgeInsets.symmetric(vertical: 18),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           elevation: 0,
                         ),
-                        child: const Text('Browse More Hotels', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                        child: const Text('Browse More', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                       ),
                     ),
                   ],
@@ -221,5 +244,49 @@ class ConfirmationPage extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Widget _priceRow(String label, String value, {Color? valueColor}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: const TextStyle(fontSize: 13, color: Colors.grey)),
+          Text(value, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: valueColor ?? AppTheme.primaryColor)),
+        ],
+      ),
+    );
+  }
+
+  void _downloadReceipt(BuildContext context, BookingProvider provider, BookingEntity booking, String hotelLocation) {
+    final nights = booking.nights ?? booking.checkOut.difference(booking.checkIn).inDays;
+    final sub = booking.subtotal ?? booking.totalAmount;
+    final tax = booking.taxes ?? 0;
+    final disc = (sub + tax - booking.totalAmount).clamp(0.0, sub + tax);
+    final data = ReceiptData(
+      bookingId: booking.id,
+      hotelName: booking.hotelName,
+      hotelLocation: hotelLocation,
+      guestName: booking.guestName ?? 'Guest',
+      guestId: booking.guestId,
+      roomType: booking.roomType ?? provider.selectedRoomType,
+      roomNumber: booking.roomNumber ?? provider.selectedRoomType,
+      checkIn: booking.checkIn,
+      checkOut: booking.checkOut,
+      nights: nights,
+      guests: 1 + (booking.additionalAdults?.length ?? 0) + (booking.additionalChildren?.length ?? 0),
+      pricePerNight: booking.pricePerNight ?? provider.selectedRoomPrice,
+      subtotal: sub,
+      taxes: tax,
+      discount: disc,
+      total: booking.totalAmount,
+      paymentMethod: booking.paymentMethod ?? 'Card',
+      status: booking.status,
+      bookedAt: booking.createdAt ?? DateTime.now(),
+      additionalAdults: booking.additionalAdults ?? const [],
+      additionalChildren: booking.additionalChildren ?? const [],
+    );
+    downloadReceipt(context, data);
   }
 }

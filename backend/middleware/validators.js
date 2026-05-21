@@ -60,16 +60,21 @@ export const validateBooking = [
     .isLength({ min: 2 })
     .withMessage("Name must be at least 2 characters"),
 
+  body("guest.id")
+    .trim()
+    .notEmpty()
+    .withMessage("Govt ID is required"),
+
   body("guest.email")
+    .optional({ checkFalsy: true })
     .trim()
     .isEmail()
-    .withMessage("Valid email is required")
+    .withMessage("Please provide a valid email address")
     .normalizeEmail(),
 
   body("guest.phone")
-    .trim()
-    .notEmpty()
-    .withMessage("Phone number is required"),
+    .optional({ checkFalsy: true })
+    .trim(),
 
   body("checkIn")
     .isISO8601()
@@ -87,8 +92,17 @@ export const validateBooking = [
 
   body("guestCount")
     .optional()
-    .isInt({ min: 1 })
-    .withMessage("Guest count must be at least 1"),
+    .isInt({ min: 1, max: 8 })
+    .withMessage("Guest count must be between 1 and 8")
+    .custom((value, { req }) => {
+      const additionalAdults = req.body.additionalAdults || [];
+      const additionalChildren = req.body.additionalChildren || [];
+      const total = 1 + additionalAdults.length + additionalChildren.length;
+      if (total > 8) {
+        throw new Error("Total guest count cannot exceed 8 persons");
+      }
+      return true;
+    }),
 
   body("totalAmount")
     .isFloat({ min: 0 })

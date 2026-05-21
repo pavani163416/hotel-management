@@ -13,6 +13,7 @@ import '../../features/booking/domain/repositories/booking_repository.dart';
 import '../providers/auth_provider.dart';
 import '../providers/hotel_provider.dart';
 import '../providers/booking_provider.dart';
+import '../providers/promo_provider.dart';
 
 final sl = GetIt.instance;
 
@@ -24,34 +25,25 @@ Future<void> init() async {
   sl.registerLazySingleton(() => ApiService(sl()));
 
   // Features - Auth
-  // Data Sources
   sl.registerLazySingleton<AuthRemoteDataSource>(
     () => AuthRemoteDataSourceImpl(sl()),
   );
-
-  // Repositories
   sl.registerLazySingleton<AuthRepository>(
     () => AuthRepositoryImpl(sl()),
   );
 
   // Features - Hotels
-  // Data Sources
   sl.registerLazySingleton<HotelRemoteDataSource>(
     () => HotelRemoteDataSourceImpl(sl()),
   );
-
-  // Repositories
   sl.registerLazySingleton<HotelRepository>(
     () => HotelRepositoryImpl(sl()),
   );
 
   // Features - Booking
-  // Data Sources
   sl.registerLazySingleton<BookingRemoteDataSource>(
     () => BookingRemoteDataSourceImpl(sl()),
   );
-
-  // Repositories
   sl.registerLazySingleton<BookingRepository>(
     () => BookingRepositoryImpl(sl()),
   );
@@ -60,4 +52,5 @@ Future<void> init() async {
   sl.registerFactory(() => AuthProvider(sl()));
   sl.registerFactory(() => HotelProvider(sl()));
   sl.registerFactory(() => BookingProvider(sl()));
+  sl.registerFactory(() => PromoProvider(sl()));
 }

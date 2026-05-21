@@ -22,6 +22,7 @@ const additionalGuestSchema = new mongoose.Schema(
     adults: [
       {
         name:            { type: String, required: true },
+        id:              { type: String, required: true },
         email:           { type: String },
         phone:           { type: String },
         specialRequests: { type: String },
@@ -32,6 +33,7 @@ const additionalGuestSchema = new mongoose.Schema(
     children: [
       {
         name: { type: String, required: true },
+        id:   { type: String, required: true },
         age:  { type: Number },
       },
     ],

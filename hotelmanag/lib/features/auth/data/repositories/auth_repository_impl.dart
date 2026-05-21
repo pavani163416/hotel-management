@@ -4,7 +4,6 @@ import 'package:hotelmanag/core/errors/failures.dart';
 import 'package:hotelmanag/features/auth/domain/entities/user_entity.dart';
 import 'package:hotelmanag/features/auth/domain/repositories/auth_repository.dart';
 import 'package:hotelmanag/features/auth/data/datasources/auth_remote_data_source.dart';
-import '../../../../core/constants/app_constants.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
   final AuthRemoteDataSource _remoteDataSource;
@@ -27,7 +26,7 @@ class AuthRepositoryImpl implements AuthRepository {
         }
       } else if (e.type == DioExceptionType.connectionError || 
                  e.type == DioExceptionType.connectionTimeout) {
-        message = 'Cannot reach server at ${AppConstants.apiBaseUrl}. Ensure your phone and PC are on same Wi-Fi and Firewall is off.';
+        message = 'Unable to connect to the server. Please check your internet connection.';
       }
       return Left(ServerFailure(message));
     } catch (e) {
@@ -51,7 +50,7 @@ class AuthRepositoryImpl implements AuthRepository {
         }
       } else if (e.type == DioExceptionType.connectionError || 
                  e.type == DioExceptionType.connectionTimeout) {
-        message = 'Cannot reach server at ${AppConstants.apiBaseUrl}. Ensure your phone and PC are on same Wi-Fi and Firewall is off.';
+        message = 'Unable to connect to the server. Please check your internet connection.';
       }
       return Left(ServerFailure(message));
     } catch (e) {
@@ -81,7 +80,13 @@ class AuthRepositoryImpl implements AuthRepository {
       final user = await _remoteDataSource.getMe(''); // Token handled by ApiService
       return Right(user);
     } on DioException catch (e) {
-      return Left(ServerFailure(e.response?.data['message'] ?? 'Failed to get profile'));
+      String message = 'Failed to get profile';
+      if (e.response?.data is Map) {
+        message = e.response?.data['message'] ?? message;
+      } else if (e.message != null && e.message!.isNotEmpty) {
+        message = e.message!;
+      }
+      return Left(ServerFailure(message));
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }

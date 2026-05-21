@@ -22,7 +22,7 @@ class _BookingPageState extends State<BookingPage> {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: isCheckIn ? provider.checkIn : provider.checkOut,
-      firstDate: DateTime.now(),
+      firstDate: isCheckIn ? DateTime.now() : provider.checkIn.add(const Duration(days: 1)),
       lastDate: DateTime(2101),
       builder: (context, child) {
         return Theme(
@@ -147,7 +147,7 @@ class _BookingPageState extends State<BookingPage> {
                       spacing: 32,
                       runSpacing: 24,
                       children: [
-                        _buildSection('ROOM', Text('Standard', style: _valueStyle())),
+                        _buildSection('ROOM', Text(provider.selectedRoomType, style: _valueStyle())),
                         _buildSection(
                           'DATES',
                           Column(
@@ -175,7 +175,16 @@ class _BookingPageState extends State<BookingPage> {
                               _buildCounterRow(LucideIcons.users, '${provider.guests} guests', () {
                                 if (provider.guests > 1) provider.updateGuests(provider.guests - 1);
                               }, () {
-                                provider.updateGuests(provider.guests + 1);
+                                if (provider.guests < 8) {
+                                  provider.updateGuests(provider.guests + 1);
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Maximum 8 guests allowed'),
+                                      behavior: SnackBarBehavior.floating,
+                                    ),
+                                  );
+                                }
                               }),
                             ],
                           ),

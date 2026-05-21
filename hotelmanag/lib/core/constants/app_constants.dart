@@ -1,20 +1,30 @@
-import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart';
 
 class AppConstants {
   static const String appName = 'HotelManag';
-  
-  // DYNAMIC URL MATCHER
+
+  // ── Production backend (Railway) ──────────────────────────
+  static const String _productionApiUrl =
+      'https://luxestay-backend-production.up.railway.app/api/';
+
+  // ── Local dev fallback (only used in debug builds on web/emulator) ──
+  static const String _localApiUrl = 'http://localhost:5000/api/';
+
+  /// Returns the correct base URL for the current build/platform.
+  /// - Release builds always use the production Railway URL.
+  /// - Debug builds on web or Android emulator use localhost.
+  /// - Debug builds on a physical device also use production so you
+  ///   don't need adb reverse or firewall changes during testing.
   static String get apiBaseUrl {
-    if (kIsWeb) {
-      // Chrome (Web) natively reaches the computer's localhost
-      return 'http://localhost:5000/api/';
-    } else {
-      // For physical mobile WITHOUT USB, change this to: 'http://192.168.1.60:5000/api/' 
-      // (Note: You MUST turn off Windows Defender Firewall for this to work over Wi-Fi)
-      // For physical mobile WITH USB, keep it as localhost and use `adb reverse tcp:5000 tcp:5000`
-      return 'http://localhost:5000/api/'; 
-    }
+    // Always use production in release mode
+    if (!kDebugMode) return _productionApiUrl;
+
+    // In debug mode: web & Android emulator can reach localhost
+    if (kIsWeb) return _localApiUrl;
+
+    // Physical devices cannot reach the dev machine via "localhost" —
+    // use the production URL so the app works without extra setup.
+    return _productionApiUrl;
   }
   
   // Storage Keys

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../utils/audio_helper.dart';
+import '../widgets/notification_popup.dart';
 import '../../features/booking/domain/entities/booking_entity.dart';
 
 class NotificationItem {
@@ -71,24 +72,41 @@ class NotificationProvider extends ChangeNotifier {
     return items;
   }
 
-  void addNotification(String title, {bool isCancelled = false, String? bookingId}) {
+  void addNotification(String title, {
+    bool isCancelled = false,
+    String? bookingId,
+    String subtitle = '',
+    String type = 'Booking',
+  }) {
     final id = bookingId ?? DateTime.now().millisecondsSinceEpoch.toString();
     final newItem = NotificationItem(
       id: id,
       title: title,
-      type: 'Booking',
+      type: type,
       timestamp: DateTime.now(),
       isNew: true,
       isCancelled: isCancelled,
     );
-    
+
     _liveNotifications.insert(0, newItem);
-    
-    // Play pleasant chime audio chime feedback
-    try {
-      triggerNotificationChime();
-    } catch (_) {}
-    
+
+    // Show in-app popup banner with sound
+    showNotificationPopup(
+      title: title,
+      subtitle: subtitle,
+      icon: type == 'Offer'
+          ? Icons.local_offer_rounded
+          : isCancelled
+              ? Icons.cancel_outlined
+              : Icons.check_circle_outline_rounded,
+      iconColor: type == 'Offer'
+          ? const Color(0xFFC0A080)
+          : isCancelled
+              ? Colors.redAccent
+              : Colors.green,
+    );
+
+    // Sound is played inside showNotificationPopup via the overlay
     notifyListeners();
   }
 

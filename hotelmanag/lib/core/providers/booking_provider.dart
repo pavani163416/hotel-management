@@ -22,6 +22,7 @@ class BookingProvider extends ChangeNotifier {
     'name': '',
     'email': '',
     'phone': '',
+    'id': '',
     'requests': '',
   };
   
@@ -74,6 +75,7 @@ class BookingProvider extends ChangeNotifier {
       'name': user?.name ?? '',
       'email': user?.email ?? '',
       'phone': user?.phone ?? '',
+      'id': '',
       'requests': '',
     };
     _additionalAdults = [];
@@ -110,7 +112,11 @@ class BookingProvider extends ChangeNotifier {
 
   void updateDates(DateTime checkIn, DateTime checkOut) {
     _checkIn = checkIn;
-    _checkOut = checkOut;
+    if (checkOut.isBefore(checkIn.add(const Duration(days: 1)))) {
+      _checkOut = checkIn.add(const Duration(days: 1));
+    } else {
+      _checkOut = checkOut;
+    }
     // Recalculate discount if promo applied
     if (_appliedPromoCode != null) {
       _discountAmount = subtotal * _validPromos[_appliedPromoCode]!;
@@ -180,9 +186,10 @@ class BookingProvider extends ChangeNotifier {
       'promoCode': _appliedPromoCode,
       'paymentMethod': paymentMethod,
       'guest': {
-        'name': _leadGuest['name']?.isNotEmpty == true ? _leadGuest['name'] : 'Guest',
-        'email': _leadGuest['email']?.isNotEmpty == true ? _leadGuest['email'] : 'guest@example.com',
-        'phone': _leadGuest['phone']?.isNotEmpty == true ? _leadGuest['phone'] : '9999999999',
+        'name': _leadGuest['name']?.isNotEmpty == true ? _leadGuest['name']! : 'Guest',
+        'email': _leadGuest['email'] ?? '',
+        'phone': _leadGuest['phone'] ?? '',
+        'id': _leadGuest['id'] ?? '',
       },
       'additionalAdults': _additionalAdults,
       'additionalChildren': _children,
@@ -216,12 +223,16 @@ class BookingProvider extends ChangeNotifier {
 
     result.fold(
       (failure) {
-        _error = failure.message;
+        // Only show error if we have no cached bookings
+        if (_bookings.isEmpty) {
+          _error = failure.message;
+        }
         _isLoading = false;
         notifyListeners();
       },
       (bookings) {
         _bookings = List<BookingEntity>.from(bookings);
+        _error = null;
         _isLoading = false;
         notifyListeners();
       },

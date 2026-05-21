@@ -122,8 +122,9 @@ export const addReviewToHotel = async (req, res, next) => {
     };
 
     hotel.reviews.push(review);
-    hotel.reviewCount = (hotel.reviewCount || 0) + 1;
-    const totalRating = (hotel.rating || 0) * ((hotel.reviewCount || 1) - 1) + numericRating;
+    // Recompute rating and count directly from the reviews array — avoids drift
+    hotel.reviewCount = hotel.reviews.length;
+    const totalRating = hotel.reviews.reduce((sum, r) => sum + (r.rating || 0), 0);
     hotel.rating = Number((totalRating / hotel.reviewCount).toFixed(1));
     await hotel.save();
 

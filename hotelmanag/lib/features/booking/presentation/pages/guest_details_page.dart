@@ -19,6 +19,7 @@ class _GuestDetailsPageState extends State<GuestDetailsPage> {
   final _leadNameController = TextEditingController();
   final _leadEmailController = TextEditingController();
   final _leadPhoneController = TextEditingController();
+  final _leadIdController = TextEditingController();
   final _leadRequestsController = TextEditingController();
 
   final List<Map<String, TextEditingController>> _adultControllers = [];
@@ -31,7 +32,20 @@ class _GuestDetailsPageState extends State<GuestDetailsPage> {
     _leadNameController.text = provider.leadGuest['name'] ?? '';
     _leadEmailController.text = provider.leadGuest['email'] ?? '';
     _leadPhoneController.text = provider.leadGuest['phone'] ?? '';
+    _leadIdController.text = provider.leadGuest['id'] ?? '';
     _leadRequestsController.text = provider.leadGuest['requests'] ?? '';
+
+    // Pre-populate additional adult forms to equal provider.guests - 1
+    final requiredAdditional = (provider.guests - 1).clamp(0, 7);
+    for (int i = 0; i < requiredAdditional; i++) {
+      _adultControllers.add({
+        'name': TextEditingController(),
+        'email': TextEditingController(),
+        'phone': TextEditingController(),
+        'id': TextEditingController(),
+        'requests': TextEditingController(),
+      });
+    }
   }
 
   @override
@@ -39,35 +53,62 @@ class _GuestDetailsPageState extends State<GuestDetailsPage> {
     _leadNameController.dispose();
     _leadEmailController.dispose();
     _leadPhoneController.dispose();
+    _leadIdController.dispose();
     _leadRequestsController.dispose();
     for (var c in _adultControllers) {
       c['name']?.dispose();
       c['email']?.dispose();
       c['phone']?.dispose();
+      c['id']?.dispose();
       c['requests']?.dispose();
     }
     for (var c in _childControllers) {
       c['name']?.dispose();
+      c['id']?.dispose();
       c['age']?.dispose();
     }
     super.dispose();
   }
 
   void _addAdult() {
+    final totalGuests = 1 + _adultControllers.length + _childControllers.length;
+    if (totalGuests >= 8) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Maximum 8 guests allowed'),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      return;
+    }
     setState(() {
       _adultControllers.add({
         'name': TextEditingController(),
         'email': TextEditingController(),
         'phone': TextEditingController(),
+        'id': TextEditingController(),
         'requests': TextEditingController(),
       });
     });
   }
 
   void _addChild() {
+    final totalGuests = 1 + _adultControllers.length + _childControllers.length;
+    if (totalGuests >= 8) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Maximum 8 guests allowed'),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      return;
+    }
     setState(() {
       _childControllers.add({
         'name': TextEditingController(),
+        'id': TextEditingController(),
         'age': TextEditingController(),
       });
     });
@@ -81,6 +122,7 @@ class _GuestDetailsPageState extends State<GuestDetailsPage> {
         'name': _leadNameController.text,
         'email': _leadEmailController.text,
         'phone': _leadPhoneController.text,
+        'id': _leadIdController.text,
         'requests': _leadRequestsController.text,
       });
 
@@ -88,15 +130,18 @@ class _GuestDetailsPageState extends State<GuestDetailsPage> {
         'name': c['name']!.text,
         'email': c['email']!.text,
         'phone': c['phone']!.text,
+        'id': c['id']!.text,
         'requests': c['requests']!.text,
       }).toList();
 
       final children = _childControllers.map((c) => {
         'name': c['name']!.text,
+        'id': c['id']!.text,
         'age': c['age']!.text,
       }).toList();
 
       provider.setAdditionalGuests(adults, children);
+      provider.updateGuests(1 + adults.length + children.length);
       context.push('/review');
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -151,7 +196,7 @@ class _GuestDetailsPageState extends State<GuestDetailsPage> {
                 if (_childControllers.isEmpty)
                   _buildEmptyState('No children.')
                 else
-                  ..._childControllers.asMap().entries.map((entry) => _buildChildRow(entry.key)),
+                  ..._childControllers.asMap().entries.map((entry) => _buildChildCard(entry.key)),
                 
                 const SizedBox(height: 60),
                 
@@ -214,15 +259,19 @@ class _GuestDetailsPageState extends State<GuestDetailsPage> {
           const SizedBox(height: 8),
           _buildTextField('e.g. James Wilson', _leadNameController, required: true),
           const SizedBox(height: 24),
+          _buildLabel('GOVT ID (AADHAAR / VOTER / PASSPORT) *'),
+          const SizedBox(height: 8),
+          _buildTextField('e.g. Aadhaar 1234 5678 9012', _leadIdController, required: true),
+          const SizedBox(height: 24),
           Row(
             children: [
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildLabel('EMAIL ADDRESS *'),
+                    _buildLabel('EMAIL ADDRESS (OPTIONAL)'),
                     const SizedBox(height: 8),
-                    _buildTextField('you@example.com', _leadEmailController, required: true, isEmail: true),
+                    _buildTextField('you@example.com', _leadEmailController, required: false, isEmail: true),
                   ],
                 ),
               ),
@@ -231,9 +280,9 @@ class _GuestDetailsPageState extends State<GuestDetailsPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildLabel('PHONE NUMBER *'),
+                    _buildLabel('PHONE NUMBER (OPTIONAL)'),
                     const SizedBox(height: 8),
-                    _buildTextField('+1 (555) 000-0000', _leadPhoneController, required: true),
+                    _buildTextField('+1 (555) 000-0000', _leadPhoneController, required: false),
                   ],
                 ),
               ),
@@ -292,13 +341,17 @@ class _GuestDetailsPageState extends State<GuestDetailsPage> {
           const SizedBox(height: 8),
           _buildTextField('Full Name', controllers['name']!, required: true),
           const SizedBox(height: 24),
+          _buildLabel('GOVT ID (AADHAAR / VOTER / PASSPORT) *'),
+          const SizedBox(height: 8),
+          _buildTextField('Aadhaar / Voter ID / Passport number', controllers['id']!, required: true),
+          const SizedBox(height: 24),
           Row(
             children: [
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildLabel('EMAIL ADDRESS'),
+                    _buildLabel('EMAIL ADDRESS (OPTIONAL)'),
                     const SizedBox(height: 8),
                     _buildTextField('you@example.com', controllers['email']!),
                   ],
@@ -309,7 +362,7 @@ class _GuestDetailsPageState extends State<GuestDetailsPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildLabel('PHONE NUMBER'),
+                    _buildLabel('PHONE NUMBER (OPTIONAL)'),
                     const SizedBox(height: 8),
                     _buildTextField('+1 (555) 000-0000', controllers['phone']!),
                   ],
@@ -341,18 +394,62 @@ class _GuestDetailsPageState extends State<GuestDetailsPage> {
     );
   }
 
-  Widget _buildChildRow(int index) {
+  Widget _buildChildCard(int index) {
     final controllers = _childControllers[index];
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 24),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 24),
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppTheme.mutedColor.withOpacity(0.5)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(flex: 3, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('CHILD ${index + 1} FULL NAME *'), const SizedBox(height: 8), _buildTextField('Full Name', controllers['name']!, required: true)])),
-          const SizedBox(width: 12),
-          Expanded(flex: 1, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('AGE *'), const SizedBox(height: 8), _buildTextField('e.g. 5', controllers['age']!, required: true)])),
-          const SizedBox(width: 12),
-          Padding(padding: const EdgeInsets.only(bottom: 12), child: IconButton(icon: const Icon(LucideIcons.trash2, size: 20, color: Colors.grey), onPressed: () => setState(() => _childControllers.removeAt(index)))),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('CHILD ${index + 1}', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.primaryColor.withOpacity(0.6), letterSpacing: 1)),
+              GestureDetector(
+                onTap: () => setState(() => _childControllers.removeAt(index)),
+                child: const Icon(LucideIcons.trash2, size: 18, color: Colors.grey),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          _buildLabel('FULL NAME *'),
+          const SizedBox(height: 8),
+          _buildTextField('Full Name', controllers['name']!, required: true),
+          const SizedBox(height: 24),
+          Row(
+            children: [
+              Expanded(
+                flex: 2,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildLabel('GOVT ID (AADHAAR / VOTER / PASSPORT) *'),
+                    const SizedBox(height: 8),
+                    _buildTextField('Aadhaar / Voter ID / Passport number', controllers['id']!, required: true),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                flex: 1,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildLabel('AGE *'),
+                    const SizedBox(height: 8),
+                    _buildTextField('e.g. 5', controllers['age']!, required: true),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
