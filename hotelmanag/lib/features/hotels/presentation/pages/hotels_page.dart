@@ -271,10 +271,9 @@ class _HotelsPageState extends State<HotelsPage> {
 
   Widget _buildTopDeals(BuildContext context, bool isWide) {
     // Use select so this section only rebuilds when the first 3 hotels change
-    // Use the provider's filtered hotels so the Premium section
-    // reflects the active search/location and sidebar filters.
+    // Use the provider's full hotel list so Top Deals shows every hotel.
     final deals = context.select<HotelProvider, List<HotelEntity>>(
-      (p) => List<HotelEntity>.from(p.hotels),
+      (p) => List<HotelEntity>.from(p.allHotels),
     );
     final isDark = Theme.of(context).colorScheme.brightness == Brightness.dark;
     
