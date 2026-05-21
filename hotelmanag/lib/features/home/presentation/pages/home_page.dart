@@ -1329,10 +1329,10 @@ class _HomePageState extends State<HomePage> {
           height: 380,
           child: Consumer<HotelProvider>(
             builder: (context, provider, child) {
-              if (provider.isLoading && provider.hotels.isEmpty) {
+              if (provider.isLoading && provider.allHotels.isEmpty) {
                 return const Center(child: CircularProgressIndicator());
               }
-              final hotels = provider.hotels.take(3).toList();
+              final hotels = provider.allHotels.take(3).toList();
               if (hotels.isEmpty) {
                 return const Center(child: Text('No destinations found'));
               }
