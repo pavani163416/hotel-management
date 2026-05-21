@@ -37,7 +37,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(AppConstants.onboardingKey, true);
     if (mounted) {
-      context.go('/login');
+      context.go('/welcome');
     }
   }
 
