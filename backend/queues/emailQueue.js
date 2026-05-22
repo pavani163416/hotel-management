@@ -1,12 +1,11 @@
 import IORedis from "ioredis";
-import { Queue, QueueScheduler } from "bullmq";
+import { Queue } from "bullmq";
 import logger from "../utils/logger.js";
 
 const REDIS_URL = process.env.REDIS_URL || process.env.REDIS_URI || process.env.REDISCLOUD_URL || "";
 const REDIS_TLS = process.env.REDIS_TLS === "true";
 
 let queue = null;
-let queueScheduler = null;
 let connection = null;
 let queueEnabled = false;
 
@@ -35,8 +34,6 @@ if (REDIS_URL) {
       removeOnFail: false,
     },
   });
-
-  queueScheduler = new QueueScheduler("luxeEmailQueue", { connection });
 }
 
 export const isEmailQueueEnabled = () => queueEnabled && Boolean(queue);
