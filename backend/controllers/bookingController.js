@@ -566,11 +566,26 @@ export const getAllBookings = async (req, res, next) => {
       Booking.countDocuments(filter),
     ]);
 
-    const data = bookings.map((b) => ({
-      ...b.toJSON(),
-      hotelName: b.hotelName || resolveHotelName(b.room?.roomNumber || "") || "LuxeStay",
-      hotelImage: b.hotelImage || b.room?.images?.[0] || b.hotelId?.image || "",
-    }));
+    const bookingIds = bookings.map(b => b._id);
+    const AdditionalGuest = (await import("../models/AdditionalGuest.js")).default;
+    const additionalGuests = await AdditionalGuest.find({ bookingId: { $in: bookingIds } });
+    
+    const additionalGuestsMap = {};
+    additionalGuests.forEach(ag => {
+      additionalGuestsMap[ag.bookingId.toString()] = ag;
+    });
+
+    const data = bookings.map((b) => {
+      const bJson = b.toJSON();
+      const agRecord = additionalGuestsMap[b._id.toString()];
+      return {
+        ...bJson,
+        hotelName: b.hotelName || resolveHotelName(b.room?.roomNumber || "") || "LuxeStay",
+        hotelImage: b.hotelImage || b.room?.images?.[0] || b.hotelId?.image || "",
+        additionalAdults: agRecord?.adults?.length ? agRecord.adults : (bJson.additionalAdults || []),
+        additionalChildren: agRecord?.children?.length ? agRecord.children : (bJson.additionalChildren || []),
+      };
+    });
 
     res.status(200).json({
       success: true,
