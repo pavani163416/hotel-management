@@ -1,0 +1,23 @@
+import session from "express-session";
+import connectRedis from "connect-redis";
+import { getRedisClient, isRedisReady } from "./redis.js";
+
+const RedisStore = connectRedis(session);
+
+export const createSessionMiddleware = () => {
+  const store = isRedisReady() ? new RedisStore({ client: getRedisClient(), prefix: "luxe:sess:" }) : undefined;
+
+  return session({
+    store,
+    secret: process.env.SESSION_SECRET || process.env.JWT_SECRET || "default-session-secret",
+    name: process.env.SESSION_NAME || "luxe_sid",
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: process.env.NODE_ENV === "production",
+      httpOnly: true,
+      sameSite: "lax",
+      maxAge: Number(process.env.SESSION_TTL_MS) || 24 * 60 * 60 * 1000,
+    },
+  });
+};

@@ -648,15 +648,19 @@ export const cancelBooking = async (req, res, next) => {
           role: "customer",
           message: `Your booking for ${booking.hotelName || "LuxeStay"} has been cancelled.`,
           type: "booking",
-        }).catch(() => {});
+        }).catch(nonCriticalCatch("cancellationNotification", { bookingId: booking._id }));
 
-        sendCancellationEmail({
+        const cancellationEmailPayload = {
           to:        email,
           guestName: populatedForEmail.guest?.name || booking.guestSnapshot?.name || "Guest",
           hotelName: booking.hotelName || "LuxeStay",
           bookingRef: `LS-${booking._id.toString().slice(-5).toUpperCase()}`,
           reason:    booking.cancellationReason,
-        }).catch(() => {});
+        };
+        const cancellationEmailJob = await enqueueEmailJob("cancellationEmail", cancellationEmailPayload);
+        if (!cancellationEmailJob) {
+          sendCancellationEmail(cancellationEmailPayload).catch(nonCriticalCatch("cancellationEmail", { bookingId: booking._id }));
+        }
       }
     }
     sendNotification({

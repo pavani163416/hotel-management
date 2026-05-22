@@ -1,8 +1,12 @@
 import Hotel from "../models/Hotel.js";
 import Room from "../models/Room.js";
+import Booking from "../models/Booking.js";
 import { broadcastHotels } from "../routes/sseRoutes.js";
 import connectAdminDB from "../config/adminDb.js";
 import HotelSnapshotModel from "../models/admin/HotelSnapshot.js";
+import { deleteRoomSnapshotByNumber, syncRoomSnapshot } from "../services/syncService.js";
+import { cacheGet, cacheSet, cacheDel, buildCacheKey } from "../cache/redisCache.js";
+import { CACHE_TTL } from "../config/constants.js";
 
 // Lazy-load HotelSnapshot bound to admin connection
 let _HotelSnapshot = null;
@@ -37,43 +41,24 @@ const syncSnapshot = async (hotel, extra = {}) => {
   } catch { /* never block main flow */ }
 };
 
-// Sync a room to controller DB room snapshots
-const syncRoomSnapshot = async (hotelId, hotelName, room) => {
-  try {
-    const conn = await connectAdminDB();
-    const RoomSnapshot = (await import("../models/admin/RoomSnapshot.js")).default(conn);
-    await RoomSnapshot.findOneAndUpdate(
-      { roomNumber: room.id },
-      {
-        roomNumber:    room.id,
-        hotelId,
-        hotelName,
-        name:          room.name,
-        type:          "Standard",
-        pricePerNight: room.price,
-        capacity:      room.capacity,
-        bed:           room.bed,
-        available:     room.available ?? 1,
-        features:      room.features || [],
-        status:        (room.available ?? 1) > 0 ? "Available" : "Booked",
-      },
-      { upsert: true, new: true, runValidators: false }
-    );
-  } catch {}
-};
-
-// Remove a room from controller DB room snapshots
-const deleteRoomSnapshotByNumber = async (roomNumber) => {
-  try {
-    const conn = await connectAdminDB();
-    const RoomSnapshot = (await import("../models/admin/RoomSnapshot.js")).default(conn);
-    await RoomSnapshot.findOneAndDelete({ roomNumber });
-  } catch {}
+const invalidateHotelCache = async () => {
+  await Promise.all([
+    cacheDel("hotels:*"),
+    cacheDel("hotel:*"),
+    cacheDel("rooms:*"),
+    cacheDel("rooms:available-count*")
+  ]);
 };
 
 // GET /api/hotels
 export const getHotels = async (req, res, next) => {
   try {
+    const cacheKey = buildCacheKey("hotels", req.query.city || "all", req.query.minPrice || "", req.query.maxPrice || "");
+    const cached = await cacheGet(cacheKey);
+    if (cached) {
+      return res.status(200).json({ success: true, count: cached.length, data: cached, cached: true });
+    }
+
     const { city, minPrice, maxPrice } = req.query;
     const filter = { isActive: true };
     if (city) filter.city = new RegExp(city, "i");
@@ -82,8 +67,73 @@ export const getHotels = async (req, res, next) => {
       if (minPrice) filter.pricePerNight.$gte = Number(minPrice);
       if (maxPrice) filter.pricePerNight.$lte = Number(maxPrice);
     }
-    const hotels = await Hotel.find(filter).sort({ pricePerNight: 1 });
-    res.status(200).json({ success: true, count: hotels.length, data: hotels });
+    const hotelIds = hotels.map((hotel) => hotel.hotelId).filter(Boolean);
+    let statsByHotel = {};
+
+    if (hotelIds.length > 0) {
+      const now = new Date();
+      const currentYear = now.getFullYear();
+      const activeStatuses = ["Confirmed", "CheckedIn", "Pending"];
+      const revenueStatuses = ["Confirmed", "Completed", "CheckedIn", "CheckedOut"];
+
+      const hotelStats = await Booking.aggregate([
+        {
+          $match: {
+            hotelStringId: { $in: hotelIds },
+            $or: [
+              { status: { $in: activeStatuses }, checkOut: { $gt: now } },
+              { status: { $in: revenueStatuses }, createdAt: { $gte: new Date(`${currentYear}-01-01T00:00:00.000Z`) } },
+            ],
+          },
+        },
+        {
+          $group: {
+            _id: "$hotelStringId",
+            activeBookings: {
+              $sum: {
+                $cond: [
+                  { $and: [
+                    { $in: ["$status", activeStatuses] },
+                    { $gt: ["$checkOut", now] },
+                  ] },
+                  1,
+                  0,
+                ],
+              },
+            },
+            ytdRevenue: {
+              $sum: {
+                $cond: [
+                  { $and: [
+                    { $in: ["$status", revenueStatuses] },
+                    { $gte: ["$createdAt", new Date(`${currentYear}-01-01T00:00:00.000Z`) ] },
+                  ] },
+                  "$totalAmount",
+                  0,
+                ],
+              },
+            },
+          },
+        },
+      ]);
+
+      statsByHotel = hotelStats.reduce((acc, stat) => {
+        acc[stat._id] = {
+          activeBookings: stat.activeBookings || 0,
+          ytdRevenue: stat.ytdRevenue || 0,
+        };
+        return acc;
+      }, {});
+    }
+
+    const enrichedHotels = hotels.map((hotel) => ({
+      ...hotel.toObject(),
+      activeBookings: statsByHotel[hotel.hotelId]?.activeBookings ?? 0,
+      ytdRevenue: statsByHotel[hotel.hotelId]?.ytdRevenue ?? 0,
+    }));
+
+    await cacheSet(cacheKey, enrichedHotels, CACHE_TTL.HOTEL_STATS);
+    res.status(200).json({ success: true, count: enrichedHotels.length, data: enrichedHotels });
   } catch (error) {
     next(error);
   }
@@ -92,8 +142,16 @@ export const getHotels = async (req, res, next) => {
 // GET /api/hotels/:id
 export const getHotelById = async (req, res, next) => {
   try {
+    const cacheKey = buildCacheKey("hotel", req.params.id);
+    const cached = await cacheGet(cacheKey);
+    if (cached) {
+      return res.status(200).json({ success: true, data: cached, cached: true });
+    }
+
     const hotel = await Hotel.findOne({ hotelId: req.params.id, isActive: true });
     if (!hotel) return res.status(404).json({ success: false, message: "Hotel not found" });
+
+    await cacheSet(cacheKey, hotel.toObject(), CACHE_TTL.HOTEL_STATS);
     res.status(200).json({ success: true, data: hotel });
   } catch (error) {
     next(error);
@@ -128,6 +186,7 @@ export const addReviewToHotel = async (req, res, next) => {
     hotel.rating = Number((totalRating / hotel.reviewCount).toFixed(1));
     await hotel.save();
 
+    await invalidateHotelCache();
     broadcastHotels();
     res.status(201).json({ success: true, message: "Review added", data: hotel });
   } catch (error) {
@@ -145,6 +204,7 @@ export const createHotel = async (req, res, next) => {
       totalRooms: req.body.totalRooms || 0,
       status:     hotel.isActive ? "Active" : "Inactive",
     });
+    await invalidateHotelCache();
     broadcastHotels();
     res.status(201).json({ success: true, message: "Hotel created", data: hotel });
   } catch (error) {
@@ -167,6 +227,7 @@ export const updateHotel = async (req, res, next) => {
       totalRooms: req.body.totalRooms || hotel.rooms?.length || 0,
       status:     hotel.isActive ? "Active" : "Inactive",
     });
+    await invalidateHotelCache();
     broadcastHotels();
     res.status(200).json({ success: true, message: "Hotel updated", data: hotel });
   } catch (error) {
@@ -184,6 +245,7 @@ export const deleteHotel = async (req, res, next) => {
       const HotelSnapshot = await getHotelSnapshot();
       await HotelSnapshot.findOneAndDelete({ hotelId: req.params.id });
     } catch {}
+    await invalidateHotelCache();
     broadcastHotels();
     res.status(200).json({ success: true, message: "Hotel permanently deleted" });
   } catch (error) {
@@ -257,6 +319,7 @@ export const addRoomToHotel = async (req, res, next) => {
       });
     }
 
+    await invalidateHotelCache();
     broadcastHotels();
     res.status(201).json({ success: true, message: "Room added to hotel", data: hotel });
   } catch (error) {
@@ -277,6 +340,7 @@ export const removeRoomFromHotel = async (req, res, next) => {
     // Remove from controller DB room snapshots
     deleteRoomSnapshotByNumber(req.params.roomId).catch(() => {});
 
+    await invalidateHotelCache();
     broadcastHotels();
     res.status(200).json({ success: true, message: "Room removed from hotel", data: hotel });
   } catch (error) {
@@ -315,6 +379,7 @@ export const updateRoomInHotel = async (req, res, next) => {
       } catch {}
     }
 
+    await invalidateHotelCache();
     broadcastHotels();
     res.status(200).json({ success: true, message: "Room availability updated", data: hotel });
   } catch (error) {

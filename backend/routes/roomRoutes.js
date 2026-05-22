@@ -86,6 +86,8 @@ import {
   getMapOverview,
 } from "../controllers/roomController.js";
 import { countAvailableRooms } from "../services/roomAllocationService.js";
+import { cacheGet, cacheSet, buildCacheKey } from "../cache/redisCache.js";
+import { CACHE_TTL } from "../config/constants.js";
 import { validateRoom, validateRoomStatus } from "../middleware/validators.js";
 import Booking from "../models/Booking.js";
 import Room   from "../models/Room.js";
@@ -107,7 +109,13 @@ router.get("/available-count", async (req, res) => {
       return res.json({ success: true, available: null });
     }
 
-    const { available, total } = await countAvailableRooms({
+    const cacheKey = buildCacheKey("rooms", "available-count", hotelStringId || "all", roomTypeId || roomType || "all", checkIn, checkOut);
+    const cached = await cacheGet(cacheKey);
+    if (cached) {
+      return res.json({ success: true, ...cached, cached: true });
+    }
+
+    const result = await countAvailableRooms({
       hotelStringId,
       roomTypeId: roomTypeId || roomType,
       type: roomType,
@@ -115,7 +123,8 @@ router.get("/available-count", async (req, res) => {
       checkOut,
     });
 
-    return res.json({ success: true, available, total });
+    await cacheSet(cacheKey, result, CACHE_TTL.ROOM_AVAILABILITY);
+    return res.json({ success: true, ...result });
   } catch {
     return res.json({ success: true, available: null });
   }

@@ -1,5 +1,16 @@
 import Room from "../models/Room.js";
 import { getHotelMapOverview } from "../services/roomAllocationService.js";
+import { cacheGet, cacheSet, cacheDel, buildCacheKey } from "../cache/redisCache.js";
+import { CACHE_TTL } from "../config/constants.js";
+
+const invalidateRoomCache = async () => {
+  await Promise.all([
+    cacheDel("rooms:*"),
+    cacheDel("hotel:*"),
+    cacheDel("hotels:*"),
+    cacheDel("rooms:available-count*")
+  ]);
+};
 
 // ─────────────────────────────────────────────────────────
 // GET /api/rooms
@@ -7,6 +18,21 @@ import { getHotelMapOverview } from "../services/roomAllocationService.js";
 // ─────────────────────────────────────────────────────────
 export const getRooms = async (req, res, next) => {
   try {
+    const cacheKey = buildCacheKey(
+      "rooms",
+      req.query.status || "all",
+      req.query.type || "all",
+      req.query.hotelStringId || "all",
+      req.query.roomNumber || "all",
+      req.query.minPrice || "",
+      req.query.maxPrice || ""
+    );
+
+    const cached = await cacheGet(cacheKey);
+    if (cached) {
+      return res.status(200).json({ success: true, count: cached.length, data: cached, cached: true });
+    }
+
     const { status, type, minPrice, maxPrice, roomNumber, hotelStringId } = req.query;
 
     const filter = { isActive: true };
@@ -22,6 +48,7 @@ export const getRooms = async (req, res, next) => {
     }
 
     const rooms = await Room.find(filter).sort({ pricePerNight: 1 });
+    await cacheSet(cacheKey, rooms, CACHE_TTL.ROOM_AVAILABILITY);
 
     res.status(200).json({
       success: true,
@@ -74,6 +101,7 @@ export const createRoom = async (req, res, next) => {
       { upsert: true, new: true, runValidators: true, setDefaultsOnInsert: true }
     );
 
+    await invalidateRoomCache();
     res.status(201).json({
       success: true,
       message: "Room saved successfully",
@@ -113,6 +141,7 @@ export const updateRoomStatus = async (req, res, next) => {
       });
     }
 
+    await invalidateRoomCache();
     res.status(200).json({
       success: true,
       message: `Room status updated to "${status}"`,
@@ -155,6 +184,7 @@ export const deleteRoom = async (req, res, next) => {
       });
     }
 
+    await invalidateRoomCache();
     res.status(200).json({
       success: true,
       message: "Room deleted successfully",

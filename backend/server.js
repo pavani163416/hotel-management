@@ -6,18 +6,23 @@ import morgan           from "morgan";
 import mongoSanitize    from "express-mongo-sanitize";
 import { createServer } from "http";
 import { Server as SocketIOServer } from "socket.io";
+import { createAdapter } from "@socket.io/redis-adapter";
 import { WebSocketServer } from "ws";
 import jwt              from "jsonwebtoken";
 import { initWebSocket } from "./routes/wsRoutes.js";
 
 import connectDB        from "./config/db.js";
 import connectAdminDB   from "./config/adminDb.js";
+import { createMainDbIndexes, createAdminDbIndexes } from "./config/dbIndexes.js";
+import { initializeRedis, createRedisAdapterClients } from "./config/redis.js";
+import { createSessionMiddleware } from "./config/session.js";
 import roomRoutes       from "./routes/roomRoutes.js";
 import bookingRoutes    from "./routes/bookingRoutes.js";
 import guestRoutes      from "./routes/guestRoutes.js";
 import adminRoutes      from "./routes/adminRoutes.js";
 import visitorRoutes    from "./routes/visitorRoutes.js";
 import hotelRoutes      from "./routes/hotelRoutes.js";
+import { getHotels }    from "./controllers/hotelController.js";
 import controllerRoutes from "./routes/controllerRoutes.js";
 import managerRoutes    from "./routes/managerRoutes.js";
 import sseRoutes        from "./routes/sseRoutes.js";
@@ -42,6 +47,9 @@ if (missing.length) {
   logger.error(`Missing required environment variables: ${missing.join(", ")}`);
   process.exit(1);
 }
+
+// ── Initialize Redis and session cache layer ──────────────
+await initializeRedis();
 
 // ── Connect to both databases ─────────────────────────────
 connectDB();
@@ -122,6 +130,8 @@ import("./models/Hotel.js").then(async ({ default: Hotel }) => {
 
 const app = express();
 
+app.use(createSessionMiddleware());
+
 const isProd     = process.env.NODE_ENV === "production";
 if (isProd) {
   app.set("trust proxy", true);
@@ -178,6 +188,7 @@ app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 app.get(["/api/docs", "/api/docs/"], (req, res) => swaggerUi.setup(swaggerDocument)(req, res));
 app.get("/api/docs.json", (req, res) => res.json(swaggerDocument));
 app.get("/api/docs/swagger.json", (req, res) => res.json(swaggerDocument));
+app.get("/api/search", getHotels);
 
 // ── Additional headers for WebSocket support ──────────────
 app.use((req, res, next) => {
@@ -317,6 +328,14 @@ const io = new SocketIOServer(httpServer, {
     exposedHeaders: ["Content-Length"],
   },
 });
+
+const { pubClient, subClient } = await createRedisAdapterClients();
+if (pubClient && subClient) {
+  io.adapter(createAdapter(pubClient, subClient));
+  logger.info("Socket.IO Redis adapter enabled");
+} else {
+  logger.warn("Socket.IO Redis adapter not initialized; running in single-instance mode.");
+}
 
 // ── Socket.IO JWT authentication ─────────────────────────
 io.use((socket, next) => {
