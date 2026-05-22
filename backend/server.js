@@ -14,7 +14,7 @@ import { initWebSocket } from "./routes/wsRoutes.js";
 
 import connectDB        from "./config/db.js";
 import connectAdminDB   from "./config/adminDb.js";
-import { initializeRedis, createRedisAdapterClients } from "./config/redis.js";
+import { initializeRedis, createRedisAdapterClients, isRedisReady } from "./config/redis.js";
 import { createSessionMiddleware } from "./config/session.js";
 import roomRoutes       from "./routes/roomRoutes.js";
 import bookingRoutes    from "./routes/bookingRoutes.js";
@@ -276,6 +276,8 @@ app.get("/api/health", (req, res) => {
     success:     true,
     message:     "LuxeStay API is running",
     environment: process.env.NODE_ENV,
+    redis:       isRedisReady() ? "connected" : "disconnected",
+    socket:      "running",
     timestamp:   new Date().toISOString(),
   });
 });
@@ -313,10 +315,11 @@ const httpServer = createServer(app);
 
 const io = new SocketIOServer(httpServer, {
   path: "/socket.io/",
-  transports: ["polling", "websocket"],  // Polling FIRST for Railway compatibility
+  transports: ["websocket", "polling"],  // Prioritize websocket, fallback to polling
   allowUpgrades: true,
-  pingInterval: 30000,
+  pingInterval: 25000,
   pingTimeout: 60000,
+  connectTimeout: 45000,
   maxHttpBufferSize: 1e7,
   cookie: false,
   serveClient: false,
@@ -330,12 +333,16 @@ const io = new SocketIOServer(httpServer, {
   },
 });
 
-const { pubClient, subClient } = await createRedisAdapterClients();
-if (pubClient && subClient) {
-  io.adapter(createAdapter(pubClient, subClient));
-  logger.info("Socket.IO Redis adapter enabled");
-} else {
-  logger.warn("Socket.IO Redis adapter not initialized; running in single-instance mode.");
+try {
+  const { pubClient, subClient } = await createRedisAdapterClients();
+  if (pubClient && subClient) {
+    io.adapter(createAdapter(pubClient, subClient));
+    logger.info("Socket.IO Redis adapter enabled");
+  } else {
+    logger.warn("Socket.IO Redis adapter not initialized; running in single-instance mode.");
+  }
+} catch (error) {
+  logger.error("Failed to setup Socket.IO Redis adapter", { error: error?.message || error });
 }
 
 // ── Socket.IO JWT authentication ─────────────────────────

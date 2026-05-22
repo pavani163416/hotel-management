@@ -67,9 +67,21 @@ export const createRedisAdapterClients = async () => {
   const pubClient = redisClient.duplicate();
   const subClient = redisClient.duplicate();
 
-  await Promise.all([pubClient.connect(), subClient.connect()]);
+  // Prevent fatal uncaught exceptions if adapter clients lose connection
+  pubClient.on("error", (error) => {
+    logger.error("Redis pubClient error", { error: error?.message || error });
+  });
+  subClient.on("error", (error) => {
+    logger.error("Redis subClient error", { error: error?.message || error });
+  });
 
-  return { pubClient, subClient };
+  try {
+    await Promise.all([pubClient.connect(), subClient.connect()]);
+    return { pubClient, subClient };
+  } catch (error) {
+    logger.error("Failed to connect Redis adapter clients", { error: error?.message || error });
+    return { pubClient: null, subClient: null };
+  }
 };
 
 export const disconnectRedis = async () => {

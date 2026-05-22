@@ -3,7 +3,13 @@ import { RedisStore } from "connect-redis";
 import { getRedisClient, isRedisReady } from "./redis.js";
 
 export const createSessionMiddleware = () => {
-  const store = isRedisReady() ? new RedisStore({ client: getRedisClient(), prefix: "luxe:sess:" }) : undefined;
+  let store;
+  try {
+    store = isRedisReady() ? new RedisStore({ client: getRedisClient(), prefix: "luxe:sess:" }) : undefined;
+  } catch (error) {
+    console.error("Failed to initialize RedisStore for sessions", error);
+    store = undefined;
+  }
 
   return session({
     store,
