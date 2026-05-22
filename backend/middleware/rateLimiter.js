@@ -1,4 +1,6 @@
 import rateLimit from "express-rate-limit";
+import pkg from "express-rate-limit";
+const { ipKeyGenerator } = pkg;
 import RedisStore from "rate-limit-redis";
 import { getRedisClient, isRedisReady } from "../config/redis.js";
 
@@ -16,10 +18,12 @@ const createRateLimitStore = (windowMs = 15 * 60 * 1000) => {
 
 const getClientIp = (req) => {
   const forwarded = req.headers["x-forwarded-for"];
+  let ip = req.ip || req.connection?.remoteAddress || "unknown";
   if (typeof forwarded === "string" && forwarded.trim()) {
-    return forwarded.split(",")[0].trim();
+    ip = forwarded.split(",")[0].trim();
   }
-  return req.ip || req.connection?.remoteAddress || "unknown";
+  // Use ipKeyGenerator for IPv6 compatibility
+  return ipKeyGenerator(ip);
 };
 
 // Helper to determine if a request originates locally
