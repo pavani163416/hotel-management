@@ -14,7 +14,6 @@ import { initWebSocket } from "./routes/wsRoutes.js";
 
 import connectDB        from "./config/db.js";
 import connectAdminDB   from "./config/adminDb.js";
-import { createMainDbIndexes, createAdminDbIndexes } from "./config/dbIndexes.js";
 import { initializeRedis, createRedisAdapterClients } from "./config/redis.js";
 import { createSessionMiddleware } from "./config/session.js";
 import roomRoutes       from "./routes/roomRoutes.js";
