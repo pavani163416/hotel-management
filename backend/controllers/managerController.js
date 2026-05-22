@@ -324,6 +324,7 @@ export const checkInBooking = async (req, res, next) => {
     }
     if (booking.status === "Cancelled") return res.status(400).json({ success:false, message:"Cannot check in a cancelled booking" });
     if (booking.status === "CheckedIn") return res.status(400).json({ success:false, message:"Guest is already checked in" });
+    if (booking.status === "CheckedOut") return res.status(409).json({ success:false, message:"Cannot check in a booking that has already been checked out", code:"INVALID_STATE_TRANSITION" });
     booking.status = "CheckedIn";
     booking.checkedInAt = new Date();
     await booking.save();
@@ -375,9 +376,9 @@ export const createWalkInBooking = async (req, res, next) => {
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
-    const { roomId, guest: guestData, checkIn, checkOut, pricePerNight, subtotal, taxes=0, discount=0, totalAmount, paymentMethod="cash", specialRequests="" } = req.body;
-    if (!roomId || !guestData?.name || !guestData?.email || !guestData?.phone || !checkIn || !checkOut || !totalAmount)
-      return res.status(400).json({ success:false, message:"roomId, guest (name/email/phone), checkIn, checkOut, totalAmount are required" });
+    const { roomId, guest: guestData, checkIn, checkOut, pricePerNight, subtotal, taxes=0, discount=0, paymentMethod="cash", specialRequests="" } = req.body;
+    if (!roomId || !guestData?.name || !guestData?.email || !guestData?.phone || !checkIn || !checkOut)
+      return res.status(400).json({ success:false, message:"roomId, guest (name/email/phone), checkIn, checkOut are required" });
     let room = mongoose.Types.ObjectId.isValid(roomId)
       ? await Room.findById(roomId).session(session)
       : await Room.findOne({ roomNumber:roomId, isActive:true }).session(session);
@@ -404,12 +405,21 @@ export const createWalkInBooking = async (req, res, next) => {
     }
     let guest = await Guest.findOne({ email: guestData.email }).session(session);
     if (!guest) { [guest] = await Guest.create([{ name:guestData.name, email:guestData.email, phone:guestData.phone, city:guestData.city||"" }], { session }); }
+    
+    const checkInDate = new Date(checkIn);
+    const checkOutDate = new Date(checkOut);
+    const msPerDay = 1000 * 60 * 60 * 24;
+    const nights = Math.max(1, Math.ceil((checkOutDate - checkInDate) / msPerDay));
+    const nightlyRate = pricePerNight || room.pricePerNight;
+    const calculatedTotal = nightlyRate * nights;
+    const totalAmount = calculatedTotal + (taxes || 0) - (discount || 0);
+
     const [booking] = await Booking.create([{
       room: room._id, guest: guest._id,
       guestSnapshot: { name:guestData.name, email:guestData.email, phone:guestData.phone },
-      checkIn: new Date(checkIn), checkOut: new Date(checkOut),
-      pricePerNight: pricePerNight || room.pricePerNight,
-      subtotal: subtotal || totalAmount,
+      checkIn: checkInDate, checkOut: checkOutDate,
+      pricePerNight: nightlyRate,
+      subtotal: subtotal || calculatedTotal,
       taxes, discount, totalAmount, paymentMethod, specialRequests,
       hotelName: req.scopedHotelName || "",
       hotelStringId: req.scopedHotelId || null,
