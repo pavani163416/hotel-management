@@ -23,6 +23,17 @@ import {
   getHotelMapOverview,
 } from "../services/roomAllocationService.js";
 
+const normalizePhoneNumber = (phone) => {
+  if (!phone) return "";
+  // Strip whitespace, parentheses, dashes, and ensure it starts with +
+  const normalized = phone.trim().replace(/[\s()\-]/g, "");
+  if (!normalized.startsWith("+")) {
+    // Assume missing country code; prepend a default '+'
+    return `+${normalized}`;
+  }
+  return normalized;
+};
+
 const getSecret = () => {
   const s = process.env.JWT_SECRET;
   if (!s) throw new Error("Server misconfiguration: JWT_SECRET missing");
@@ -165,6 +176,46 @@ export const getManagerRooms = async (req, res, next) => {
 
 // ── POST /api/manager/rooms ───────────────────────────────
 export const createManagerRoom = async (req, res, next) => {
+  try {
+    const hotelId = req.scopedHotelId, hotelName = req.scopedHotelName;
+    let { roomNumber, roomType, pricePerNight, capacity, description, amenities } = req.body;
+    // Validate required fields
+    if (!roomNumber) return res.status(400).json({ success: false, message: "roomNumber is required" });
+    // Length constraints
+    const MAX_ROOM_NUMBER_LENGTH = 15;
+    if (roomNumber.length > MAX_ROOM_NUMBER_LENGTH) {
+      return res.status(413).json({ success: false, message: `roomNumber exceeds maximum length of ${MAX_ROOM_NUMBER_LENGTH}` });
+    }
+    // Simple XSS/character whitelist (alphanum, dash, underscore, space)
+    const ROOM_REGEX = /^[a-zA-Z0-9\-_=\s]+$/;
+    if (!ROOM_REGEX.test(roomNumber)) {
+      return res.status(400).json({ success: false, message: "roomNumber contains invalid characters" });
+    }
+    // Prefix handling
+    const prefix = getHotelPrefix(hotelId, hotelName);
+    if (prefix && !roomNumber.toLowerCase().startsWith(prefix + "-")) {
+      roomNumber = `${prefix}-${roomNumber}`;
+    }
+    // Duplicate check within this hotel
+    const existingRoom = await Room.findOne({ roomNumber, hotelStringId: hotelId });
+    if (existingRoom) {
+      return res.status(409).json({ success: false, message: "Room number already exists for this hotel" });
+    }
+    // Whitelist allowed fields
+    const allowed = { roomNumber, roomType, pricePerNight, capacity, description, amenities };
+    const room = await Room.create({
+      ...allowed,
+      hotelStringId: hotelId,
+      hotelId: req.scopedHotelObjectId || null,
+    });
+    if (hotelId) {
+      Hotel.findOneAndUpdate({ hotelId }, { $push: { rooms: { id: roomNumber, name: roomType || "Room", price: pricePerNight, capacity: capacity || 2, bed: "King", available: 1, features: amenities || [] } } }, { new: true }).catch(() => {});
+    }
+    const io = req.app.get("io");
+    if (io) io.emit("roomCreated", { roomId: room._id, roomNumber, hotelId, hotelName });
+    res.status(201).json({ success: true, message: "Room created", data: room });
+  } catch (err) { next(err); }
+};
   try {
     const hotelId = req.scopedHotelId, hotelName = req.scopedHotelName;
     let { roomNumber } = req.body;
