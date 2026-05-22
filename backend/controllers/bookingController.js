@@ -606,6 +606,11 @@ export const getBookingById = async (req, res, next) => {
     const response = booking.toJSON();
     response.hotelImage = response.hotelImage || booking.room?.images?.[0] || booking.hotelId?.image || "";
 
+    // Fetch additional guests stored in the AdditionalGuest collection
+    const additionalGuestRecord = await AdditionalGuest.findOne({ bookingId: booking._id });
+    response.additionalAdults   = additionalGuestRecord?.adults   || [];
+    response.additionalChildren = additionalGuestRecord?.children || [];
+
     res.status(200).json({ success: true, data: response });
   } catch (error) {
     next(error);

@@ -63,24 +63,19 @@ export default function Bookings() {
   const [nbSubmitted, setNbSubmitted] = useState(false);
   const PER_PAGE = 8;
 
-  // Cancel reason state
-  const CANCEL_REASONS = [
-    "Change of plans", "Found a better deal", "Travel dates changed",
-    "Medical / health reasons", "Work / business conflict", "Booked by mistake", "Other",
-  ];
-  const [cancelReason, setCancelReason] = useState("");
-  const [cancelOther, setCancelOther] = useState("");
+  // Simple cancel confirmation state (no reason required for admin)
+  const [confirmCancel, setConfirmCancel] = useState(false);
   const [cancelling, setCancelling] = useState(false);
 
-  // Open detail modal — fetch full booking data including adults
+  // Open detail modal — fetch full booking data including additional guests
   const openDetail = async (b: Booking) => {
     setDetailBooking(b);
     setDetailFull(null);
-    setCancelReason("");
-    setCancelOther("");
+    setConfirmCancel(false);
     try {
       const r: any = await apiGetBookingById(b.id);
-      setDetailFull(r?.data || null);
+      // API returns { success, data: booking } — unwrap one level
+      setDetailFull(r?.data?.data || null);
     } catch {}
   };
 
@@ -155,23 +150,19 @@ export default function Bookings() {
   };
 
   const handleCancel = async () => {
-    if (!detailBooking || !cancelReason) return;
+    if (!detailBooking) return;
     setCancelling(true);
-    const reason = cancelReason === "Other" ? (cancelOther || "Other") : cancelReason;
     try {
-      await apiCancelBooking(detailBooking.id, reason);
-      // Optimistically update local state immediately
+      await apiCancelBooking(detailBooking.id, "Cancelled by admin");
       updateStatus(detailBooking.id, "Cancelled");
     } catch {
       updateStatus(detailBooking.id, "Cancelled");
     }
-    // Trigger a debounced re-fetch to sync with backend
     refetch();
     setCancelling(false);
     setDetailBooking(null);
     setDetailFull(null);
-    setCancelReason("");
-    setCancelOther("");
+    setConfirmCancel(false);
   };
 
   const properties = [...new Set(bookings.map((b) => b.property))];
@@ -370,7 +361,7 @@ export default function Bookings() {
       </div>
 
       {/* ── Detail Modal ── */}
-      <Modal isOpen={!!detailBooking} onClose={() => { setDetailBooking(null); setDetailFull(null); setCancelReason(""); setCancelOther(""); }} title="Booking Details">
+      <Modal isOpen={!!detailBooking} onClose={() => { setDetailBooking(null); setDetailFull(null); setConfirmCancel(false); }} title="Booking Details">
         {detailBooking && (
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-3 text-sm">
@@ -444,9 +435,9 @@ export default function Bookings() {
 
             {detailBooking.status !== "Cancelled" && detailBooking.status !== "Completed" && (
               <div className="border-t border-border pt-4">
-                {!cancelReason ? (
+                {!confirmCancel ? (
                   <div className="flex gap-2">
-                    <button onClick={() => setCancelReason("__selecting__")}
+                    <button onClick={() => setConfirmCancel(true)}
                       className="flex-1 py-2.5 bg-danger-light text-danger rounded-lg text-sm font-semibold hover:bg-danger hover:text-white transition-colors flex items-center justify-center gap-1.5">
                       <AlertTriangle className="w-4 h-4" /> Cancel Booking
                     </button>
@@ -466,30 +457,16 @@ export default function Bookings() {
                 ) : (
                   <div className="space-y-3">
                     <p className="text-sm font-semibold text-text-primary flex items-center gap-2">
-                      <AlertTriangle className="w-4 h-4 text-danger" /> Why are you cancelling?
+                      <AlertTriangle className="w-4 h-4 text-danger" /> Are you sure you want to cancel this booking?
                     </p>
-                    <div className="space-y-1.5">
-                      {CANCEL_REASONS.map((r) => (
-                        <label key={r} className={`flex items-center gap-3 p-2.5 rounded-lg border cursor-pointer transition-colors ${cancelReason === r ? "border-danger bg-danger-light" : "border-border hover:bg-surface-2"}`}>
-                          <input type="radio" name="adminCancelReason" value={r} checked={cancelReason === r} onChange={() => setCancelReason(r)} className="w-4 h-4 accent-danger" />
-                          <span className="text-sm text-text-primary">{r}</span>
-                        </label>
-                      ))}
-                    </div>
-                    {cancelReason === "Other" && (
-                      <textarea value={cancelOther} onChange={(e) => setCancelOther(e.target.value)}
-                        placeholder="Describe the reason..." rows={2}
-                        className="w-full px-3 py-2 border border-border rounded-lg text-sm outline-none focus:border-danger resize-none" />
-                    )}
                     <div className="flex gap-2">
-                      <button onClick={() => { setCancelReason(""); setCancelOther(""); }}
+                      <button onClick={() => setConfirmCancel(false)}
                         className="flex-1 py-2.5 border border-border rounded-lg text-sm font-medium text-text-secondary hover:bg-surface-3 transition-colors">
-                        Back
+                        Keep Booking
                       </button>
-                      <button onClick={handleCancel}
-                        disabled={!cancelReason || cancelReason === "__selecting__" || cancelling || (cancelReason === "Other" && !cancelOther.trim())}
+                      <button onClick={handleCancel} disabled={cancelling}
                         className="flex-1 py-2.5 bg-danger text-white rounded-lg text-sm font-semibold hover:bg-danger/90 disabled:opacity-50 transition-colors">
-                        {cancelling ? "Cancelling..." : "Confirm Cancel"}
+                        {cancelling ? "Cancelling..." : "Yes, Cancel It"}
                       </button>
                     </div>
                   </div>
