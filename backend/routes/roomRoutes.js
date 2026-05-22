@@ -93,6 +93,7 @@ import Booking from "../models/Booking.js";
 import Room   from "../models/Room.js";
 import Hotel  from "../models/Hotel.js";
 import mongoose from "mongoose";
+import { protect, authorizeRoles, validateOwnership } from "../middleware/auth.js";
 
 const router = express.Router();
 
@@ -130,23 +131,23 @@ router.get("/available-count", async (req, res) => {
   }
 });
 
-router.get("/map-overview", getMapOverview);
+router.get("/map-overview", protect, authorizeRoles("Manager", "admin", "Super Admin", "Controller"), getMapOverview);
 
 // ─────────────────────────────────────────────────────────
-// GET /api/rooms/booking-history/:roomId
+// GET /api/rooms/booking-history/:id
 // Returns recent bookings for a room (for the map drawer history panel).
 // Query: limit (default 5)
 // ─────────────────────────────────────────────────────────
-router.get("/booking-history/:roomId", async (req, res, next) => {
+router.get("/booking-history/:id", protect, authorizeRoles("Manager", "admin", "Super Admin", "Controller"), validateOwnership("Room"), async (req, res, next) => {
   try {
-    const { roomId } = req.params;
+    const { id } = req.params;
     const limit = Math.min(20, parseInt(req.query.limit) || 5);
 
-    if (!mongoose.Types.ObjectId.isValid(roomId)) {
+    if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ success: false, message: "Invalid roomId" });
     }
 
-    const bookings = await Booking.find({ room: roomId })
+    const bookings = await Booking.find({ room: id })
       .populate("guest", "name email phone")
       .select("guestSnapshot checkIn checkOut status totalAmount nights paymentMethod createdAt")
       .sort({ createdAt: -1 })
@@ -214,7 +215,7 @@ router.post("/availability", async (req, res) => {
 
 // GET  /api/rooms          → list all available rooms (with optional filters)
 // POST /api/rooms          → create a new room
-router.route("/").get(getRooms).post(validateRoom, createRoom);
+router.route("/").get(getRooms).post(protect, authorizeRoles("Manager", "admin", "Super Admin"), validateRoom, createRoom);
 
 // GET    /api/rooms/:id    → get single room
 // PATCH  /api/rooms/:id    → update room status
@@ -222,7 +223,7 @@ router.route("/").get(getRooms).post(validateRoom, createRoom);
 router
   .route("/:id")
   .get(getRoomById)
-  .patch(validateRoomStatus, updateRoomStatus)
-  .delete(deleteRoom);
+  .patch(protect, validateOwnership("Room"), validateRoomStatus, updateRoomStatus)
+  .delete(protect, validateOwnership("Room"), deleteRoom);
 
 export default router;

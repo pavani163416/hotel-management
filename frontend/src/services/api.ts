@@ -12,6 +12,18 @@ const api = axios.create({
   timeout: 15000,
 });
 
+// ── Request interceptor: attach token ────────────────────
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("luxe_customer_token");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
 // ── Response interceptor: unwrap data / normalise errors ──
 api.interceptors.response.use(
   (response) => response,
@@ -20,7 +32,12 @@ api.interceptors.response.use(
       error.response?.data?.message ||
       error.message ||
       "Something went wrong";
-    return Promise.reject(new Error(message));
+    const customError = new Error(message) as any;
+    customError.status = error.response?.status;
+    customError.code = error.response?.data?.code;
+    customError.email = error.response?.data?.email;
+    customError.response = error.response;
+    return Promise.reject(customError);
   }
 );
 

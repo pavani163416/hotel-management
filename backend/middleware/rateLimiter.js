@@ -4,12 +4,12 @@ import { getRedisClient, isRedisReady } from "../config/redis.js";
 
 const isProd = process.env.NODE_ENV === "production";
 
-const createRateLimitStore = () => {
+const createRateLimitStore = (windowMs = 15 * 60 * 1000) => {
   const client = getRedisClient();
   if (!client) return undefined;
   return new RedisStore({
     sendCommand: (...args) => client.sendCommand(args),
-    expiry: Number(process.env.RATE_LIMIT_WINDOW_MS || 15 * 60 * 1000) / 1000,
+    expiry: Math.max(1, Number(windowMs) / 1000),
     prefix: "luxe:rl:",
   });
 };
@@ -35,11 +35,12 @@ const isLocalRequest = (req) => {
 };
 
 // ── General API limiter ───────────────────────────────────
+const apiWindow = Number(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000;
 export const apiLimiter = rateLimit({
-  windowMs: Number(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000,
+  windowMs: apiWindow,
   max:      Number(process.env.RATE_LIMIT_MAX)        || (isProd ? 10000 : 999999),
   keyGenerator: getClientIp,
-  store: isRedisReady() ? createRateLimitStore() : undefined,
+  store: isRedisReady() ? createRateLimitStore(apiWindow) : undefined,
   standardHeaders: true,
   legacyHeaders:   false,
   // Skip entirely in local dev, or for promo endpoints in production
@@ -55,7 +56,7 @@ export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,          // 15 minutes
   max:      isProd ? 200 : 999999,        // increased for testing
   keyGenerator: getClientIp,
-  store: isRedisReady() ? createRateLimitStore() : undefined,
+  store: isRedisReady() ? createRateLimitStore(15 * 60 * 1000) : undefined,
   standardHeaders: true,
   legacyHeaders:   false,
   skipSuccessfulRequests: true,       // only count failures
@@ -71,7 +72,7 @@ export const bookingLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,          // 1 hour
   max:      isProd ? 10 : 999999,
   keyGenerator: getClientIp,
-  store: isRedisReady() ? createRateLimitStore() : undefined,
+  store: isRedisReady() ? createRateLimitStore(60 * 60 * 1000) : undefined,
   standardHeaders: true,
   legacyHeaders:   false,
   skip: (req) => isLocalRequest(req),
@@ -88,12 +89,42 @@ export const promoLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,          // 15 minutes
   max:      isProd ? 200 : 999999,
   keyGenerator: getClientIp,
-  store: isRedisReady() ? createRateLimitStore() : undefined,
+  store: isRedisReady() ? createRateLimitStore(15 * 60 * 1000) : undefined,
   standardHeaders: true,
   legacyHeaders:   false,
   skip: (req) => isLocalRequest(req),
   message: {
     success: false,
     message: "Too many requests. Please try again later.",
+  },
+});
+
+// ── Strict Login specific limiter ────────────────────────
+export const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,          // 15 minutes
+  max:      isProd ? 5 : 999999,            // 5 attempts per 15 minutes
+  keyGenerator: getClientIp,
+  store: isRedisReady() ? createRateLimitStore(15 * 60 * 1000) : undefined,
+  standardHeaders: true,
+  legacyHeaders:   false,
+  skip: (req) => isLocalRequest(req),
+  message: {
+    success: false,
+    message: "Too many login attempts. Please try again in 15 minutes.",
+  },
+});
+
+// ── Strict OTP specific limiter ──────────────────────────
+export const otpRateLimiter = rateLimit({
+  windowMs: 5 * 60 * 1000,           // 5 minutes
+  max:      isProd ? 3 : 999999,            // 3 attempts per 5 minutes
+  keyGenerator: getClientIp,
+  store: isRedisReady() ? createRateLimitStore(5 * 60 * 1000) : undefined,
+  standardHeaders: true,
+  legacyHeaders:   false,
+  skip: (req) => isLocalRequest(req),
+  message: {
+    success: false,
+    message: "Too many OTP requests. Please try again in 5 minutes.",
   },
 });

@@ -88,3 +88,73 @@ export const buildCacheKey = (...parts) => parts
   .filter((part) => part !== undefined && part !== null && String(part).trim() !== "")
   .map((part) => String(part).trim().toLowerCase())
   .join(":");
+
+export const acquireLock = async (lockKey, ttlMs = 5000) => {
+  const lockValue = `${Date.now()}_${Math.random()}`;
+  if (!isRedisReady()) {
+    const now = Date.now();
+    const existing = localCache.get(lockKey);
+    if (existing && existing.expiry > now) {
+      return null;
+    }
+    localCache.set(lockKey, { value: lockValue, expiry: now + ttlMs });
+    return lockValue;
+  }
+
+  try {
+    const client = getRedisClient();
+    if (!client) return null;
+    const result = await client.set(lockKey, lockValue, { NX: true, PX: ttlMs });
+    return result === "OK" || result === true ? lockValue : null;
+  } catch (error) {
+    logger.warn("Redis acquireLock failed, falling back to local memory lock", { lockKey, error: error?.message || error });
+    const now = Date.now();
+    const existing = localCache.get(lockKey);
+    if (existing && existing.expiry > now) {
+      return null;
+    }
+    localCache.set(lockKey, { value: lockValue, expiry: now + ttlMs });
+    return lockValue;
+  }
+};
+
+export const releaseLock = async (lockKey, lockValue) => {
+  if (!lockValue) return;
+
+  if (!isRedisReady()) {
+    const existing = localCache.get(lockKey);
+    if (existing && existing.value === lockValue) {
+      localCache.delete(lockKey);
+    }
+    return;
+  }
+
+  try {
+    const client = getRedisClient();
+    if (!client) return;
+    const script = 'if redis.call("get", KEYS[1]) == ARGV[1] then return redis.call("del", KEYS[1]) else return 0 end';
+    await client.eval(script, {
+      keys: [lockKey],
+      arguments: [lockValue]
+    });
+  } catch (error) {
+    logger.warn("Redis releaseLock failed, cleaning up local memory lock if present", { lockKey, error: error?.message || error });
+    const existing = localCache.get(lockKey);
+    if (existing && existing.value === lockValue) {
+      localCache.delete(lockKey);
+    }
+  }
+};
+
+export const invalidateAllCaches = async () => {
+  logger.info("Triggering centralized cache invalidation");
+  await Promise.all([
+    cacheDel("hotels:*"),
+    cacheDel("hotel:*"),
+    cacheDel("rooms:*"),
+    cacheDel("rooms:available-count*"),
+    cacheDel("dashboard:stats:*"),
+    cacheDel("dashboard:stats")
+  ]);
+};
+

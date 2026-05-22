@@ -195,14 +195,20 @@ import Guest   from "../models/Guest.js";
 import Booking from "../models/Booking.js";
 import Manager from "../models/Manager.js";
 import connectAdminDB from "../config/adminDb.js";
-import { authLimiter } from "../middleware/rateLimiter.js";
+import { authLimiter, loginLimiter, otpRateLimiter } from "../middleware/rateLimiter.js";
 import logger  from "../utils/logger.js";
-import { sendPasswordResetEmail } from "../utils/emailService.js";
+import { sendPasswordResetEmail, sendOtpEmail } from "../utils/emailService.js";
+import { cacheGet, cacheSet, cacheDel } from "../cache/redisCache.js";
+import { getRedisClient, isRedisReady } from "../config/redis.js";
+import { enqueueEmailJob } from "../queues/emailQueue.js";
 
 import { OAuth2Client } from "google-auth-library";
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 const router = express.Router();
+
+// Local fallback for tracking user refresh tokens (if Redis is down)
+const localUserRefreshTokens = new Map();
 
 const getSecret  = () => {
   const s = process.env.JWT_SECRET;
@@ -351,11 +357,10 @@ router.post("/register", authLimiter, async (req, res, next) => {
       passwordHash,
       phone:        phone.trim(),
       city:         city?.trim() || "",
+      isVerified:   false
     });
 
     // ── Upsert Guest record (booking profile) ─────────
-    // If a guest record already exists from a previous booking, link it.
-    // Otherwise create a new one.
     let guest = await Guest.findOne({ email: normalEmail });
     if (!guest) {
       guest = await Guest.create({
@@ -370,27 +375,26 @@ router.post("/register", authLimiter, async (req, res, next) => {
     user.guestId = guest._id;
     await user.save();
 
-    const token = jwt.sign(
-      { id: user._id, guestId: guest._id, email: user.email, name: user.name, role: "customer" },
-      getSecret(),
-      { expiresIn: JWT_EXPIRES }
-    );
+    // ── Generate 6-digit OTP code ─────────────────────
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    await cacheSet(`otp_${normalEmail}`, otp, 300);
 
-    logger.info("Customer registered", { email: normalEmail });
+    const otpEmailPayload = { to: normalEmail, name: user.name, otp };
+    const queued = await enqueueEmailJob("otpEmail", otpEmailPayload);
+    if (!queued) {
+      await sendOtpEmail(otpEmailPayload).catch((err) => {
+        logger.error("Failed to send registration OTP email directly", { email: normalEmail, error: err.message });
+      });
+    }
+
+    logger.info("Customer registered (unverified)", { email: normalEmail });
 
     return res.status(201).json({
       success: true,
-      message: "Account created successfully.",
+      message: "Registration successful. A 6-digit verification code has been sent to your email.",
       data: {
-        id:    user._id,
-        name:  user.name,
         email: user.email,
-        phone: user.phone,
-        city:  user.city,
-        profileImage: user.profileImage,
-        coverImage:   user.coverImage,
-        paymentMethods: user.paymentMethods,
-        token,
+        isVerified: false,
       },
     });
   } catch (err) { next(err); }
@@ -492,7 +496,7 @@ router.post("/reset-password", authLimiter, async (req, res, next) => {
 });
 
 // ── POST /api/auth/login ──────────────────────────────────
-router.post("/login", authLimiter, async (req, res, next) => {
+router.post("/login", loginLimiter, async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
@@ -520,6 +524,27 @@ router.post("/login", authLimiter, async (req, res, next) => {
     if (!valid) {
       logger.warn("Failed customer login", { email: normalEmail, ip: req.ip });
       return res.status(401).json({ success: false, message: "Invalid credentials." });
+    }
+
+    // Check email verification status
+    if (!user.isVerified) {
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      await cacheSet(`otp_${normalEmail}`, otp, 300);
+
+      const otpEmailPayload = { to: normalEmail, name: user.name, otp };
+      const queued = await enqueueEmailJob("otpEmail", otpEmailPayload);
+      if (!queued) {
+        await sendOtpEmail(otpEmailPayload).catch((err) => {
+          logger.error("Failed to send login OTP email directly", { email: normalEmail, error: err.message });
+        });
+      }
+
+      return res.status(403).json({
+        success: false,
+        message: "Your email address is not verified. A verification code has been sent to your email.",
+        code: "UNVERIFIED_EMAIL",
+        email: normalEmail
+      });
     }
 
     // Update last login timestamp
@@ -554,13 +579,50 @@ router.post("/login", authLimiter, async (req, res, next) => {
       await user.save();
     }
 
-    const token = jwt.sign(
+    // Issue tokens
+    const accessToken = jwt.sign(
       { id: user._id, guestId: user.guestId?.toString() || user.guestId, email: user.email, name: user.name, role: "customer" },
       getSecret(),
-      { expiresIn: JWT_EXPIRES }
+      { expiresIn: "15m" }
     );
 
-    logger.info("Customer login", { email: normalEmail });
+    const refreshToken = jwt.sign(
+      { id: user._id, role: "customer" },
+      getSecret(),
+      { expiresIn: "7d" }
+    );
+
+    // Save refresh token in Redis session store
+    await cacheSet(`refresh_token:${refreshToken}`, { userId: user._id.toString(), role: "customer" }, 7 * 24 * 3600);
+
+    // Add to user's set of active refresh tokens (Redis or local fallback)
+    if (isRedisReady()) {
+      try {
+        const client = getRedisClient();
+        if (client) {
+          await client.sadd(`user_refresh_tokens:${user._id.toString()}`, refreshToken);
+        }
+      } catch (e) {
+        logger.warn("Failed to add refresh token to user set in Redis", { userId: user._id, error: e.message });
+      }
+    } else {
+      let set = localUserRefreshTokens.get(user._id.toString());
+      if (!set) {
+        set = new Set();
+        localUserRefreshTokens.set(user._id.toString(), set);
+      }
+      set.add(refreshToken);
+    }
+
+    // Set refresh token in secure HttpOnly cookie
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    });
+
+    logger.info("Customer login successful", { email: normalEmail });
 
     return res.status(200).json({
       success: true,
@@ -574,7 +636,8 @@ router.post("/login", authLimiter, async (req, res, next) => {
         profileImage: user.profileImage,
         coverImage:   user.coverImage,
         paymentMethods: user.paymentMethods,
-        token,
+        token: accessToken,
+        refreshToken
       },
     });
   } catch (err) { next(err); }
@@ -950,6 +1013,314 @@ router.get("/bookings", verifyCustomerToken, async (req, res, next) => {
       pages:   Math.ceil(total / limit),
       data,
     });
+  } catch (err) { next(err); }
+});
+
+// ── POST /api/auth/verify-otp ─────────────────────────────
+router.post("/verify-otp", otpRateLimiter, async (req, res, next) => {
+  try {
+    const { email, code } = req.body;
+    if (!email || !code) {
+      return res.status(400).json({ success: false, message: "Email and OTP code are required." });
+    }
+
+    const normalEmail = email.toLowerCase().trim();
+    const storedOtp = await cacheGet(`otp_${normalEmail}`);
+
+    if (!storedOtp || storedOtp !== code.trim()) {
+      return res.status(400).json({ success: false, message: "Invalid or expired verification code." });
+    }
+
+    // Set user as verified
+    const user = await User.findOne({ email: normalEmail });
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found." });
+    }
+
+    user.isVerified = true;
+    await user.save();
+
+    // Delete OTP
+    await cacheDel(`otp_${normalEmail}`);
+
+    // Generate tokens
+    const accessToken = jwt.sign(
+      { id: user._id, guestId: user.guestId?.toString() || user.guestId, email: user.email, name: user.name, role: "customer" },
+      getSecret(),
+      { expiresIn: "15m" }
+    );
+
+    const refreshToken = jwt.sign(
+      { id: user._id, role: "customer" },
+      getSecret(),
+      { expiresIn: "7d" }
+    );
+
+    // Save refresh token in Redis session store
+    await cacheSet(`refresh_token:${refreshToken}`, { userId: user._id.toString(), role: "customer" }, 7 * 24 * 3600);
+
+    // Add to user's set of active refresh tokens (Redis or local fallback)
+    if (isRedisReady()) {
+      try {
+        const client = getRedisClient();
+        if (client) {
+          await client.sadd(`user_refresh_tokens:${user._id.toString()}`, refreshToken);
+        }
+      } catch (e) {
+        logger.warn("Failed to add refresh token to user set in Redis on verification", { userId: user._id, error: e.message });
+      }
+    } else {
+      let set = localUserRefreshTokens.get(user._id.toString());
+      if (!set) {
+        set = new Set();
+        localUserRefreshTokens.set(user._id.toString(), set);
+      }
+      set.add(refreshToken);
+    }
+
+    // Set refresh token cookie
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    });
+
+    logger.info("Email verified successfully", { email: normalEmail });
+
+    return res.status(200).json({
+      success: true,
+      message: "Email verified successfully.",
+      data: {
+        id:    user._id,
+        name:  user.name,
+        email: user.email,
+        phone: user.phone,
+        city:  user.city,
+        profileImage: user.profileImage,
+        coverImage:   user.coverImage,
+        paymentMethods: user.paymentMethods,
+        token: accessToken,
+        refreshToken
+      },
+    });
+  } catch (err) { next(err); }
+});
+
+// ── POST /api/auth/resend-otp ─────────────────────────────
+router.post("/resend-otp", otpRateLimiter, async (req, res, next) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ success: false, message: "Email is required." });
+    }
+
+    const normalEmail = email.toLowerCase().trim();
+
+    // Check cooldown
+    const cooldown = await cacheGet(`cooldown_${normalEmail}`);
+    if (cooldown) {
+      return res.status(429).json({
+        success: false,
+        message: "Please wait 1 minute before requesting another verification code."
+      });
+    }
+
+    const user = await User.findOne({ email: normalEmail });
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found." });
+    }
+
+    if (user.isVerified) {
+      return res.status(400).json({ success: false, message: "Email is already verified." });
+    }
+
+    // Generate new OTP and set cooldown
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    await cacheSet(`otp_${normalEmail}`, otp, 300);
+    await cacheSet(`cooldown_${normalEmail}`, "true", 60);
+
+    const otpEmailPayload = { to: normalEmail, name: user.name, otp };
+    const queued = await enqueueEmailJob("otpEmail", otpEmailPayload);
+    if (!queued) {
+      await sendOtpEmail(otpEmailPayload).catch((err) => {
+        logger.error("Failed to resend OTP email directly", { email: normalEmail, error: err.message });
+      });
+    }
+
+    logger.info("Verification code resent", { email: normalEmail });
+
+    return res.status(200).json({
+      success: true,
+      message: "A new verification code has been sent to your email."
+    });
+  } catch (err) { next(err); }
+});
+
+// ── POST /api/auth/refresh-token ──────────────────────────
+router.post("/refresh-token", async (req, res, next) => {
+  try {
+    let token = req.cookies?.refreshToken || req.body?.refreshToken;
+    if (!token) {
+      return res.status(401).json({ success: false, message: "Refresh token is required." });
+    }
+
+    let payload;
+    try {
+      payload = jwt.verify(token, getSecret());
+    } catch (e) {
+      return res.status(401).json({ success: false, message: "Invalid or expired refresh token." });
+    }
+
+    // Check if the refresh token exists in Redis/session storage
+    const sessionData = await cacheGet(`refresh_token:${token}`);
+    if (!sessionData) {
+      return res.status(401).json({ success: false, message: "Session expired or refresh token revoked." });
+    }
+
+    const userId = sessionData.userId;
+    const user = await User.findById(userId);
+    if (!user || !user.isActive) {
+      return res.status(401).json({ success: false, message: "User not found or account is deactivated." });
+    }
+
+    // Rotate: Issue new access token and new refresh token
+    const newAccessToken = jwt.sign(
+      { id: user._id, guestId: user.guestId?.toString() || user.guestId, email: user.email, name: user.name, role: user.role || "customer" },
+      getSecret(),
+      { expiresIn: "15m" }
+    );
+
+    const newRefreshToken = jwt.sign(
+      { id: user._id, role: user.role || "customer" },
+      getSecret(),
+      { expiresIn: "7d" }
+    );
+
+    // Delete old refresh token from Redis
+    await cacheDel(`refresh_token:${token}`);
+
+    // Save new refresh token in Redis
+    await cacheSet(`refresh_token:${newRefreshToken}`, { userId: user._id.toString(), role: user.role || "customer" }, 7 * 24 * 3600);
+
+    // Update the set of active refresh tokens for this user
+    if (isRedisReady()) {
+      try {
+        const client = getRedisClient();
+        if (client) {
+          await client.srem(`user_refresh_tokens:${user._id.toString()}`, token);
+          await client.sadd(`user_refresh_tokens:${user._id.toString()}`, newRefreshToken);
+        }
+      } catch (e) {
+        logger.warn("Failed to update refresh token set in Redis during rotation", { userId: user._id, error: e.message });
+      }
+    } else {
+      let set = localUserRefreshTokens.get(user._id.toString());
+      if (set) {
+        set.delete(token);
+        set.add(newRefreshToken);
+      }
+    }
+
+    // Set new refresh token cookie
+    res.cookie("refreshToken", newRefreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        token: newAccessToken,
+        refreshToken: newRefreshToken
+      }
+    });
+  } catch (err) { next(err); }
+});
+
+// ── POST /api/auth/logout ─────────────────────────────────
+router.post("/logout", async (req, res, next) => {
+  try {
+    const token = req.cookies?.refreshToken || req.body?.refreshToken;
+    if (token) {
+      // Invalidate in Redis
+      await cacheDel(`refresh_token:${token}`);
+
+      // Verify and remove from user set (best-effort)
+      try {
+        const payload = jwt.verify(token, getSecret());
+        const userId = payload.id;
+        if (userId) {
+          if (isRedisReady()) {
+            const client = getRedisClient();
+            if (client) {
+              await client.srem(`user_refresh_tokens:${userId.toString()}`, token);
+            }
+          } else {
+            const set = localUserRefreshTokens.get(userId.toString());
+            if (set) {
+              set.delete(token);
+            }
+          }
+        }
+      } catch (e) {}
+    }
+
+    // Clear cookie
+    res.clearCookie("refreshToken", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict"
+    });
+
+    return res.status(200).json({ success: true, message: "Logged out successfully." });
+  } catch (err) { next(err); }
+});
+
+// ── POST /api/auth/logout-all ─────────────────────────────
+router.post("/logout-all", verifyCustomerToken, async (req, res, next) => {
+  try {
+    const userId = req.customer.id;
+    if (!userId) {
+      return res.status(401).json({ success: false, message: "Authentication required." });
+    }
+
+    // Invalidate all active refresh tokens for the user in Redis/local fallback
+    if (isRedisReady()) {
+      try {
+        const client = getRedisClient();
+        if (client) {
+          const userTokensKey = `user_refresh_tokens:${userId.toString()}`;
+          const tokens = await client.smembers(userTokensKey);
+          if (tokens && tokens.length > 0) {
+            const deleteKeys = tokens.map(token => `refresh_token:${token}`);
+            await client.del(...deleteKeys);
+          }
+          await client.del(userTokensKey);
+        }
+      } catch (e) {
+        logger.warn("Failed to delete all refresh tokens in Redis for user logout-all", { userId, error: e.message });
+      }
+    } else {
+      const set = localUserRefreshTokens.get(userId.toString());
+      if (set) {
+        for (const token of set) {
+          await cacheDel(`refresh_token:${token}`);
+        }
+        localUserRefreshTokens.delete(userId.toString());
+      }
+    }
+
+    // Clear cookie
+    res.clearCookie("refreshToken", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict"
+    });
+
+    return res.status(200).json({ success: true, message: "Logged out from all devices successfully." });
   } catch (err) { next(err); }
 });
 

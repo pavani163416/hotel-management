@@ -13,7 +13,7 @@ type AuthModalProps = {
 
 export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModalProps) {
   const { setUser } = useBooking();
-  const [mode, setMode]         = useState<"signin" | "signup" | "phone">(defaultMode);
+  const [mode, setMode]         = useState<"signin" | "signup" | "phone" | "verify_email_otp">(defaultMode);
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState("");
   const [email, setEmail]       = useState("");
@@ -24,12 +24,25 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
   const [otpSent, setOtpSent] = useState(false);
   const [verificationCode, setVerificationCode] = useState("");
   const [otpMessage, setOtpMessage] = useState("");
+  const [resendCooldown, setResendCooldown] = useState(0);
+
+  useEffect(() => {
+    let timer: any;
+    if (resendCooldown > 0) {
+      timer = setInterval(() => {
+        setResendCooldown((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [resendCooldown]);
 
   useEffect(() => { if (isOpen) { setMode(defaultMode); setError(""); } }, [isOpen, defaultMode]);
 
   const resetForm = () => {
     setEmail(""); setPassword(""); setName(""); setPhone(""); setCity(""); setError("");
-    setOtpSent(false); setVerificationCode(""); setOtpMessage("");
+    setOtpSent(false); setVerificationCode(""); setOtpMessage(""); setResendCooldown(0);
   };
 
   const handleOpenChange = (open: boolean) => { if (!open) { onClose(); resetForm(); } };
@@ -45,7 +58,13 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
       setUser({ name: d.name, email: d.email, phone: d.phone || "", city: d.city || "" });
       onClose(); resetForm();
     } catch (err: any) {
-      setError(err.message || "Sign in failed. Please try again.");
+      if (err.code === "UNVERIFIED_EMAIL") {
+        setMode("verify_email_otp");
+        setOtpMessage("Your email is not verified yet. We have sent a 6-digit verification code to " + email);
+        setError("");
+      } else {
+        setError(err.message || "Sign in failed. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
@@ -59,9 +78,14 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
     try {
       const res: any = await api.post("/auth/register", { name, email, password, phone, city });
       const d = res.data?.data ?? res.data;
-      localStorage.setItem("luxe_customer_token", d.token);
-      setUser({ name: d.name, email: d.email, phone: d.phone || "", city: d.city || "" });
-      onClose(); resetForm();
+      if (d.isVerified === false) {
+        setMode("verify_email_otp");
+        setOtpMessage("Registration successful! A 6-digit verification code has been sent to " + email);
+      } else {
+        localStorage.setItem("luxe_customer_token", d.token);
+        setUser({ name: d.name, email: d.email, phone: d.phone || "", city: d.city || "" });
+        onClose(); resetForm();
+      }
     } catch (err: any) {
       setError(err.message || "Registration failed. Please try again.");
     } finally {
@@ -106,6 +130,39 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
       finishAuth(res.data?.data ?? res.data);
     } catch (err: any) {
       setError(err.response?.data?.message || err.message || "OTP verification failed.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyEmailOTP = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!verificationCode?.trim()) {
+      setError("Please enter the verification code.");
+      return;
+    }
+    setError(""); setLoading(true);
+    try {
+      const res: any = await api.post("/auth/verify-otp", {
+        email: email.trim(),
+        code: verificationCode.trim(),
+      });
+      finishAuth(res.data?.data ?? res.data);
+    } catch (err: any) {
+      setError(err.message || "Verification failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResendEmailOTP = async () => {
+    setError(""); setLoading(true);
+    try {
+      await api.post("/auth/resend-otp", { email: email.trim() });
+      setOtpMessage("A new verification code has been sent to your email.");
+      setResendCooldown(60);
+    } catch (err: any) {
+      setError(err.message || "Resend failed. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -190,7 +247,7 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle className="font-display text-2xl font-bold">
-            {mode === "signin" ? "Welcome Back" : mode === "phone" ? "Continue with Phone" : "Create an Account"}
+            {mode === "signin" ? "Welcome Back" : mode === "phone" ? "Continue with Phone" : mode === "verify_email_otp" ? "Verify Your Email" : "Create an Account"}
           </DialogTitle>
         </DialogHeader>
 
@@ -266,7 +323,7 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
                 className="text-primary hover:underline font-semibold">Sign In</button>
             </p>
           </form>
-        ) : (
+        ) : mode === "phone" ? (
           <div className="space-y-4 mt-4">
             <div className="space-y-2">
               <label className="block text-sm font-medium">Phone Number</label>
@@ -295,6 +352,55 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
                 className="text-primary hover:underline font-semibold">Sign In</button>
             </p>
           </div>
+        ) : (
+          <form onSubmit={handleVerifyEmailOTP} className="space-y-4 mt-4">
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-center">Verification Code</label>
+              <input
+                type="text"
+                maxLength={6}
+                value={verificationCode}
+                onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, ""))}
+                className="w-full px-4 py-3 border border-border rounded-lg outline-none text-center text-2xl tracking-[0.5em] font-semibold focus:ring-2 focus:ring-primary focus:border-primary"
+                placeholder="000000"
+                autoComplete="one-time-code"
+                required
+              />
+            </div>
+            {otpMessage && (
+              <p className="text-sm text-muted-foreground bg-muted p-3 rounded-lg text-center leading-relaxed">
+                {otpMessage}
+              </p>
+            )}
+            {error && <p className="text-destructive text-sm font-medium text-center">{error}</p>}
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-3 rounded-xl font-semibold flex items-center justify-center transition-base mt-2"
+            >
+              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Verify Code"}
+            </button>
+            <div className="flex flex-col gap-2 items-center mt-4">
+              <button
+                type="button"
+                onClick={handleResendEmailOTP}
+                disabled={loading || resendCooldown > 0}
+                className="text-primary hover:underline text-sm font-semibold disabled:text-muted-foreground disabled:no-underline"
+              >
+                {resendCooldown > 0 ? `Resend Code in ${resendCooldown}s` : "Resend Verification Code"}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setMode("signin");
+                  resetForm();
+                }}
+                className="text-muted-foreground hover:text-foreground text-xs mt-2"
+              >
+                Back to Sign In
+              </button>
+            </div>
+          </form>
         )}
       </DialogContent>
     </Dialog>

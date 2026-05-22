@@ -18,6 +18,12 @@ import {
   syncRoomLegacyStatus,
   NON_BOOKABLE_STATUSES,
 } from "../services/roomAllocationService.js";
+import { acquireLock, releaseLock } from "../cache/redisCache.js";
+import { enqueueEmailJob } from "../queues/emailQueue.js";
+
+const nonCriticalCatch = (context, metadata) => (err) => {
+  logger.warn(`Non-critical error in ${context}`, { error: err.message, ...metadata });
+};
 
 const inferBackendRoomType = (name = "") => {
   const normalized = String(name).toLowerCase();
@@ -109,14 +115,30 @@ export const createBooking = async (req, res, next) => {
     } catch (e) {}
   }
 
+  const { roomId, roomNumber, roomTypeId } = req.body;
+  const targetRoomType = roomTypeId || roomId || roomNumber;
+  if (!targetRoomType) {
+    return res.status(400).json({
+      success: false,
+      message: "Room identifier is required"
+    });
+  }
+
+  const lockKey = `room_lock_${targetRoomType}`;
+  const lockValue = await acquireLock(lockKey, 10000);
+  if (!lockValue) {
+    return res.status(409).json({
+      success: false,
+      message: "Room is currently being booked by another user. Please try again in a few seconds.",
+      code: "ROOM_LOCK_ACQUIRE_FAILED",
+    });
+  }
+
   const session = await mongoose.startSession();
   session.startTransaction();
 
   try {
     const {
-      roomId,
-      roomNumber,
-      roomTypeId,
       guest: guestData,
       checkIn,
       checkOut,
@@ -452,6 +474,9 @@ export const createBooking = async (req, res, next) => {
     next(error);
   } finally {
     session.endSession();
+    if (lockKey && lockValue) {
+      await releaseLock(lockKey, lockValue);
+    }
   }
 };
 
@@ -478,6 +503,10 @@ function resolveHotelName(roomNumber = "") {
 // ─────────────────────────────────────────────────────────
 export const getAllBookings = async (req, res, next) => {
   try {
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: "Authentication required" });
+    }
+
     const { status, guestEmail } = req.query;
     const page  = Math.max(1, parseInt(req.query.page)  || 1);
     const limit = Math.min(500, parseInt(req.query.limit) || 20);
@@ -485,15 +514,45 @@ export const getAllBookings = async (req, res, next) => {
 
     const filter = {};
     if (status) filter.status = status;
-    if (guestEmail) {
-      const normalEmail = String(guestEmail).toLowerCase().trim();
-      const guest = await Guest.findOne({ email: normalEmail });
-      if (guest) {
-        filter.guest = guest._id;
-      } else {
-        // Fallback: search by guestSnapshot.email (covers cases where guest record differs)
-        filter["guestSnapshot.email"] = normalEmail;
+
+    if (req.user.role === "customer") {
+      const userEmail = req.user.email?.toLowerCase().trim();
+      const orConditions = [];
+      if (userEmail) {
+        orConditions.push({ "guestSnapshot.email": userEmail });
       }
+      if (req.user.guestId) {
+        orConditions.push({ guest: req.user.guestId });
+      }
+      if (orConditions.length > 0) {
+        filter.$or = orConditions;
+      } else {
+        return res.status(200).json({ success: true, count: 0, total: 0, page, pages: 0, data: [] });
+      }
+    } else if (req.user.role === "Manager") {
+      const managerHotelId = req.user.assignedHotelId;
+      const managerHotelObjId = req.user.hotelObjectId;
+      const orConditions = [];
+      if (managerHotelId) orConditions.push({ hotelStringId: managerHotelId });
+      if (managerHotelObjId) orConditions.push({ hotelId: managerHotelObjId });
+      
+      if (orConditions.length > 0) {
+        filter.$or = orConditions;
+      } else {
+        return res.status(200).json({ success: true, count: 0, total: 0, page, pages: 0, data: [] });
+      }
+    } else if (req.user.role === "admin" || req.user.role === "Super Admin" || req.user.role === "Controller") {
+      if (guestEmail) {
+        const normalEmail = String(guestEmail).toLowerCase().trim();
+        const guest = await Guest.findOne({ email: normalEmail });
+        if (guest) {
+          filter.guest = guest._id;
+        } else {
+          filter["guestSnapshot.email"] = normalEmail;
+        }
+      }
+    } else {
+      return res.status(403).json({ success: false, message: "Unauthorized role access." });
     }
 
     const [bookings, total] = await Promise.all([

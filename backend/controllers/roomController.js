@@ -1,15 +1,10 @@
 import Room from "../models/Room.js";
 import { getHotelMapOverview } from "../services/roomAllocationService.js";
-import { cacheGet, cacheSet, cacheDel, buildCacheKey } from "../cache/redisCache.js";
+import { cacheGet, cacheSet, cacheDel, buildCacheKey, invalidateAllCaches } from "../cache/redisCache.js";
 import { CACHE_TTL } from "../config/constants.js";
 
 const invalidateRoomCache = async () => {
-  await Promise.all([
-    cacheDel("rooms:*"),
-    cacheDel("hotel:*"),
-    cacheDel("hotels:*"),
-    cacheDel("rooms:available-count*")
-  ]);
+  await invalidateAllCaches();
 };
 
 // ─────────────────────────────────────────────────────────
@@ -90,6 +85,20 @@ export const createRoom = async (req, res, next) => {
   try {
     const { roomNumber, hotelStringId, hotelId, ...rest } = req.body;
 
+    if (req.user?.role === "Manager") {
+      const managerHotelId = req.user.assignedHotelId;
+      const managerHotelObjId = req.user.hotelObjectId;
+      const isAuthorized = 
+        (managerHotelId && hotelStringId === managerHotelId) ||
+        (managerHotelObjId && hotelId === String(managerHotelObjId));
+      if (!isAuthorized) {
+        return res.status(403).json({
+          success: false,
+          message: "Unauthorized: You do not have management rights for this hotel."
+        });
+      }
+    }
+
     const updateData = { ...rest };
     if (hotelStringId !== undefined) updateData.hotelStringId = hotelStringId;
     if (hotelId !== undefined)       updateData.hotelId       = hotelId;
@@ -162,6 +171,21 @@ export const getMapOverview = async (req, res, next) => {
     if (!hotelStringId && !hotelId) {
       return res.status(400).json({ success: false, message: "hotelStringId or hotelId required" });
     }
+
+    if (req.user?.role === "Manager") {
+      const managerHotelId = req.user.assignedHotelId;
+      const managerHotelObjId = req.user.hotelObjectId;
+      const isAuthorized = 
+        (managerHotelId && hotelStringId === managerHotelId) ||
+        (managerHotelObjId && hotelId === String(managerHotelObjId));
+      if (!isAuthorized) {
+        return res.status(403).json({
+          success: false,
+          message: "Unauthorized: You do not manage this hotel."
+        });
+      }
+    }
+
     const overview = await getHotelMapOverview({
       hotelStringId,
       hotelObjectId: hotelId,

@@ -27,6 +27,7 @@ import PriceRequests from "@/pages/PriceRequests";
 import Coupons       from "@/pages/Coupons";
 import TopDeals      from "@/pages/TopDeals";
 import Amenities     from "@/pages/Amenities";
+import Notifications from "@/pages/Notifications";
 
 // ── Manager pages (role === "Manager") ────────────────────
 import MDashboard     from "@/pages/manager/MDashboard";
@@ -88,6 +89,7 @@ export default function App() {
             <Route path="/top-deals" element={<TopDeals />} />
             <Route path="/amenities" element={<Amenities />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/notifications" element={<Notifications />} />
 
             <Route path="/m/dashboard" element={<MDashboard />} />
             <Route path="/m/hotel-map" element={<MFloorMap />} />

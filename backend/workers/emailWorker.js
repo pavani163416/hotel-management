@@ -1,6 +1,6 @@
 import IORedis from "ioredis";
 import { Worker } from "bullmq";
-import { sendBookingConfirmation, sendCancellationEmail, sendPasswordResetEmail } from "../utils/emailService.js";
+import { sendBookingConfirmation, sendCancellationEmail, sendPasswordResetEmail, sendOtpEmail } from "../utils/emailService.js";
 import logger from "../utils/logger.js";
 
 const REDIS_URL = process.env.REDIS_URL || process.env.REDIS_URI || process.env.REDISCLOUD_URL || "";
@@ -29,6 +29,8 @@ const worker = new Worker(
         return sendCancellationEmail(data);
       case "passwordReset":
         return sendPasswordResetEmail(data);
+      case "otpEmail":
+        return sendOtpEmail(data);
       default:
         throw new Error(`Unknown email job type: ${name}`);
     }

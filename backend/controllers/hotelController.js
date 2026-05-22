@@ -5,7 +5,7 @@ import { broadcastHotels } from "../routes/sseRoutes.js";
 import connectAdminDB from "../config/adminDb.js";
 import HotelSnapshotModel from "../models/admin/HotelSnapshot.js";
 import { deleteRoomSnapshotByNumber, syncRoomSnapshot } from "../services/syncService.js";
-import { cacheGet, cacheSet, cacheDel, buildCacheKey } from "../cache/redisCache.js";
+import { cacheGet, cacheSet, cacheDel, buildCacheKey, invalidateAllCaches } from "../cache/redisCache.js";
 import { CACHE_TTL } from "../config/constants.js";
 
 // Lazy-load HotelSnapshot bound to admin connection
@@ -42,12 +42,7 @@ const syncSnapshot = async (hotel, extra = {}) => {
 };
 
 const invalidateHotelCache = async () => {
-  await Promise.all([
-    cacheDel("hotels:*"),
-    cacheDel("hotel:*"),
-    cacheDel("rooms:*"),
-    cacheDel("rooms:available-count*")
-  ]);
+  await invalidateAllCaches();
 };
 
 // GET /api/hotels
@@ -67,6 +62,7 @@ export const getHotels = async (req, res, next) => {
       if (minPrice) filter.pricePerNight.$gte = Number(minPrice);
       if (maxPrice) filter.pricePerNight.$lte = Number(maxPrice);
     }
+    const hotels = await Hotel.find(filter);
     const hotelIds = hotels.map((hotel) => hotel.hotelId).filter(Boolean);
     let statsByHotel = {};
 

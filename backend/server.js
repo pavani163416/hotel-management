@@ -4,6 +4,7 @@ import cors             from "cors";
 import helmet           from "helmet";
 import morgan           from "morgan";
 import mongoSanitize    from "express-mongo-sanitize";
+import cookieParser     from "cookie-parser";
 import { createServer } from "http";
 import { Server as SocketIOServer } from "socket.io";
 import { createAdapter } from "@socket.io/redis-adapter";
@@ -130,6 +131,7 @@ import("./models/Hotel.js").then(async ({ default: Hotel }) => {
 
 const app = express();
 
+app.use(cookieParser());
 app.use(createSessionMiddleware());
 
 const isProd     = process.env.NODE_ENV === "production";

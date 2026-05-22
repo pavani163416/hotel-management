@@ -282,12 +282,12 @@ export default function Topbar({ searchPlaceholder }: Props) {
                   </button>
                 ))}
               </div>
-              <button onClick={() => { setShowNotifs(false); navigate("/bookings"); }}
+              <button onClick={() => { setShowNotifs(false); navigate("/notifications"); }}
                 className="w-full py-2.5 text-xs font-semibold text-gold transition-colors"
                 style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}
                 onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.04)"}
                 onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = "transparent"}>
-                View All Bookings →
+                View All Notifications →
               </button>
             </div>
           )}
