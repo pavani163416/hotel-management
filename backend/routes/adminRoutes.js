@@ -263,6 +263,7 @@ import bcrypt   from "bcryptjs";
 import { adminLogin, getAdminStats, getAdminAnalytics } from "../controllers/adminController.js";
 import { verifyAdminToken, requireAdmin } from "../middleware/adminAuth.js";
 import { authLimiter } from "../middleware/rateLimiter.js";
+import { validateLoginPayload } from "../middleware/authValidator.js";
 import AdminUser          from "../models/AdminUser.js";
 import Manager            from "../models/Manager.js";
 import Hotel              from "../models/Hotel.js";
@@ -277,7 +278,7 @@ import logger from "../utils/logger.js";
 const router = express.Router();
 
 // ── Public ────────────────────────────────────────────────
-router.post("/login", authLimiter, adminLogin);
+router.post("/login", authLimiter, validateLoginPayload, adminLogin);
 
 // ── Protected — all routes below require valid admin JWT ──
 const protect = [verifyAdminToken, requireAdmin];

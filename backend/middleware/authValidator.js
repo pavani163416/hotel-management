@@ -1,0 +1,66 @@
+const MAX_EMAIL_LENGTH = 254;
+const MAX_PASSWORD_LENGTH = 128;
+const MAX_NAME_LENGTH = 100;
+
+const validateStringInput = (value, maxLength, fieldName) => {
+  if (value === undefined || value === null) return `${fieldName} is required`;
+  if (typeof value !== "string") return `${fieldName} must be a valid string`;
+  if (value.length === 0) return `${fieldName} cannot be empty`;
+  if (value.length > maxLength) return `${fieldName} exceeds allowed size`;
+  return null;
+};
+
+// Validates standard email/password login payloads
+export const validateLoginPayload = (req, res, next) => {
+  const { email, password } = req.body;
+
+  const emailError = validateStringInput(email, MAX_EMAIL_LENGTH, "Email");
+  if (emailError) return res.status(400).json({ success: false, message: emailError });
+
+  const passwordError = validateStringInput(password, MAX_PASSWORD_LENGTH, "Password");
+  if (passwordError) return res.status(400).json({ success: false, message: passwordError });
+
+  next();
+};
+
+// Validates registration payloads
+export const validateRegisterPayload = (req, res, next) => {
+  const { name, email, password } = req.body;
+
+  const nameError = validateStringInput(name, MAX_NAME_LENGTH, "Name");
+  if (nameError) return res.status(400).json({ success: false, message: nameError });
+
+  const emailError = validateStringInput(email, MAX_EMAIL_LENGTH, "Email");
+  if (emailError) return res.status(400).json({ success: false, message: emailError });
+
+  const passwordError = validateStringInput(password, MAX_PASSWORD_LENGTH, "Password");
+  if (passwordError) return res.status(400).json({ success: false, message: passwordError });
+
+  next();
+};
+
+// Validates payloads that only require email (e.g. forgot password)
+export const validateEmailPayload = (req, res, next) => {
+  const { email } = req.body;
+
+  const emailError = validateStringInput(email, MAX_EMAIL_LENGTH, "Email");
+  if (emailError) return res.status(400).json({ success: false, message: emailError });
+
+  next();
+};
+
+// Validates password reset payloads (token + new password)
+export const validateResetPasswordPayload = (req, res, next) => {
+  const { email, token, password } = req.body;
+
+  const emailError = validateStringInput(email, MAX_EMAIL_LENGTH, "Email");
+  if (emailError) return res.status(400).json({ success: false, message: emailError });
+
+  const tokenError = validateStringInput(token, 256, "Token");
+  if (tokenError) return res.status(400).json({ success: false, message: tokenError });
+
+  const passwordError = validateStringInput(password, MAX_PASSWORD_LENGTH, "Password");
+  if (passwordError) return res.status(400).json({ success: false, message: passwordError });
+
+  next();
+};

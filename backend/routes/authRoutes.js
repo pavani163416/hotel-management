@@ -202,6 +202,12 @@ import { cacheGet, cacheSet, cacheDel } from "../cache/redisCache.js";
 import { getRedisClient, isRedisReady } from "../config/redis.js";
 import { enqueueEmailJob } from "../queues/emailQueue.js";
 import AuditLog from "../models/AuditLog.js";
+import { 
+  validateLoginPayload, 
+  validateRegisterPayload, 
+  validateEmailPayload, 
+  validateResetPasswordPayload 
+} from "../middleware/authValidator.js";
 
 import { OAuth2Client } from "google-auth-library";
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
@@ -321,7 +327,7 @@ export const verifyCustomerToken = (req, res, next) => {
 };
 
 // ── POST /api/auth/register ───────────────────────────────
-router.post("/register", authLimiter, async (req, res, next) => {
+router.post("/register", authLimiter, validateRegisterPayload, async (req, res, next) => {
   try {
     const { name, email, password, phone, city } = req.body;
 
@@ -402,7 +408,7 @@ router.post("/register", authLimiter, async (req, res, next) => {
 });
 
 // ── POST /api/auth/forgot-password ─────────────────────────
-router.post("/forgot-password", authLimiter, async (req, res, next) => {
+router.post("/forgot-password", authLimiter, validateEmailPayload, async (req, res, next) => {
   try {
     const email = (req.body.email || "").toLowerCase().trim();
     if (!email) {
@@ -453,7 +459,7 @@ router.post("/forgot-password", authLimiter, async (req, res, next) => {
 });
 
 // ── POST /api/auth/reset-password ────────────────────────
-router.post("/reset-password", authLimiter, async (req, res, next) => {
+router.post("/reset-password", authLimiter, validateResetPasswordPayload, async (req, res, next) => {
   try {
     const { email, token, password } = req.body;
     if (!email || !token || !password) {
@@ -497,7 +503,7 @@ router.post("/reset-password", authLimiter, async (req, res, next) => {
 });
 
 // ── POST /api/auth/login ──────────────────────────────────
-router.post("/login", loginLimiter, async (req, res, next) => {
+router.post("/login", loginLimiter, validateLoginPayload, async (req, res, next) => {
   try {
     const { email, password } = req.body;
 

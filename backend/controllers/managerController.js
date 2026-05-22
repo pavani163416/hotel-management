@@ -258,27 +258,7 @@ export const getManagerBookings = async (req, res, next) => {
       .populate("room",  "roomNumber type pricePerNight images")
       .populate("guest", "name email phone")
       .sort({ createdAt:-1 });
-
-    const bookingIds = bookings.map(b => b._id);
-    const AdditionalGuest = (await import("../models/AdditionalGuest.js")).default;
-    const additionalGuests = await AdditionalGuest.find({ bookingId: { $in: bookingIds } });
-    
-    const additionalGuestsMap = {};
-    additionalGuests.forEach(ag => {
-      additionalGuestsMap[ag.bookingId.toString()] = ag;
-    });
-
-    const data = bookings.map(b => {
-      const bJson = b.toJSON();
-      const agRecord = additionalGuestsMap[b._id.toString()];
-      return { 
-        ...bJson, 
-        hotelName: b.hotelName || req.scopedHotelName || "LuxeStay",
-        additionalAdults: agRecord?.adults?.length ? agRecord.adults : (bJson.additionalAdults || []),
-        additionalChildren: agRecord?.children?.length ? agRecord.children : (bJson.additionalChildren || []),
-      };
-    });
-    
+    const data = bookings.map(b => ({ ...b.toJSON(), hotelName: b.hotelName || req.scopedHotelName || "LuxeStay" }));
     res.status(200).json({ success:true, count:data.length, data });
   } catch (err) { next(err); }
 };

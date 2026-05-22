@@ -309,6 +309,7 @@ import {
 } from "../controllers/managerController.js";
 import { verifyManagerToken, isAssignedManager, scopeToHotel } from "../middleware/managerAuth.js";
 import { authLimiter } from "../middleware/rateLimiter.js";
+import { validateLoginPayload } from "../middleware/authValidator.js";
 import Room    from "../models/Room.js";
 import Booking from "../models/Booking.js";
 
@@ -330,7 +331,7 @@ const roomBelongsToHotel = (room, manager) => {
 const router = express.Router();
 
 // ── Public ────────────────────────────────────────────────
-router.post("/login", authLimiter, managerLogin);
+router.post("/login", authLimiter, validateLoginPayload, managerLogin);
 
 // ── Protected middleware chain ────────────────────────────
 const protect = [verifyManagerToken, scopeToHotel];
