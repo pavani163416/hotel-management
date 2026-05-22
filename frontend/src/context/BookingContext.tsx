@@ -85,8 +85,9 @@ export type Adult = {
   email: string;
   phone: string;
   specialRequests?: string;
+  id: string;
 };
-export type Child = { name: string; age: string };
+export type Child = { name: string; age: string; id: string };
 
 export type GuestDetails = {
   name: string;

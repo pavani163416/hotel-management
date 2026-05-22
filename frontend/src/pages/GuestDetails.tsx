@@ -59,7 +59,7 @@ const GuestDetails = () => {
           <div className="space-y-5">
             <div className="flex items-center justify-between pb-3 border-b border-border">
               <h2 className="font-semibold text-primary">Additional Adults</h2>
-              <button type="button" onClick={() => appendAdult({ name: "", email: "", phone: "", specialRequests: "" })}
+              <button type="button" onClick={() => appendAdult({ name: "", email: "", phone: "", specialRequests: "", id: "" })}
                 className="text-sm font-semibold text-primary hover:text-primary/80 flex items-center gap-1 transition-base">
                 <Plus className="w-4 h-4" /> Add Adult
               </button>
@@ -73,10 +73,16 @@ const GuestDetails = () => {
                   </button>
                   <h3 className="font-medium text-sm text-muted-foreground uppercase tracking-wider mb-4">Adult {index + 1}</h3>
                   <div className="space-y-5">
-                    <Field label="Full Name" error={errors.adults?.[index]?.name?.message}>
-                      <input {...register(`adults.${index}.name`, { required: "Name is required" })} placeholder="Full Name"
-                        className="w-full px-4 py-2.5 border border-border rounded-lg outline-none focus:ring-2 focus:ring-primary focus:border-primary text-sm" />
-                    </Field>
+                    <div className="grid sm:grid-cols-2 gap-5">
+                      <Field label="Full Name" error={errors.adults?.[index]?.name?.message}>
+                        <input {...register(`adults.${index}.name`, { required: "Name is required" })} placeholder="Full Name"
+                          className="w-full px-4 py-2.5 border border-border rounded-lg outline-none focus:ring-2 focus:ring-primary focus:border-primary text-sm" />
+                      </Field>
+                      <Field label="Aadhaar Number (Govt ID)" error={errors.adults?.[index]?.id?.message}>
+                        <input {...register(`adults.${index}.id`, { required: "Aadhaar number is required", pattern: { value: /^\d{12}$/, message: "Must be a 12-digit number" } })} placeholder="12-digit Aadhaar number"
+                          className="w-full px-4 py-2.5 border border-border rounded-lg outline-none focus:ring-2 focus:ring-primary focus:border-primary text-sm" />
+                      </Field>
+                    </div>
                     <div className="grid sm:grid-cols-2 gap-5">
                       <Field label="Email Address" error={errors.adults?.[index]?.email?.message}>
                         <input type="email" {...register(`adults.${index}.email`, { required: "Please enter a valid email", pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: "Please enter a valid email" } })}
@@ -102,30 +108,33 @@ const GuestDetails = () => {
           <div className="space-y-5">
             <div className="flex items-center justify-between pb-3 border-b border-border">
               <h2 className="font-semibold text-primary">Children</h2>
-              <button type="button" onClick={() => appendChild({ name: "", age: "" })}
+              <button type="button" onClick={() => appendChild({ name: "", age: "", id: "" })}
                 className="text-sm font-semibold text-primary hover:text-primary/80 flex items-center gap-1 transition-base">
                 <Plus className="w-4 h-4" /> Add Child
               </button>
             </div>
             <div className="space-y-4">
               {childFields.map((field, index) => (
-                <div key={field.id} className="flex gap-4 items-start">
-                  <div className="flex-[2]">
-                    <Field label={`Child ${index + 1} Full Name`} error={errors.children?.[index]?.name?.message}>
+                <div key={field.id} className="relative p-5 border border-border rounded-xl bg-card/50">
+                  <button type="button" onClick={() => removeChild(index)}
+                    className="absolute top-4 right-4 p-2 text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-lg transition-base" aria-label="Remove child">
+                    <Trash2 className="w-5 h-5" />
+                  </button>
+                  <h3 className="font-medium text-sm text-muted-foreground uppercase tracking-wider mb-4">Child {index + 1}</h3>
+                  <div className="grid sm:grid-cols-[2fr_1fr_2fr] gap-5">
+                    <Field label="Full Name" error={errors.children?.[index]?.name?.message}>
                       <input {...register(`children.${index}.name`, { required: "Name is required" })} placeholder="Full Name"
                         className="w-full px-4 py-2.5 border border-border rounded-lg outline-none focus:ring-2 focus:ring-primary focus:border-primary text-sm" />
                     </Field>
-                  </div>
-                  <div className="flex-1">
                     <Field label="Age" error={errors.children?.[index]?.age?.message}>
                       <input type="number" {...register(`children.${index}.age`, { required: "Required", min: 0, max: 17 })} placeholder="e.g. 5"
                         className="w-full px-4 py-2.5 border border-border rounded-lg outline-none focus:ring-2 focus:ring-primary focus:border-primary text-sm" />
                     </Field>
+                    <Field label="Aadhaar Number (Govt ID)" error={errors.children?.[index]?.id?.message}>
+                      <input {...register(`children.${index}.id`, { required: "Aadhaar is required", pattern: { value: /^\d{12}$/, message: "Must be a 12-digit number" } })} placeholder="12-digit Aadhaar"
+                        className="w-full px-4 py-2.5 border border-border rounded-lg outline-none focus:ring-2 focus:ring-primary focus:border-primary text-sm" />
+                    </Field>
                   </div>
-                  <button type="button" onClick={() => removeChild(index)}
-                    className="mt-7 p-2.5 text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-lg transition-base" aria-label="Remove child">
-                    <Trash2 className="w-5 h-5" />
-                  </button>
                 </div>
               ))}
               {childFields.length === 0 && <p className="text-sm text-muted-foreground italic">No children.</p>}

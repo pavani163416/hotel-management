@@ -14,9 +14,9 @@ import { useSocket } from "@/hooks/useSocket";
 type Booking = {
   _id: string;
   bookingRef?: string;
-  guestSnapshot: { name: string; email: string; phone?: string };
-  additionalAdults?: { name: string; email?: string; phone?: string }[];
-  additionalChildren?: { name: string; age?: number }[];
+  guestSnapshot: { name: string; email: string; phone?: string; id?: string };
+  additionalAdults?: { name: string; email?: string; phone?: string; id?: string }[];
+  additionalChildren?: { name: string; age?: number; id?: string }[];
   room?: { type?: string; roomNumber?: string };
   checkIn: string;
   checkOut: string;
@@ -35,6 +35,13 @@ const ROOM_TYPES  = ["All", "Standard", "Deluxe", "Suite", "Penthouse", "Villa"]
 
 const DAYS_SHORT = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
 const MONTHS_FULL = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+
+const formatAadhaar = (aadhaar?: string) => {
+  if (!aadhaar) return "";
+  const cleaned = aadhaar.replace(/\s/g, "");
+  if (cleaned.length < 4) return cleaned;
+  return `**** **** ${cleaned.slice(-4)}`;
+};
 
 export default function Bookings() {
   const [bookings, setBookings]   = useState<Booking[]>([]);
@@ -318,7 +325,10 @@ export default function Bookings() {
                           </div>
                           <div>
                             <p className="text-sm font-medium text-bright">{a.name}</p>
-                            {a.email && <p className="text-xs text-dim">{a.email}</p>}
+                            <p className="text-xs text-dim">
+                              {a.email || "—"}
+                              {a.id && ` · Govt ID: ${formatAadhaar(a.id)}`}
+                            </p>
                           </div>
                         </div>
                       ))}
@@ -332,13 +342,21 @@ export default function Bookings() {
                     <h3 className="text-xs font-semibold text-dim uppercase tracking-wider mb-3">
                       Children ({selected.additionalChildren.length})
                     </h3>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="space-y-2">
                       {selected.additionalChildren.map((c, i) => (
-                        <div key={i} className="flex items-center gap-2 rounded-xl px-3 py-2"
+                        <div key={i} className="rounded-xl p-3 flex items-center gap-3"
                           style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
-                          <Baby className="w-3.5 h-3.5 text-gold" />
-                          <span className="text-sm text-bright">{c.name}</span>
-                          {c.age && <span className="text-xs text-dim">Age {c.age}</span>}
+                          <div className="w-7 h-7 rounded-lg grid place-items-center shrink-0"
+                            style={{ background: "rgba(212,168,67,0.15)" }}>
+                            <Baby className="w-3.5 h-3.5 text-gold" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-bright">{c.name}</p>
+                            <p className="text-xs text-dim">
+                              Age {c.age ?? "—"}
+                              {c.id && ` · Govt ID: ${formatAadhaar(c.id)}`}
+                            </p>
+                          </div>
                         </div>
                       ))}
                     </div>

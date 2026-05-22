@@ -100,7 +100,7 @@ const Payment = () => {
           roomNumber:     selectedRoom.id,
           hotelId:        selectedHotel.id,
           guestCount:     search.guests,
-          guest:          { name: guest.name, email: user?.email || guest.email, phone: guest.phone, city: "" },
+          guest:          { name: guest.name, email: user?.email || guest.email, phone: guest.phone, city: "", id: govtId },
           checkIn:        search.checkIn,
           checkOut:       search.checkOut,
           pricePerNight:  selectedRoom.price,
@@ -112,7 +112,7 @@ const Payment = () => {
           paymentMethod:  method,
           specialRequests: guest.specialRequests || "",
           additionalAdults:   guest.adults || [],
-          additionalChildren: guest.children?.map((c) => ({ name: c.name, age: c.age })) || [],
+          additionalChildren: guest.children?.map((c) => ({ name: c.name, age: Number(c.age), id: c.id })) || [],
           hotelName:      selectedHotel.name,
         });
         mongoBookingId = response.data._id;

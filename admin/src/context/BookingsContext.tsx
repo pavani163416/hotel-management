@@ -13,7 +13,7 @@ export type Payment = {
 
 export type Booking = {
   id: string;
-  guestSnapshot: { name: string; email: string };
+  guestSnapshot: { name: string; email: string; id?: string };
   room: { type: string; roomNumber: string };
   checkIn: string;
   checkOut: string;
@@ -91,6 +91,7 @@ function mapBackend(b: any): Booking {
     guestSnapshot: {
       name:  b.guestSnapshot?.name  || b.guest?.name  || "Guest",
       email: b.guestSnapshot?.email || b.guest?.email || "",
+      id:    b.guestSnapshot?.id    || b.guest?.id    || "",
     },
     room: {
       type:       b.room?.type       || b.roomType || "Room",

@@ -39,6 +39,13 @@ function resolveHotelName(roomNumber: string): string {
   return legacyMap[legacyPrefix] || "";
 }
 
+const formatAadhaar = (aadhaar?: string) => {
+  if (!aadhaar) return "—";
+  const cleaned = aadhaar.replace(/\s/g, "");
+  if (cleaned.length < 4) return cleaned;
+  return `**** **** ${cleaned.slice(-4)}`;
+};
+
 export default function Bookings() {
   const navigate = useNavigate();
   // Use BookingsContext as single source of truth — it handles fetching,
@@ -238,7 +245,7 @@ export default function Bookings() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-border">
-                  {["Booking ID", "Guest", "Property", "Room Type", "Stay Dates", "Booked At", "Total", "Status", "Action"].map((h) => (
+                  {["Booking ID", "Guest", "Govt ID Number", "Property", "Room Type", "Stay Dates", "Booked At", "Total", "Status", "Action"].map((h) => (
                     <th key={h} className="text-left text-xs font-semibold text-muted uppercase tracking-wider px-5 py-3">{h}</th>
                   ))}
                 </tr>
@@ -248,7 +255,7 @@ export default function Bookings() {
                   // Loading skeleton rows
                   [...Array(5)].map((_, i) => (
                     <tr key={i} className="border-b border-border">
-                      {[...Array(9)].map((_, j) => (
+                      {[...Array(10)].map((_, j) => (
                         <td key={j} className="px-5 py-4">
                           <div className="h-4 bg-surface-3 rounded animate-pulse" style={{ width: j === 0 ? "80%" : j === 1 ? "60%" : "70%" }} />
                         </td>
@@ -257,7 +264,7 @@ export default function Bookings() {
                   ))
                 ) : paginated.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="px-5 py-12 text-center text-muted text-sm">
+                    <td colSpan={10} className="px-5 py-12 text-center text-muted text-sm">
                       No bookings found. Try adjusting your filters.
                     </td>
                   </tr>
@@ -274,6 +281,9 @@ export default function Bookings() {
                           <p className="text-xs text-muted">{b.guestSnapshot.email}</p>
                         </div>
                       </div>
+                    </td>
+                    <td className="px-5 py-4 text-sm font-medium text-text-secondary">
+                      {formatAadhaar(b.guestSnapshot.id)}
                     </td>
                     <td className="px-5 py-4 text-sm text-text-secondary">{b.property}</td>
                     <td className="px-5 py-4 text-sm text-text-secondary">{b.room.type}</td>
@@ -396,7 +406,10 @@ export default function Bookings() {
                       </div>
                       <div>
                         <p className="text-sm font-semibold text-text-primary">{a.name}</p>
-                        <p className="text-xs text-muted">{a.email || "—"} · {a.phone || "—"}</p>
+                        <p className="text-xs text-muted">
+                          {a.email || "—"} · {a.phone || "—"}
+                          {a.id && ` · Govt ID: ${formatAadhaar(a.id)}`}
+                        </p>
                         {a.specialRequests && <p className="text-xs text-muted italic mt-0.5">"{a.specialRequests}"</p>}
                       </div>
                     </div>
@@ -410,11 +423,20 @@ export default function Bookings() {
                 <p className="text-xs font-semibold text-muted uppercase tracking-wider mb-2 flex items-center gap-1.5">
                   <Baby className="w-3.5 h-3.5" /> Children ({detailFull.additionalChildren.length})
                 </p>
-                <div className="flex flex-wrap gap-2">
+                <div className="space-y-2">
                   {detailFull.additionalChildren.map((c: any, i: number) => (
-                    <span key={i} className="text-xs bg-warning-light text-warning font-semibold px-3 py-1.5 rounded-full">
-                      {c.name} · Age {c.age ?? "—"}
-                    </span>
+                    <div key={i} className="flex items-center gap-3 bg-surface-2 rounded-lg px-3 py-2.5">
+                      <div className="w-8 h-8 rounded-full bg-warning-light grid place-items-center shrink-0">
+                        <span className="text-warning text-xs font-bold">{c.name?.charAt(0) || "C"}</span>
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-text-primary">{c.name}</p>
+                        <p className="text-xs text-muted">
+                          Age: {c.age ?? "—"}
+                          {c.id && ` · Govt ID: ${formatAadhaar(c.id)}`}
+                        </p>
+                      </div>
+                    </div>
                   ))}
                 </div>
               </div>

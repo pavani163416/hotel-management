@@ -55,6 +55,7 @@ export interface CreateBookingPayload {
     email: string;
     phone: string;
     city?: string;
+    id?: string;
   };
   checkIn: string;
   checkOut: string;
@@ -67,8 +68,8 @@ export interface CreateBookingPayload {
   promoCode?: string;
   paymentMethod: "card" | "upi" | "netbanking";
   specialRequests?: string;
-  additionalAdults?: { name: string; email: string; phone: string; specialRequests?: string }[];
-  additionalChildren?: { name: string; age: string }[];
+  additionalAdults?: { name: string; email: string; phone: string; specialRequests?: string; id: string }[];
+  additionalChildren?: { name: string; age: number; id: string }[];
 }
 
 export interface BookingResponse {
