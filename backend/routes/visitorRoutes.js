@@ -60,12 +60,15 @@
  */
 import express from "express";
 import { trackVisitor, updateVisitor, convertVisitor, getVisitors } from "../controllers/visitorController.js";
+import { protect, authorizeRoles } from "../middleware/auth.js";
 
 const router = express.Router();
 
 router.post("/track",    trackVisitor);   // user panel → track page visit
 router.patch("/convert", convertVisitor); // user panel → mark session as Converted
 router.patch("/:id",     updateVisitor);  // user panel → update duration on leave
-router.get("/",          getVisitors);    // admin panel → read all visitors
+
+// Restrict read access to admins
+router.get("/", protect, authorizeRoles("admin", "Super Admin", "Controller"), getVisitors);
 
 export default router;

@@ -201,6 +201,7 @@ import { sendPasswordResetEmail, sendOtpEmail } from "../utils/emailService.js";
 import { cacheGet, cacheSet, cacheDel } from "../cache/redisCache.js";
 import { getRedisClient, isRedisReady } from "../config/redis.js";
 import { enqueueEmailJob } from "../queues/emailQueue.js";
+import AuditLog from "../models/AuditLog.js";
 
 import { OAuth2Client } from "google-auth-library";
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
@@ -579,9 +580,33 @@ router.post("/login", loginLimiter, async (req, res, next) => {
       await user.save();
     }
 
+    // ── Generate Fingerprint & Audit ───────────────
+    const ip = req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || req.socket.remoteAddress || "127.0.0.1";
+    const deviceFingerprint = req.headers["user-agent"] || "unknown";
+    const jti = crypto.randomUUID();
+
+    AuditLog.create({
+      event: "LoginSuccess",
+      userId: user._id,
+      userEmail: user.email,
+      role: "customer",
+      ipAddress: ip,
+      deviceFingerprint,
+      description: "Customer local login successful",
+    }).catch(err => logger.error("AuditLog error:", err));
+
     // Issue tokens
     const accessToken = jwt.sign(
-      { id: user._id, guestId: user.guestId?.toString() || user.guestId, email: user.email, name: user.name, role: "customer" },
+      { 
+        id: user._id, 
+        guestId: user.guestId?.toString() || user.guestId, 
+        email: user.email, 
+        name: user.name, 
+        role: "customer",
+        jti,
+        ip,
+        deviceFingerprint
+      },
       getSecret(),
       { expiresIn: "15m" }
     );
@@ -1251,7 +1276,7 @@ router.post("/logout", async (req, res, next) => {
       // Verify and remove from user set (best-effort)
       try {
         const payload = jwt.verify(token, getSecret());
-        const userId = payload.id;
+        userId = payload.id;
         if (userId) {
           if (isRedisReady()) {
             const client = getRedisClient();
@@ -1263,6 +1288,22 @@ router.post("/logout", async (req, res, next) => {
             if (set) {
               set.delete(token);
             }
+          }
+        }
+      } catch (e) {}
+    }
+
+    // ── Access Token Blacklist ───────────────
+    const authHeader = req.headers.authorization;
+    if (authHeader?.startsWith("Bearer ")) {
+      const accessToken = authHeader.split(" ")[1];
+      try {
+        const decoded = jwt.decode(accessToken);
+        if (decoded && decoded.jti && isRedisReady()) {
+          const client = getRedisClient();
+          const exp = decoded.exp ? decoded.exp - Math.floor(Date.now() / 1000) : 900;
+          if (exp > 0) {
+            await client.set(`blacklist:${decoded.jti}`, "true", "EX", exp);
           }
         }
       } catch (e) {}
@@ -1312,6 +1353,30 @@ router.post("/logout-all", verifyCustomerToken, async (req, res, next) => {
         localUserRefreshTokens.delete(userId.toString());
       }
     }
+
+    // ── Access Token Blacklist ───────────────
+    const authHeader = req.headers.authorization;
+    if (authHeader?.startsWith("Bearer ")) {
+      const accessToken = authHeader.split(" ")[1];
+      try {
+        const decoded = jwt.decode(accessToken);
+        if (decoded && decoded.jti && isRedisReady()) {
+          const client = getRedisClient();
+          const exp = decoded.exp ? decoded.exp - Math.floor(Date.now() / 1000) : 900;
+          if (exp > 0) {
+            await client.set(`blacklist:${decoded.jti}`, "true", "EX", exp);
+          }
+        }
+      } catch (e) {}
+    }
+
+    AuditLog.create({
+      event: "LogoutAllDevices",
+      userId: userId,
+      role: "customer",
+      description: "User forcefully logged out all devices",
+      severity: "Medium"
+    }).catch(err => logger.error("AuditLog error:", err));
 
     // Clear cookie
     res.clearCookie("refreshToken", {

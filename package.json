@@ -10,5 +10,10 @@
     "build:admin": "npm --prefix admin run build",
     "build:frontend": "npm --prefix frontend run build",
     "build": "npm run build:admin"
+  },
+  "dependencies": {
+    "connect-redis": "^9.0.0",
+    "express-session": "^1.19.0",
+    "redis": "^5.12.1"
   }
 }

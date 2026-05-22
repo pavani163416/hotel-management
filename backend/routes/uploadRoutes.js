@@ -40,14 +40,38 @@
 import express from "express";
 import { uploadImage } from "../utils/cloudinary.js";
 import { Resend } from "resend";
+import { protect, authorizeRoles } from "../middleware/auth.js";
 
 const router = express.Router();
 
 // POST /api/upload/image
-router.post("/image", async (req, res) => {
+router.post("/image", protect, async (req, res) => {
   try {
     const { image, folder } = req.body;
     if (!image) return res.status(400).json({ success: false, message: "No image provided" });
+
+    // ── Advanced File Security (Base64 Sanitization) ──
+    // 1. Strict MIME Type check (only jpeg, png, webp)
+    const mimeRegex = /^data:image\/(jpeg|png|webp);base64,/;
+    if (!mimeRegex.test(image)) {
+      const AuditLog = (await import("../models/AuditLog.js")).default;
+      AuditLog.create({
+        event: "UnauthorizedAccess",
+        userId: req.user?.id,
+        userEmail: req.user?.email,
+        role: req.user?.role,
+        description: "Attempted to upload an invalid or malicious file type (MIME mismatch).",
+        severity: "High"
+      }).catch(() => {});
+      return res.status(415).json({ success: false, message: "Invalid file type. Only JPEG, PNG, and WEBP are allowed." });
+    }
+
+    // 2. Strict Size Limit (Max ~5MB raw = ~7MB Base64 string length)
+    const MAX_BASE64_LENGTH = 7 * 1024 * 1024;
+    if (image.length > MAX_BASE64_LENGTH) {
+      return res.status(413).json({ success: false, message: "File too large. Maximum size is 5MB." });
+    }
+
     const result = await uploadImage(image, folder || "hotels");
     res.json({ success: true, url: result.url, publicId: result.publicId });
   } catch (err) {
@@ -80,7 +104,7 @@ router.get("/test-email", async (req, res) => {
 });
 
 // GET /api/upload/fix-hotel-names — fixes old bookings with missing hotel names
-router.get("/fix-hotel-names", async (req, res) => {
+router.get("/fix-hotel-names", protect, authorizeRoles("Super Admin", "admin"), async (req, res) => {
   try {
     const Booking = (await import("../models/Booking.js")).default;
     const Hotel   = (await import("../models/Hotel.js")).default;
@@ -141,7 +165,7 @@ router.get("/fix-hotel-names", async (req, res) => {
 export default router;
 
 // GET /api/upload/fix-seeded-bookings — fixes the 7 seeded bookings with no room ref
-router.get("/fix-seeded-bookings", async (req, res) => {
+router.get("/fix-seeded-bookings", protect, authorizeRoles("Super Admin", "admin"), async (req, res) => {
   try {
     const Booking = (await import("../models/Booking.js")).default;
 
@@ -168,7 +192,7 @@ router.get("/fix-seeded-bookings", async (req, res) => {
 });
 
 // GET /api/upload/fix-seeded-room-types — fixes room type for seeded bookings
-router.get("/fix-seeded-room-types", async (req, res) => {
+router.get("/fix-seeded-room-types", protect, authorizeRoles("Super Admin", "admin"), async (req, res) => {
   try {
     const Booking = (await import("../models/Booking.js")).default;
     const Room    = (await import("../models/Room.js")).default;

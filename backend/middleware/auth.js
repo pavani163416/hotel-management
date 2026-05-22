@@ -4,6 +4,10 @@ import User from "../models/User.js";
 import Booking from "../models/Booking.js";
 import Room from "../models/Room.js";
 import Hotel from "../models/Hotel.js";
+import Guest from "../models/Guest.js";
+import Notification from "../models/Notification.js";
+import AuditLog from "../models/AuditLog.js";
+import { getRedisClient, isRedisReady } from "../config/redis.js";
 import logger from "../utils/logger.js";
 
 const getSecret = () => {
@@ -43,6 +47,38 @@ export const protect = async (req, res, next) => {
           ? "Session expired. Please sign in again."
           : "Invalid token. Please sign in again.";
       return res.status(401).json({ success: false, message });
+    }
+
+    // ── Access Token Blacklist Check ─────────────────
+    if (decoded.jti && isRedisReady()) {
+      try {
+        const client = getRedisClient();
+        const isBlacklisted = await client.get(`blacklist:${decoded.jti}`);
+        if (isBlacklisted) {
+          return res.status(401).json({ success: false, message: "Session revoked. Please sign in again." });
+        }
+      } catch (err) {}
+    }
+
+    // ── Silent IP/Device Anomaly Detection ───────────
+    if (decoded.ip && decoded.deviceFingerprint) {
+      const currentIp = req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || req.socket.remoteAddress || "127.0.0.1";
+      const currentDevice = req.headers["user-agent"] || "unknown";
+
+      if (currentIp !== decoded.ip || currentDevice !== decoded.deviceFingerprint) {
+        AuditLog.create({
+          event: "IPAnomaly",
+          userId: decoded.id,
+          userEmail: decoded.email,
+          role: decoded.role,
+          ipAddress: currentIp,
+          previousIp: decoded.ip,
+          deviceFingerprint: currentDevice,
+          previousDevice: decoded.deviceFingerprint,
+          description: "Detected mismatched IP or Device from original JWT payload.",
+          severity: "Medium"
+        }).catch(() => {});
+      }
     }
 
     // Attach to request
@@ -222,6 +258,73 @@ export const validateOwnership = (modelName) => {
               success: false,
               message: "Unauthorized: You can only access your own profile.",
             });
+          }
+          break;
+        }
+
+        case "Guest": {
+          if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({ success: false, message: "Invalid guest ID format." });
+          }
+
+          const guest = await Guest.findById(id).populate("bookings");
+          if (!guest) {
+            return res.status(404).json({ success: false, message: "Guest not found." });
+          }
+
+          if (user.role === "customer") {
+            const isGuestOwner = guest.email?.toLowerCase().trim() === userEmail || guest._id.toString() === user.guestId;
+            if (!isGuestOwner) {
+              return res.status(403).json({
+                success: false,
+                message: "Unauthorized: Access denied to this guest profile.",
+              });
+            }
+          } else if (user.role === "Manager") {
+            const managerHotelId = user.assignedHotelId;
+            const managerHotelObjId = user.hotelObjectId;
+            const hasBookedHere = guest.bookings.some(b => 
+              b.hotelStringId === managerHotelId || String(b.hotelId) === String(managerHotelObjId)
+            );
+
+            if (!hasBookedHere) {
+              return res.status(403).json({
+                success: false,
+                message: "Unauthorized: Guest has no bookings at your assigned hotel.",
+              });
+            }
+          } else {
+            return res.status(403).json({ success: false, message: "Unauthorized role access." });
+          }
+          break;
+        }
+
+        case "Notification": {
+          if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({ success: false, message: "Invalid notification ID format." });
+          }
+
+          const notification = await Notification.findById(id);
+          if (!notification) {
+            return res.status(404).json({ success: false, message: "Notification not found." });
+          }
+
+          if (user.role === "Manager") {
+            if (notification.hotelId !== user.assignedHotelId) {
+              return res.status(403).json({
+                success: false,
+                message: "Unauthorized: You do not have access to this notification.",
+              });
+            }
+          } else if (user.role === "customer") {
+            if (notification.userId !== user.id) {
+              return res.status(403).json({
+                success: false,
+                message: "Unauthorized: You do not own this notification.",
+              });
+            }
+          } else {
+            return res.status(403).json({ success: false, message: "Unauthorized role access." });
           }
           break;
         }

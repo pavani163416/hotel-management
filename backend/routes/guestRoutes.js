@@ -33,11 +33,17 @@
  */
 import express from "express";
 import { getAllGuests, getGuestById, getAdditionalGuests } from "../controllers/guestController.js";
+import { protect, authorizeRoles, validateOwnership } from "../middleware/auth.js";
 
 const router = express.Router();
 
-router.get("/additional", getAdditionalGuests); // must be before /:id
-router.get("/", getAllGuests);
-router.get("/:id", getGuestById);
+router.use(protect); // Ensure all routes require authentication
+
+// Global read access restricted to management/admin roles
+router.get("/additional", authorizeRoles("Manager", "admin", "Super Admin", "Controller"), getAdditionalGuests);
+router.get("/", authorizeRoles("Manager", "admin", "Super Admin", "Controller"), getAllGuests);
+
+// Specific guest profile fetch protected by multi-tenant ownership validation
+router.get("/:id", validateOwnership("Guest"), getGuestById);
 
 export default router;

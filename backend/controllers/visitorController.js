@@ -73,11 +73,23 @@ export const updateVisitor = async (req, res, next) => {
     if (typeof body === "string") {
       try { body = JSON.parse(body); } catch { body = {}; }
     }
-    const { duration, status } = body;
-    await Visitor.findByIdAndUpdate(req.params.id, {
-      ...(duration !== undefined && { duration }),
-      ...(status && { status }),
-    });
+    const { duration, status, sessionId } = body;
+    
+    const visitor = await Visitor.findById(req.params.id);
+    if (!visitor) {
+      return res.status(404).json({ success: false, message: "Visitor not found" });
+    }
+
+    // IDOR Protection: Verify the sessionId matches
+    if (sessionId && visitor.sessionId && visitor.sessionId !== sessionId) {
+      return res.status(403).json({ success: false, message: "Unauthorized visitor update" });
+    }
+
+    if (duration !== undefined) visitor.duration = duration;
+    if (status) visitor.status = status;
+    
+    await visitor.save();
+    
     res.status(200).json({ success: true });
   } catch (error) {
     next(error);

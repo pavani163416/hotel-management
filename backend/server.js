@@ -212,7 +212,19 @@ app.use(helmet({
   hidePoweredBy:        true,
   xssFilter:            true,
   referrerPolicy:       { policy: "strict-origin-when-cross-origin" },
-  contentSecurityPolicy: false,   // disabled — causes CORS-like blocks for API consumers
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'none'"],
+      scriptSrc: ["'none'"],
+      styleSrc: ["'none'"],
+      imgSrc: ["'none'"],
+      objectSrc: ["'none'"],
+      frameAncestors: ["'none'"],
+      formAction: ["'none'"],
+      baseUri: ["'none'"],
+      upgradeInsecureRequests: [],
+    },
+  },
 }));
 
 // ── Force HTTPS redirect in production ───────────────────
@@ -349,8 +361,9 @@ try {
 io.use((socket, next) => {
   const token = socket.handshake.auth?.token || socket.handshake.headers?.authorization?.split(" ")[1];
 
-  // Allow unauthenticated connections — frontend panels register without tokens
-  if (!token) return next();
+  if (!token) {
+    return next(new Error("Authentication required. Connection rejected."));
+  }
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
@@ -365,9 +378,21 @@ io.on("connection", (socket) => {
   logger.info("Socket.IO client connected", { socketId: socket.id, userId: socket.data.user?.id });
 
   socket.on("registerNotifications", ({ userId, hotelId, role } = {}) => {
-    if (userId)  socket.join(roomNames.user(userId));
-    if (hotelId) socket.join(roomNames.hotel(hotelId));
-    if (role)    socket.join(roomNames.role(role));
+    const u = socket.data.user;
+    if (!u) return;
+
+    // Strict Role & Ownership Enforcement for Rooms
+    if (userId && (u.id === userId || u.role === "admin" || u.role === "Super Admin")) {
+      socket.join(roomNames.user(userId));
+    }
+    
+    if (hotelId && (u.assignedHotelId === hotelId || u.hotelObjectId === hotelId || u.role === "admin" || u.role === "Super Admin")) {
+      socket.join(roomNames.hotel(hotelId));
+    }
+    
+    if (role && (u.role === role || u.role === "admin" || u.role === "Super Admin")) {
+      socket.join(roomNames.role(role));
+    }
   });
 
   socket.on("disconnect", () => {

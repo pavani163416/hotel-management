@@ -608,8 +608,10 @@ export const getBookingById = async (req, res, next) => {
 
     // Fetch additional guests stored in the AdditionalGuest collection
     const additionalGuestRecord = await AdditionalGuest.findOne({ bookingId: booking._id });
-    response.additionalAdults   = additionalGuestRecord?.adults   || [];
-    response.additionalChildren = additionalGuestRecord?.children || [];
+    
+    // Merge from both collections to ensure we don't overwrite with empty arrays
+    response.additionalAdults   = additionalGuestRecord?.adults?.length ? additionalGuestRecord.adults : (booking.additionalAdults || []);
+    response.additionalChildren = additionalGuestRecord?.children?.length ? additionalGuestRecord.children : (booking.additionalChildren || []);
 
     res.status(200).json({ success: true, data: response });
   } catch (error) {

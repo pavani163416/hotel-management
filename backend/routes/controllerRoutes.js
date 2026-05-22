@@ -188,8 +188,13 @@ import {
   getRoomSnapshots, upsertRoomSnapshot, deleteRoomSnapshot,
   getControllerStats,
 } from "../controllers/controllerDbController.js";
+import { protect, authorizeRoles } from "../middleware/auth.js";
 
 const router = express.Router();
+
+// Apply protection to ALL controller endpoints to prevent critical privilege escalation
+router.use(protect);
+router.use(authorizeRoles("admin", "Super Admin", "Controller"));
 
 // Stats
 router.get("/stats", getControllerStats);
