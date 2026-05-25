@@ -193,6 +193,15 @@ export const addReviewToHotel = async (req, res, next) => {
 // POST /api/hotels (admin only)
 export const createHotel = async (req, res, next) => {
   try {
+    // Map friendly status values to the isActive boolean field.
+    if (typeof req.body.status === "string") {
+      req.body.isActive = req.body.status === "Active";
+    }
+
+    if (req.body.floors != null) req.body.floors = Number(req.body.floors);
+    if (req.body.roomsPerFloor != null) req.body.roomsPerFloor = Number(req.body.roomsPerFloor);
+    if (req.body.pricePerNight != null) req.body.pricePerNight = Number(req.body.pricePerNight);
+
     const hotel = await Hotel.create(req.body);
     
     // Auto-generate rooms if floors and roomsPerFloor are provided
@@ -240,6 +249,13 @@ export const createHotel = async (req, res, next) => {
 // PATCH /api/hotels/:id (admin only)
 export const updateHotel = async (req, res, next) => {
   try {
+    if (typeof req.body.status === "string") {
+      req.body.isActive = req.body.status === "Active";
+    }
+    if (req.body.floors != null) req.body.floors = Number(req.body.floors);
+    if (req.body.roomsPerFloor != null) req.body.roomsPerFloor = Number(req.body.roomsPerFloor);
+    if (req.body.pricePerNight != null) req.body.pricePerNight = Number(req.body.pricePerNight);
+
     const hotel = await Hotel.findOneAndUpdate(
       { hotelId: req.params.id },
       req.body,

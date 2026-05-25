@@ -121,8 +121,8 @@ router.route("/")
 
 router.route("/:id")
   .get(getHotelById)
-  .patch(protect, requireObjectId(), validateOwnership("Hotel"), validate(schemas.updateHotel), updateHotel)
-  .delete(protect, requireObjectId(), validateOwnership("Hotel"), deleteHotel);
+  .patch(protect, validateOwnership("Hotel"), validate(schemas.updateHotel), updateHotel)
+  .delete(protect, validateOwnership("Hotel"), deleteHotel);
 
 router.route("/:id/reviews")
   .post(protect, validate(schemas.addReview), addReviewToHotel);

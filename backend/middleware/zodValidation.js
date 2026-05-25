@@ -148,6 +148,7 @@ const createHotel = z.object({
   floors:        positiveInt.optional(),
   roomsPerFloor: positiveInt.optional(),
   totalRooms:    positiveInt.optional(),
+  status:        z.enum(["Active", "Inactive", "Maintenance"]).optional(),
   isActive:      z.boolean().optional(),
 }).strict();
 
@@ -169,6 +170,7 @@ const updateHotel = z.object({
   floors:        positiveInt.optional(),
   roomsPerFloor: positiveInt.optional(),
   totalRooms:    positiveInt.optional(),
+  status:        z.enum(["Active", "Inactive", "Maintenance"]).optional(),
   isActive:      z.boolean().optional(),
 }).strict();
 
