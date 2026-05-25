@@ -402,8 +402,8 @@ export default function Hotels() {
 
           <div className="flex items-center justify-between px-5 py-3 border-t border-border">
             <p className="text-xs text-muted">Showing {filtered.length} of {hotels.length} properties</p>
-            <button onClick={() => navigate("/bookings")}
-              className="text-xs text-primary font-semibold hover:underline">View All Bookings →</button>
+            <button onClick={() => navigate("/notifications")}
+              className="text-xs text-primary font-semibold hover:underline">View All Notifications →</button>
           </div>
         </div>
       </div>
