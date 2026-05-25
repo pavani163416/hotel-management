@@ -216,25 +216,7 @@ export const createManagerRoom = async (req, res, next) => {
     res.status(201).json({ success: true, message: "Room created", data: room });
   } catch (err) { next(err); }
 };
-  try {
-    const hotelId = req.scopedHotelId, hotelName = req.scopedHotelName;
-    let { roomNumber } = req.body;
-    const prefix = getHotelPrefix(hotelId, hotelName);
-    if (prefix && roomNumber && !roomNumber.toLowerCase().startsWith(prefix + "-"))
-      roomNumber = prefix + "-" + roomNumber;
-    const room = await Room.findOneAndUpdate(
-      { roomNumber },
-      { ...req.body, roomNumber, hotelStringId: hotelId, hotelId: req.scopedHotelObjectId || null },
-      { upsert:true, new:true, runValidators:true, setDefaultsOnInsert:true }
-    );
-    if (hotelId) {
-      Hotel.findOneAndUpdate({ hotelId }, { $push:{ rooms:{ id:roomNumber, name:req.body.type||"Room", price:req.body.pricePerNight, capacity:req.body.capacity||2, bed:req.body.bedType||"King", available:1, features:req.body.amenities||[] } } }, { new:true }).catch(()=>{});
-    }
-    const io = req.app.get("io");
-    if (io) io.emit("roomCreated", { roomId:room._id, roomNumber, hotelId, hotelName });
-    res.status(201).json({ success:true, message:"Room created", data:room });
-  } catch (err) { next(err); }
-};
+
 
 // ── PUT /api/manager/rooms/:id ────────────────────────────
 export const updateManagerRoom = async (req, res, next) => {
