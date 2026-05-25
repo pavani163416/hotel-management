@@ -193,20 +193,24 @@ export const addReviewToHotel = async (req, res, next) => {
 // POST /api/hotels (admin only)
 export const createHotel = async (req, res, next) => {
   try {
-    // Map friendly status values to the isActive boolean field.
+    // Normalize activation status and numeric hotel metadata.
     if (typeof req.body.status === "string") {
-      req.body.isActive = req.body.status === "Active";
+      req.body.isActive = req.body.status.toLowerCase() === "active";
+    }
+    if (typeof req.body.isActive === "string") {
+      req.body.isActive = req.body.isActive.toLowerCase() === "true";
     }
 
     if (req.body.floors != null) req.body.floors = Number(req.body.floors);
     if (req.body.roomsPerFloor != null) req.body.roomsPerFloor = Number(req.body.roomsPerFloor);
     if (req.body.pricePerNight != null) req.body.pricePerNight = Number(req.body.pricePerNight);
+    if (req.body.totalRooms != null) req.body.totalRooms = Number(req.body.totalRooms);
 
     const hotel = await Hotel.create(req.body);
     
     // Auto-generate rooms if floors and roomsPerFloor are provided
-    const floors = Number(req.body.floors) || 0;
-    const roomsPerFloor = Number(req.body.roomsPerFloor) || 0;
+    const floors = Math.max(0, Number(req.body.floors) || 0);
+    const roomsPerFloor = Math.max(0, Number(req.body.roomsPerFloor) || 0);
     
     if (floors > 0 && roomsPerFloor > 0) {
       const roomsToCreate = [];
@@ -223,12 +227,17 @@ export const createHotel = async (req, res, next) => {
             bedType: "King",
             status: "Available",
             floor: f,
-            isActive: true
+            isActive: true,
           });
         }
       }
       if (roomsToCreate.length > 0) {
-        await Room.insertMany(roomsToCreate);
+        try {
+          await Room.insertMany(roomsToCreate, { ordered: false });
+        } catch (roomInsertError) {
+          // If room generation fails, keep the hotel creation successful.
+          console.warn("Hotel created, but room auto-generation failed:", roomInsertError.message);
+        }
       }
     }
 
@@ -250,11 +259,15 @@ export const createHotel = async (req, res, next) => {
 export const updateHotel = async (req, res, next) => {
   try {
     if (typeof req.body.status === "string") {
-      req.body.isActive = req.body.status === "Active";
+      req.body.isActive = req.body.status.toLowerCase() === "active";
+    }
+    if (typeof req.body.isActive === "string") {
+      req.body.isActive = req.body.isActive.toLowerCase() === "true";
     }
     if (req.body.floors != null) req.body.floors = Number(req.body.floors);
     if (req.body.roomsPerFloor != null) req.body.roomsPerFloor = Number(req.body.roomsPerFloor);
     if (req.body.pricePerNight != null) req.body.pricePerNight = Number(req.body.pricePerNight);
+    if (req.body.totalRooms != null) req.body.totalRooms = Number(req.body.totalRooms);
 
     const hotel = await Hotel.findOneAndUpdate(
       { hotelId: req.params.id },
