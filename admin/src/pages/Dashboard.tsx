@@ -47,7 +47,7 @@ export default function Dashboard() {
     getAdminPriceRequests({ status: "pending" })
       .then((res: any) => setPriceRequests(res?.data?.slice(0, 5) || []))
       .catch(() => setPriceRequests([]));
-  }, [bookings, hotels]);
+  }, []);
 
   // ── Compute live revenue chart data from bookings ──
   const revenueData = (() => {

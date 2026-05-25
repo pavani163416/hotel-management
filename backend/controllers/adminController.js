@@ -126,7 +126,10 @@ export const getAdminStats = async (req, res, next) => {
       cancelledBookings,
       totalGuests,
       totalVisitors,
-      rooms,
+      availableRooms,
+      bookedRooms,
+      maintenanceRooms,
+      totalRoomsCount,
       revenueAgg,
       monthRevenueAgg,
     ] = await Promise.all([
@@ -136,7 +139,10 @@ export const getAdminStats = async (req, res, next) => {
       Booking.countDocuments({ status: "Cancelled" }),
       Guest.countDocuments(),
       Visitor.countDocuments(),
-      Room.find({ isActive: true }),
+      Room.countDocuments({ isActive: true, status: "Available" }),
+      Room.countDocuments({ isActive: true, status: "Booked" }),
+      Room.countDocuments({ isActive: true, status: "Maintenance" }),
+      Room.countDocuments({ isActive: true }),
       Booking.aggregate([
         { $match: { status: { $in: ["Confirmed", "Completed"] } } },
         { $group: { _id: null, total: { $sum: "$totalAmount" } } },
@@ -154,10 +160,6 @@ export const getAdminStats = async (req, res, next) => {
       ]),
     ]);
 
-    const availableRooms   = rooms.filter((r) => r.status === "Available").length;
-    const bookedRooms      = rooms.filter((r) => r.status === "Booked").length;
-    const maintenanceRooms = rooms.filter((r) => r.status === "Maintenance").length;
-
     res.status(200).json({
       success: true,
       data: {
@@ -170,7 +172,7 @@ export const getAdminStats = async (req, res, next) => {
         bookingsThisMonth: monthRevenueAgg[0]?.count || 0,
         totalGuests,
         totalVisitors,
-        totalRooms:        rooms.length,
+        totalRooms:        totalRoomsCount,
         availableRooms,
         bookedRooms,
         maintenanceRooms,
