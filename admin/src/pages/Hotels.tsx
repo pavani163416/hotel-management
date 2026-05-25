@@ -516,7 +516,7 @@ export default function Hotels() {
                 )}
               </div>
               <input ref={fileInputRef} type="file" accept="image/*" className="hidden"
-                onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageFile(f); }} />
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageFile(f); e.target.value = ""; }} />
               {!uploadedImage && !uploading && (
                 <p className="text-[10px] text-muted mt-1">If no image is uploaded, a default hotel image will be used.</p>
               )}

@@ -51,8 +51,8 @@ router.post("/image", protect, async (req, res) => {
     if (!image) return res.status(400).json({ success: false, message: "No image provided" });
 
     // ── Advanced File Security (Base64 Sanitization) ──
-    // 1. Strict MIME Type check (only jpeg, png, webp)
-    const mimeRegex = /^data:image\/(jpeg|png|webp);base64,/;
+    // 1. Strict MIME Type check
+    const mimeRegex = /^data:image\/(jpeg|jpg|png|webp|gif|avif);base64,/;
     if (!mimeRegex.test(image)) {
       const AuditLog = (await import("../models/AuditLog.js")).default;
       AuditLog.create({
@@ -63,13 +63,13 @@ router.post("/image", protect, async (req, res) => {
         description: "Attempted to upload an invalid or malicious file type (MIME mismatch).",
         severity: "High"
       }).catch(() => {});
-      return res.status(415).json({ success: false, message: "Invalid file type. Only JPEG, PNG, and WEBP are allowed." });
+      return res.status(415).json({ success: false, message: "Invalid file type. Only JPEG, PNG, WEBP, and GIF are allowed." });
     }
 
-    // 2. Strict Size Limit (Max ~5MB raw = ~7MB Base64 string length)
-    const MAX_BASE64_LENGTH = 7 * 1024 * 1024;
+    // 2. Strict Size Limit (Max ~10MB raw = ~14MB Base64 string length)
+    const MAX_BASE64_LENGTH = 15 * 1024 * 1024;
     if (image.length > MAX_BASE64_LENGTH) {
-      return res.status(413).json({ success: false, message: "File too large. Maximum size is 5MB." });
+      return res.status(413).json({ success: false, message: "File too large. Maximum size is 10MB." });
     }
 
     const result = await uploadImage(image, folder || "hotels");
