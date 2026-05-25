@@ -227,7 +227,11 @@ export default function Hotels() {
       const luxData = await luxRes.json();
       if (!luxRes.ok) {
         // Show the actual error from backend
-        setSaveError(luxData?.message || `Server error ${luxRes.status}`);
+        let errMsg = luxData?.message || `Server error ${luxRes.status}`;
+        if (luxData?.errors && Array.isArray(luxData.errors)) {
+          errMsg = luxData.errors.map((e: any) => `${e.field}: ${e.message}`).join(" | ");
+        }
+        setSaveError(errMsg);
         return; // stop — don't show success
       }
       // Success — backend already syncs controller snapshot automatically
