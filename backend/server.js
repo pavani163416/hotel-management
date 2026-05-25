@@ -359,10 +359,13 @@ try {
 
 // ── Socket.IO JWT authentication ─────────────────────────
 io.use((socket, next) => {
+  // Retrieve JWT either from the handshake auth payload or from an Authorization header.
   const token = socket.handshake.auth?.token || socket.handshake.headers?.authorization?.split(" ")[1];
 
+  // If no token is supplied, treat the connection as unauthenticated but allow it.
   if (!token) {
-    return next(new Error("Authentication required. Connection rejected."));
+    socket.data.user = null;
+    return next();
   }
 
   try {
@@ -370,6 +373,7 @@ io.use((socket, next) => {
     socket.data.user = decoded;
     next();
   } catch {
+    // Invalid or expired token – reject the connection with a clear error.
     next(new Error("Invalid or expired token"));
   }
 });
