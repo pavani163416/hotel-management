@@ -14,21 +14,6 @@ const createRateLimitStore = (windowMs = 15 * 60 * 1000) => {
   });
 };
 
-const getClientIp = (req) => {
-  const forwarded = req.headers["x-forwarded-for"];
-  let ip = req.ip || req.connection?.remoteAddress || "unknown";
-  if (typeof forwarded === "string" && forwarded.trim()) {
-    ip = forwarded.split(",")[0].trim();
-  }
-  
-  // Clean IPv4-mapped IPv6 prefix for consistency
-  if (ip.startsWith("::ffff:")) {
-    ip = ip.substring(7);
-  }
-  
-  return ip;
-};
-
 // Helper to determine if a request originates locally
 const isLocalRequest = (req) => {
   const ip = req.ip || req.connection.remoteAddress || "";
@@ -47,7 +32,6 @@ export const apiLimiter = rateLimit({
   windowMs: apiWindow,
   // Ensure the general API limit is high enough for SPAs (minimum 10000)
   max:      Math.max(Number(process.env.RATE_LIMIT_MAX) || 0, isProd ? 10000 : 999999),
-  keyGenerator: getClientIp,
   store: isRedisReady() ? createRateLimitStore(apiWindow) : undefined,
   standardHeaders: true,
   legacyHeaders:   false,
@@ -63,7 +47,6 @@ export const apiLimiter = rateLimit({
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,          // 15 minutes
   max:      isProd ? 200 : 999999,        // increased for testing
-  keyGenerator: getClientIp,
   store: isRedisReady() ? createRateLimitStore(15 * 60 * 1000) : undefined,
   standardHeaders: true,
   legacyHeaders:   false,
@@ -79,7 +62,6 @@ export const authLimiter = rateLimit({
 export const bookingLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,          // 1 hour
   max:      isProd ? 10 : 999999,
-  keyGenerator: getClientIp,
   store: isRedisReady() ? createRateLimitStore(60 * 60 * 1000) : undefined,
   standardHeaders: true,
   legacyHeaders:   false,
@@ -96,7 +78,6 @@ export const bookingLimiter = rateLimit({
 export const promoLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,          // 15 minutes
   max:      isProd ? 200 : 999999,
-  keyGenerator: getClientIp,
   store: isRedisReady() ? createRateLimitStore(15 * 60 * 1000) : undefined,
   standardHeaders: true,
   legacyHeaders:   false,
@@ -111,7 +92,6 @@ export const promoLimiter = rateLimit({
 export const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,          // 15 minutes
   max:      isProd ? 5 : 999999,            // 5 attempts per 15 minutes
-  keyGenerator: getClientIp,
   store: isRedisReady() ? createRateLimitStore(15 * 60 * 1000) : undefined,
   standardHeaders: true,
   legacyHeaders:   false,
@@ -126,7 +106,6 @@ export const loginLimiter = rateLimit({
 export const otpRateLimiter = rateLimit({
   windowMs: 5 * 60 * 1000,           // 5 minutes
   max:      isProd ? 3 : 999999,            // 3 attempts per 5 minutes
-  keyGenerator: getClientIp,
   store: isRedisReady() ? createRateLimitStore(5 * 60 * 1000) : undefined,
   standardHeaders: true,
   legacyHeaders:   false,
