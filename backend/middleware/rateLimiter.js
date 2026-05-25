@@ -42,7 +42,8 @@ const isLocalRequest = (req) => {
 const apiWindow = Number(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000;
 export const apiLimiter = rateLimit({
   windowMs: apiWindow,
-  max:      Number(process.env.RATE_LIMIT_MAX)        || (isProd ? 10000 : 999999),
+  // Ensure the general API limit is high enough for SPAs (minimum 10000)
+  max:      Math.max(Number(process.env.RATE_LIMIT_MAX) || 0, isProd ? 10000 : 999999),
   keyGenerator: getClientIp,
   store: isRedisReady() ? createRateLimitStore(apiWindow) : undefined,
   standardHeaders: true,
