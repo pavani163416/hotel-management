@@ -37,7 +37,7 @@ const Home = () => {
               Hand-picked hotels and private residences with a seamless, concierge-driven booking experience.
             </p>
             <div className="mt-8 flex flex-wrap gap-6 text-sm">
-              <Stat value="2,400+" label="Premium hotels" />
+              <Stat value={hotels.length > 0 ? `${hotels.length}+` : "..."} label="Premium hotels" />
               <Stat value="98%" label="Guest satisfaction" />
               <Stat value="24/7" label="Concierge" />
             </div>
