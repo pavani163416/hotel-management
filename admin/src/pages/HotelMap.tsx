@@ -3,7 +3,7 @@ import { BedDouble, CalendarDays, ChevronDown, RefreshCw, Search, X } from "luci
 import AdminLayout from "@/components/AdminLayout";
 import Topbar from "@/components/Topbar";
 import StatusBadge from "@/components/StatusBadge";
-import { getHotels, getHotelMapOverview, getRoomBookingHistory, updateAdminRoom } from "@/services/api";
+import { getHotels, getHotelMapOverview, getRoomBookingHistory, updateAdminRoom, updateRoomCleaningStatus, updateRoomMaintenanceStatus } from "@/services/api";
 
 type Hotel = { hotelId: string; name: string };
 type Room = {
@@ -12,6 +12,8 @@ type Room = {
   type: string;
   floor?: number | string;
   status: string;
+  cleaningStatus?: string;
+  maintenanceStatus?: string;
   displayStatus?: string;
   activeBooking?: any;
   hotelStringId?: string;
@@ -21,7 +23,7 @@ type Booking = { _id: string; guestSnapshot?: { name?: string }; status?: string
 type Stats = {
   total: number;
   available: number;
-  booked: number;
+  occupied: number;
   maintenance: number;
   cleaning: number;
   blocked: number;
@@ -31,19 +33,23 @@ type Stats = {
 const STATUS_CLASSES: Record<string, string> = {
   Available: "bg-emerald-600 hover:bg-emerald-500",
   Booked: "bg-red-600 hover:bg-red-500",
+  Occupied: "bg-red-600 hover:bg-red-500",
+  Reserved: "bg-purple-600 hover:bg-purple-500",
   Maintenance: "bg-amber-500 hover:bg-amber-400",
   Cleaning: "bg-sky-500 hover:bg-sky-400",
   Blocked: "bg-slate-600 hover:bg-slate-500",
 };
 
-const STATUS_LABELS: string[] = ["Available", "Booked", "Maintenance", "Cleaning", "Blocked"];
+const STATUS_LABELS: string[] = ["Available", "Occupied", "Reserved", "Maintenance", "Cleaning", "Blocked"];
+const CLEANING_LABELS: string[] = ["Clean", "Dirty", "In Progress", "Inspected"];
+const MAINTENANCE_LABELS: string[] = ["None", "Requested", "In Progress", "Completed"];
 
 export default function HotelMap() {
   const [hotels, setHotels] = useState<Hotel[]>([]);
   const [selectedHotel, setSelectedHotel] = useState<string>("");
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [rooms, setRooms] = useState<Room[]>([]);
-  const [stats, setStats] = useState<Stats>({ total: 0, available: 0, booked: 0, maintenance: 0, cleaning: 0, blocked: 0, occupancyPct: 0 });
+  const [stats, setStats] = useState<Stats>({ total: 0, available: 0, occupied: 0, maintenance: 0, cleaning: 0, blocked: 0, occupancyPct: 0 });
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("All");
@@ -72,16 +78,62 @@ export default function HotelMap() {
       const res: any = await getHotelMapOverview({ hotelStringId: selectedHotel, date });
       const data = res?.data || {};
       setRooms(data.rooms || []);
-      setStats(data.stats || { total: 0, available: 0, booked: 0, maintenance: 0, cleaning: 0, blocked: 0, occupancyPct: 0 });
+      setStats(data.stats || { total: 0, available: 0, occupied: 0, maintenance: 0, cleaning: 0, blocked: 0, occupancyPct: 0 });
     } catch {
       setRooms([]);
-      setStats({ total: 0, available: 0, booked: 0, maintenance: 0, cleaning: 0, blocked: 0, occupancyPct: 0 });
+      setStats({ total: 0, available: 0, occupied: 0, maintenance: 0, cleaning: 0, blocked: 0, occupancyPct: 0 });
     }
     setLoading(false);
   }, [date, selectedHotel]);
 
   useEffect(() => { fetchHotels(); }, [fetchHotels]);
   useEffect(() => { loadMap(); }, [loadMap]);
+
+  // Socket.IO Listener for real-time room updates
+  useEffect(() => {
+    const wsUrl = import.meta.env.VITE_WS_URL || "ws://localhost:5000/ws?role=admin";
+    const ws = new WebSocket(wsUrl);
+
+    ws.onmessage = (event) => {
+      try {
+        const msg = JSON.parse(event.data);
+        if (msg.type === "room_update" && msg.data) {
+          const updatedRoom = msg.data;
+          
+          setRooms((prevRooms) => {
+            const idx = prevRooms.findIndex((r) => r._id === updatedRoom._id);
+            if (idx === -1) return prevRooms;
+            const newRooms = [...prevRooms];
+            // Compute displayStatus mimicking the backend priority
+            let op = updatedRoom.status || "Available";
+            if (updatedRoom.maintenanceStatus === "Requested" || updatedRoom.maintenanceStatus === "In Progress" || updatedRoom.status === "Maintenance") {
+              op = "Maintenance";
+            } else if (updatedRoom.cleaningStatus === "Dirty" || updatedRoom.cleaningStatus === "In Progress" || updatedRoom.status === "Cleaning") {
+              op = "Cleaning";
+            } else if (updatedRoom.status === "Blocked") {
+              op = "Blocked";
+            } else if (updatedRoom.status === "Booked" || updatedRoom.status === "Occupied") {
+              op = "Occupied";
+            } else {
+              op = "Available";
+            }
+            newRooms[idx] = { ...prevRooms[idx], ...updatedRoom, displayStatus: op };
+            
+            // If this is the selected room, update it
+            if (selectedRoom?._id === updatedRoom._id) {
+              setSelectedRoom(newRooms[idx]);
+            }
+            
+            return newRooms;
+          });
+        }
+      } catch (err) {
+        console.error("WS Parse error", err);
+      }
+    };
+
+    return () => ws.close();
+  }, [selectedRoom?._id]);
 
   const floors = useMemo(() => {
     return Array.from(new Set(rooms.map((room) => String(room.floor || 1)))).sort((a, b) => Number(a) - Number(b));
@@ -123,11 +175,26 @@ export default function HotelMap() {
     setSaving(true);
     try {
       await updateAdminRoom(selectedRoom._id, { status });
-      setSelectedRoom({ ...selectedRoom, status });
-      setRooms((prev) => prev.map((room) => room._id === selectedRoom._id ? { ...room, status } : room));
-    } catch {
-      // ignore
-    }
+      // UI update is handled by the WebSocket listener now
+    } catch {}
+    setSaving(false);
+  };
+
+  const handleCleaningStatus = async (cleaningStatus: string) => {
+    if (!selectedRoom) return;
+    setSaving(true);
+    try {
+      await updateRoomCleaningStatus(selectedRoom._id, { cleaningStatus });
+    } catch {}
+    setSaving(false);
+  };
+
+  const handleMaintenanceStatus = async (maintenanceStatus: string) => {
+    if (!selectedRoom) return;
+    setSaving(true);
+    try {
+      await updateRoomMaintenanceStatus(selectedRoom._id, { maintenanceStatus });
+    } catch {}
     setSaving(false);
   };
 
@@ -171,7 +238,7 @@ export default function HotelMap() {
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
           {[
             { label: "Available", value: stats.available, color: "bg-emerald-400" },
-            { label: "Booked", value: stats.booked, color: "bg-red-400" },
+            { label: "Occupied", value: stats.occupied, color: "bg-red-400" },
             { label: "Maintenance", value: stats.maintenance, color: "bg-amber-400" },
             { label: "Cleaning", value: stats.cleaning, color: "bg-sky-400" },
             { label: "Blocked", value: stats.blocked, color: "bg-slate-400" },
@@ -281,17 +348,58 @@ export default function HotelMap() {
                     <span>Status</span>
                     <StatusBadge status={selectedRoom.displayStatus || selectedRoom.status} />
                   </div>
-                  <div className="flex flex-wrap gap-2">
-                    {STATUS_LABELS.map((status) => (
-                      <button
-                        key={status}
-                        onClick={() => handleRoomStatus(status)}
-                        disabled={saving}
-                        className="rounded-xl border border-border px-3 py-2 text-xs font-semibold text-text-primary transition hover:border-primary"
-                      >
-                        {status}
-                      </button>
-                    ))}
+                  <div className="flex flex-col gap-2">
+                    <span className="text-xs font-semibold text-text-primary uppercase">Room Status</span>
+                    <div className="flex flex-wrap gap-2">
+                      {STATUS_LABELS.map((status) => (
+                        <button
+                          key={status}
+                          onClick={() => handleRoomStatus(status)}
+                          disabled={saving}
+                          className={`rounded-xl border border-border px-3 py-2 text-xs font-semibold transition hover:border-primary ${
+                            (selectedRoom.status === status) ? "bg-primary text-white border-primary" : "text-text-primary"
+                          }`}
+                        >
+                          {status}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <span className="text-xs font-semibold text-text-primary uppercase mt-2">Cleaning Status</span>
+                    <div className="flex flex-wrap gap-2">
+                      {CLEANING_LABELS.map((status) => (
+                        <button
+                          key={status}
+                          onClick={() => handleCleaningStatus(status)}
+                          disabled={saving}
+                          className={`rounded-xl border border-border px-3 py-2 text-xs font-semibold transition hover:border-sky-500 ${
+                            (selectedRoom.cleaningStatus === status) ? "bg-sky-500 text-white border-sky-500" : "text-text-primary"
+                          }`}
+                        >
+                          {status}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <span className="text-xs font-semibold text-text-primary uppercase mt-2">Maintenance Status</span>
+                    <div className="flex flex-wrap gap-2">
+                      {MAINTENANCE_LABELS.map((status) => (
+                        <button
+                          key={status}
+                          onClick={() => handleMaintenanceStatus(status)}
+                          disabled={saving}
+                          className={`rounded-xl border border-border px-3 py-2 text-xs font-semibold transition hover:border-amber-500 ${
+                            (selectedRoom.maintenanceStatus === status) ? "bg-amber-500 text-white border-amber-500" : "text-text-primary"
+                          }`}
+                        >
+                          {status}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
                 <div className="rounded-2xl bg-surface-3 p-4">

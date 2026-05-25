@@ -82,6 +82,8 @@ import {
   getRoomById,
   createRoom,
   updateRoomStatus,
+  updateRoomCleaningStatus,
+  updateRoomMaintenanceStatus,
   deleteRoom,
   getMapOverview,
 } from "../controllers/roomController.js";
@@ -225,5 +227,8 @@ router
   .get(getRoomById)
   .patch(protect, requireObjectId(), validateOwnership("Room"), validateRoomStatus, updateRoomStatus)
   .delete(protect, requireObjectId(), validateOwnership("Room"), deleteRoom);
+
+router.patch("/:id/cleaning", protect, requireObjectId(), validateOwnership("Room"), updateRoomCleaningStatus);
+router.patch("/:id/maintenance", protect, requireObjectId(), validateOwnership("Room"), updateRoomMaintenanceStatus);
 
 export default router;

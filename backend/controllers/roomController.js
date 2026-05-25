@@ -151,11 +151,74 @@ export const updateRoomStatus = async (req, res, next) => {
     }
 
     await invalidateRoomCache();
+    broadcastRoomUpdate(room);
     res.status(200).json({
       success: true,
       message: `Room status updated to "${status}"`,
       data: room,
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+import { broadcastRoomUpdate } from "../routes/wsRoutes.js";
+
+// ─────────────────────────────────────────────────────────
+// PATCH /api/rooms/:id/cleaning
+// Updates room cleaning status (Clean, Dirty, In Progress, Inspected)
+// ─────────────────────────────────────────────────────────
+export const updateRoomCleaningStatus = async (req, res, next) => {
+  try {
+    const { cleaningStatus } = req.body;
+    const allowed = ["Clean", "Dirty", "In Progress", "Inspected"];
+    if (!allowed.includes(cleaningStatus)) {
+      return res.status(400).json({ success: false, message: `cleaningStatus must be one of: ${allowed.join(", ")}` });
+    }
+
+    const room = await Room.findByIdAndUpdate(
+      req.params.id,
+      { cleaningStatus },
+      { new: true, runValidators: true }
+    );
+
+    if (!room) return res.status(404).json({ success: false, message: "Room not found" });
+
+    await invalidateRoomCache();
+    broadcastRoomUpdate(room);
+    
+    res.status(200).json({ success: true, message: `Room cleaning status updated to "${cleaningStatus}"`, data: room });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ─────────────────────────────────────────────────────────
+// PATCH /api/rooms/:id/maintenance
+// Updates room maintenance status (None, Requested, In Progress, Completed)
+// ─────────────────────────────────────────────────────────
+export const updateRoomMaintenanceStatus = async (req, res, next) => {
+  try {
+    const { maintenanceStatus, blockedReason } = req.body;
+    const allowed = ["None", "Requested", "In Progress", "Completed"];
+    if (!allowed.includes(maintenanceStatus)) {
+      return res.status(400).json({ success: false, message: `maintenanceStatus must be one of: ${allowed.join(", ")}` });
+    }
+
+    const updateData = { maintenanceStatus };
+    if (blockedReason !== undefined) updateData.blockedReason = blockedReason;
+
+    const room = await Room.findByIdAndUpdate(
+      req.params.id,
+      updateData,
+      { new: true, runValidators: true }
+    );
+
+    if (!room) return res.status(404).json({ success: false, message: "Room not found" });
+
+    await invalidateRoomCache();
+    broadcastRoomUpdate(room);
+    res.status(200).json({ success: true, message: `Room maintenance status updated to "${maintenanceStatus}"`, data: room });
   } catch (error) {
     next(error);
   }

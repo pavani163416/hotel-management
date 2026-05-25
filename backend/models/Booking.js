@@ -9,6 +9,17 @@ const bookingSchema = new mongoose.Schema(
       required: [true, "Room reference is required"],
     },
 
+    assignedRoom: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Room",
+      default: null,
+    },
+
+    roomType: {
+      type: String,
+      default: "Standard",
+    },
+
     guest: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Guest",

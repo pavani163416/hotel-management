@@ -76,10 +76,34 @@ const roomSchema = new mongoose.Schema(
     status: {
       type: String,
       enum: {
-        values: ["Available", "Booked", "Maintenance", "Blocked", "Cleaning"],
+        values: ["Available", "Occupied", "Reserved", "Maintenance", "Blocked", "Cleaning", "CheckInToday", "CheckOutToday"],
         message: "{VALUE} is not a valid status",
       },
       default: "Available",
+    },
+
+    cleaningStatus: {
+      type: String,
+      enum: {
+        values: ["Clean", "Dirty", "In Progress", "Inspected"],
+        message: "{VALUE} is not a valid cleaning status",
+      },
+      default: "Clean",
+    },
+
+    maintenanceStatus: {
+      type: String,
+      enum: {
+        values: ["None", "Requested", "In Progress", "Completed"],
+        message: "{VALUE} is not a valid maintenance status",
+      },
+      default: "None",
+    },
+
+    currentBooking: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Booking",
+      default: null,
     },
 
     // Reason for blocking (set when status = "Blocked")

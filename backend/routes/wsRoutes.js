@@ -17,9 +17,16 @@ const broadcastVisitor = (visitor) => {
   });
 };
 
-// Broadcast a booking status change to all connected admin panels
 export const broadcastBookingUpdate = (booking) => {
   const msg = JSON.stringify({ type: "booking_update", data: booking });
+  adminClients.forEach((ws) => {
+    try { if (ws.readyState === 1) ws.send(msg); } catch { adminClients.delete(ws); }
+  });
+};
+
+// Broadcast a room status change to all connected admin panels
+export const broadcastRoomUpdate = (room) => {
+  const msg = JSON.stringify({ type: "room_update", data: room });
   adminClients.forEach((ws) => {
     try { if (ws.readyState === 1) ws.send(msg); } catch { adminClients.delete(ws); }
   });

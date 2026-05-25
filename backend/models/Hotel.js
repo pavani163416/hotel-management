@@ -40,6 +40,8 @@ const hotelSchema = new mongoose.Schema(
     reviews:       [reviewSchema],
     floors:        { type: Number, default: 1 },
     roomsPerFloor: { type: Number, default: 10 },
+    roomCount:     { type: Number, default: 0 },
+    roomMapEnabled:{ type: Boolean, default: true },
     isActive:      { type: Boolean, default: true },
   },
   { timestamps: true }

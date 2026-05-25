@@ -144,6 +144,8 @@ export async function findAvailableRoom({
       continue;
     }
     if (NON_BOOKABLE_STATUSES.includes(r.status)) continue;
+    if (r.cleaningStatus === "Dirty" || r.cleaningStatus === "In Progress") continue;
+    if (r.maintenanceStatus === "Requested" || r.maintenanceStatus === "In Progress") continue;
     return await Room.findById(r._id);
   }
 
@@ -229,13 +231,28 @@ export async function getHotelMapOverview({ hotelStringId, hotelObjectId, date }
   }
 
   const enrichedRooms = rooms.map((room) => {
-    const op = NON_BOOKABLE_STATUSES.includes(room.status)
-      ? room.status
-      : bookingByRoom.has(String(room._id))
-        ? "Booked"
-        : room.status === "Booked"
-          ? "Available"
-          : room.status || "Available";
+    let op = room.status || "Available";
+
+    // Priority 1: Maintenance
+    if (room.maintenanceStatus === "Requested" || room.maintenanceStatus === "In Progress" || room.status === "Maintenance") {
+      op = "Maintenance";
+    } 
+    // Priority 2: Cleaning
+    else if (room.cleaningStatus === "Dirty" || room.cleaningStatus === "In Progress" || room.status === "Cleaning") {
+      op = "Cleaning";
+    }
+    // Priority 3: Blocked
+    else if (room.status === "Blocked") {
+      op = "Blocked";
+    }
+    // Priority 4: Booked/Occupied
+    else if (bookingByRoom.has(String(room._id)) || room.status === "Booked" || room.status === "Occupied") {
+      op = "Occupied";
+    } 
+    // Priority 5: Available
+    else {
+      op = "Available";
+    }
 
     return {
       ...room,
@@ -247,13 +264,13 @@ export async function getHotelMapOverview({ hotelStringId, hotelObjectId, date }
   const stats = {
     total: enrichedRooms.length,
     available: enrichedRooms.filter((r) => r.displayStatus === "Available").length,
-    booked: enrichedRooms.filter((r) => r.displayStatus === "Booked").length,
+    occupied: enrichedRooms.filter((r) => r.displayStatus === "Occupied").length,
     maintenance: enrichedRooms.filter((r) => r.displayStatus === "Maintenance").length,
     cleaning: enrichedRooms.filter((r) => r.displayStatus === "Cleaning").length,
     blocked: enrichedRooms.filter((r) => r.displayStatus === "Blocked").length,
   };
   stats.occupancyPct = stats.total
-    ? Math.round((stats.booked / stats.total) * 100)
+    ? Math.round((stats.occupied / stats.total) * 100)
     : 0;
 
   return { rooms: enrichedRooms, bookings, stats };

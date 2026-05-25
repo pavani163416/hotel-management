@@ -214,6 +214,8 @@ export const getHotelMapOverview = (params: { hotelStringId: string; date?: stri
 export const getAdminRooms = (params?: Record<string, any>) => api.get("/rooms", { params });
 export const getAdminBookings = (params?: Record<string, any>) => api.get("/bookings", { params });
 export const updateAdminRoom = (id: string, data: Record<string, any>) => api.patch(`/rooms/${id}`, data);
+export const updateRoomCleaningStatus = (id: string, data: { cleaningStatus: string }) => api.patch(`/rooms/${id}/cleaning`, data);
+export const updateRoomMaintenanceStatus = (id: string, data: { maintenanceStatus: string, blockedReason?: string }) => api.patch(`/rooms/${id}/maintenance`, data);
 
 /**
  * Admin-level booking reassignment (no hotel isolation — cross-hotel capable).
