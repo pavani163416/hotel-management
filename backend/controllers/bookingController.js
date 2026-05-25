@@ -107,13 +107,7 @@ const getOrCreateRoomFromHotelDefinition = async ({ identifier, hotelId, hotelNa
 // All steps run inside a MongoDB session (transaction)
 // ─────────────────────────────────────────────────────────
 export const createBooking = async (req, res, next) => {
-  const authHeader = req.headers.authorization;
-  if (authHeader?.startsWith("Bearer ")) {
-    try {
-      const token = authHeader.split(" ")[1];
-      req.customer = jwt.verify(token, process.env.JWT_SECRET);
-    } catch (e) {}
-  }
+  // JWT is already parsed by the 'protect' middleware in the routes
 
   const { roomId, roomNumber, roomTypeId } = req.body;
   const targetRoomType = roomTypeId || roomId || roomNumber;
@@ -336,7 +330,7 @@ export const createBooking = async (req, res, next) => {
           promoCode: promoCode || null,
           totalAmount,
           paymentMethod: paymentMethod || "card",
-          specialRequests: specialRequests || "",
+          specialRequests: specialRequests ? String(specialRequests).replace(/</g, "&lt;").replace(/>/g, "&gt;") : "",
           hotelName: req.body.hotelName || resolveHotelName(room.roomNumber),
           hotelStringId: room.hotelStringId || null,
           hotelImage,
@@ -393,7 +387,7 @@ export const createBooking = async (req, res, next) => {
     }).catch(() => {});
 
     // ── Increment coupon usedCount (best-effort, outside transaction) ──
-    if (promoCode) {
+    if (promoCode && typeof promoCode === "string") {
       Coupon.findOneAndUpdate(
         { code: promoCode.toUpperCase().trim() },
         { $inc: { usedCount: 1 } }
@@ -641,13 +635,7 @@ export const getBookingById = async (req, res, next) => {
 // Cancels a booking and frees the room atomically
 // ─────────────────────────────────────────────────────────
 export const cancelBooking = async (req, res, next) => {
-  const authHeader = req.headers.authorization;
-  if (authHeader?.startsWith("Bearer ")) {
-    try {
-      const token = authHeader.split(" ")[1];
-      req.customer = jwt.verify(token, process.env.JWT_SECRET);
-    } catch (e) {}
-  }
+  // JWT is already parsed by the 'protect' middleware in the routes
 
   try {
     const booking = await Booking.findById(req.params.id);
