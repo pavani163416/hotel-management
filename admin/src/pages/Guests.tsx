@@ -387,9 +387,9 @@ export default function Guests() {
                 </div>
               ))}
             </div>
-            <button onClick={() => navigate("/bookings")}
+            <button onClick={() => navigate("/notifications")}
               className="mt-3 text-xs font-semibold text-primary hover:underline">
-              View All Bookings →
+              View All Notifications →
             </button>
           </div>
         </div>
@@ -440,6 +440,9 @@ export default function Guests() {
                       <div>
                         <p className="font-medium text-text-primary">#{b.id} · {b.room.type}</p>
                         <p className="text-xs text-muted">{b.checkIn} → {b.checkOut} · {b.nights} nights</p>
+                        <p className="text-xs text-muted mt-0.5">
+                          Booked on: {b.createdAt ? new Date(b.createdAt).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" }) : "—"}
+                        </p>
                       </div>
                       <div className="text-right">
                         <p className="font-semibold text-text-primary">${b.totalAmount.toLocaleString()}</p>
@@ -499,9 +502,9 @@ export default function Guests() {
                 </div>
               </div>
             )}
-            <button onClick={() => { setDetailGuest(null); navigate("/bookings"); }}
+            <button onClick={() => { setDetailGuest(null); navigate("/notifications"); }}
               className="w-full py-2.5 border border-border rounded-lg text-sm font-medium text-text-secondary hover:bg-surface-3 transition-colors">
-              View All Bookings →
+              View All Notifications →
             </button>
           </div>
         )}
