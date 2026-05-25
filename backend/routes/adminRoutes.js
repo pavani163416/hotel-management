@@ -518,11 +518,31 @@ router.put("/price-requests/:id/reject", protect, async (req, res, next) => {
 // ── Manager insights ──────────────────────────────────────
 router.get("/manager-insights", protect, async (req, res, next) => {
   try {
-    const allManagers    = await Manager.find({}).populate("hotelObjectId", "name hotelId");
+    const [allManagers, recentLogs] = await Promise.all([
+      Manager.find({}).populate("hotelObjectId", "name hotelId"),
+      import("../models/AuditLog.js").then((mod) =>
+        mod.default.find({ role: { $in: ["Manager", "Admin"] } })
+          .sort({ createdAt: -1 })
+          .limit(20)
+      )
+    ]);
+    
     const totalManagers  = allManagers.length;
     const activeManagers = allManagers.filter((m) => m.isActive).length;
 
     const managersPerHotel = {};
+    const recentlyActive = [...allManagers]
+      .sort((a, b) => new Date(b.lastLogin || 0) - new Date(a.lastLogin || 0))
+      .slice(0, 5)
+      .map(m => ({
+        _id: m._id,
+        name: m.name,
+        email: m.email,
+        hotelName: m.assignedHotelName || m.hotelObjectId?.name || 'Unassigned',
+        isActive: m.isActive,
+        lastLogin: m.lastLogin
+      }));
+
     allManagers.forEach((m) => {
       const hotelId   = m.assignedHotelId || m.hotelObjectId?.hotelId || "unassigned";
       const hotelName = m.assignedHotelName || m.hotelObjectId?.name  || "Unassigned";
@@ -537,8 +557,35 @@ router.get("/manager-insights", protect, async (req, res, next) => {
         activeManagers,
         inactiveManagers:  totalManagers - activeManagers,
         managersPerHotel:  Object.values(managersPerHotel),
+        recentlyActive,
+        recentActivity: recentLogs,
       },
     });
+  } catch (e) { next(e); }
+});
+
+// ── Hotel Manager Mapping ──────────────────────────────────
+router.get("/hotel-manager-map", protect, async (req, res, next) => {
+  try {
+    const hotels = await Hotel.find({}).sort({ name: 1 });
+    const managers = await import("../models/AdminUser.js").then(m => m.default.find({ role: "Manager", isActive: true }));
+    
+    const hotelMap = hotels.map(h => {
+      const hotelManagers = managers.filter(m => 
+        m.assignedHotelId === h.hotelId || 
+        (m.hotelObjectId && m.hotelObjectId.toString() === h._id.toString())
+      ).map(m => ({ _id: m._id, name: m.name, email: m.email }));
+
+      return {
+        hotelId: h.hotelId,
+        name: h.name,
+        location: h.location,
+        city: h.city,
+        managers: hotelManagers
+      };
+    });
+
+    res.json({ success: true, data: { hotels: hotelMap } });
   } catch (e) { next(e); }
 });
 

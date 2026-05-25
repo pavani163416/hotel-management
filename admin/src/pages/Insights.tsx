@@ -77,26 +77,44 @@ export default function Insights() {
 
   const API = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
+  const [visitorStats, setVisitorStats] = useState({ active: 0, converted: 0, bounced: 0, avgDur: 0 });
+  const [totalVisitors, setTotalVisitors] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [visitorSearch, setVisitorSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All");
+  const [page, setPage] = useState(1);
+  const PER_PAGE = 5;
+
   // ── Fetch real visitors from HTTP first, then layer Socket.IO updates ──
   useEffect(() => {
-    fetch(`${API}/visitors`)
+    if (!token) return;
+    setLoadingVisitors(true);
+    let url = `${API}/visitors?page=${page}&limit=${PER_PAGE}`;
+    if (statusFilter !== "All") url += `&status=${statusFilter}`;
+    if (visitorSearch) url += `&search=${encodeURIComponent(visitorSearch)}`;
+
+    fetch(url, { headers: { Authorization: `Bearer ${token}` } })
       .then((r) => r.json())
       .then((data) => {
         const raw: any[] = Array.isArray(data?.data) ? data.data : [];
         setVisitors(raw.map((v) => mapVisitor(v)));
+        if (data.stats) {
+          setVisitorStats({
+            active: data.stats.active,
+            converted: data.stats.converted,
+            bounced: data.stats.bounced,
+            avgDur: data.stats.avgDuration,
+          });
+        }
+        setTotalPages(data.totalPages || 1);
+        setTotalVisitors(data.total || 0);
       })
       .catch(() => {})
       .finally(() => setLoadingVisitors(false));
-  }, []);
+  }, [page, statusFilter, visitorSearch, token]);
 
   // ── Socket.IO for real-time visitor updates ──
   useEffect(() => {
-    const handleVisitorsList = (data: any[]) => {
-      const mapped: Visitor[] = data.map((v: any) => mapVisitor(v));
-      if (mapped.length) setVisitors(mapped);
-      setLoadingVisitors(false);
-    };
-
     const handleVisitorUpdate = (data: any) => {
       const updated = mapVisitor(data);
       setVisitors((prev) => {
@@ -106,22 +124,23 @@ export default function Insights() {
           next[idx] = updated;
           return next;
         }
-        return [updated, ...prev];
+        // Only prepend if we are on page 1
+        if (page === 1) return [updated, ...prev].slice(0, PER_PAGE);
+        return prev;
       });
     };
 
-    socket.on("visitors_list", handleVisitorsList);
     socket.on("visitor_update", handleVisitorUpdate);
 
     return () => {
-      socket.off("visitors_list", handleVisitorsList);
       socket.off("visitor_update", handleVisitorUpdate);
     };
-  }, []);
+  }, [page]);
 
   // ── Fetch Manager Insights ──
   useEffect(() => {
     const fetchManagerInsights = async () => {
+      if (!token) return;
       try {
         const [insightsRes, mapRes] = await Promise.all([
           fetch(`${API}/admin/manager-insights`, {
@@ -170,11 +189,7 @@ export default function Insights() {
     };
   }
 
-  const [visitorSearch, setVisitorSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("All");
   const [detail, setDetail] = useState<Visitor | null>(null);
-  const [page, setPage] = useState(1);
-  const PER_PAGE = 8;
 
   // ── Hotel popularity: rank by bookings count from BookingsContext ──
   const hotelStats = hotels.map((h) => {
@@ -189,23 +204,13 @@ export default function Insights() {
 
   const maxBookings = Math.max(...hotelStats.map((h) => h.bookingCount), 1);
 
-  // ── Visitor stats ──
-  const active    = visitors.filter((v) => v.status === "Active").length;
-  const converted = visitors.filter((v) => v.status === "Converted").length;
-  const bounced   = visitors.filter((v) => v.status === "Bounced").length;
-  const avgDur    = Math.round(visitors.reduce((s, v) => s + v.duration, 0) / (visitors.length || 1));
+  // ── Visitor stats (from API) ──
+  const active    = visitorStats.active;
+  const converted = visitorStats.converted;
+  const bounced   = visitorStats.bounced;
+  const avgDur    = visitorStats.avgDur;
 
-  // ── Filtered visitors ──
-  const filteredVisitors = visitors.filter((v) => {
-    const q = visitorSearch.toLowerCase();
-    const match = !q || v.ip.includes(q) || v.country.toLowerCase().includes(q) ||
-      v.city.toLowerCase().includes(q) || v.page.toLowerCase().includes(q);
-    const matchStatus = statusFilter === "All" || v.status === statusFilter;
-    return match && matchStatus;
-  });
-
-  const paginated = filteredVisitors.slice((page - 1) * PER_PAGE, page * PER_PAGE);
-  const totalPages = Math.max(1, Math.ceil(filteredVisitors.length / PER_PAGE));
+  const paginated = visitors;
 
   return (
     <AdminLayout>
@@ -307,7 +312,7 @@ export default function Insights() {
 
           {/* Visitor stats cards */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-            <StatsCard title="Total Visitors" value={visitors.length} change="Last 24 hours" trend="up"
+            <StatsCard title="Total Visitors" value={totalVisitors} change="All time" trend="up"
               icon={<Users className="w-5 h-5 text-primary" />} iconBg="bg-primary-light" />
             <StatsCard title="Active Now" value={active} change="On site" trend="up"
               icon={<Eye className="w-5 h-5 text-success" />} iconBg="bg-success-light" />
@@ -352,9 +357,7 @@ export default function Insights() {
                     <tr><td colSpan={9} className="px-5 py-12 text-center text-muted text-sm">
                       {loadingVisitors
                         ? "Loading visitors..."
-                        : visitors.length === 0
-                          ? "No visitor data yet. Visitors are tracked when guests browse the user portal (localhost:3000)."
-                          : "No visitors match your search."}
+                        : "No visitors match your search or filters."}
                     </td></tr>
                   ) : paginated.map((v) => (
                     <tr key={v.id} className="border-b border-border last:border-0 hover:bg-surface-2 transition-colors">
@@ -430,7 +433,7 @@ export default function Insights() {
             {/* Pagination */}
             <div className="flex items-center justify-between px-5 py-3 border-t border-border">
               <p className="text-xs text-muted">
-                Showing {filteredVisitors.length === 0 ? 0 : (page - 1) * PER_PAGE + 1}–{Math.min(page * PER_PAGE, filteredVisitors.length)} of {filteredVisitors.length} visitors
+                Showing {totalVisitors === 0 ? 0 : (page - 1) * PER_PAGE + 1}–{Math.min(page * PER_PAGE, totalVisitors)} of {totalVisitors} visitors
               </p>
               <div className="flex items-center gap-1">
                 <button onClick={() => setPage(Math.max(1, page - 1))} disabled={page === 1}
@@ -537,44 +540,40 @@ export default function Insights() {
 
         {/* Manager Activity & Hotel Mapping */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {/* Recently Active Managers */}
+          {/* Manager Activity Timeline */}
           <div className="bg-white rounded-xl border border-border shadow-card">
-            <div className="px-5 py-4 border-b border-border">
+            <div className="px-5 py-4 border-b border-border flex justify-between items-center">
               <h3 className="text-sm font-semibold text-text-primary flex items-center gap-2">
-                <Clock className="w-4 h-4 text-primary" /> Recently Active Managers
+                <Clock className="w-4 h-4 text-primary" /> Manager Activity Timeline
               </h3>
             </div>
-            <div className="p-4">
+            <div className="p-4 max-h-80 overflow-y-auto">
               {loadingInsights ? (
                 <div className="flex items-center justify-center py-8">
                   <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                 </div>
-              ) : managerInsights?.recentlyActive?.length === 0 ? (
+              ) : managerInsights?.recentActivity?.length === 0 ? (
                 <p className="text-sm text-muted text-center py-4">No recent manager activity</p>
               ) : (
-                <div className="space-y-3">
-                  {managerInsights?.recentlyActive?.slice(0, 5).map((manager: ManagerInsight) => (
-                    <div key={manager._id} className="flex items-center justify-between p-3 bg-surface-2 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                          manager.isActive ? 'bg-success-light' : 'bg-surface-3'
-                        }`}>
-                          <span className={`text-sm font-semibold ${manager.isActive ? 'text-success' : 'text-muted'}`}>
-                            {manager.name.charAt(0).toUpperCase()}
+                <div className="space-y-4">
+                  {managerInsights?.recentActivity?.map((log: any) => (
+                    <div key={log._id} className="relative pl-4 border-l-2 border-surface-3">
+                      <div className="absolute -left-[5px] top-1.5 w-2 h-2 rounded-full bg-primary" />
+                      <div className="flex flex-col gap-1">
+                        <p className="text-sm text-text-primary">
+                          <span className="font-semibold">{log.userEmail || "System"}</span> {" "}
+                          {log.description}
+                        </p>
+                        <p className="text-xs text-muted flex items-center gap-2">
+                          <span className={`px-1.5 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider ${
+                            log.severity === 'High' || log.severity === 'Critical' ? 'bg-danger-light text-danger' :
+                            log.severity === 'Medium' ? 'bg-warning-light text-warning' : 'bg-success-light text-success'
+                          }`}>
+                            {log.event}
                           </span>
-                        </div>
-                        <div>
-                          <p className="text-sm font-semibold text-text-primary">{manager.name}</p>
-                          <p className="text-xs text-muted">{manager.hotelName || 'Unassigned'}</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-xs text-muted">{manager.lastLogin ? timeAgo(manager.lastLogin) : 'Never'}</p>
-                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                          manager.isActive ? 'bg-success-light text-success' : 'bg-surface-3 text-muted'
-                        }`}>
-                          {manager.isActive ? 'Active' : 'Inactive'}
-                        </span>
+                          {timeAgo(log.createdAt)}
+                          {log.location && <span>· {log.location}</span>}
+                        </p>
                       </div>
                     </div>
                   ))}

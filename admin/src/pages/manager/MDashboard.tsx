@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import ManagerLayout from "@/components/ManagerLayout";
 import StatusBadge from "@/components/StatusBadge";
-import { getManagerStats, getManagerBookings, getManagerRooms } from "@/services/api";
+import { getManagerStats, getManagerBookings, getManagerRooms, getManagerPriceRequests } from "@/services/api";
 import { useSocket } from "@/hooks/useSocket";
 import { useNavigate } from "react-router-dom";
 
@@ -91,13 +91,21 @@ export default function Dashboard() {
     saveAlerts(next);
   };
 
+  const [priceRequests, setPriceRequests] = useState<any[]>([]);
+
   const load = useCallback(async (showRefresh = false) => {
     if (showRefresh) setRefreshing(true);
     try {
-      const [sR, bR, rR]: any[] = await Promise.allSettled([getManagerStats(), getManagerBookings(), getManagerRooms()]);
+      const [sR, bR, rR, pR]: any[] = await Promise.allSettled([
+        getManagerStats(), 
+        getManagerBookings(), 
+        getManagerRooms(),
+        getManagerPriceRequests()
+      ]);
       if (sR.status === "fulfilled") setStats(sR.value?.data);
       if (bR.status === "fulfilled") setBookings(bR.value?.data || []);
       if (rR.status === "fulfilled") setRooms(rR.value?.data || []);
+      if (pR.status === "fulfilled") setPriceRequests(pR.value?.data || []);
     } catch { /* use whatever loaded */ }
     setLoading(false);
     setRefreshing(false);
@@ -443,6 +451,51 @@ export default function Dashboard() {
             </div>
           )}
         </div>
+      </div>
+
+      {/* ── Recent Price Requests Module ── */}
+      <div className="mt-6 rounded-2xl overflow-hidden" style={cardStyle}>
+        <div className="flex items-center justify-between px-5 py-4"
+          style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+          <h3 className="font-semibold text-bright">Recent Price Requests</h3>
+          <button onClick={() => navigate("/m/pricing")}
+            className="flex items-center gap-1 text-xs font-semibold text-gold transition-colors"
+            onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = "#e8c96a"}
+            onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = "#d4a843"}>
+            View all <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+        {priceRequests.length === 0 ? (
+          <div className="px-5 py-10 text-center">
+            <DollarSign className="w-8 h-8 text-dim mx-auto mb-2" />
+            <p className="text-sm text-dim">No price requests yet</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full glass-table">
+              <thead>
+                <tr>
+                  {["Room", "Requested By", "Current", "Requested", "Status"].map((h) => (
+                    <th key={h}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {priceRequests.slice(0, 5).map((req, i) => (
+                  <tr key={i}>
+                    <td>
+                      <p className="text-sm font-semibold text-bright">#{req.roomNumber}</p>
+                    </td>
+                    <td>{req.createdByName || req.createdBy?.name || "—"}</td>
+                    <td><span className="text-soft font-semibold">${req.currentPrice.toLocaleString()}</span></td>
+                    <td><span className="font-bold text-gold">${req.requestedPrice.toLocaleString()}</span></td>
+                    <td><StatusBadge status={req.status} /></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {/* ── Alert Detail Modal ── */}

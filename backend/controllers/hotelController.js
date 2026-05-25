@@ -126,7 +126,7 @@ export const getHotels = async (req, res, next) => {
       ...hotel.toObject(),
       activeBookings: statsByHotel[hotel.hotelId]?.activeBookings ?? 0,
       ytdRevenue: statsByHotel[hotel.hotelId]?.ytdRevenue ?? 0,
-    }));
+    })).sort((a, b) => b.ytdRevenue - a.ytdRevenue || b.activeBookings - a.activeBookings);
 
     await cacheSet(cacheKey, enrichedHotels, CACHE_TTL.HOTEL_STATS);
     res.status(200).json({ success: true, count: enrichedHotels.length, data: enrichedHotels });

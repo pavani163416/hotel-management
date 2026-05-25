@@ -84,7 +84,7 @@ export default function Rooms() {
           available:   r.available ?? 1,
           features:    r.features || [],
           floor:       r.floor ?? 1,
-          status:      (r.available ?? 1) === 0 ? "Unavailable" : "Available",
+          status:      (r.available ?? 1) === 0 ? "Maintenance" : "Available",
         })));
       })
       .catch(() => setRooms([]))
@@ -324,7 +324,7 @@ export default function Rooms() {
                 className="bg-transparent text-sm outline-none w-full placeholder:text-muted" />
               {search && <button onClick={() => setSearch("")}><X className="w-3.5 h-3.5 text-muted" /></button>}
             </div>
-            {["All", "Available", "Unavailable"].map((s) => (
+            {(["All", "Available", "Maintenance"] as const).map((s) => (
               <button key={s} onClick={() => setStatusFilter(s)}
                 className={`text-xs font-semibold px-3 py-1.5 rounded-full transition-colors ${statusFilter === s ? "bg-primary text-white" : "bg-surface-3 text-muted hover:bg-surface-2"}`}>
                 {s}

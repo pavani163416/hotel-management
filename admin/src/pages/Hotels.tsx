@@ -9,6 +9,7 @@ import StatsCard from "@/components/StatsCard";
 import StatusBadge from "@/components/StatusBadge";
 import Modal from "@/components/Modal";
 import { useHotels, Hotel } from "@/context/HotelsContext";
+import MaintenanceTab from "./MaintenanceTab";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
@@ -21,6 +22,7 @@ export default function Hotels() {
   const [editTarget, setEditTarget] = useState<Hotel | null>(null);
   const [actionTarget, setActionTarget] = useState<Hotel | null>(null);
   const [submitted, setSubmitted] = useState(false);
+  const [activeTab, setActiveTab] = useState<"Hotels" | "Maintenance">("Hotels");
   
   // Load amenities from backend
   const [allAmenities, setAllAmenities] = useState<string[]>([]);
@@ -325,7 +327,22 @@ export default function Hotels() {
           }
         />
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="flex gap-1 border-b border-border mb-6">
+          {(["Hotels", "Maintenance"] as const).map(t => (
+            <button key={t} onClick={() => setActiveTab(t)}
+              className={`px-4 py-2 text-sm font-semibold transition-colors border-b-2 ${
+                activeTab === t ? "border-primary text-primary" : "border-transparent text-muted hover:text-text-primary"
+              }`}>
+              {t}
+            </button>
+          ))}
+        </div>
+
+        {activeTab === "Maintenance" ? (
+          <MaintenanceTab />
+        ) : (
+          <>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <StatsCard title="Total Managed" value={hotels.length} change="+2 New" trend="up"
             icon={<HotelIcon className="w-5 h-5 text-primary" />} iconBg="bg-primary-light" />
           <StatsCard title="Active" value={active} change="Operational" trend="up"
@@ -406,6 +423,8 @@ export default function Hotels() {
               className="text-xs text-primary font-semibold hover:underline">View All Notifications →</button>
           </div>
         </div>
+        </>
+      )}
       </div>
 
       {/* Add / Edit Modal */}

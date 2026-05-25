@@ -83,9 +83,13 @@ export const HotelsProvider = ({ children }: { children: ReactNode }) => {
     const reload = () => fetchFromBackend();
     socket.on("hotelCreated", reload);
     socket.on("hotelUpdated", reload);
+    socket.on("newBooking", reload);
+    socket.on("booking_update", reload);
     return () => {
       socket.off("hotelCreated", reload);
       socket.off("hotelUpdated", reload);
+      socket.off("newBooking", reload);
+      socket.off("booking_update", reload);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

@@ -112,14 +112,61 @@ export const convertVisitor = async (req, res, next) => {
 };
 export const getVisitors = async (req, res, next) => {
   try {
-    const visitors = await Visitor.find()
-      .sort({ createdAt: -1 })
-      .limit(200);
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 5;
+    const skip = (page - 1) * limit;
+
+    const query = {};
+    if (req.query.status && req.query.status !== "All") {
+      query.status = req.query.status;
+    }
+    if (req.query.search) {
+      const searchRegex = new RegExp(req.query.search, "i");
+      query.$or = [
+        { ip: searchRegex },
+        { country: searchRegex },
+        { city: searchRegex },
+        { page: searchRegex },
+      ];
+    }
+
+    const [visitors, total, statsAgg] = await Promise.all([
+      Visitor.find(query)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      Visitor.countDocuments(query),
+      Visitor.aggregate([
+        { $match: query },
+        {
+          $group: {
+            _id: null,
+            active: { $sum: { $cond: [{ $eq: ["$status", "Active"] }, 1, 0] } },
+            converted: { $sum: { $cond: [{ $eq: ["$status", "Converted"] }, 1, 0] } },
+            bounced: { $sum: { $cond: [{ $eq: ["$status", "Bounced"] }, 1, 0] } },
+            totalDuration: { $sum: "$duration" },
+            count: { $sum: 1 }
+          }
+        }
+      ])
+    ]);
+
+    const stats = statsAgg[0] || { active: 0, converted: 0, bounced: 0, totalDuration: 0, count: 0 };
+    const avgDuration = stats.count > 0 ? Math.round(stats.totalDuration / stats.count) : 0;
 
     res.status(200).json({
       success: true,
       count: visitors.length,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
       data: visitors,
+      stats: {
+        active: stats.active,
+        converted: stats.converted,
+        bounced: stats.bounced,
+        avgDuration,
+      }
     });
   } catch (error) {
     next(error);

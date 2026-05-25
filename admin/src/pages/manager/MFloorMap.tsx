@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import {
   BedDouble, Phone, Calendar, Wrench,
-  ArrowRightLeft, Check, AlertCircle, RefreshCw, History,
+  ArrowRightLeft, Check, AlertCircle, RefreshCw, History, User,
 } from "lucide-react";
 import ManagerLayout from "@/components/ManagerLayout";
 import Drawer from "@/components/Drawer";
