@@ -39,7 +39,7 @@ export const validate = (schema, source = "body") => {
 
 // ── Shared field definitions ─────────────────────────────────────────────────
 const emailField       = z.string().email("Invalid email address").toLowerCase().trim();
-const passwordField    = z.string().min(8, "Password must be at least 8 characters").max(128, "Password too long");
+const passwordField    = z.string().min(8, "Password must be at least 8 characters").max(72, "Password too long");
 const nameField        = z.string().min(2, "Name must be at least 2 characters").max(100).trim();
 const phoneField       = z.string().regex(/^\+?[0-9\s\-().]{7,20}$/, "Invalid phone number").optional();
 const mongoIdField     = z.string().regex(/^[a-f\d]{24}$/i, "Invalid ID format");
@@ -50,7 +50,7 @@ const positiveNumber   = z.number().positive();
 // ── Auth Schemas ─────────────────────────────────────────────────────────────
 const login = z.object({
   email:    emailField,
-  password: z.string().min(1, "Password is required").max(128),
+  password: z.string().min(1, "Password is required").max(72),
 }).strict();
 
 const register = z.object({
@@ -212,7 +212,7 @@ const addReview = z.object({
 // ── Manager Login Schema (same as user login but exported separately) ─────────
 const managerLogin = z.object({
   email:    emailField,
-  password: z.string().min(1).max(128),
+  password: z.string().min(1).max(72),
 }).strict();
 
 // ── Exported schemas map ──────────────────────────────────────────────────────

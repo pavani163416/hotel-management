@@ -601,6 +601,10 @@ export const getAllBookings = async (req, res, next) => {
 // Returns a single booking by ID
 // ─────────────────────────────────────────────────────────
 export const getBookingById = async (req, res, next) => {
+  if (!req.user && !req.customer) {
+    return res.status(401).json({ success: false, message: "Authentication required" });
+  }
+
   try {
     const booking = await Booking.findById(req.params.id)
       .populate("room", "roomNumber type pricePerNight images amenities")
@@ -612,6 +616,13 @@ export const getBookingById = async (req, res, next) => {
         success: false,
         message: "Booking not found",
       });
+    }
+
+    const currentUser = req.user || req.customer;
+    if (currentUser.role !== "admin" && currentUser.role !== "Super Admin" && currentUser.role !== "Controller" && currentUser.role !== "Manager") {
+      if (booking.guest?.id !== currentUser.id && booking.guestSnapshot?.email !== currentUser.email && booking.guestSnapshot?.id !== currentUser.guestId) {
+        return res.status(403).json({ success: false, message: "Unauthorized: You do not own this booking." });
+      }
     }
 
     const response = booking.toJSON();
@@ -635,7 +646,9 @@ export const getBookingById = async (req, res, next) => {
 // Cancels a booking and frees the room atomically
 // ─────────────────────────────────────────────────────────
 export const cancelBooking = async (req, res, next) => {
-  // JWT is already parsed by the 'protect' middleware in the routes
+  if (!req.user && !req.customer) {
+    return res.status(401).json({ success: false, message: "Authentication required" });
+  }
 
   try {
     const booking = await Booking.findById(req.params.id);
@@ -645,6 +658,13 @@ export const cancelBooking = async (req, res, next) => {
         success: false,
         message: "Booking not found",
       });
+    }
+
+    const currentUser = req.user || req.customer;
+    if (currentUser.role !== "admin" && currentUser.role !== "Super Admin" && currentUser.role !== "Controller" && currentUser.role !== "Manager") {
+      if (booking.guest?.toString() !== currentUser.id && booking.guestSnapshot?.email !== currentUser.email && booking.guestSnapshot?.id !== currentUser.guestId) {
+        return res.status(403).json({ success: false, message: "Unauthorized: You do not own this booking." });
+      }
     }
 
     if (booking.status === "Cancelled") {

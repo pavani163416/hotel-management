@@ -130,6 +130,7 @@ import("./models/Hotel.js").then(async ({ default: Hotel }) => {
 }).catch(() => {});
 
 const app = express();
+app.disable("x-powered-by");
 
 app.use(cookieParser());
 app.use(createSessionMiddleware());
