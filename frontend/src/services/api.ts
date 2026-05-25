@@ -28,6 +28,14 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    // Intercept 401 Unauthorized errors to automatically clean up expired/invalid sessions
+    if (error.response?.status === 401) {
+      localStorage.removeItem("luxe_customer_token");
+      localStorage.removeItem("luxe_user");
+      localStorage.removeItem("luxe_bookings");
+      window.dispatchEvent(new Event("luxe_logout"));
+    }
+
     const message =
       error.response?.data?.message ||
       error.message ||

@@ -4,7 +4,7 @@ import { Bell, Hotel, UserCircle, LogOut, Mail, CheckCircle2 } from "lucide-reac
 import { useBooking } from "@/context/BookingContext";
 import { AuthModal } from "@/components/AuthModal";
 import socket from "@/services/socket";
-import { getNotifications, markNotificationRead, createNotification } from "@/services/api";
+import api, { getNotifications, markNotificationRead, createNotification } from "@/services/api";
 import { toast } from "sonner";
 import {
   DropdownMenu,
@@ -105,12 +105,8 @@ const Navbar = () => {
       // (local context bookings may be stale or missing hotelId)
       let hotelId = selectedHotel?.id || "";
       try {
-        const token = localStorage.getItem("luxe_customer_token");
-        const headers: Record<string, string> = { "Content-Type": "application/json" };
-        if (token) headers["Authorization"] = `Bearer ${token}`;
-        const bRes = await fetch(`${base}/bookings?guestEmail=${encodeURIComponent(user.email)}&limit=10`, { headers });
-        const bJson = await bRes.json();
-        const apiBookings: any[] = bJson?.data || [];
+        const bRes = await api.get(`/bookings?guestEmail=${encodeURIComponent(user.email)}&limit=10`);
+        const apiBookings: any[] = bRes.data?.data || [];
         // Find most recent confirmed booking — use room.hotelStringId (e.g. "h7") for routing
         const confirmed = apiBookings.find((b: any) => b.status === "Confirmed") || apiBookings[0];
         const stringId = confirmed?.room?.hotelStringId;   // "h7", "h1", etc.
@@ -180,14 +176,9 @@ const Navbar = () => {
     getNotifications(scope).then((res) => setNotifications(res?.data || [])).catch(() => {});
 
     // Check if user has an active (Confirmed/CheckedIn) booking from API
-    const base = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
-    const token = localStorage.getItem("luxe_customer_token");
-    const headers: Record<string, string> = { "Content-Type": "application/json" };
-    if (token) headers["Authorization"] = `Bearer ${token}`;
-    fetch(`${base}/bookings?guestEmail=${encodeURIComponent(user.email)}&limit=20`, { headers })
-      .then((r) => r.json())
-      .then((d) => {
-        const active = (d?.data || []).some((b: any) =>
+    api.get(`/bookings?guestEmail=${encodeURIComponent(user.email)}&limit=20`)
+      .then((res) => {
+        const active = (res.data?.data || []).some((b: any) =>
           (b.status === "Confirmed" || b.status === "CheckedIn") && bookingIsActiveToday(b)
         );
         setHasActiveStay(active || bookings.some((b) => (b.status === "Confirmed" || b.status === "CheckedIn") && bookingIsActiveToday(b)));

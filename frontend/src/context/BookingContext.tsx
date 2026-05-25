@@ -178,6 +178,15 @@ export const BookingProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => { localStorage.setItem("luxe_bookings", JSON.stringify(bookings)); }, [bookings]);
   useEffect(() => { localStorage.setItem("luxe_user", JSON.stringify(user)); }, [user]);
 
+  // Handle centralized logout events (e.g. from 401 Unauthorized interceptor)
+  useEffect(() => {
+    const handleLuxeLogout = () => {
+      setUser(null);
+    };
+    window.addEventListener("luxe_logout", handleLuxeLogout);
+    return () => window.removeEventListener("luxe_logout", handleLuxeLogout);
+  }, []);
+
   // Real-time hotel updates via SSE with auto-reconnect, polling fallback
   useEffect(() => {
     let sse: EventSource | null = null;
