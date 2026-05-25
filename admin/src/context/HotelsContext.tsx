@@ -16,6 +16,7 @@ export type Hotel = {
   status: "Active" | "Maintenance" | "Inactive";
   img: string;
   amenities: string[];
+  floors: number;
 };
 
 type HotelsCtx = {
@@ -43,6 +44,7 @@ function mapBackend(h: any): Hotel {
     status:         h.isActive === false ? "Inactive" : (h.status || "Active"),
     img:            h.image || h.img || "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=60&q=80",
     amenities:      Array.isArray(h.amenities) ? h.amenities : [],
+    floors:         h.floors || 1,
   };
 }
 

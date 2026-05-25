@@ -194,15 +194,44 @@ export const addReviewToHotel = async (req, res, next) => {
 export const createHotel = async (req, res, next) => {
   try {
     const hotel = await Hotel.create(req.body);
+    
+    // Auto-generate rooms if floors and roomsPerFloor are provided
+    const floors = Number(req.body.floors) || 0;
+    const roomsPerFloor = Number(req.body.roomsPerFloor) || 0;
+    
+    if (floors > 0 && roomsPerFloor > 0) {
+      const roomsToCreate = [];
+      for (let f = 1; f <= floors; f++) {
+        for (let r = 1; r <= roomsPerFloor; r++) {
+          const roomNumber = `${f}${r.toString().padStart(2, '0')}`;
+          roomsToCreate.push({
+            hotelId: hotel._id,
+            hotelStringId: hotel.hotelId,
+            roomNumber,
+            type: "Standard",
+            pricePerNight: hotel.pricePerNight || 500,
+            capacity: 2,
+            bedType: "King",
+            status: "Available",
+            floor: f,
+            isActive: true
+          });
+        }
+      }
+      if (roomsToCreate.length > 0) {
+        await Room.insertMany(roomsToCreate);
+      }
+    }
+
     // Sync to controller DB snapshot so admin panel stats stay in sync
     await syncSnapshot(hotel, {
       country:    req.body.country || "",
-      totalRooms: req.body.totalRooms || 0,
+      totalRooms: req.body.totalRooms || (floors * roomsPerFloor) || 0,
       status:     hotel.isActive ? "Active" : "Inactive",
     });
     await invalidateHotelCache();
     broadcastHotels();
-    res.status(201).json({ success: true, message: "Hotel created", data: hotel });
+    res.status(201).json({ success: true, message: "Hotel created and rooms auto-generated", data: hotel });
   } catch (error) {
     next(error);
   }

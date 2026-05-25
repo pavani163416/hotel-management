@@ -23,42 +23,22 @@ export default function Hotels() {
   const [actionTarget, setActionTarget] = useState<Hotel | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [activeTab, setActiveTab] = useState<"Hotels" | "Maintenance">("Hotels");
-  
-  // Load amenities from backend
-  const [allAmenities, setAllAmenities] = useState<string[]>([]);
+  const [allAmenities] = useState<string[]>([
+    "Free WiFi", "Pool", "Infinity Pool", "Garden", "Gym", "Spa & Wellness",
+    "Restaurant", "Bar", "Breakfast", "Coffee", "Room Service",
+    "Airport Shuttle", "Parking", "Valet",
+    "Beach Access", "Water Sports", "Ski-in/Ski-out",
+    "Concierge", "Butler", "Business Center",
+    "Fireplace Lounge", "Sunset Terrace", "Rooftop",
+    "AC", "Smart TV", "Pet Friendly", "Family Friendly",
+  ]);
   
   const [form, setForm] = useState({
     name: "", subtitle: "", location: "", country: "",
-    rooms: "", pricePerNight: "500", status: "Active" as Hotel["status"],
+    pricePerNight: "500", status: "Active" as Hotel["status"],
     amenities: ["Free WiFi", "Restaurant", "Concierge"] as string[],
+    floors: "1", roomsPerFloor: "10",
   });
-
-  // Load amenities on component mount
-  useEffect(() => {
-    loadAmenities();
-  }, []);
-
-  const loadAmenities = async () => {
-    try {
-      const res = await fetch(`${API}/amenities`);
-      const data = await res.json();
-      if (data.success && data.data) {
-        setAllAmenities(data.data);
-      }
-    } catch (err) {
-      console.error("Failed to load amenities:", err);
-      // Fallback to default amenities if backend fails
-      setAllAmenities([
-        "Free WiFi", "Pool", "Infinity Pool", "Garden", "Gym", "Spa & Wellness",
-        "Restaurant", "Bar", "Breakfast", "Coffee", "Room Service",
-        "Airport Shuttle", "Parking", "Valet",
-        "Beach Access", "Water Sports", "Ski-in/Ski-out",
-        "Concierge", "Butler", "Business Center",
-        "Fireplace Lounge", "Sunset Terrace", "Rooftop",
-        "AC", "Smart TV", "Pet Friendly", "Family Friendly",
-      ]);
-    }
-  };
 
   const toggleAmenity = (a: string) => {
     setForm((prev) => ({
@@ -79,7 +59,7 @@ export default function Hotels() {
 
   const openAdd = () => {
     setEditTarget(null);
-    setForm({ name: "", subtitle: "", location: "", country: "", rooms: "", pricePerNight: "500", status: "Active", amenities: ["Free WiFi", "Restaurant", "Concierge"] });
+    setForm({ name: "", subtitle: "", location: "", country: "", pricePerNight: "500", status: "Active", amenities: ["Free WiFi", "Restaurant", "Concierge"], floors: "1", roomsPerFloor: "10" });
     setUploadedImage("");
     setUploadedImage2("");
     setUploadedImage3("");
@@ -90,7 +70,7 @@ export default function Hotels() {
 
   const openEdit = (h: Hotel) => {
     setEditTarget(h);
-    setForm({ name: h.name, subtitle: h.subtitle, location: h.location, country: h.country, rooms: String(h.rooms), pricePerNight: "500", status: h.status, amenities: h.amenities?.length ? h.amenities : ["Free WiFi", "Restaurant", "Concierge"] });
+    setForm({ name: h.name, subtitle: h.subtitle, location: h.location, country: h.country, pricePerNight: "500", status: h.status, amenities: h.amenities?.length ? h.amenities : ["Free WiFi", "Restaurant", "Concierge"], floors: String(h.floors || 1), roomsPerFloor: String((h as any).roomsPerFloor || 10) });
     setUploadedImage(h.img || "");
     setUploadedImage2("");
     setUploadedImage3("");
@@ -230,7 +210,9 @@ export default function Hotels() {
       reviews:       [],
       isActive:      form.status === "Active",
       country:       form.country.toUpperCase(),
-      totalRooms:    Number(form.rooms),
+      totalRooms:    Number(form.floors) * Number(form.roomsPerFloor),
+      floors:        Number(form.floors),
+      roomsPerFloor: Number(form.roomsPerFloor),
     };
 
     try {
@@ -619,11 +601,21 @@ export default function Hotels() {
                   className="w-full px-3 py-2.5 border border-border rounded-lg text-sm outline-none focus:border-primary" />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div>
-                <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">Total Rooms *</label>
-                <input required type="number" min="1" value={form.rooms} onChange={(e) => setForm({ ...form, rooms: e.target.value })} placeholder="142"
+                <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">Floors *</label>
+                <input required type="number" min="1" value={form.floors} onChange={(e) => setForm({ ...form, floors: e.target.value })} placeholder="10"
                   className="w-full px-3 py-2.5 border border-border rounded-lg text-sm outline-none focus:border-primary" />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">Rooms/Floor *</label>
+                <input required type="number" min="1" value={form.roomsPerFloor} onChange={(e) => setForm({ ...form, roomsPerFloor: e.target.value })} placeholder="10"
+                  className="w-full px-3 py-2.5 border border-border rounded-lg text-sm outline-none focus:border-primary" />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">Total Rooms</label>
+                <input disabled type="number" value={Number(form.floors || 0) * Number(form.roomsPerFloor || 0)}
+                  className="w-full px-3 py-2.5 border border-border rounded-lg text-sm bg-surface-2 outline-none text-muted cursor-not-allowed" />
               </div>
               <div>
                 <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">Price/Night ($) *</label>
@@ -653,13 +645,6 @@ export default function Hotels() {
               {form.amenities.length > 0 && (
                 <p className="text-xs text-muted mt-1.5">{form.amenities.length} selected</p>
               )}
-              <button
-                type="button"
-                onClick={() => navigate("/amenities")}
-                className="mt-2 text-xs text-primary hover:underline font-medium"
-              >
-                + Manage Amenities
-              </button>
             </div>
             <div>
               <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">Status</label>
