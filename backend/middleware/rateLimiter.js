@@ -1,6 +1,4 @@
 import rateLimit from "express-rate-limit";
-import pkg from "express-rate-limit";
-const { ipKeyGenerator } = pkg;
 import RedisStore from "rate-limit-redis";
 import { getRedisClient, isRedisReady } from "../config/redis.js";
 
@@ -22,8 +20,13 @@ const getClientIp = (req) => {
   if (typeof forwarded === "string" && forwarded.trim()) {
     ip = forwarded.split(",")[0].trim();
   }
-  // Use ipKeyGenerator for IPv6 compatibility
-  return ipKeyGenerator(ip);
+  
+  // Clean IPv4-mapped IPv6 prefix for consistency
+  if (ip.startsWith("::ffff:")) {
+    ip = ip.substring(7);
+  }
+  
+  return ip;
 };
 
 // Helper to determine if a request originates locally
