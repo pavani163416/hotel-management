@@ -12,9 +12,26 @@ import 'core/widgets/notification_popup.dart';
 import 'dart:ui';
 import 'core/utils/injection_container.dart' as di;
 import 'core/providers/notification_provider.dart';
+import 'package:flutter/foundation.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'core/services/push_notifications.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  if (kIsWeb) {
+    await Firebase.initializeApp(
+      options: const FirebaseOptions(
+        apiKey: 'AIzaSyBi6icwlduwBjJjue-uDXJDiXm9icrV_Wo',
+        appId: '1:239513848879:web:5eeec57c5abcbfc6f30ada',
+        messagingSenderId: '239513848879',
+        projectId: 'hotel-mgnt-8ffff',
+        storageBucket: 'hotel-mgnt-8ffff.firebasestorage.app',
+      ),
+    );
+  } else {
+    await Firebase.initializeApp();
+  }
+  await PushNotificationService.initialize();
   await di.init();
   runApp(
     MultiProvider(

@@ -180,7 +180,7 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
       document.head.appendChild(script);
     });
 
-  const GOOGLE_CLIENT_ID_FALLBACK = "70312411330-jo6eo462a26qo7gcici4nr1csaoa8v0q.apps.googleusercontent.com";
+  const GOOGLE_CLIENT_ID_FALLBACK = "239513848879-7n631mq8o0due6v807tk58gbli9907mc.apps.googleusercontent.com";
   const handleGoogleLogin = async () => {
     const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID_FALLBACK;
     if (!clientId) {

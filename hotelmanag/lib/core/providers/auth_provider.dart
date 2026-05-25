@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'dart:convert';
@@ -12,24 +13,32 @@ class AuthProvider extends ChangeNotifier {
   UserEntity? _user;
   bool _isLoading = false;
   String? _error;
+  String? _unverifiedEmail;
 
   AuthProvider(this._authRepository);
 
   UserEntity? get user => _user;
   bool get isLoading => _isLoading;
   String? get error => _error;
+  String? get unverifiedEmail => _unverifiedEmail;
   bool get isAuthenticated => _user != null;
 
   Future<void> login(String email, String password) async {
     _isLoading = true;
     _error = null;
+    _unverifiedEmail = null;
     notifyListeners();
 
     final result = await _authRepository.login(email, password);
 
     result.fold(
       (failure) {
-        _error = failure.message;
+        if (failure.message.toLowerCase().contains('not verified')) {
+          _unverifiedEmail = email;
+          _error = failure.message;
+        } else {
+          _error = failure.message;
+        }
         _isLoading = false;
         notifyListeners();
       },
@@ -46,6 +55,7 @@ class AuthProvider extends ChangeNotifier {
   Future<void> register(String name, String email, String password, String phone) async {
     _isLoading = true;
     _error = null;
+    _unverifiedEmail = null;
     notifyListeners();
 
     final result = await _authRepository.register(name, email, password, phone);
@@ -58,10 +68,62 @@ class AuthProvider extends ChangeNotifier {
       },
       (data) async {
         final (user, token) = data;
+        if (token.isEmpty) {
+          _unverifiedEmail = email;
+        } else {
+          _user = user;
+          await _saveAuthData(user, token);
+        }
+        _isLoading = false;
+        notifyListeners();
+      },
+    );
+  }
+
+  Future<bool> verifyOtp(String email, String code) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    final result = await _authRepository.verifyOtp(email, code);
+
+    return result.fold(
+      (failure) {
+        _error = failure.message;
+        _isLoading = false;
+        notifyListeners();
+        return false;
+      },
+      (data) async {
+        final (user, token) = data;
         _user = user;
+        _unverifiedEmail = null;
         await _saveAuthData(user, token);
         _isLoading = false;
         notifyListeners();
+        return true;
+      },
+    );
+  }
+
+  Future<bool> resendOtp(String email) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    final result = await _authRepository.resendOtp(email);
+
+    return result.fold(
+      (failure) {
+        _error = failure.message;
+        _isLoading = false;
+        notifyListeners();
+        return false;
+      },
+      (_) {
+        _isLoading = false;
+        notifyListeners();
+        return true;
       },
     );
   }
@@ -124,12 +186,21 @@ class AuthProvider extends ChangeNotifier {
     );
   }
 
+  GoogleSignIn get _googleSignIn {
+    const clientId = '239513848879-7n631mq8o0due6v807tk58gbli9907mc.apps.googleusercontent.com';
+    return GoogleSignIn(
+      clientId: kIsWeb ? clientId : null,
+      serverClientId: kIsWeb ? null : clientId,
+      scopes: ['email', 'profile', 'openid'],
+    );
+  }
+
   void logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(AppConstants.tokenKey);
     await prefs.remove('user_favorites'); // Clear favorites on logout
     await prefs.remove('user_data'); // Clear cached user details
-    await GoogleSignIn().signOut(); // Also sign out from Google
+    await _googleSignIn.signOut(); // Also sign out from Google
     _user = null;
     notifyListeners();
   }
@@ -139,45 +210,45 @@ class AuthProvider extends ChangeNotifier {
     _error = null;
     notifyListeners();
 
+    print('DEBUG: Google Sign-In button pressed. Initializing flow...');
     try {
-      // serverClientId is the Web OAuth client ID from Google Cloud Console.
-      // It is required to get an idToken on Android when google-services.json
-      // is not present or when the Web client is used as the backend verifier.
-      const serverClientId =
-          '70312411330-jo6eo462a26qo7gcici4nr1csaoa8v0q.apps.googleusercontent.com';
-
-      final GoogleSignIn googleSignIn = GoogleSignIn(
-        serverClientId: serverClientId,
-        scopes: ['email', 'profile'],
-      );
+      final GoogleSignIn googleSignIn = _googleSignIn;
 
       // Sign out first to force the account picker to show every time
+      print('DEBUG: Signing out from existing session...');
       await googleSignIn.signOut();
 
+      print('DEBUG: Requesting Google Sign-In Dialog...');
       final GoogleSignInAccount? account = await googleSignIn.signIn();
 
       if (account == null) {
-        // User cancelled the picker
+        print('DEBUG: User cancelled the account selection dialog.');
         _isLoading = false;
         notifyListeners();
         return false;
       }
 
+      print('DEBUG: Google Account Selected: ${account.email}');
       final GoogleSignInAuthentication auth = await account.authentication;
-      final String? idToken = auth.idToken;
+      final String? idToken = auth.idToken ?? auth.accessToken;
+
+      print('DEBUG: idToken obtained: ${auth.idToken != null ? "YES" : "NO"}');
+      print('DEBUG: accessToken obtained: ${auth.accessToken != null ? "YES" : "NO"}');
 
       if (idToken == null) {
-        _error = 'Google sign-in failed: could not obtain ID token. '
-            'Make sure google-services.json is configured for this app.';
+        print('DEBUG: ERROR - Both idToken and accessToken are NULL!');
+        _error = 'Google sign-in failed: could not obtain authentication token.';
         _isLoading = false;
         notifyListeners();
         return false;
       }
 
+      print('DEBUG: Sending selected token to LuxeStay backend API...');
       final result = await _authRepository.signInWithGoogle(idToken);
 
       return result.fold(
         (failure) {
+          print('DEBUG: Backend Auth Failed! Error: ${failure.message}');
           _error = failure.message;
           _isLoading = false;
           notifyListeners();
@@ -185,6 +256,7 @@ class AuthProvider extends ChangeNotifier {
         },
         (data) async {
           final (user, token) = data;
+          print('DEBUG: Backend Auth SUCCESS! User: ${user.name}, Email: ${user.email}');
           _user = user;
           await _saveAuthData(user, token);
           _isLoading = false;
@@ -193,6 +265,7 @@ class AuthProvider extends ChangeNotifier {
         },
       );
     } catch (e) {
+      print('DEBUG: Caught Exception during Google Sign-In flow: ${e.toString()}');
       _error = 'Google sign-in error: ${e.toString()}';
       _isLoading = false;
       notifyListeners();

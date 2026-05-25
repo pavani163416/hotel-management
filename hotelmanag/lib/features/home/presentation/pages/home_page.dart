@@ -385,7 +385,7 @@ backgroundImage: (profileImage != null && profileImage.isNotEmpty)
                             const SizedBox(width: 12),
                             Consumer<AuthProvider>(
                               builder: (context, auth, _) {
-                                final name = auth.user?.name ?? 'Guest';
+                                final name = (auth.user?.name?.isEmpty ?? true) ? 'Guest' : auth.user!.name;
                                 return Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [

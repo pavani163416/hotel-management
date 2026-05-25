@@ -187,7 +187,7 @@ export const createManagerRoom = async (req, res, next) => {
       return res.status(413).json({ success: false, message: `roomNumber exceeds maximum length of ${MAX_ROOM_NUMBER_LENGTH}` });
     }
     // Simple XSS/character whitelist (alphanum, dash, underscore, space)
-    const ROOM_REGEX = /^[a-zA-Z0-9\-_=\s]+$/;
+    const ROOM_REGEX = /^[a-zA-Z0-9\-_\=\s]+$/;
     if (!ROOM_REGEX.test(roomNumber)) {
       return res.status(400).json({ success: false, message: "roomNumber contains invalid characters" });
     }
@@ -216,7 +216,6 @@ export const createManagerRoom = async (req, res, next) => {
     res.status(201).json({ success: true, message: "Room created", data: room });
   } catch (err) { next(err); }
 };
-
 
 // ── PUT /api/manager/rooms/:id ────────────────────────────
 export const updateManagerRoom = async (req, res, next) => {

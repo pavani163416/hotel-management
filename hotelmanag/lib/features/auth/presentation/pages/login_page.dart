@@ -78,6 +78,7 @@ class _LoginPageState extends State<LoginPage> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Checkbox(
                       value: _rememberMe,
@@ -87,13 +88,25 @@ class _LoginPageState extends State<LoginPage> {
                     const Text('Remember me', style: TextStyle(fontSize: 14, color: AppTheme.primaryColor)),
                   ],
                 ),
-                TextButton(
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Password reset link sent to your email!')),
-                    );
-                  },
-                  child: const Text('Forgot your password?', style: TextStyle(color: AppTheme.primaryColor, fontSize: 13)),
+                Flexible(
+                  child: TextButton(
+                    style: TextButton.styleFrom(
+                      padding: EdgeInsets.zero,
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    onPressed: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Password reset link sent to your email!')),
+                      );
+                    },
+                    child: const Text(
+                      'Forgot your password?',
+                      style: TextStyle(color: AppTheme.primaryColor, fontSize: 13),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -112,6 +125,10 @@ class _LoginPageState extends State<LoginPage> {
                               if (context.mounted) {
                                 context.read<BookingProvider>().fetchMyBookings();
                                 context.go('/');
+                              }
+                            } else if (auth.unverifiedEmail != null) {
+                              if (context.mounted) {
+                                context.push('/otp', extra: auth.unverifiedEmail);
                               }
                             } else if (auth.error != null) {
                               if (context.mounted) {

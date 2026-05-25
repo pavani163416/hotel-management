@@ -4,6 +4,8 @@ import 'package:hotelmanag/features/auth/data/models/user_model.dart';
 abstract class AuthRemoteDataSource {
   Future<AuthResponse> login(String email, String password);
   Future<AuthResponse> register(String name, String email, String password, String phone);
+  Future<AuthResponse> verifyOtp(String email, String code);
+  Future<void> resendOtp(String email);
   Future<AuthResponse> signInWithGoogle(String idToken);
   Future<UserModel> getMe(String token);
   Future<UserModel> updateProfile({
@@ -77,6 +79,31 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       user: UserModel.fromJson(data),
       token: data['token'] ?? '',
     );
+  }
+
+  @override
+  Future<AuthResponse> verifyOtp(String email, String code) async {
+    final response = await _apiService.post('auth/verify-otp', data: {
+      'email': email,
+      'code': code,
+    });
+
+    final data = response.data['data'];
+    if (data == null) {
+      throw Exception(response.data['message'] ?? 'OTP Verification failed');
+    }
+
+    return AuthResponse(
+      user: UserModel.fromJson(data),
+      token: data['token'] ?? '',
+    );
+  }
+
+  @override
+  Future<void> resendOtp(String email) async {
+    await _apiService.post('auth/resend-otp', data: {
+      'email': email,
+    });
   }
 
   @override

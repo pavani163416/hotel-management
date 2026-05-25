@@ -154,6 +154,10 @@ class _RegisterPageState extends State<RegisterPage> {
                                 context.read<BookingProvider>().fetchMyBookings();
                                 context.go('/');
                               }
+                            } else if (auth.unverifiedEmail != null) {
+                              if (context.mounted) {
+                                context.push('/otp', extra: auth.unverifiedEmail);
+                              }
                             } else if (auth.error != null) {
                               if (context.mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(

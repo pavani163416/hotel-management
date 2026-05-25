@@ -57,9 +57,19 @@ class _PaymentPageState extends State<PaymentPage> {
 
   Future<void> _processPayment(BookingProvider provider) async {
     if (provider.isLoading) return;
-    final leadId = provider.leadGuest['id']?.trim() ?? '';
-    final hasLeadId = leadId.isNotEmpty;
-    bool isIdValid = hasLeadId ? true : _idFormKey.currentState!.validate();
+    
+    String selectedGuestId = '';
+    if (_selectedGuest == 'lead') {
+      selectedGuestId = provider.leadGuest['id']?.trim() ?? '';
+    } else if (_selectedGuest.startsWith('adult_')) {
+      final index = int.tryParse(_selectedGuest.split('_')[1]);
+      if (index != null && index >= 0 && index < provider.additionalAdults.length) {
+        selectedGuestId = provider.additionalAdults[index]['id']?.trim() ?? '';
+      }
+    }
+
+    final hasId = selectedGuestId.isNotEmpty;
+    bool isIdValid = hasId ? true : _idFormKey.currentState!.validate();
     bool isPaymentValid = _paymentFormKey.currentState!.validate();
 
     if (_selectedMethod == 'bank' && _selectedBank == null) {
@@ -71,6 +81,26 @@ class _PaymentPageState extends State<PaymentPage> {
     }
 
     if (isIdValid && isPaymentValid) {
+      if (!hasId) {
+        final newId = _idNumberController.text.trim();
+        if (_selectedGuest == 'lead') {
+          provider.updateLeadGuest({
+            ...provider.leadGuest,
+            'id': newId,
+          });
+        } else if (_selectedGuest.startsWith('adult_')) {
+          final index = int.tryParse(_selectedGuest.split('_')[1]);
+          if (index != null && index >= 0 && index < provider.additionalAdults.length) {
+            final updatedAdults = List<Map<String, String>>.from(provider.additionalAdults);
+            updatedAdults[index] = {
+              ...updatedAdults[index],
+              'id': newId,
+            };
+            provider.setAdditionalGuests(updatedAdults, provider.children);
+          }
+        }
+      }
+
       final cardNumber = _cardNumberController.text.trim();
       // Handle simulated payment failure tip
       if (_selectedMethod == 'card' && cardNumber.endsWith('0000')) {
@@ -270,7 +300,17 @@ class _PaymentPageState extends State<PaymentPage> {
 
   Widget _buildGuestIdentityVerification(BookingProvider provider) {
     final leadName = provider.leadGuest['name'] ?? 'Guest';
-    final leadId = provider.leadGuest['id']?.trim() ?? '';
+    
+    String selectedGuestId = '';
+    if (_selectedGuest == 'lead') {
+      selectedGuestId = provider.leadGuest['id']?.trim() ?? '';
+    } else if (_selectedGuest.startsWith('adult_')) {
+      final index = int.tryParse(_selectedGuest.split('_')[1]);
+      if (index != null && index >= 0 && index < provider.additionalAdults.length) {
+        selectedGuestId = provider.additionalAdults[index]['id']?.trim() ?? '';
+      }
+    }
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
@@ -302,7 +342,7 @@ class _PaymentPageState extends State<PaymentPage> {
             );
           }),
           
-          if (leadId.isNotEmpty) ...[
+          if (selectedGuestId.isNotEmpty) ...[
             _buildLabel('GOVT ID ON FILE'),
             const SizedBox(height: 8),
             Container(
@@ -314,7 +354,7 @@ class _PaymentPageState extends State<PaymentPage> {
                 border: Border.all(color: AppTheme.mutedColor.withOpacity(0.6)),
               ),
               child: Text(
-                leadId,
+                selectedGuestId,
                 style: const TextStyle(fontSize: 14, color: AppTheme.primaryColor, fontWeight: FontWeight.w600),
               ),
             ),

@@ -774,12 +774,31 @@ router.post("/google", async (req, res, next) => {
     const { idToken } = req.body;
     if (!idToken) return res.status(400).json({ success: false, message: "ID Token is required" });
 
-    const ticket = await googleClient.verifyIdToken({
-      idToken,
-      audience: process.env.GOOGLE_CLIENT_ID,
-    });
-    const payload = ticket.getPayload();
-    const { email, name, picture, sub: googleId } = payload;
+    let email, name, picture, googleId;
+
+    if (idToken.startsWith("ya29.")) {
+      // It's a Google Access Token (implicit flow on Web)
+      const response = await fetch(`https://www.googleapis.com/oauth2/v3/userinfo?access_token=${idToken}`);
+      if (!response.ok) {
+        throw new Error("Failed to verify Google access token");
+      }
+      const userInfo = await response.json();
+      email = userInfo.email;
+      name = userInfo.name;
+      picture = userInfo.picture;
+      googleId = userInfo.sub;
+    } else {
+      // It's an ID Token (JWT) (used on mobile devices)
+      const ticket = await googleClient.verifyIdToken({
+        idToken,
+        audience: process.env.GOOGLE_CLIENT_ID,
+      });
+      const payload = ticket.getPayload();
+      email = payload.email;
+      name = payload.name;
+      picture = payload.picture;
+      googleId = payload.sub;
+    }
 
     let user = await User.findOne({ email });
 

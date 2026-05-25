@@ -24,8 +24,8 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  String _profileImageUrl = 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=200';
-  String _coverImageUrl = 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?q=80&w=1000';
+  String _profileImageUrl = '';
+  String _coverImageUrl = '';
   XFile? _profileImageFile;
   XFile? _coverImageFile;
   final ImagePicker _picker = ImagePicker();
@@ -60,13 +60,13 @@ class _ProfilePageState extends State<ProfilePage> {
     if (user?.profileImage != null && user!.profileImage!.isNotEmpty) {
       _profileImageUrl = user.profileImage!;
     } else {
-_profileImageUrl = 'https://ui-avatars.com/api/?name=${((user?.name ?? 'User').toString().isEmpty ? 'User' : user!.name).replaceAll(' ', '+')}&background=F5E6CA&color=2C3E50';
+      _profileImageUrl = '';
     }
 
     if (user?.coverImage != null && user!.coverImage!.isNotEmpty) {
       _coverImageUrl = user.coverImage!;
     } else {
-      _coverImageUrl = 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?q=80&w=1000';
+      _coverImageUrl = '';
     }
 
     _nameController.addListener(() {
@@ -334,14 +334,10 @@ _profileImageUrl = 'https://ui-avatars.com/api/?name=${((user?.name ?? 'User').t
     return Consumer<AuthProvider>(
       builder: (context, auth, _) {
         final user = auth.user;
-        final displayName = user?.name ?? 'Guest';
-        final displayCity = user?.city ?? 'Set your location';
-final profileUrl = (user?.profileImage != null && user!.profileImage!.isNotEmpty)
-            ? user.profileImage!
-            : 'https://ui-avatars.com/api/?name=${displayName.isEmpty ? 'User' : displayName}&background=F5E6CA&color=2C3E50';
-        final coverUrl = (user?.coverImage != null && user!.coverImage!.isNotEmpty)
-            ? user.coverImage!
-            : 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?q=80&w=1000';
+        final displayName = (user?.name?.isEmpty ?? true) ? 'Guest' : user!.name;
+        final displayCity = (user?.city?.isEmpty ?? true) ? 'Set your location' : user!.city!;
+        final profileUrl = user?.profileImage ?? '';
+        final coverUrl = user?.coverImage ?? '';
 
         return Stack(
           clipBehavior: Clip.none,
@@ -353,14 +349,20 @@ final profileUrl = (user?.profileImage != null && user!.profileImage!.isNotEmpty
                 height: 200,
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  image: DecorationImage(
-                    image: _coverImageFile != null
-                        ? (kIsWeb
-                            ? NetworkImage(_coverImageFile!.path)
-                            : FileImage(io.File(_coverImageFile!.path)) as ImageProvider)
-                        : CachedNetworkImageProvider(coverUrl),
-                    fit: BoxFit.cover,
-                  ),
+                  color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                  image: _coverImageFile != null
+                      ? DecorationImage(
+                          image: (kIsWeb
+                              ? NetworkImage(_coverImageFile!.path)
+                              : FileImage(io.File(_coverImageFile!.path)) as ImageProvider),
+                          fit: BoxFit.cover,
+                        )
+                      : coverUrl.isNotEmpty
+                          ? DecorationImage(
+                              image: CachedNetworkImageProvider(coverUrl),
+                              fit: BoxFit.cover,
+                            )
+                          : null,
                 ),
                 child: Stack(
                   children: [
@@ -417,20 +419,29 @@ final profileUrl = (user?.profileImage != null && user!.profileImage!.isNotEmpty
                               width: 100,
                               height: 100,
                               decoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
                                 shape: BoxShape.circle,
                                 border: Border.all(color: Colors.white, width: 4),
                                 boxShadow: [
                                   BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 5)),
                                 ],
-                                image: DecorationImage(
-                                  image: _profileImageFile != null
-                                      ? (kIsWeb
-                                          ? NetworkImage(_profileImageFile!.path)
-                                          : FileImage(io.File(_profileImageFile!.path)) as ImageProvider)
-                                      : CachedNetworkImageProvider(profileUrl),
-                                  fit: BoxFit.cover,
-                                ),
+                                image: _profileImageFile != null
+                                    ? DecorationImage(
+                                        image: (kIsWeb
+                                            ? NetworkImage(_profileImageFile!.path)
+                                            : FileImage(io.File(_profileImageFile!.path)) as ImageProvider),
+                                        fit: BoxFit.cover,
+                                      )
+                                    : profileUrl.isNotEmpty
+                                        ? DecorationImage(
+                                            image: CachedNetworkImageProvider(profileUrl),
+                                            fit: BoxFit.cover,
+                                          )
+                                        : null,
                               ),
+                              child: _profileImageFile == null && profileUrl.isEmpty
+                                  ? Icon(LucideIcons.user, size: 40, color: Theme.of(context).colorScheme.primary)
+                                  : null,
                             ),
                           ),
                           Positioned(

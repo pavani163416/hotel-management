@@ -59,6 +59,40 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Future<Either<Failure, (UserEntity, String)>> verifyOtp(String email, String code) async {
+    try {
+      final authResponse = await _remoteDataSource.verifyOtp(email, code);
+      return Right((authResponse.user, authResponse.token));
+    } on DioException catch (e) {
+      String message = 'OTP Verification failed';
+      if (e.response?.data is Map) {
+        message = e.response?.data['message'] ?? message;
+      } else if (e.response?.data is String) {
+        message = e.response?.data;
+      }
+      return Left(ServerFailure(message));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> resendOtp(String email) async {
+    try {
+      await _remoteDataSource.resendOtp(email);
+      return const Right(null);
+    } on DioException catch (e) {
+      String message = 'Failed to resend OTP';
+      if (e.response?.data is Map) {
+        message = e.response?.data['message'] ?? message;
+      }
+      return Left(ServerFailure(message));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
   Future<Either<Failure, (UserEntity, String)>> signInWithGoogle(String idToken) async {
     try {
       final authResponse = await _remoteDataSource.signInWithGoogle(idToken);
