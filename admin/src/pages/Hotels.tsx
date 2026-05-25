@@ -219,9 +219,10 @@ export default function Hotels() {
     };
 
     try {
+      const token = localStorage.getItem("luxe_admin_token");
       const luxRes = await fetch(
         editTarget ? `${API}/hotels/${hotelId}` : `${API}/hotels`,
-        { method: editTarget ? "PATCH" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(luxestayPayload) }
+        { method: editTarget ? "PATCH" : "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify(luxestayPayload) }
       );
       const luxData = await luxRes.json();
       if (!luxRes.ok) {
@@ -248,7 +249,7 @@ export default function Hotels() {
         try {
           await fetch(`${API}/admin/managers`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
             body: JSON.stringify({
               name:              `${form.name} Manager`,
               email,
@@ -276,7 +277,8 @@ export default function Hotels() {
   const handleDelete = async (hotelId: string) => {
     if (!confirm("Remove this hotel from the portfolio?")) return;
     try {
-      await fetch(`${API}/hotels/${hotelId}`, { method: "DELETE" });
+      const token = localStorage.getItem("luxe_admin_token");
+      await fetch(`${API}/hotels/${hotelId}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
     } catch { /* backend offline */ }
     deleteHotel(hotelId);
     setActionTarget(null);
