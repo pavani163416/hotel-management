@@ -105,9 +105,10 @@ export default function Hotels() {
       reader.onload = async (e) => {
         const base64 = e.target?.result as string;
         try {
+          const token = localStorage.getItem("luxe_admin_token");
           const res = await fetch(`${API}/upload/image`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
             body: JSON.stringify({ image: base64, folder: "hotels" }),
           });
           const data = await res.json();
@@ -137,9 +138,10 @@ export default function Hotels() {
       reader.onload = async (e) => {
         const base64 = e.target?.result as string;
         try {
+          const token = localStorage.getItem("luxe_admin_token");
           const res = await fetch(`${API}/upload/image`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
             body: JSON.stringify({ image: base64, folder: "hotels" }),
           });
           const data = await res.json();
@@ -161,9 +163,10 @@ export default function Hotels() {
       reader.onload = async (e) => {
         const base64 = e.target?.result as string;
         try {
+          const token = localStorage.getItem("luxe_admin_token");
           const res = await fetch(`${API}/upload/image`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
             body: JSON.stringify({ image: base64, folder: "hotels" }),
           });
           const data = await res.json();
