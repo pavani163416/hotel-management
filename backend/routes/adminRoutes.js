@@ -264,6 +264,7 @@ import { adminLogin, getAdminStats, getAdminAnalytics } from "../controllers/adm
 import { verifyAdminToken, requireAdmin } from "../middleware/adminAuth.js";
 import { authLimiter } from "../middleware/rateLimiter.js";
 import { validateLoginPayload } from "../middleware/authValidator.js";
+import { requireObjectId } from "../middleware/auth.js";
 import AdminUser          from "../models/AdminUser.js";
 import Manager            from "../models/Manager.js";
 import Hotel              from "../models/Hotel.js";
@@ -303,7 +304,7 @@ router.post("/users", protect, async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-router.patch("/users/:id", protect, async (req, res, next) => {
+router.patch("/users/:id", protect, requireObjectId(), async (req, res, next) => {
   try {
     const update = { ...req.body };
     if (update.password) update.password = await bcrypt.hash(update.password, 12);
@@ -385,7 +386,7 @@ router.post("/managers", protect, async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-router.get("/managers/:id", protect, async (req, res, next) => {
+router.get("/managers/:id", protect, requireObjectId(), async (req, res, next) => {
   try {
     const manager = await Manager.findById(req.params.id)
       .select("-password")
@@ -410,7 +411,7 @@ router.get("/managers/:id", protect, async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-router.put("/managers/:id", protect, async (req, res, next) => {
+router.put("/managers/:id", protect, requireObjectId(), async (req, res, next) => {
   try {
     const { name, email, password, hotelId, hotelName, isActive } = req.body;
 
@@ -447,7 +448,7 @@ router.put("/managers/:id", protect, async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-router.delete("/managers/:id", protect, async (req, res, next) => {
+router.delete("/managers/:id", protect, requireObjectId(), async (req, res, next) => {
   try {
     const manager = await Manager.findByIdAndDelete(req.params.id);
     if (!manager) return res.status(404).json({ success: false, message: "Manager not found." });
@@ -470,7 +471,7 @@ router.get("/price-requests", protect, async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-router.put("/price-requests/:id/approve", protect, async (req, res, next) => {
+router.put("/price-requests/:id/approve", protect, requireObjectId(), async (req, res, next) => {
   try {
     const request = await PriceRequest.findById(req.params.id);
     if (!request) return res.status(404).json({ success: false, message: "Price request not found." });
@@ -493,7 +494,7 @@ router.put("/price-requests/:id/approve", protect, async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-router.put("/price-requests/:id/reject", protect, async (req, res, next) => {
+router.put("/price-requests/:id/reject", protect, requireObjectId(), async (req, res, next) => {
   try {
     const request = await PriceRequest.findById(req.params.id);
     if (!request) return res.status(404).json({ success: false, message: "Price request not found." });
@@ -613,7 +614,7 @@ router.post("/coupons", protect, async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-router.get("/coupons/:id", protect, async (req, res, next) => {
+router.get("/coupons/:id", protect, requireObjectId(), async (req, res, next) => {
   try {
     const coupon = await Coupon.findById(req.params.id);
     if (!coupon) return res.status(404).json({ success: false, message: "Coupon not found." });
@@ -621,7 +622,7 @@ router.get("/coupons/:id", protect, async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-router.put("/coupons/:id", protect, async (req, res, next) => {
+router.put("/coupons/:id", protect, requireObjectId(), async (req, res, next) => {
   try {
     const coupon = await Coupon.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
     if (!coupon) return res.status(404).json({ success: false, message: "Coupon not found." });
@@ -629,7 +630,7 @@ router.put("/coupons/:id", protect, async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-router.delete("/coupons/:id", protect, async (req, res, next) => {
+router.delete("/coupons/:id", protect, requireObjectId(), async (req, res, next) => {
   try {
     const coupon = await Coupon.findByIdAndDelete(req.params.id);
     if (!coupon) return res.status(404).json({ success: false, message: "Coupon not found." });
@@ -674,7 +675,7 @@ router.get("/cancellations", protect, async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-router.get("/cancellations/:id", protect, async (req, res, next) => {
+router.get("/cancellations/:id", protect, requireObjectId(), async (req, res, next) => {
   try {
     const record = await CancellationRefund.findById(req.params.id)
       .populate("bookingId");
@@ -683,7 +684,7 @@ router.get("/cancellations/:id", protect, async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-router.patch("/cancellations/:id", protect, async (req, res, next) => {
+router.patch("/cancellations/:id", protect, requireObjectId(), async (req, res, next) => {
   try {
     const { refundStatus, refundReference, notes } = req.body;
     const update = {};
@@ -799,7 +800,7 @@ router.post("/migrate/fix-room-hotel-ids", protect, async (req, res, next) => {
 // Admin-level booking room reassignment — no hotel isolation.
 // Validates overlap before reassigning.
 // ─────────────────────────────────────────────────────────
-router.put("/bookings/:id/reassign", protect, async (req, res, next) => {
+router.put("/bookings/:id/reassign", protect, requireObjectId(), async (req, res, next) => {
   try {
     const { newRoomId } = req.body;
     if (!newRoomId) return res.status(400).json({ success: false, message: "newRoomId is required" });

@@ -310,6 +310,8 @@ import {
 import { verifyManagerToken, isAssignedManager, scopeToHotel } from "../middleware/managerAuth.js";
 import { authLimiter } from "../middleware/rateLimiter.js";
 import { validateLoginPayload } from "../middleware/authValidator.js";
+import { validate, schemas } from "../middleware/zodValidation.js";
+import { requireObjectId } from "../middleware/auth.js";
 import Room    from "../models/Room.js";
 import Booking from "../models/Booking.js";
 
@@ -343,13 +345,13 @@ router.get("/stats",     ...protect, getManagerStats);
 // ── Rooms (full CRUD, hotel-scoped) ──────────────────────
 router.get("/rooms",        ...protect, getManagerRooms);
 router.get("/rooms/map-overview", ...protect, getManagerMapOverview);
-router.post("/rooms",       ...protect, createManagerRoom);
-router.put("/rooms/:id",    ...protect, isAssignedManager, updateManagerRoom);
-router.delete("/rooms/:id", ...protect, isAssignedManager, deleteManagerRoom);
+router.post("/rooms",       ...protect, validate(schemas.createRoom), createManagerRoom);
+router.put("/rooms/:id",    ...protect, isAssignedManager, requireObjectId(), validate(schemas.updateRoom), updateManagerRoom);
+router.delete("/rooms/:id", ...protect, isAssignedManager, requireObjectId(), deleteManagerRoom);
 
 // ── Room availability check (date-based) ─────────────────
 // GET /api/manager/rooms/:id/availability?checkIn=&checkOut=
-router.get("/rooms/:id/availability", ...protect, isAssignedManager, async (req, res, next) => {
+router.get("/rooms/:id/availability", ...protect, isAssignedManager, requireObjectId(), async (req, res, next) => {
   try {
     const { checkIn, checkOut } = req.query;
     if (!checkIn || !checkOut) {
@@ -378,7 +380,7 @@ router.get("/rooms/:id/availability", ...protect, isAssignedManager, async (req,
 
 // ── Room reassignment ─────────────────────────────────────
 // PUT /api/manager/bookings/:id/reassign  { newRoomId }
-router.put("/bookings/:id/reassign", ...protect, isAssignedManager, async (req, res, next) => {
+router.put("/bookings/:id/reassign", ...protect, isAssignedManager, requireObjectId(), async (req, res, next) => {
   try {
     const { newRoomId } = req.body;
     if (!newRoomId) return res.status(400).json({ success: false, message: "newRoomId is required" });
@@ -450,10 +452,10 @@ router.put("/bookings/:id/reassign", ...protect, isAssignedManager, async (req, 
 
 // ── Bookings ──────────────────────────────────────────────
 // NOTE: /walkin must be before /:id to avoid route conflict
-router.post("/bookings/walkin",        ...protect, createWalkInBooking);
+router.post("/bookings/walkin",        ...protect, validate(schemas.walkInBooking), createWalkInBooking);
 router.get("/bookings",                ...protect, getManagerBookings);
-router.put("/bookings/:id/checkin",    ...protect, checkInBooking);
-router.put("/bookings/:id/checkout",   ...protect, checkOutBooking);
+router.put("/bookings/:id/checkin",    ...protect, requireObjectId(), checkInBooking);
+router.put("/bookings/:id/checkout",   ...protect, requireObjectId(), checkOutBooking);
 
 // ── Guests ────────────────────────────────────────────────
 router.get("/guests/additional", ...protect, getManagerAdditionalGuests); // before /:id
@@ -465,7 +467,7 @@ router.post("/halls",       ...protect, createManagerHall);
 router.put("/halls/:id",    ...protect, updateManagerHall);
 
 // ── Price Requests ────────────────────────────────────────
-router.post("/price-requests", ...protect, createPriceRequest);
+router.post("/price-requests", ...protect, validate(schemas.createPriceRequest), createPriceRequest);
 router.get("/price-requests",  ...protect, getManagerPriceRequests);
 
 // ── Hotel access guard (for hotel switcher) ───────────────

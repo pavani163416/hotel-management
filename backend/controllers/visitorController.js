@@ -55,6 +55,16 @@ export const trackVisitor = async (req, res, next) => {
       sessionId: sessionId || null,
     });
 
+    // Cleanup: Keep only the most recent 50 visitors
+    const count = await Visitor.countDocuments();
+    if (count > 50) {
+      const oldestVisitors = await Visitor.find().sort({ createdAt: 1 }).limit(count - 50).select("_id");
+      const idsToDelete = oldestVisitors.map(v => v._id);
+      if (idsToDelete.length > 0) {
+        await Visitor.deleteMany({ _id: { $in: idsToDelete } });
+      }
+    }
+
     res.status(201).json({ success: true, id: visitor._id });
   } catch (error) {
     next(error);

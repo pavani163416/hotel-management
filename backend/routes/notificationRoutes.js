@@ -38,7 +38,7 @@
  */
 import express from "express";
 import { getNotifications, markNotificationRead, createNotification } from "../controllers/notificationController.js";
-import { protect, validateOwnership } from "../middleware/auth.js";
+import { protect, validateOwnership, requireObjectId } from "../middleware/auth.js";
 
 const router = express.Router();
 
@@ -46,6 +46,6 @@ router.use(protect); // Ensure all routes require authentication
 
 router.get("/", getNotifications); // Fetches notifications bounded to req.user internally
 router.post("/", createNotification);
-router.put("/:id/read", validateOwnership("Notification"), markNotificationRead);
+router.put("/:id/read", requireObjectId(), validateOwnership("Notification"), markNotificationRead);
 
 export default router;

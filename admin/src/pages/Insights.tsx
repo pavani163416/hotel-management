@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Search, X, Monitor, Smartphone, Tablet, Globe, TrendingUp, Users, UserCheck, UserX, Building2, Clock, Eye, MousePointerClick } from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import AdminLayout from "@/components/AdminLayout";
 import Topbar from "@/components/Topbar";
 import PageHeader from "@/components/PageHeader";
@@ -651,24 +652,19 @@ export default function Insights() {
             <h3 className="text-sm font-semibold text-text-primary mb-4 flex items-center gap-2">
               <TrendingUp className="w-4 h-4 text-primary" /> Managers per Hotel
             </h3>
-            <div className="flex items-end gap-2 h-40">
-              {managerInsights.managersPerHotel
-                .filter((h: any) => h.hotelId !== 'unassigned')
-                .map((hotel: any) => {
-                  const maxCount = Math.max(...managerInsights.managersPerHotel.filter((h: any) => h.hotelId !== 'unassigned').map((h: any) => h.count), 1);
-                  const height = (hotel.count / maxCount) * 100;
-                  return (
-                    <div key={hotel.hotelId} className="flex-1 flex flex-col items-center gap-2">
-                      <div 
-                        className="w-full bg-primary/80 hover:bg-primary rounded-t transition-all"
-                        style={{ height: `${Math.max(height, 4)}%` }}
-                        title={`${hotel.count} manager(s)`}
-                      />
-                      <span className="text-xs text-muted truncate w-full text-center">{hotel.hotelName}</span>
-                      <span className="text-xs font-semibold text-text-primary">{hotel.count}</span>
-                    </div>
-                  );
-                })}
+            <div className="h-64 w-full mt-6">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={managerInsights.managersPerHotel.filter((h: any) => h.hotelId !== 'unassigned')} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                  <XAxis dataKey="hotelName" tick={{ fontSize: 12, fill: '#64748B' }} tickLine={false} axisLine={false} />
+                  <YAxis allowDecimals={false} tick={{ fontSize: 12, fill: '#64748B' }} tickLine={false} axisLine={false} />
+                  <Tooltip 
+                    cursor={{ fill: '#F1F5F9' }} 
+                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)' }}
+                  />
+                  <Bar dataKey="count" name="Managers" fill="#3B82F6" radius={[4, 4, 0, 0]} maxBarSize={50} />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
           </div>
         )}

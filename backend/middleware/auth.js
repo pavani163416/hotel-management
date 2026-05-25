@@ -32,20 +32,14 @@ export const protect = async (req, res, next) => {
     }
 
     if (!token) {
-      return res.status(401).json({
-        success: false,
-        message: "Authentication required. Please sign in.",
-      });
+      return res.status(401).json({ success: false, message: "Authentication required. Please sign in." });
     }
 
     let decoded;
     try {
       decoded = jwt.verify(token, getSecret());
     } catch (err) {
-      const message =
-        err.name === "TokenExpiredError"
-          ? "Session expired. Please sign in again."
-          : "Invalid token. Please sign in again.";
+      const message = err.name === "TokenExpiredError" ? "Session expired. Please sign in again." : "Invalid token. Please sign in again.";
       return res.status(401).json({ success: false, message });
     }
 
@@ -54,17 +48,14 @@ export const protect = async (req, res, next) => {
       try {
         const client = getRedisClient();
         const isBlacklisted = await client.get(`blacklist:${decoded.jti}`);
-        if (isBlacklisted) {
-          return res.status(401).json({ success: false, message: "Session revoked. Please sign in again." });
-        }
+        if (isBlacklisted) return res.status(401).json({ success: false, message: "Session revoked. Please sign in again." });
       } catch (err) {}
     }
 
-    // ── Silent IP/Device Anomaly Detection ───────────
-    if (decoded.ip && decoded.deviceFingerprint) {
-      const currentIp = req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || req.socket.remoteAddress || "127.0.0.1";
-      const currentDevice = req.headers["user-agent"] || "unknown";
+    const currentIp = req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || req.socket.remoteAddress || "127.0.0.1";
+    const currentDevice = req.headers["user-agent"] || "unknown";
 
+    if (decoded.ip && decoded.deviceFingerprint) {
       if (currentIp !== decoded.ip || currentDevice !== decoded.deviceFingerprint) {
         AuditLog.create({
           event: "IPAnomaly",
@@ -78,21 +69,18 @@ export const protect = async (req, res, next) => {
           description: "Detected mismatched IP or Device from original JWT payload.",
           severity: "Medium"
         }).catch(() => {});
+        // Strict enforcement: if IP fundamentally changes, require re-authentication
+        // return res.status(401).json({ success: false, message: "Session anomaly detected. Please sign in again." });
       }
     }
 
-    // Attach to request
     req.user = decoded;
-
-    // Maintain backwards compatibility with legacy routes
     req.customer = decoded;
     req.manager = decoded;
     req.admin = decoded;
 
     next();
-  } catch (error) {
-    next(error);
-  }
+  } catch (error) { next(error); }
 };
 
 // ── Role-Based Access Control (RBAC) ─────────────────────
@@ -100,27 +88,18 @@ export const authorizeRoles = (...roles) => {
   return (req, res, next) => {
     const userRole = req.user?.role;
     if (!userRole || !roles.map(r => r.toLowerCase()).includes(userRole.toLowerCase())) {
-      logger.warn("Unauthorized role access attempt", {
-        userId: req.user?.id,
-        role: userRole,
-        requiredRoles: roles,
-        path: req.originalUrl,
-      });
-      return res.status(403).json({
-        success: false,
-        message: `Access denied. Role '${userRole || "guest"}' is not authorized.`,
-      });
+      return res.status(403).json({ success: false, message: "Forbidden: You do not have the required role to access this resource." });
     }
     next();
   };
 };
 
-// ── BOLA / IDOR Ownership Validation Middleware ──────────
+// ── BOLA Protection: Validate Ownership ──────────────────
 export const validateOwnership = (modelName) => {
   return async (req, res, next) => {
     try {
-      const { id } = req.params;
-      const user = req.user;
+      const user = req.user;   // ← populated by protect() middleware
+      const id   = req.params.id;
 
       if (!user) {
         return res.status(401).json({ success: false, message: "Authentication required." });
@@ -339,3 +318,23 @@ export const validateOwnership = (modelName) => {
     }
   };
 };
+
+// ── ObjectId Validation Guard ─────────────────────────────
+// Prevents CastError leakage and protects against malformed
+// BOLA/IDOR attempts via crafted non-ObjectId identifiers.
+// Apply BEFORE any findById / route that uses req.params.id.
+export const requireObjectId = (paramName = "id") => {
+  return (req, res, next) => {
+    const id = req.params[paramName];
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid ${paramName} format. Must be a valid resource identifier.`,
+      });
+    }
+    next();
+  };
+};
+
+// ── Alias: requireRoles — cleaner name for inline use ─────
+export const requireRoles = authorizeRoles;

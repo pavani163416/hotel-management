@@ -110,21 +110,22 @@
  */
 import express from "express";
 import { getHotels, getHotelById, createHotel, updateHotel, deleteHotel, addRoomToHotel, removeRoomFromHotel, updateRoomInHotel, addReviewToHotel } from "../controllers/hotelController.js";
-import { protect, authorizeRoles, validateOwnership } from "../middleware/auth.js";
+import { protect, authorizeRoles, validateOwnership, requireObjectId } from "../middleware/auth.js";
+import { validate, schemas } from "../middleware/zodValidation.js";
 
 const router = express.Router();
 
 router.route("/")
   .get(getHotels)
-  .post(protect, authorizeRoles("admin", "Super Admin", "Controller"), createHotel);
+  .post(protect, authorizeRoles("admin", "Super Admin", "Controller"), validate(schemas.createHotel), createHotel);
 
 router.route("/:id")
   .get(getHotelById)
-  .patch(protect, validateOwnership("Hotel"), updateHotel)
-  .delete(protect, validateOwnership("Hotel"), deleteHotel);
+  .patch(protect, requireObjectId(), validateOwnership("Hotel"), validate(schemas.updateHotel), updateHotel)
+  .delete(protect, requireObjectId(), validateOwnership("Hotel"), deleteHotel);
 
 router.route("/:id/reviews")
-  .post(protect, addReviewToHotel);
+  .post(protect, validate(schemas.addReview), addReviewToHotel);
 
 router.route("/:id/rooms")
   .post(protect, validateOwnership("Hotel"), addRoomToHotel);

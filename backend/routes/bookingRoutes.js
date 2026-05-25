@@ -57,19 +57,19 @@ import {
 } from "../controllers/bookingController.js";
 import { validateBooking } from "../middleware/validators.js";
 import { bookingLimiter } from "../middleware/rateLimiter.js";
-import { protect, validateOwnership } from "../middleware/auth.js";
+import { protect, validateOwnership, requireObjectId } from "../middleware/auth.js";
 
 const router = express.Router();
 
 // GET  /api/bookings        → list all bookings (protected, filtered by role)
-// POST /api/bookings        → create a new booking (rate limited)
+// POST /api/bookings        → create a new booking (requires auth + rate limited)
 router.get("/", protect, getAllBookings);
-router.post("/", validateBooking, bookingLimiter, createBooking);
+router.post("/", protect, validateBooking, bookingLimiter, createBooking);
 
 // GET   /api/bookings/:id          → get single booking (validated ownership)
-router.route("/:id").get(protect, validateOwnership("Booking"), getBookingById);
+router.route("/:id").get(protect, requireObjectId(), validateOwnership("Booking"), getBookingById);
 
 // PATCH /api/bookings/:id/cancel   → cancel a booking (validated ownership)
-router.patch("/:id/cancel", protect, validateOwnership("Booking"), cancelBooking);
+router.patch("/:id/cancel", protect, requireObjectId(), validateOwnership("Booking"), cancelBooking);
 
 export default router;

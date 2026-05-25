@@ -1,0 +1,192 @@
+/**
+ * zodValidation.js
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Enterprise-grade Zod validation middleware.
+ *
+ * Usage:
+ *   import { validate, schemas } from "../middleware/zodValidation.js";
+ *   router.post("/login", validate(schemas.login), loginHandler);
+ *
+ * Security:
+ *   - .strict() strips all unknown/unexpected keys → prevents NoSQL injection
+ *   - All inputs validated server-side before hitting any controller
+ *   - Returns structured 422 on failure (never leaks stack traces)
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
+
+import { z } from "zod";
+
+// ── Generic validate middleware factory ──────────────────────────────────────
+export const validate = (schema, source = "body") => {
+  return (req, res, next) => {
+    const result = schema.safeParse(req[source]);
+    if (!result.success) {
+      const errors = result.error.errors.map((e) => ({
+        field:   e.path.join("."),
+        message: e.message,
+      }));
+      return res.status(422).json({
+        success: false,
+        message: "Validation failed",
+        errors,
+      });
+    }
+    // Replace req[source] with the parsed (stripped) data
+    req[source] = result.data;
+    next();
+  };
+};
+
+// ── Shared field definitions ─────────────────────────────────────────────────
+const emailField       = z.string().email("Invalid email address").toLowerCase().trim();
+const passwordField    = z.string().min(8, "Password must be at least 8 characters").max(128, "Password too long");
+const nameField        = z.string().min(2, "Name must be at least 2 characters").max(100).trim();
+const phoneField       = z.string().regex(/^\+?[0-9\s\-().]{7,20}$/, "Invalid phone number").optional();
+const mongoIdField     = z.string().regex(/^[a-f\d]{24}$/i, "Invalid ID format");
+const dateField        = z.string().refine((d) => !isNaN(Date.parse(d)), "Invalid date format");
+const positiveInt      = z.number().int().positive();
+const positiveNumber   = z.number().positive();
+
+// ── Auth Schemas ─────────────────────────────────────────────────────────────
+const login = z.object({
+  email:    emailField,
+  password: z.string().min(1, "Password is required").max(128),
+}).strict();
+
+const register = z.object({
+  name:     nameField,
+  email:    emailField,
+  password: passwordField,
+  phone:    phoneField,
+}).strict();
+
+const changePassword = z.object({
+  currentPassword: z.string().min(1, "Current password is required"),
+  newPassword:     passwordField,
+}).strict();
+
+// ── Booking Schemas ──────────────────────────────────────────────────────────
+const createBooking = z.object({
+  roomId:        mongoIdField.optional(),
+  room:          mongoIdField.optional(),
+  hotelId:       z.string().max(50).optional(),
+  hotelStringId: z.string().max(50).optional(),
+  checkIn:       dateField,
+  checkOut:      dateField,
+  guests:        z.number().int().min(1).max(20).optional(),
+  // Guest snapshot for non-logged-in bookings
+  guestSnapshot: z.object({
+    name:  nameField,
+    email: emailField,
+    phone: phoneField,
+  }).optional(),
+  // Payment / promo
+  promoCode:    z.string().max(50).trim().optional(),
+  paymentMode:  z.enum(["card", "upi", "cash", "bank_transfer", "online"]).optional(),
+  specialRequests: z.string().max(500).trim().optional(),
+}).strict().refine(
+  (d) => d.roomId || d.room,
+  { message: "roomId is required", path: ["roomId"] }
+).refine(
+  (d) => new Date(d.checkIn) < new Date(d.checkOut),
+  { message: "checkOut must be after checkIn", path: ["checkOut"] }
+);
+
+const cancelBooking = z.object({
+  reason: z.string().max(300).trim().optional(),
+}).strict();
+
+// ── Walk-in Booking (Manager) Schema ─────────────────────────────────────────
+const walkInBooking = z.object({
+  roomId:          mongoIdField.optional(),
+  room:            mongoIdField.optional(),
+  checkIn:         dateField,
+  checkOut:        dateField,
+  guests:          z.number().int().min(1).max(20).optional(),
+  guestName:       nameField,
+  guestEmail:      emailField.optional(),
+  guestPhone:      phoneField,
+  paymentMode:     z.enum(["card", "upi", "cash", "bank_transfer"]).optional(),
+  specialRequests: z.string().max(500).trim().optional(),
+}).strict().refine(
+  (d) => new Date(d.checkIn) < new Date(d.checkOut),
+  { message: "checkOut must be after checkIn", path: ["checkOut"] }
+);
+
+// ── Hotel Schemas ─────────────────────────────────────────────────────────────
+const createHotel = z.object({
+  name:        z.string().min(2).max(200).trim(),
+  hotelId:     z.string().min(2).max(50).trim(),
+  location:    z.string().max(300).trim().optional(),
+  description: z.string().max(2000).trim().optional(),
+  rating:      z.number().min(0).max(5).optional(),
+  isActive:    z.boolean().optional(),
+}).strict();
+
+const updateHotel = z.object({
+  name:        z.string().min(2).max(200).trim().optional(),
+  location:    z.string().max(300).trim().optional(),
+  description: z.string().max(2000).trim().optional(),
+  rating:      z.number().min(0).max(5).optional(),
+  isActive:    z.boolean().optional(),
+  amenities:   z.array(z.string().max(100)).max(50).optional(),
+  images:      z.array(z.string().url()).max(20).optional(),
+}).strict();
+
+// ── Room Schemas ──────────────────────────────────────────────────────────────
+const createRoom = z.object({
+  roomNumber:    z.string().min(1).max(50).trim(),
+  type:          z.enum(["Standard", "Deluxe", "Suite", "Penthouse", "Villa"]).optional(),
+  bedType:       z.enum(["Single", "Double", "Queen", "King", "Twin"]).optional(),
+  pricePerNight: positiveNumber,
+  capacity:      positiveInt,
+  description:   z.string().max(1000).trim().optional(),
+  amenities:     z.array(z.string().max(100)).max(50).optional(),
+  status:        z.enum(["Available", "Booked", "Maintenance", "Blocked"]).optional(),
+}).strict();
+
+const updateRoom = z.object({
+  type:          z.enum(["Standard", "Deluxe", "Suite", "Penthouse", "Villa"]).optional(),
+  bedType:       z.enum(["Single", "Double", "Queen", "King", "Twin"]).optional(),
+  pricePerNight: positiveNumber.optional(),
+  capacity:      positiveInt.optional(),
+  description:   z.string().max(1000).trim().optional(),
+  amenities:     z.array(z.string().max(100)).max(50).optional(),
+  status:        z.enum(["Available", "Booked", "Maintenance", "Blocked"]).optional(),
+}).strict();
+
+// ── Price Request Schema ──────────────────────────────────────────────────────
+const createPriceRequest = z.object({
+  roomId:           mongoIdField,
+  requestedPrice:   positiveNumber,
+  reason:           z.string().max(500).trim().optional(),
+}).strict();
+
+// ── Review Schema ─────────────────────────────────────────────────────────────
+const addReview = z.object({
+  rating:  z.number().int().min(1).max(5),
+  comment: z.string().min(5).max(1000).trim().optional(),
+}).strict();
+
+// ── Manager Login Schema (same as user login but exported separately) ─────────
+const managerLogin = z.object({
+  email:    emailField,
+  password: z.string().min(1).max(128),
+}).strict();
+
+// ── Exported schemas map ──────────────────────────────────────────────────────
+export const schemas = {
+  login,
+  register,
+  changePassword,
+  createBooking,
+  cancelBooking,
+  walkInBooking,
+  createHotel,
+  updateHotel,
+  createRoom,
+  updateRoom,
+  createPriceRequest,
+  addReview,
+  managerLogin,
+};

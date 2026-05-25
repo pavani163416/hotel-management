@@ -93,7 +93,7 @@ import Booking from "../models/Booking.js";
 import Room   from "../models/Room.js";
 import Hotel  from "../models/Hotel.js";
 import mongoose from "mongoose";
-import { protect, authorizeRoles, validateOwnership } from "../middleware/auth.js";
+import { protect, authorizeRoles, validateOwnership, requireObjectId } from "../middleware/auth.js";
 
 const router = express.Router();
 
@@ -138,7 +138,7 @@ router.get("/map-overview", protect, authorizeRoles("Manager", "admin", "Super A
 // Returns recent bookings for a room (for the map drawer history panel).
 // Query: limit (default 5)
 // ─────────────────────────────────────────────────────────
-router.get("/booking-history/:id", protect, authorizeRoles("Manager", "admin", "Super Admin", "Controller"), validateOwnership("Room"), async (req, res, next) => {
+router.get("/booking-history/:id", protect, authorizeRoles("Manager", "admin", "Super Admin", "Controller"), requireObjectId(), validateOwnership("Room"), async (req, res, next) => {
   try {
     const { id } = req.params;
     const limit = Math.min(20, parseInt(req.query.limit) || 5);
@@ -223,7 +223,7 @@ router.route("/").get(getRooms).post(protect, authorizeRoles("Manager", "admin",
 router
   .route("/:id")
   .get(getRoomById)
-  .patch(protect, validateOwnership("Room"), validateRoomStatus, updateRoomStatus)
-  .delete(protect, validateOwnership("Room"), deleteRoom);
+  .patch(protect, requireObjectId(), validateOwnership("Room"), validateRoomStatus, updateRoomStatus)
+  .delete(protect, requireObjectId(), validateOwnership("Room"), deleteRoom);
 
 export default router;
