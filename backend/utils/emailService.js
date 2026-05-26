@@ -1,19 +1,17 @@
 /**
- * LuxeStay Email Service — powered by Resend
+ * LuxeStay Email Service — powered by Resend or SMTP (Nodemailer)
  * Docs: https://resend.com/docs
- *
- * Free plan: 100 emails/day, 3000/month
- * NOTE: On free plan, emails can only be sent to your own verified email address
- *       unless you verify a custom domain in Resend dashboard.
  */
 
 import { Resend } from "resend";
+import nodemailer from "nodemailer";
 
+// Resend client initialization
 let _resend;
 const getResend = () => {
   if (!_resend) {
     if (!process.env.RESEND_API_KEY) {
-      console.warn("📧 [Email] RESEND_API_KEY is missing. Email service will be disabled.");
+      console.warn("📧 [Email] RESEND_API_KEY is missing. Resend fallback is disabled.");
       return null;
     }
     _resend = new Resend(process.env.RESEND_API_KEY);
@@ -21,10 +19,30 @@ const getResend = () => {
   return _resend;
 };
 
+// SMTP Transporter initialization
+let _transporter;
+const getTransporter = () => {
+  if (!_transporter) {
+    if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+      return null;
+    }
+    _transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST || "smtp.gmail.com",
+      port: parseInt(process.env.SMTP_PORT || "465"),
+      secure: process.env.SMTP_SECURE !== "false", // true for 465, false for 587/other ports
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      },
+    });
+  }
+  return _transporter;
+};
+
 const FROM = process.env.RESEND_FROM_EMAIL || "LuxeStay <onboarding@resend.dev>";
 
 /**
- * Resend free plan restriction:
+ * Resend free plan restriction helper:
  * When using the shared onboarding@resend.dev sender (no custom domain),
  * emails can ONLY be delivered to the account owner's verified email.
  * Set RESEND_TEST_EMAIL in .env to your Resend-verified email to receive all emails in dev.
@@ -38,23 +56,55 @@ const resolveRecipient = (to) => {
   return [to];
 };
 
+/**
+ * Internal sender logic helper that handles SMTP routing or Resend fallback.
+ */
+const sendMailInternal = async ({ to, subject, html }) => {
+  const transporter = getTransporter();
+  
+  if (transporter) {
+    console.log(`📧 [Email] Sending email via SMTP (Nodemailer) to: ${to}`);
+    const mailOptions = {
+      from: process.env.SMTP_FROM_EMAIL || `"LuxeStay" <${process.env.SMTP_USER}>`,
+      to,
+      subject,
+      html,
+    };
+    const info = await transporter.sendMail(mailOptions);
+    console.log("📧 [Email] SMTP Message Sent successfully:", info.messageId);
+    return { data: { id: info.messageId }, error: null };
+  }
+
+  // Fallback to Resend
+  const resendClient = getResend();
+  if (!resendClient) {
+    throw new Error("No email service configured (missing SMTP or Resend credentials).");
+  }
+  
+  console.log(`📧 [Email] Sending email via Resend to: ${to}`);
+  const { data, error } = await resendClient.emails.send({
+    from: FROM,
+    to: resolveRecipient(to),
+    subject,
+    html,
+  });
+  return { data, error };
+};
+
+// ─────────────────────────────────────────────────────────
+// sendPasswordResetEmail
+// Called when user requests a password reset link
+// ─────────────────────────────────────────────────────────
 export const sendPasswordResetEmail = async ({ to, name, resetUrl }) => {
-  if (!process.env.RESEND_API_KEY) {
-    console.log("📧 [Email] RESEND_API_KEY not set — skipping password reset email.");
+  if (!process.env.RESEND_API_KEY && (!process.env.SMTP_USER || !process.env.SMTP_PASS)) {
+    console.log("📧 [Email] No email service configured — skipping password reset email.");
     return;
   }
 
   console.log(`📧 [Email] Triggering password reset → ${to}`);
 
-  try {
-    const resendClient = getResend();
-    if (!resendClient) return;
-
-    const { data, error } = await resendClient.emails.send({
-      from:    FROM,
-      to:      resolveRecipient(to),
-      subject: `Reset your LuxeStay password`,
-      html: `
+  const subject = `Reset your LuxeStay password`;
+  const html = `
 <!DOCTYPE html>
 <html lang="en">
 <head><meta charset="UTF-8"/></head>
@@ -98,11 +148,12 @@ export const sendPasswordResetEmail = async ({ to, name, resetUrl }) => {
   </table>
 </body>
 </html>
-      `,
-    });
+  `;
 
+  try {
+    const { data, error } = await sendMailInternal({ to, subject, html });
     if (error) {
-      console.error("📧 [Email] Resend API error:", error);
+      console.error("📧 [Email] Password reset send error:", error);
     } else {
       console.log(`📧 [Email] Password reset sent → ${to} | ID: ${data?.id}`);
     }
@@ -126,8 +177,8 @@ export const sendBookingConfirmation = async ({
   roomType,
   totalAmount,
 }) => {
-  if (!process.env.RESEND_API_KEY) {
-    console.log("📧 [Email] RESEND_API_KEY not set — skipping confirmation email.");
+  if (!process.env.RESEND_API_KEY && (!process.env.SMTP_USER || !process.env.SMTP_PASS)) {
+    console.log("📧 [Email] No email service configured — skipping confirmation email.");
     return;
   }
 
@@ -140,133 +191,88 @@ export const sendBookingConfirmation = async ({
     weekday: "short", month: "long", day: "numeric", year: "numeric",
   });
 
-  try {
-    const resendClient = getResend();
-    if (!resendClient) return;
-
-    const { data, error } = await resendClient.emails.send({
-      from:    FROM,
-      to:      resolveRecipient(to),
-      subject: `✅ Booking Confirmed — ${hotelName} · ${bookingRef}`,
-      html: `
+  const subject = `✅ Booking Confirmed — ${hotelName} · ${bookingRef}`;
+  const html = `
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Booking Confirmed</title>
-</head>
-<body style="margin:0;padding:0;background-color:#f4f4f0;font-family:'Helvetica Neue',Arial,sans-serif;">
+<head><meta charset="UTF-8"/></head>
+<body style="margin:0;padding:0;background:#f4f4f0;font-family:'Helvetica Neue',Arial,sans-serif;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f0;padding:40px 0;">
-    <tr>
-      <td align="center">
-        <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+        <tr>
+          <td style="background:#1a1f2e;padding:32px 40px;text-align:center;">
+            <h1 style="color:#ffffff;margin:0;font-size:26px;font-weight:700;">LuxeStay</h1>
+          </td>
+        </tr>
+        <tr>
+          <td style="background:#27ae60;padding:20px 40px;text-align:center;">
+            <h2 style="color:#ffffff;margin:0;font-size:20px;font-weight:600;">Booking Confirmed</h2>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:40px;text-align:left;color:#374151;">
+            <p style="margin:0 0 24px;font-size:16px;">Hi <strong>${guestName}</strong>,</p>
+            <p style="margin:0 0 24px;font-size:14px;color:#6b7280;line-height:1.7;">
+              Your reservation at <strong>${hotelName}</strong> is confirmed. Below are your booking details.
+            </p>
+            
+            <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:32px;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;">
+              <tr style="background:#f9fafb;">
+                <td style="padding:16px;font-size:12px;font-weight:bold;color:#9ca3af;text-transform:uppercase;border-bottom:1px solid #e5e7eb;">Booking Reference</td>
+                <td style="padding:16px;font-size:14px;font-weight:bold;color:#111827;text-align:right;border-bottom:1px solid #e5e7eb;">${bookingRef}</td>
+              </tr>
+              <tr>
+                <td style="padding:16px;font-size:14px;color:#4b5563;border-bottom:1px solid #e5e7eb;">Check-in</td>
+                <td style="padding:16px;font-size:14px;color:#111827;text-align:right;font-weight:500;border-bottom:1px solid #e5e7eb;">${fromDate}</td>
+              </tr>
+              <tr>
+                <td style="padding:16px;font-size:14px;color:#4b5563;border-bottom:1px solid #e5e7eb;">Check-out</td>
+                <td style="padding:16px;font-size:14px;color:#111827;text-align:right;font-weight:500;border-bottom:1px solid #e5e7eb;">${toDate}</td>
+              </tr>
+              <tr>
+                <td style="padding:16px;font-size:14px;color:#4b5563;border-bottom:1px solid #e5e7eb;">Nights</td>
+                <td style="padding:16px;font-size:14px;color:#111827;text-align:right;font-weight:500;border-bottom:1px solid #e5e7eb;">${nights}</td>
+              </tr>
+              <tr>
+                <td style="padding:16px;font-size:14px;color:#4b5563;border-bottom:1px solid #e5e7eb;">Room Type</td>
+                <td style="padding:16px;font-size:14px;color:#111827;text-align:right;font-weight:500;border-bottom:1px solid #e5e7eb;">${roomType}</td>
+              </tr>
+              <tr style="background:#f9fafb;">
+                <td style="padding:16px;font-size:14px;font-weight:bold;color:#111827;">Total Paid</td>
+                <td style="padding:16px;font-size:18px;font-weight:bold;color:#27ae60;text-align:right;">$${totalAmount}</td>
+              </tr>
+            </table>
 
-          <!-- Header -->
-          <tr>
-            <td style="background:#1a1f2e;padding:32px 40px;text-align:center;">
-              <h1 style="color:#ffffff;margin:0;font-size:26px;font-weight:700;letter-spacing:-0.5px;">LuxeStay</h1>
-              <p style="color:rgba(255,255,255,0.45);margin:6px 0 0;font-size:13px;">Premium Hotel Reservations</p>
-            </td>
-          </tr>
-
-          <!-- Success Banner -->
-          <tr>
-            <td style="background:#f0fdf4;border-bottom:1px solid #bbf7d0;padding:24px 40px;text-align:center;">
-              <div style="display:inline-block;background:#22c55e;border-radius:50%;width:52px;height:52px;line-height:52px;text-align:center;font-size:26px;color:#fff;margin-bottom:12px;">✓</div>
-              <h2 style="color:#15803d;margin:0;font-size:22px;font-weight:700;">Booking Confirmed!</h2>
-              <p style="color:#166534;margin:6px 0 0;font-size:14px;">Your reservation is secured. See you soon!</p>
-            </td>
-          </tr>
-
-          <!-- Greeting -->
-          <tr>
-            <td style="padding:32px 40px 0;">
-              <p style="color:#374151;font-size:15px;margin:0 0 8px;">Hi <strong>${guestName}</strong>,</p>
-              <p style="color:#6b7280;font-size:14px;margin:0 0 24px;line-height:1.6;">
-                Your reservation at <strong style="color:#111827;">${hotelName}</strong> has been confirmed.
-                Here's a summary of your booking:
-              </p>
-            </td>
-          </tr>
-
-          <!-- Booking Details Card -->
-          <tr>
-            <td style="padding:0 40px 24px;">
-              <table width="100%" cellpadding="0" cellspacing="0"
-                style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;">
-                <tr style="background:#f3f4f6;">
-                  <td colspan="2" style="padding:14px 20px;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.8px;">
-                    Booking Summary
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding:12px 20px;color:#6b7280;font-size:13px;border-top:1px solid #e5e7eb;width:45%;">Booking ID</td>
-                  <td style="padding:12px 20px;color:#111827;font-size:13px;font-weight:700;border-top:1px solid #e5e7eb;">${bookingRef}</td>
-                </tr>
-                <tr>
-                  <td style="padding:12px 20px;color:#6b7280;font-size:13px;border-top:1px solid #e5e7eb;">Hotel</td>
-                  <td style="padding:12px 20px;color:#111827;font-size:13px;font-weight:600;border-top:1px solid #e5e7eb;">${hotelName}</td>
-                </tr>
-                <tr>
-                  <td style="padding:12px 20px;color:#6b7280;font-size:13px;border-top:1px solid #e5e7eb;">Room Type</td>
-                  <td style="padding:12px 20px;color:#111827;font-size:13px;border-top:1px solid #e5e7eb;">${roomType}</td>
-                </tr>
-                <tr>
-                  <td style="padding:12px 20px;color:#6b7280;font-size:13px;border-top:1px solid #e5e7eb;">Check-in</td>
-                  <td style="padding:12px 20px;color:#111827;font-size:13px;border-top:1px solid #e5e7eb;">${fromDate}</td>
-                </tr>
-                <tr>
-                  <td style="padding:12px 20px;color:#6b7280;font-size:13px;border-top:1px solid #e5e7eb;">Check-out</td>
-                  <td style="padding:12px 20px;color:#111827;font-size:13px;border-top:1px solid #e5e7eb;">${toDate}</td>
-                </tr>
-                <tr>
-                  <td style="padding:12px 20px;color:#6b7280;font-size:13px;border-top:1px solid #e5e7eb;">Duration</td>
-                  <td style="padding:12px 20px;color:#111827;font-size:13px;border-top:1px solid #e5e7eb;">${nights} night${nights !== 1 ? "s" : ""}</td>
-                </tr>
-                <tr style="background:#f0fdf4;">
-                  <td style="padding:16px 20px;color:#15803d;font-size:15px;font-weight:700;border-top:2px solid #bbf7d0;">Total Paid</td>
-                  <td style="padding:16px 20px;color:#15803d;font-size:20px;font-weight:800;border-top:2px solid #bbf7d0;">$${Number(totalAmount).toLocaleString()}</td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-
-          <!-- Help note -->
-          <tr>
-            <td style="padding:0 40px 32px;">
-              <p style="color:#9ca3af;font-size:13px;margin:0;line-height:1.6;">
-                Questions? Reply to this email or contact our 24/7 concierge team.
-                We look forward to welcoming you!
-              </p>
-            </td>
-          </tr>
-
-          <!-- Footer -->
-          <tr>
-            <td style="background:#f9fafb;border-top:1px solid #e5e7eb;padding:20px 40px;text-align:center;">
-              <p style="color:#9ca3af;font-size:12px;margin:0;">
-                © 2026 LuxeStay Hospitality. All rights reserved.
-              </p>
-            </td>
-          </tr>
-
-        </table>
-      </td>
-    </tr>
+            <p style="margin:0 0 8px;font-size:14px;font-weight:600;color:#111827;">Important Information</p>
+            <ul style="margin:0;padding-left:20px;font-size:13px;color:#6b7280;line-height:1.7;">
+              <li>Please carry a valid government-issued photo ID at check-in.</li>
+              <li>Standard check-in time is 2:00 PM, and check-out time is 12:00 PM.</li>
+              <li>To manage or cancel your booking, visit your profile in the LuxeStay app.</li>
+            </ul>
+          </td>
+        </tr>
+        <tr>
+          <td style="background:#f9fafb;border-top:1px solid #e5e7eb;padding:20px 40px;text-align:center;">
+            <p style="margin:0;color:#9ca3af;font-size:12px;">© 2026 LuxeStay Hospitality. All rights reserved.</p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
   </table>
 </body>
 </html>
-      `,
-    });
+  `;
 
+  try {
+    const { data, error } = await sendMailInternal({ to, subject, html });
     if (error) {
-      console.error("📧 [Email] Resend API error:", error);
+      console.error("📧 [Email] Booking confirmation send error:", error);
     } else {
-      console.log(`📧 [Email] Confirmation sent successfully → ${to} | ID: ${data?.id}`);
+      console.log(`📧 [Email] Booking confirmation sent → ${to} | ID: ${data?.id}`);
     }
   } catch (err) {
-    console.error("📧 [Email] Exception sending confirmation:", err.message);
+    console.error("📧 [Email] Exception sending booking confirmation:", err.message);
   }
 };
 
@@ -281,22 +287,15 @@ export const sendCancellationEmail = async ({
   bookingRef,
   reason,
 }) => {
-  if (!process.env.RESEND_API_KEY) {
-    console.log("📧 [Email] RESEND_API_KEY not set — skipping cancellation email.");
+  if (!process.env.RESEND_API_KEY && (!process.env.SMTP_USER || !process.env.SMTP_PASS)) {
+    console.log("📧 [Email] No email service configured — skipping cancellation email.");
     return;
   }
 
   console.log(`📧 [Email] Triggering cancellation email → ${to}`);
 
-  try {
-    const resendClient = getResend();
-    if (!resendClient) return;
-
-    const { data, error } = await resendClient.emails.send({
-      from:    FROM,
-      to:      resolveRecipient(to),
-      subject: `Booking Cancelled — ${hotelName} · ${bookingRef}`,
-      html: `
+  const subject = `Booking Cancelled — ${hotelName} · ${bookingRef}`;
+  const html = `
 <!DOCTYPE html>
 <html lang="en">
 <head><meta charset="UTF-8"/></head>
@@ -337,9 +336,10 @@ export const sendCancellationEmail = async ({
   </table>
 </body>
 </html>
-      `,
-    });
+  `;
 
+  try {
+    const { data, error } = await sendMailInternal({ to, subject, html });
     if (error) {
       console.error("📧 [Email] Resend API error:", error);
     } else {
@@ -350,27 +350,22 @@ export const sendCancellationEmail = async ({
   }
 };
 
+// ─────────────────────────────────────────────────────────
+// sendOtpEmail
+// Called when registering or sending verification codes
+// ─────────────────────────────────────────────────────────
 export const sendOtpEmail = async ({ to, name, otp }) => {
-  if (!process.env.RESEND_API_KEY) {
-    console.error("📧 [Email] RESEND_API_KEY not set — cannot send OTP email.");
-    throw new Error("Email service is not configured (missing API key).");
+  if (!process.env.RESEND_API_KEY && (!process.env.SMTP_USER || !process.env.SMTP_PASS)) {
+    console.error("📧 [Email] Email service not configured — cannot send OTP email.");
+    throw new Error("Email service is not configured (missing SMTP or Resend credentials).");
   }
 
   console.log("Starting verification email...");
   console.log("Recipient:", to);
   console.log("Generated OTP:", otp);
 
-  try {
-    const resendClient = getResend();
-    if (!resendClient) {
-      throw new Error("Failed to initialize Resend client.");
-    }
-
-    const { data, error } = await resendClient.emails.send({
-      from:    FROM,
-      to:      resolveRecipient(to),
-      subject: `LuxeStay Verification Code — ${otp}`,
-      html: `
+  const subject = `LuxeStay Verification Code — ${otp}`;
+  const html = `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -411,9 +406,10 @@ export const sendOtpEmail = async ({ to, name, otp }) => {
   </table>
 </body>
 </html>
-      `,
-    });
+  `;
 
+  try {
+    const { data, error } = await sendMailInternal({ to, subject, html });
     if (error) {
       console.log("\n========================================================");
       console.log(`📧  [Resend Free Tier Info] Delivery blocked to: ${to}`);
