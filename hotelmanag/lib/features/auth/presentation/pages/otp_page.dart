@@ -50,49 +50,14 @@ class _OtpPageState extends State<OtpPage> {
     }
   }
 
-  void _checkFirebaseVerification() async {
-    final auth = Provider.of<AuthProvider>(context, listen: false);
-    final user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      await user.reload();
-      final freshUser = FirebaseAuth.instance.currentUser;
-      if (freshUser?.emailVerified == true) {
-        final idToken = await freshUser?.getIdToken();
-        if (idToken != null) {
-          final success = await auth.signInWithFirebaseToken(idToken);
-          if (success && mounted) {
-            context.go('/');
-            return;
-          }
-        }
-      }
-    }
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Email not verified yet. Please check your Gmail inbox and click the link first."),
-        ),
-      );
-    }
-  }
-
   void _resendOtp() async {
     final auth = Provider.of<AuthProvider>(context, listen: false);
     
-    try {
-      final user = FirebaseAuth.instance.currentUser;
-      if (user != null) {
-        await user.sendEmailVerification();
-      }
-    } catch (e) {
-      debugPrint("Failed to resend Firebase verification: $e");
-    }
-
     final success = await auth.resendOtp(widget.email);
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(success ? 'A new verification link and code have been sent to your email.' : (auth.error ?? 'Failed to resend code')),
+          content: Text(success ? 'A new verification code has been sent to your email.' : (auth.error ?? 'Failed to resend code')),
         ),
       );
     }
@@ -285,25 +250,6 @@ class _OtpPageState extends State<OtpPage> {
                               'Verify Account', 
                               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 0.5)
                             ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Firebase Verification Link Option
-                  SizedBox(
-                    width: double.infinity,
-                    height: 56,
-                    child: OutlinedButton.icon(
-                      onPressed: auth.isLoading ? null : _checkFirebaseVerification,
-                      icon: const Icon(LucideIcons.mailCheck, color: AppTheme.accentColor),
-                      label: const Text(
-                        'I Clicked the Verification Link in Gmail',
-                        style: TextStyle(color: AppTheme.primaryColor, fontWeight: FontWeight.bold),
-                      ),
-                      style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: AppTheme.mutedColor),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      ),
                     ),
                   ),
                   const SizedBox(height: 24),

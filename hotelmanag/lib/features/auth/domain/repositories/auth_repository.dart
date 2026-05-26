@@ -28,4 +28,7 @@ abstract class AuthRepository {
     bool isDefault = false,
   });
   Future<Either<Failure, bool>> changePassword(String oldPassword, String newPassword);
+  Future<Either<Failure, bool>> forgotPassword(String email);
+  Future<Either<Failure, String?>> sendPhoneOtp(String phone);
+  Future<Either<Failure, (UserEntity, String)>> verifyPhoneOtp(String phone, String code);
 }

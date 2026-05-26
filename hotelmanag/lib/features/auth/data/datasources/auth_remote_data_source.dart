@@ -27,6 +27,9 @@ abstract class AuthRemoteDataSource {
     bool isDefault = false,
   });
   Future<bool> changePassword(String oldPassword, String newPassword);
+  Future<bool> forgotPassword(String email);
+  Future<String?> sendPhoneOtp(String phone);
+  Future<AuthResponse> verifyPhoneOtp(String phone, String code);
 }
 
 class AuthResponse {
@@ -41,6 +44,41 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   final ApiService _apiService;
 
   AuthRemoteDataSourceImpl(this._apiService);
+
+  @override
+  Future<String?> sendPhoneOtp(String phone) async {
+    final response = await _apiService.post('auth/phone/send', data: {
+      'phone': phone,
+    });
+    if (response.data['success'] == true) {
+      return response.data['otp']?.toString() ?? 'success';
+    }
+    return null;
+  }
+
+  @override
+  Future<AuthResponse> verifyPhoneOtp(String phone, String code) async {
+    final response = await _apiService.post('auth/phone/verify', data: {
+      'phone': phone,
+      'code': code,
+    });
+    final data = response.data['data'];
+    if (data == null) {
+      throw Exception(response.data['message'] ?? 'Verification failed');
+    }
+    return AuthResponse(
+      user: UserModel.fromJson(data),
+      token: data['token'] ?? '',
+    );
+  }
+
+  @override
+  Future<bool> forgotPassword(String email) async {
+    final response = await _apiService.post('auth/forgot-password', data: {
+      'email': email,
+    });
+    return response.data['success'] ?? false;
+  }
 
   @override
   Future<AuthResponse> login(String email, String password) async {

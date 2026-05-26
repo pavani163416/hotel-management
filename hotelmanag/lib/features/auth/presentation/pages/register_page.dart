@@ -58,77 +58,84 @@ class _RegisterPageState extends State<RegisterPage> {
           ),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          children: [
-            _buildLogo(),
-            const SizedBox(height: 24),
-            const Text(
-              'Welcome Create your new\naccount',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
-            ),
-            const SizedBox(height: 32),
-            Row(
-              children: [
-                Expanded(
-                  child: CustomTextField(
-                    label: 'First Name *',
-                    hint: 'Md Rahamat',
-                    controller: _firstNameController,
+      body: AutofillGroup(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            children: [
+              _buildLogo(),
+              const SizedBox(height: 24),
+              const Text(
+                'Welcome Create your new\naccount',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
+              ),
+              const SizedBox(height: 32),
+              Row(
+                children: [
+                  Expanded(
+                    child: CustomTextField(
+                      label: 'First Name *',
+                      hint: 'Md Rahamat',
+                      controller: _firstNameController,
+                      autofillHints: const [AutofillHints.givenName],
+                    ),
                   ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: CustomTextField(
-                    label: 'Last Name *',
-                    hint: 'Hawlader',
-                    controller: _lastNameController,
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: CustomTextField(
+                      label: 'Last Name *',
+                      hint: 'Hawlader',
+                      controller: _lastNameController,
+                      autofillHints: const [AutofillHints.familyName],
+                    ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            CustomTextField(
-              label: 'Email *',
-              hint: 'uirahamat098@gmail.com',
-              keyboardType: TextInputType.emailAddress,
-              controller: _emailController,
-            ),
-            const SizedBox(height: 16),
-            CustomTextField(
-              label: 'Phone *',
-              hint: '+8801724649510',
-              keyboardType: TextInputType.phone,
-              controller: _phoneController,
-            ),
-            const SizedBox(height: 16),
-            CustomTextField(
-              label: 'Password *',
-              hint: '.......',
-              obscureText: true,
-              controller: _passwordController,
-            ),
-            const SizedBox(height: 16),
-            CustomTextField(
-              label: 'Confirm Password *',
-              hint: '.......',
-              obscureText: true,
-              controller: _confirmPasswordController,
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Checkbox(
-                  value: _rememberMe,
-                  onChanged: (v) => setState(() => _rememberMe = v ?? false),
-                  activeColor: const Color(0xFFA67C52),
-                ),
-                const Text('Remember me', style: TextStyle(fontSize: 14, color: AppTheme.primaryColor)),
-              ],
-            ),
-            const SizedBox(height: 32),
+                ],
+              ),
+              const SizedBox(height: 16),
+              CustomTextField(
+                label: 'Email *',
+                hint: 'uirahamat098@gmail.com',
+                keyboardType: TextInputType.emailAddress,
+                controller: _emailController,
+                autofillHints: const [AutofillHints.email],
+              ),
+              const SizedBox(height: 16),
+              CustomTextField(
+                label: 'Phone *',
+                hint: '+8801724649510',
+                keyboardType: TextInputType.phone,
+                controller: _phoneController,
+                autofillHints: const [AutofillHints.telephoneNumber],
+              ),
+              const SizedBox(height: 16),
+              CustomTextField(
+                label: 'Password *',
+                hint: '.......',
+                obscureText: true,
+                controller: _passwordController,
+                autofillHints: const [AutofillHints.newPassword],
+              ),
+              const SizedBox(height: 16),
+              CustomTextField(
+                label: 'Confirm Password *',
+                hint: '.......',
+                obscureText: true,
+                controller: _confirmPasswordController,
+                autofillHints: const [AutofillHints.newPassword],
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Checkbox(
+                    value: _rememberMe,
+                    onChanged: (v) => setState(() => _rememberMe = v ?? false),
+                    activeColor: const Color(0xFFA67C52),
+                  ),
+                  const Text('Remember me', style: TextStyle(fontSize: 14, color: AppTheme.primaryColor)),
+                ],
+              ),
+              const SizedBox(height: 32),
             Consumer<AuthProvider>(
               builder: (context, auth, _) {
                 return SizedBox(
@@ -213,7 +220,7 @@ class _RegisterPageState extends State<RegisterPage> {
           ],
         ),
       ),
-    );
+    ));
   }
 
   Widget _buildLogo() {

@@ -224,4 +224,40 @@ class AuthRepositoryImpl implements AuthRepository {
       return Left(ServerFailure(e.toString()));
     }
   }
+
+  @override
+  Future<Either<Failure, bool>> forgotPassword(String email) async {
+    try {
+      final success = await _remoteDataSource.forgotPassword(email);
+      return Right(success);
+    } on DioException catch (e) {
+      return Left(ServerFailure(e.response?.data['message'] ?? 'Failed to send password reset link'));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, String?>> sendPhoneOtp(String phone) async {
+    try {
+      final otp = await _remoteDataSource.sendPhoneOtp(phone);
+      return Right(otp);
+    } on DioException catch (e) {
+      return Left(ServerFailure(e.response?.data['message'] ?? 'Failed to send phone OTP'));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, (UserEntity, String)>> verifyPhoneOtp(String phone, String code) async {
+    try {
+      final authResponse = await _remoteDataSource.verifyPhoneOtp(phone, code);
+      return Right((authResponse.user, authResponse.token));
+    } on DioException catch (e) {
+      return Left(ServerFailure(e.response?.data['message'] ?? 'Failed to verify phone OTP'));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
 }

@@ -52,31 +52,6 @@ class AuthProvider extends ChangeNotifier {
           _error = failure.message;
         }
 
-        // If unverified, try to trigger Firebase Email Verification
-        if (_unverifiedEmail != null) {
-          try {
-            UserCredential credential;
-            try {
-              credential = await FirebaseAuth.instance.signInWithEmailAndPassword(
-                email: email,
-                password: password,
-              );
-            } on FirebaseAuthException catch (e) {
-              if (e.code == 'user-not-found' || e.code == 'invalid-credential') {
-                credential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
-                  email: email,
-                  password: password,
-                );
-              } else {
-                rethrow;
-              }
-            }
-            await credential.user?.sendEmailVerification();
-          } catch (e) {
-            debugPrint("Firebase Verification Link error: $e");
-          }
-        }
-
         _isLoading = false;
         notifyListeners();
       },
@@ -110,29 +85,6 @@ class AuthProvider extends ChangeNotifier {
         if (token.isEmpty) {
           _unverifiedEmail = email;
           _devOtp = otp;
-
-          // Register in Firebase and send verification link
-          try {
-            UserCredential credential;
-            try {
-              credential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
-                email: email,
-                password: password,
-              );
-            } on FirebaseAuthException catch (e) {
-              if (e.code == 'email-already-in-use') {
-                credential = await FirebaseAuth.instance.signInWithEmailAndPassword(
-                  email: email,
-                  password: password,
-                );
-              } else {
-                rethrow;
-              }
-            }
-            await credential.user?.sendEmailVerification();
-          } catch (e) {
-            debugPrint("Firebase Registration Link error: $e");
-          }
         } else {
           _user = user;
           await _saveAuthData(user, token);
@@ -645,73 +597,32 @@ class AuthProvider extends ChangeNotifier {
   }) async {
     _isLoading = true;
     _error = null;
+    _devOtp = null;
     notifyListeners();
 
     try {
-      if (kIsWeb) {
-        // Inject recaptcha container if missing
-        injectRecaptchaContainer();
-
-        final verifier = RecaptchaVerifier(
-          auth: FirebaseAuthPlatform.instance,
-          container: 'recaptcha-container',
-          size: RecaptchaVerifierSize.normal,
-        );
-
-        final confirmationResult = await FirebaseAuth.instance.signInWithPhoneNumber(
-          phoneNumber,
-          verifier,
-        );
-        _webConfirmationResult = confirmationResult;
-        _isLoading = false;
-        notifyListeners();
-        onCodeSent(confirmationResult.verificationId);
-      } else {
-        await FirebaseAuth.instance.verifyPhoneNumber(
-          phoneNumber: phoneNumber,
-          verificationCompleted: (PhoneAuthCredential credential) async {
-            final userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
-            final firebaseUser = userCredential.user;
-            if (firebaseUser != null) {
-              final idToken = await firebaseUser.getIdToken() ?? '';
-              final result = await _authRepository.signInWithFirebase(
-                idToken,
-                phone: phoneNumber,
-              );
-              result.fold(
-                (failure) {
-                  _error = failure.message;
-                  _isLoading = false;
-                  notifyListeners();
-                  onError(failure.message);
-                },
-                (data) async {
-                  final (user, token) = data;
-                  _user = user;
-                  await _saveAuthData(user, token);
-                  _isLoading = false;
-                  notifyListeners();
-                },
-              );
+      final result = await _authRepository.sendPhoneOtp(phoneNumber);
+      result.fold(
+        (failure) {
+          _error = failure.message;
+          _isLoading = false;
+          notifyListeners();
+          onError(failure.message);
+        },
+        (otp) {
+          _isLoading = false;
+          if (otp != null) {
+            if (otp != 'success') {
+              _devOtp = otp;
             }
-          },
-          verificationFailed: (FirebaseAuthException e) {
-            _error = e.message;
-            _isLoading = false;
             notifyListeners();
-            onError(e.message ?? 'Verification failed');
-          },
-          codeSent: (String verificationId, int? resendToken) {
-            _isLoading = false;
+            onCodeSent(phoneNumber);
+          } else {
             notifyListeners();
-            onCodeSent(verificationId);
-          },
-          codeAutoRetrievalTimeout: (String verificationId) {
-            _isLoading = false;
-            notifyListeners();
-          },
-        );
-      }
+            onError("Failed to send verification code");
+          }
+        },
+      );
     } catch (e) {
       _error = e.toString();
       _isLoading = false;
@@ -726,28 +637,7 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      UserCredential userCredential;
-      if (kIsWeb && _webConfirmationResult != null) {
-        userCredential = await _webConfirmationResult!.confirm(smsCode);
-      } else {
-        final credential = PhoneAuthProvider.credential(
-          verificationId: verificationId,
-          smsCode: smsCode,
-        );
-        userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
-      }
-
-      final firebaseUser = userCredential.user;
-      if (firebaseUser == null) {
-        throw Exception("Firebase phone sign-in failed.");
-      }
-
-      final idToken = await firebaseUser.getIdToken() ?? '';
-      final result = await _authRepository.signInWithFirebase(
-        idToken,
-        phone: phoneNumber,
-      );
-
+      final result = await _authRepository.verifyPhoneOtp(phoneNumber, smsCode);
       return result.fold(
         (failure) {
           _error = failure.message;
@@ -770,5 +660,26 @@ class AuthProvider extends ChangeNotifier {
       notifyListeners();
       return false;
     }
+  }
+
+  Future<bool> forgotPassword(String email) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    final result = await _authRepository.forgotPassword(email);
+    return result.fold(
+      (failure) {
+        _error = failure.message;
+        _isLoading = false;
+        notifyListeners();
+        return false;
+      },
+      (success) {
+        _isLoading = false;
+        notifyListeners();
+        return success;
+      },
+    );
   }
 }

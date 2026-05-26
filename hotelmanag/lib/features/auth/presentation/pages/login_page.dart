@@ -50,31 +50,34 @@ class _LoginPageState extends State<LoginPage> {
           ),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          children: [
-            _buildLogo(),
-            const SizedBox(height: 32),
-            const Text(
-              'Welcome back glad to see you',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
-            ),
-            const SizedBox(height: 40),
-            CustomTextField(
-              label: 'User Name Or Email Address *',
-              hint: 'Type your user name',
-              controller: _emailController,
-            ),
-            const SizedBox(height: 16),
-            CustomTextField(
-              label: 'Password *',
-              hint: '.......',
-              obscureText: true,
-              controller: _passwordController,
-            ),
-            const SizedBox(height: 16),
+      body: AutofillGroup(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            children: [
+              _buildLogo(),
+              const SizedBox(height: 32),
+              const Text(
+                'Welcome back glad to see you',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
+              ),
+              const SizedBox(height: 40),
+              CustomTextField(
+                label: 'User Name Or Email Address *',
+                hint: 'Type your user name',
+                controller: _emailController,
+                autofillHints: const [AutofillHints.email, AutofillHints.username],
+              ),
+              const SizedBox(height: 16),
+              CustomTextField(
+                label: 'Password *',
+                hint: '.......',
+                obscureText: true,
+                controller: _passwordController,
+                autofillHints: const [AutofillHints.password],
+              ),
+              const SizedBox(height: 16),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -96,10 +99,27 @@ class _LoginPageState extends State<LoginPage> {
                       minimumSize: Size.zero,
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Password reset link sent to your email!')),
-                      );
+                    onPressed: () async {
+                      final email = _emailController.text.trim();
+                      if (email.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Please enter your email first in the UserName/Email field.')),
+                        );
+                        return;
+                      }
+                      final auth = Provider.of<AuthProvider>(context, listen: false);
+                      final success = await auth.forgotPassword(email);
+                      if (mounted) {
+                        if (success) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('If an account exists, a password reset link has been sent to your email.')),
+                          );
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(auth.error ?? 'Failed to send reset link')),
+                          );
+                        }
+                      }
                     },
                     child: const Text(
                       'Forgot your password?',
@@ -212,8 +232,9 @@ class _LoginPageState extends State<LoginPage> {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildLogo() {
     return RichText(

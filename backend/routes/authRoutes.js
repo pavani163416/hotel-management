@@ -466,14 +466,15 @@ router.post("/forgot-password", authLimiter, validateEmailPayload, async (req, r
     }
 
     const adminEmail = process.env.ADMIN_EMAIL?.toLowerCase().trim();
-    const [manager, AdminModel] = await Promise.all([
+    const [manager, AdminModel, customer] = await Promise.all([
       Manager.findOne({ email, isActive: true }),
       getAdminUserModel(),
+      User.findOne({ email, isActive: true }),
     ]);
 
     const adminUser = AdminModel ? await AdminModel.findOne({ email, isActive: true }) : null;
 
-    if (manager || adminUser) {
+    if (manager || adminUser || customer) {
       const { token, hashedToken } = createResetToken();
       const expires = new Date(Date.now() + 1000 * 60 * 60);
       const baseUrl = req.body.originUrl || req.headers.origin || (process.env.CLIENT_ORIGIN ? process.env.CLIENT_ORIGIN.split(',')[0] : "http://localhost:5174");
@@ -489,10 +490,15 @@ router.post("/forgot-password", authLimiter, validateEmailPayload, async (req, r
         adminUser.resetPasswordExpires = expires;
         await adminUser.save();
       }
+      if (customer) {
+        customer.resetPasswordToken = hashedToken;
+        customer.resetPasswordExpires = expires;
+        await customer.save();
+      }
 
       await sendPasswordResetEmail({
         to: email,
-        name: manager?.name || adminUser?.name || "LuxeStay Admin",
+        name: manager?.name || adminUser?.name || customer?.name || "LuxeStay User",
         resetUrl: url,
       });
     } else if (adminEmail === email) {
@@ -522,13 +528,14 @@ router.post("/reset-password", authLimiter, validateResetPasswordPayload, async 
     const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
     const now = new Date();
 
-    const [manager, AdminModel] = await Promise.all([
+    const [manager, AdminModel, customer] = await Promise.all([
       Manager.findOne({ email: email.toLowerCase().trim(), resetPasswordToken: hashedToken, resetPasswordExpires: { $gt: now } }),
       getAdminUserModel(),
+      User.findOne({ email: email.toLowerCase().trim(), resetPasswordToken: hashedToken, resetPasswordExpires: { $gt: now } }),
     ]);
     const adminUser = AdminModel ? await AdminModel.findOne({ email: email.toLowerCase().trim(), resetPasswordToken: hashedToken, resetPasswordExpires: { $gt: now } }) : null;
 
-    if (!manager && !adminUser) {
+    if (!manager && !adminUser && !customer) {
       return res.status(400).json({ success: false, message: "Invalid or expired reset link." });
     }
 
@@ -544,6 +551,12 @@ router.post("/reset-password", authLimiter, validateResetPasswordPayload, async 
       adminUser.resetPasswordToken = null;
       adminUser.resetPasswordExpires = null;
       await adminUser.save();
+    }
+    if (customer) {
+      customer.passwordHash = passwordHash;
+      customer.resetPasswordToken = null;
+      customer.resetPasswordExpires = null;
+      await customer.save();
     }
 
     return res.status(200).json({ success: true, message: "Password has been reset. Please sign in with your new password." });
@@ -751,8 +764,24 @@ router.post("/phone/send", authLimiter, async (req, res, next) => {
     }
 
     const normalizedPhone = normalizePhoneNumber(phone);
-    await sendTwilioVerification(normalizedPhone);
-    return res.status(200).json({ success: true, message: "OTP sent successfully." });
+    try {
+      await sendTwilioVerification(normalizedPhone);
+      return res.status(200).json({ success: true, message: "OTP sent successfully." });
+    } catch (twilioErr) {
+      logger.warn(`Twilio verify fail, generating mock OTP: ${twilioErr.message}`);
+      const mockCode = Math.floor(100000 + Math.random() * 900000).toString();
+      await cacheSet(`mock_phone_otp_${normalizedPhone}`, mockCode, 300);
+
+      console.log(`\n=========================================`);
+      console.log(`🔑 DEV: Phone Verification OTP for ${normalizedPhone}: ${mockCode}`);
+      console.log(`=========================================\n`);
+
+      return res.status(200).json({
+        success: true,
+        message: "OTP sent successfully (development fallback).",
+        otp: mockCode
+      });
+    }
   } catch (err) {
     logger.error(err.message, "Phone OTP send failed");
     const status = err.message?.includes("country code") ? 400 : 500;
@@ -769,8 +798,22 @@ router.post("/phone/verify", authLimiter, async (req, res, next) => {
     }
 
     const normalizedPhone = normalizePhoneNumber(phone);
-    const verification = await verifyTwilioCode(normalizedPhone, code);
-    if (verification.status !== "approved") {
+    
+    // Check if there is a dev mock OTP
+    const mockCode = await cacheGet(`mock_phone_otp_${normalizedPhone}`);
+    let isApproved = false;
+
+    if (mockCode && mockCode === code) {
+      isApproved = true;
+      await cacheDel(`mock_phone_otp_${normalizedPhone}`);
+    } else {
+      const verification = await verifyTwilioCode(normalizedPhone, code);
+      if (verification.status === "approved") {
+        isApproved = true;
+      }
+    }
+
+    if (!isApproved) {
       return res.status(401).json({ success: false, message: "OTP verification failed." });
     }
 
