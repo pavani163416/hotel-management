@@ -301,6 +301,14 @@ app.get("/api/health", (req, res) => {
   });
 });
 
+// ── Global Middlewares ────────────────────────────────────
+app.use(cors(corsOptions));
+// Use trust proxy 1 for express-rate-limit behind a single proxy (Railway/Vercel)
+app.set("trust proxy", 1);
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
+
 // ── API Routes ────────────────────────────────────────────
 app.use("/api/rooms",         roomRoutes);
 app.use("/api/bookings",      bookingRoutes);

@@ -348,15 +348,19 @@ export const sendCancellationEmail = async ({
 
 export const sendOtpEmail = async ({ to, name, otp }) => {
   if (!process.env.RESEND_API_KEY) {
-    console.log("📧 [Email] RESEND_API_KEY not set — skipping OTP email.");
-    return;
+    console.error("📧 [Email] RESEND_API_KEY not set — cannot send OTP email.");
+    throw new Error("Email service is not configured (missing API key).");
   }
 
-  console.log(`📧 [Email] Triggering OTP email → ${to}`);
+  console.log("Starting verification email...");
+  console.log("Recipient:", to);
+  console.log("Generated OTP:", otp);
 
   try {
     const resendClient = getResend();
-    if (!resendClient) return;
+    if (!resendClient) {
+      throw new Error("Failed to initialize Resend client.");
+    }
 
     const { data, error } = await resendClient.emails.send({
       from:    FROM,
@@ -407,11 +411,14 @@ export const sendOtpEmail = async ({ to, name, otp }) => {
     });
 
     if (error) {
-      console.error("📧 [Email] Resend API error:", error);
-    } else {
-      console.log(`📧 [Email] OTP email sent → \${to} | ID: \${data?.id}`);
+      console.error("EMAIL SEND ERROR:", error);
+      throw new Error(error.message || "Failed to send verification email via Resend.");
     }
+
+    console.log("EMAIL SENT SUCCESS:", data);
+    return data;
   } catch (err) {
-    console.error("📧 [Email] Exception sending OTP email:", err.message);
+    console.error("EMAIL SEND ERROR:", err);
+    throw err;
   }
 };

@@ -355,7 +355,16 @@ router.post("/register", authLimiter, validateRegisterPayload, async (req, res, 
           message: "An account with this email already exists. Please sign in.",
         });
       } else {
-        // User exists but unverified. Update password and resend OTP.
+        // User exists but unverified. Re-send email first before saving updates.
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const otpEmailPayload = { to: normalEmail, name: name.trim(), otp };
+
+        try {
+          await sendOtpEmail(otpEmailPayload);
+        } catch (emailErr) {
+          return res.status(500).json({ success: false, message: "Failed to send verification email. Please check your email address and try again." });
+        }
+
         user.passwordHash = await bcrypt.hash(password, 12);
         user.name = name.trim();
         user.phone = phone.trim();
@@ -373,17 +382,8 @@ router.post("/register", authLimiter, validateRegisterPayload, async (req, res, 
           });
         }
 
-        const otp = Math.floor(100000 + Math.random() * 900000).toString();
         await cacheSet(`otp_${normalEmail}`, otp, 300);
         await cacheSet(`cooldown_${normalEmail}`, "true", 60);
-
-        const otpEmailPayload = { to: normalEmail, name: user.name, otp };
-        const queued = await enqueueEmailJob("otpEmail", otpEmailPayload);
-        if (!queued) {
-          await sendOtpEmail(otpEmailPayload).catch((err) => {
-            logger.error("Failed to resend registration OTP email directly", { email: normalEmail, error: err.message });
-          });
-        }
 
         return res.status(201).json({
           success: true,
@@ -394,6 +394,16 @@ router.post("/register", authLimiter, validateRegisterPayload, async (req, res, 
           },
         });
       }
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpEmailPayload = { to: normalEmail, name: name.trim(), otp };
+
+    // Attempt email send first
+    try {
+      await sendOtpEmail(otpEmailPayload);
+    } catch (emailErr) {
+      return res.status(500).json({ success: false, message: "Failed to send verification email. Please check your email address and try again." });
     }
 
     const passwordHash = await bcrypt.hash(password, 12);
@@ -425,17 +435,8 @@ router.post("/register", authLimiter, validateRegisterPayload, async (req, res, 
     user.verificationSentAt = new Date();
     await user.save();
 
-    // ── Generate 6-digit OTP code ─────────────────────
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
     await cacheSet(`otp_${normalEmail}`, otp, 300);
-
-    const otpEmailPayload = { to: normalEmail, name: user.name, otp };
-    const queued = await enqueueEmailJob("otpEmail", otpEmailPayload);
-    if (!queued) {
-      await sendOtpEmail(otpEmailPayload).catch((err) => {
-        logger.error("Failed to send registration OTP email directly", { email: normalEmail, error: err.message });
-      });
-    }
+    await cacheSet(`cooldown_${normalEmail}`, "true", 60);
 
     // DEVELOPMENT AID: Log the OTP so you can see it in the terminal
     console.log(`\n=========================================`);
@@ -595,11 +596,11 @@ router.post("/login", loginLimiter, validateLoginPayload, async (req, res, next)
         await user.save();
 
         const otpEmailPayload = { to: normalEmail, name: user.name, otp };
-        const queued = await enqueueEmailJob("otpEmail", otpEmailPayload);
-        if (!queued) {
-          await sendOtpEmail(otpEmailPayload).catch((err) => {
-            logger.error("Failed to send login OTP email directly", { email: normalEmail, error: err.message });
-          });
+        
+        try {
+          await sendOtpEmail(otpEmailPayload);
+        } catch (emailErr) {
+          return res.status(500).json({ success: false, message: "Failed to send verification email. Please try again later." });
         }
       }
 
@@ -1259,11 +1260,10 @@ router.post("/resend-otp", otpRateLimiter, async (req, res, next) => {
     await cacheSet(`cooldown_${normalEmail}`, "true", 60);
 
     const otpEmailPayload = { to: normalEmail, name: user.name, otp };
-    const queued = await enqueueEmailJob("otpEmail", otpEmailPayload);
-    if (!queued) {
-      await sendOtpEmail(otpEmailPayload).catch((err) => {
-        logger.error("Failed to resend OTP email directly", { email: normalEmail, error: err.message });
-      });
+    try {
+      await sendOtpEmail(otpEmailPayload);
+    } catch (emailErr) {
+      return res.status(500).json({ success: false, message: "Failed to send verification email. Please try again later." });
     }
 
     logger.info("Verification code resent", { email: normalEmail });
