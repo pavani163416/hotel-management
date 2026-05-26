@@ -368,6 +368,7 @@ export default function Bookings() {
               {([
                 ["Booking ID", `#${detailBooking.id}`],
                 ["Status", null],
+                ["Booked At", `${new Date(detailBooking.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })} ${new Date(detailBooking.createdAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}`],
                 ["Guest Name", detailBooking.guestSnapshot.name],
                 ["Email", detailBooking.guestSnapshot.email],
                 ["Property", detailBooking.property],

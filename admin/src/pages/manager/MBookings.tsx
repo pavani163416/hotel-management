@@ -247,10 +247,15 @@ export default function Bookings() {
                     </span>
                     <span className="font-semibold text-bright">${b.totalAmount.toLocaleString()}</span>
                   </div>
-                  <div className="flex items-center gap-3 mt-1.5 text-xs text-dim">
+                  <div className="flex flex-wrap items-center gap-2 mt-1.5 text-xs text-dim">
                     {b.bookingRef && <span>Ref: {b.bookingRef}</span>}
                     {b.room?.type && <span>· {b.room.type}</span>}
                     {b.paymentMethod && <span>· {b.paymentMethod}</span>}
+                    {b.createdAt && (
+                      <span className="text-[11px] text-accent/90 font-medium bg-accent/10 px-2 py-0.5 rounded">
+                        Booked: {new Date(b.createdAt).toLocaleDateString()} {new Date(b.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                      </span>
+                    )}
                     {(b.additionalAdults?.length || 0) > 0 && (
                       <span className="flex items-center gap-1">
                         <UserCheck className="w-3 h-3" /> +{b.additionalAdults!.length} adults
@@ -372,6 +377,7 @@ export default function Bookings() {
                       { icon: <LogOut className="w-3.5 h-3.5 text-danger" />, label: "Check-out", value: new Date(selected.checkOut).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }) },
                       { icon: <Clock className="w-3.5 h-3.5 text-gold" />, label: "Duration", value: `${nights(selected)} nights` },
                       { icon: <Users className="w-3.5 h-3.5 text-gold" />, label: "Room", value: `${selected.room?.type || "—"}${selected.room?.roomNumber ? ` #${selected.room.roomNumber}` : ""}` },
+                      { icon: <Clock className="w-3.5 h-3.5 text-sky-400" />, label: "Booked At", value: `${new Date(selected.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })} ${new Date(selected.createdAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}` },
                     ].map(({ icon, label, value }) => (
                       <div key={label} className="rounded-xl p-3"
                         style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
