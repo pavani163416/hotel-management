@@ -17,6 +17,7 @@ export default function Login() {
   const [resetMessage, setResetMessage] = useState("");
   const [resetError, setResetError] = useState("");
   const [resetLoading, setResetLoading] = useState(false);
+  const [showSupportModal, setShowSupportModal] = useState(false);
 
   const supportEmail = import.meta.env.VITE_SUPPORT_EMAIL || "admin@luxestay.com";
 
@@ -306,13 +307,15 @@ export default function Login() {
             <div className="mt-6 text-center">
               <p className="text-xs text-dim">
                 Need technical assistance?{" "}
-                <a className="text-gold transition-colors"
-                  href={`mailto:${supportEmail}?subject=Support%20Request%20for%20LuxeStay%20Admin&body=Hello%20System%20Admin,%0D%0A%0D%0AI%20need%20help%20with%20the%20LuxeStay%20Admin%20portal.%20Please%20contact%20me%20at%20this%20address.%0D%0A%0D%0AThanks,%0D%0A`}
+                <button
+                  type="button"
+                  onClick={() => setShowSupportModal(true)}
+                  className="text-gold transition-colors"
                   onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = "#e8c96a"}
                   onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = "#d4a843"}
                 >
                   Contact System Admin
-                </a>
+                </button>
               </p>
             </div>
           </div>
@@ -328,6 +331,65 @@ export default function Login() {
           <span className="text-xs text-dim">V2.4.0-PRO</span>
         </div>
       </div>
+
+      {/* Static Contact Admin Popup */}
+      {showSupportModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div
+            className="w-full max-w-md rounded-2xl border p-8 shadow-2xl relative"
+            style={{
+              background: "linear-gradient(145deg, #1e293b 0%, #0f172a 100%)",
+              borderColor: "rgba(255,255,255,0.05)",
+            }}
+          >
+            <div className="flex flex-col items-center text-center">
+              <div
+                className="w-16 h-16 rounded-full flex items-center justify-center mb-6 shadow-lg"
+                style={{
+                  background: "linear-gradient(135deg, rgba(212,168,67,0.15) 0%, rgba(212,168,67,0.05) 100%)",
+                  border: "1px solid rgba(212,168,67,0.2)",
+                }}
+              >
+                <Mail className="w-8 h-8 text-gold" />
+              </div>
+              <h2 className="text-xl font-bold text-white mb-2 tracking-wide">Contact System Admin</h2>
+              <p className="text-sm text-slate-400 mb-8 max-w-sm">
+                If you need assistance with the administrative portal, please reach out to our dedicated support team using the details below.
+              </p>
+              
+              <div className="w-full space-y-4 text-left">
+                <div className="flex items-center gap-4 p-4 rounded-xl border border-white/5 bg-white/5">
+                  <Mail className="w-5 h-5 text-gold flex-shrink-0" />
+                  <div>
+                    <p className="text-xs text-slate-500 font-medium uppercase tracking-wider mb-0.5">Email Support</p>
+                    <p className="text-sm font-semibold text-white">{supportEmail}</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-4 p-4 rounded-xl border border-white/5 bg-white/5">
+                  <svg className="w-5 h-5 text-gold flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                  </svg>
+                  <div>
+                    <p className="text-xs text-slate-500 font-medium uppercase tracking-wider mb-0.5">Phone Support</p>
+                    <p className="text-sm font-semibold text-white">+1 (800) 555-0199</p>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setShowSupportModal(false)}
+                className="mt-8 px-6 py-2.5 rounded-lg text-sm font-medium text-white transition-colors w-full"
+                style={{ background: "linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)" }}
+                onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.15)")}
+                onMouseLeave={e => (e.currentTarget.style.background = "linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)")}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
