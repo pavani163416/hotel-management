@@ -97,11 +97,20 @@ class BookingProvider extends ChangeNotifier {
   bool applyPromoCode(String code) {
     final normalizedCode = code.toUpperCase().trim();
     if (_validPromos.containsKey(normalizedCode)) {
+      final firstTimeOnly = const {'WELCOME15', 'LUXE10'};
+      if (firstTimeOnly.contains(normalizedCode) && _bookings.isNotEmpty) {
+        _error = '$normalizedCode is for first-time guests only.';
+        notifyListeners();
+        return false;
+      }
       _appliedPromoCode = normalizedCode;
       _discountAmount = subtotal * _validPromos[normalizedCode]!;
+      _error = null;
       notifyListeners();
       return true;
     }
+    _error = 'Invalid promo code';
+    notifyListeners();
     return false;
   }
 

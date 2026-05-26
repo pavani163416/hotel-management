@@ -42,8 +42,8 @@ class _ReviewPageState extends State<ReviewPage> {
       // Success message is now shown in UI
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Invalid promo code'),
+        SnackBar(
+          content: Text(provider.error ?? 'Invalid promo code'),
           backgroundColor: Colors.redAccent,
         ),
       );
