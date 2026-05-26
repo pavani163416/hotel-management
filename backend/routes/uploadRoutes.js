@@ -47,8 +47,23 @@ const router = express.Router();
 // POST /api/upload/image
 router.post("/image", protect, async (req, res) => {
   try {
-    const { image, folder } = req.body;
+    let { image, folder } = req.body;
     if (!image) return res.status(400).json({ success: false, message: "No image provided" });
+
+    // ── Path Traversal & Directory Escape Sanitization ──
+    if (folder) {
+      // Strip null bytes, directory escape sequences, and absolute path indicators
+      const sanitizedFolder = folder
+        .replace(/\0/g, "")           // Remove null bytes
+        .replace(/\.\./g, "")         // Remove ..
+        .replace(/[\\/]/g, "")        // Remove / and \
+        .replace(/[:*?"<>|]/g, "");   // Remove other shell-sensitive chars
+      
+      if (sanitizedFolder !== folder) {
+        return res.status(400).json({ success: false, message: "Invalid characters detected in folder path." });
+      }
+      folder = sanitizedFolder;
+    }
 
     // ── Advanced File Security (Base64 Sanitization) ──
     // 1. Strict MIME Type check
@@ -72,10 +87,33 @@ router.post("/image", protect, async (req, res) => {
       return res.status(413).json({ success: false, message: "File too large. Maximum size is 10MB." });
     }
 
-    // 3. Deep Payload Inspection for XSS / Polyglot vectors
+    // 3. Deep Payload Inspection for XSS & Magic Byte Validation
     const base64Data = image.split(",")[1];
     if (base64Data) {
       const buffer = Buffer.from(base64Data, "base64");
+      
+      // Magic Byte Verification (MIME Spoofing Prevention)
+      const hex = buffer.toString("hex", 0, 16);
+      const isJPEG = hex.startsWith("ffd8ff");
+      const isPNG = hex.startsWith("89504e470d0a1a0a");
+      const isGIF = hex.startsWith("47494638");
+      const isWEBP = hex.startsWith("52494646") && hex.substring(16, 24) === "57454250";
+      const isAVIF = hex.includes("6674797061766966"); // ftypavif
+      
+      if (!isJPEG && !isPNG && !isGIF && !isWEBP && !isAVIF) {
+        const AuditLog = (await import("../models/AuditLog.js")).default;
+        AuditLog.create({
+          event: "UnauthorizedAccess",
+          userId: req.user?.id,
+          userEmail: req.user?.email,
+          role: req.user?.role,
+          description: "Attempted to upload a spoofed file (Magic Bytes did not match allowed image formats).",
+          severity: "High"
+        }).catch(() => {});
+        return res.status(415).json({ success: false, message: "Security Violation: MIME spoofing detected (file signature mismatch)." });
+      }
+
+      // XSS / Polyglot String Inspection
       const content = buffer.toString("utf8").toLowerCase();
       if (
         content.includes("<?php") ||
