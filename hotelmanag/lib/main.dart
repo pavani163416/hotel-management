@@ -63,14 +63,12 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final themeProvider = Provider.of<ThemeProvider>(context);
     return MaterialApp.router(
       title: 'HotelManag',
       debugShowCheckedModeBanner: false,
       scrollBehavior: MyScrollBehavior(),
       theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
-      themeMode: themeProvider.themeMode,
+      themeMode: ThemeMode.light,
       routerConfig: AppRouter.router,
       builder: (context, child) => NotificationPopupOverlay(
         key: notificationPopupKey,
