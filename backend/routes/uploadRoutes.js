@@ -44,8 +44,13 @@ import { protect, authorizeRoles } from "../middleware/auth.js";
 
 const router = express.Router();
 
+// ── Per-route body limit override for base64 image uploads ────────────────
+// The global limit is 100kb (GLB-005). Images can be much larger, so we
+// apply a higher limit ONLY to the /image endpoint.
+const jsonLargeBody = express.json({ limit: "15mb" });
+
 // POST /api/upload/image
-router.post("/image", protect, async (req, res) => {
+router.post("/image", jsonLargeBody, protect, async (req, res) => {
   try {
     let { image, folder } = req.body;
     if (!image) return res.status(400).json({ success: false, message: "No image provided" });

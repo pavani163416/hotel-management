@@ -310,7 +310,12 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
         
         if (respData?.otp) {
           setVerificationCode(respData.otp);
-          setOtpMessage(`DEV MODE: Your verification code is ${respData.otp}`);
+          const showOtpDev = import.meta.env.VITE_SHOW_OTP_DEV === "true";
+          setOtpMessage(
+            showOtpDev
+              ? `DEV MODE: Your verification code is ${respData.otp}`
+              : "A verification code has been sent to your email."
+          );
         } else {
           setOtpMessage(respData?.message || "Your account is pending verification. A verification code has been sent to your email.");
         }
@@ -336,10 +341,14 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
         localStorage.setItem("luxe_pending_email", d.email || email);
         setEmail(d.email || email);
         setMode("verify_email_otp");
-        
         if (res.data?.otp) {
           setVerificationCode(res.data.otp);
-          setOtpMessage(`DEV MODE: Your verification code is ${res.data.otp}`);
+          const showOtpDev = import.meta.env.VITE_SHOW_OTP_DEV === "true";
+          setOtpMessage(
+            showOtpDev
+              ? `DEV MODE: Your verification code is ${res.data.otp}`
+              : "A verification code has been sent to your email."
+          );
         } else {
           setOtpMessage(res.data?.message || "Registration successful! A verification code has been sent to your email.");
         }
