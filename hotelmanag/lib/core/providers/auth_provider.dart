@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:convert';
+import 'dart:js' as js;
 import '../../features/auth/domain/repositories/auth_repository.dart';
 import '../../features/auth/domain/entities/user_entity.dart';
 import '../../features/auth/data/models/user_model.dart';
@@ -559,6 +560,8 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  ConfirmationResult? _webConfirmationResult;
+
   Future<void> verifyPhoneNumber(
     String phoneNumber, {
     required Function(String verificationId) onCodeSent,
@@ -569,50 +572,78 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      await FirebaseAuth.instance.verifyPhoneNumber(
-        phoneNumber: phoneNumber,
-        verificationCompleted: (PhoneAuthCredential credential) async {
-          final userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
-          final firebaseUser = userCredential.user;
-          if (firebaseUser != null) {
-            final idToken = await firebaseUser.getIdToken() ?? '';
-            final result = await _authRepository.signInWithFirebase(
-              idToken,
-              phone: phoneNumber,
-            );
-            result.fold(
-              (failure) {
-                _error = failure.message;
-                _isLoading = false;
-                notifyListeners();
-                onError(failure.message);
-              },
-              (data) async {
-                final (user, token) = data;
-                _user = user;
-                await _saveAuthData(user, token);
-                _isLoading = false;
-                notifyListeners();
-              },
-            );
+      if (kIsWeb) {
+        // Inject recaptcha container if missing
+        js.context.callMethod('eval', [
+          '''
+          if (!document.getElementById('recaptcha-container')) {
+            var container = document.createElement('div');
+            container.id = 'recaptcha-container';
+            document.body.appendChild(container);
           }
-        },
-        verificationFailed: (FirebaseAuthException e) {
-          _error = e.message;
-          _isLoading = false;
-          notifyListeners();
-          onError(e.message ?? 'Verification failed');
-        },
-        codeSent: (String verificationId, int? resendToken) {
-          _isLoading = false;
-          notifyListeners();
-          onCodeSent(verificationId);
-        },
-        codeAutoRetrievalTimeout: (String verificationId) {
-          _isLoading = false;
-          notifyListeners();
-        },
-      );
+          '''
+        ]);
+
+        final verifier = RecaptchaVerifier(
+          auth: FirebaseAuth.instance,
+          container: 'recaptcha-container',
+          size: RecaptchaVerifierSize.invisible,
+        );
+
+        final confirmationResult = await FirebaseAuth.instance.signInWithPhoneNumber(
+          phoneNumber,
+          verifier,
+        );
+        _webConfirmationResult = confirmationResult;
+        _isLoading = false;
+        notifyListeners();
+        onCodeSent(confirmationResult.verificationId);
+      } else {
+        await FirebaseAuth.instance.verifyPhoneNumber(
+          phoneNumber: phoneNumber,
+          verificationCompleted: (PhoneAuthCredential credential) async {
+            final userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
+            final firebaseUser = userCredential.user;
+            if (firebaseUser != null) {
+              final idToken = await firebaseUser.getIdToken() ?? '';
+              final result = await _authRepository.signInWithFirebase(
+                idToken,
+                phone: phoneNumber,
+              );
+              result.fold(
+                (failure) {
+                  _error = failure.message;
+                  _isLoading = false;
+                  notifyListeners();
+                  onError(failure.message);
+                },
+                (data) async {
+                  final (user, token) = data;
+                  _user = user;
+                  await _saveAuthData(user, token);
+                  _isLoading = false;
+                  notifyListeners();
+                },
+              );
+            }
+          },
+          verificationFailed: (FirebaseAuthException e) {
+            _error = e.message;
+            _isLoading = false;
+            notifyListeners();
+            onError(e.message ?? 'Verification failed');
+          },
+          codeSent: (String verificationId, int? resendToken) {
+            _isLoading = false;
+            notifyListeners();
+            onCodeSent(verificationId);
+          },
+          codeAutoRetrievalTimeout: (String verificationId) {
+            _isLoading = false;
+            notifyListeners();
+          },
+        );
+      }
     } catch (e) {
       _error = e.toString();
       _isLoading = false;
@@ -627,12 +658,17 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final credential = PhoneAuthProvider.credential(
-        verificationId: verificationId,
-        smsCode: smsCode,
-      );
+      UserCredential userCredential;
+      if (kIsWeb && _webConfirmationResult != null) {
+        userCredential = await _webConfirmationResult!.confirm(smsCode);
+      } else {
+        final credential = PhoneAuthProvider.credential(
+          verificationId: verificationId,
+          smsCode: smsCode,
+        );
+        userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
+      }
 
-      final userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
       final firebaseUser = userCredential.user;
       if (firebaseUser == null) {
         throw Exception("Firebase phone sign-in failed.");

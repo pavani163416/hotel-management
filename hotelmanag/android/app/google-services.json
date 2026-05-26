@@ -30,6 +30,14 @@
           }
         },
         {
+          "client_id": "239513848879-b1inguas60lk6gi7lhmhoh3fo319k225.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.hotelmanag",
+            "certificate_hash": "c71cb8b1ab998c29c43379375b3cab33382633bc"
+          }
+        },
+        {
           "client_id": "239513848879-7n631mq8o0due6v807tk58gbli9907mc.apps.googleusercontent.com",
           "client_type": 3
         }
