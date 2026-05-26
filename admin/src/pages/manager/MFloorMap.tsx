@@ -41,6 +41,7 @@ type Booking = {
 const STATUS_COLORS: Record<string, string> = {
   Available:   "bg-emerald-600 hover:bg-emerald-500",
   Booked:      "bg-red-600   hover:bg-red-500",
+  Occupied:    "bg-red-600   hover:bg-red-500",   // alias — backend may return either
   Maintenance: "bg-amber-500 hover:bg-amber-400",
   Blocked:     "bg-slate-600 hover:bg-slate-500",
   Cleaning:    "bg-sky-500   hover:bg-sky-400",
@@ -247,6 +248,19 @@ export default function FloorMap() {
           )}
         </select>
       </div>
+
+      {/* Date-range hint when occupancy is 0 but rooms exist */}
+      {!loading && rooms.length > 0 && mapStats.booked === 0 && (
+        <div className="flex items-center gap-2 text-xs text-amber-400 rounded-xl px-4 py-2.5 mb-4"
+          style={{ background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.2)" }}>
+          <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+          <span>
+            No rooms show as occupied for <strong>{mapDate}</strong>. This is date-based — 
+            only bookings whose check-in ≤ {mapDate} ≤ check-out will mark a room as Booked.
+            Try selecting a date that falls within an active booking range.
+          </span>
+        </div>
+      )}
 
       {/* Floor Grid */}
       {loading ? (

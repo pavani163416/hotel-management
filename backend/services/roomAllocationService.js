@@ -211,26 +211,56 @@ export async function getHotelMapOverview({ hotelStringId, hotelObjectId, date }
   const hotelFilter = buildHotelRoomFilter({ hotelStringId, hotelObjectId });
   const rooms = await Room.find({ isActive: true, ...hotelFilter }).sort({ floor: 1, roomNumber: 1 }).lean();
 
-  const roomIds = rooms.map((r) => r._id);
-  const bookings = roomIds.length
+  const roomIds     = rooms.map((r) => r._id);
+  const roomNumbers = rooms.map((r) => r.roomNumber).filter(Boolean);
+
+  // ── Query 1: bookings linked via Room ObjectId ─────────────────────────
+  const bookingsByRef = roomIds.length
     ? await Booking.find({
         room: { $in: roomIds },
         status: { $in: ACTIVE_BOOKING_STATUSES },
-        checkIn: { $lte: dayEnd },
-        checkOut: { $gt: dayStart },
+        checkIn:  { $lte: dayEnd },
+        checkOut: { $gt:  dayStart },
       })
         .populate("guest", "name email phone")
         .select("guestSnapshot room checkIn checkOut status totalAmount nights createdAt")
         .lean()
     : [];
 
+  // ── Query 2: bookings linked via roomNumber string (legacy / frontend bookings) ─
+  const bookingsByNumber = roomNumbers.length
+    ? await Booking.find({
+        roomNumber: { $in: roomNumbers },
+        status: { $in: ACTIVE_BOOKING_STATUSES },
+        checkIn:  { $lte: dayEnd },
+        checkOut: { $gt:  dayStart },
+      })
+        .populate("guest", "name email phone")
+        .select("guestSnapshot room roomNumber checkIn checkOut status totalAmount nights createdAt")
+        .lean()
+    : [];
+
+  // Build roomNumber → room._id map for cross-referencing
+  const roomNumberToId = new Map(
+    rooms.map((r) => [r.roomNumber, String(r._id)])
+  );
+
+  // Merge both result sets; prefer ObjectId-linked booking
   const bookingByRoom = new Map();
-  for (const b of bookings) {
+
+  for (const b of bookingsByRef) {
     const rid = String(b.room);
     if (!bookingByRoom.has(rid)) bookingByRoom.set(rid, b);
   }
 
+  for (const b of bookingsByNumber) {
+    // Resolve the room._id from roomNumber
+    const rid = b.room ? String(b.room) : roomNumberToId.get(b.roomNumber);
+    if (rid && !bookingByRoom.has(rid)) bookingByRoom.set(rid, b);
+  }
+
   const enrichedRooms = rooms.map((room) => {
+    const rid = String(room._id);
     let op = room.status || "Available";
 
     // Priority 1: Maintenance
@@ -245,9 +275,9 @@ export async function getHotelMapOverview({ hotelStringId, hotelObjectId, date }
     else if (room.status === "Blocked") {
       op = "Blocked";
     }
-    // Priority 4: Booked/Occupied
-    else if (bookingByRoom.has(String(room._id)) || room.status === "Booked" || room.status === "Occupied") {
-      op = "Occupied";
+    // Priority 4: Booked (active booking in date range OR room already flagged Booked/Occupied)
+    else if (bookingByRoom.has(rid) || room.status === "Booked" || room.status === "Occupied") {
+      op = "Booked";   // ← standardized to "Booked" (matches frontend STATUS_COLORS)
     } 
     // Priority 5: Available
     else {
@@ -257,21 +287,24 @@ export async function getHotelMapOverview({ hotelStringId, hotelObjectId, date }
     return {
       ...room,
       displayStatus: op,
-      activeBooking: bookingByRoom.get(String(room._id)) || null,
+      activeBooking: bookingByRoom.get(rid) || null,
     };
   });
 
+  // Merge all matched bookings for the response array
+  const allMatchedBookings = [...bookingsByRef, ...bookingsByNumber];
+
   const stats = {
-    total: enrichedRooms.length,
-    available: enrichedRooms.filter((r) => r.displayStatus === "Available").length,
-    occupied: enrichedRooms.filter((r) => r.displayStatus === "Occupied").length,
+    total:       enrichedRooms.length,
+    available:   enrichedRooms.filter((r) => r.displayStatus === "Available").length,
+    booked:      enrichedRooms.filter((r) => r.displayStatus === "Booked").length,      // ← fixed (was "Occupied")
     maintenance: enrichedRooms.filter((r) => r.displayStatus === "Maintenance").length,
-    cleaning: enrichedRooms.filter((r) => r.displayStatus === "Cleaning").length,
-    blocked: enrichedRooms.filter((r) => r.displayStatus === "Blocked").length,
+    cleaning:    enrichedRooms.filter((r) => r.displayStatus === "Cleaning").length,
+    blocked:     enrichedRooms.filter((r) => r.displayStatus === "Blocked").length,
   };
   stats.occupancyPct = stats.total
-    ? Math.round((stats.occupied / stats.total) * 100)
+    ? Math.round((stats.booked / stats.total) * 100)
     : 0;
 
-  return { rooms: enrichedRooms, bookings, stats };
+  return { rooms: enrichedRooms, bookings: allMatchedBookings, stats };
 }
