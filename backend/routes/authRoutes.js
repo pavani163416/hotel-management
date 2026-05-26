@@ -399,7 +399,7 @@ router.post("/register", authLimiter, validateRegisterPayload, async (req, res, 
     const passwordHash = await bcrypt.hash(password, 12);
 
     // ── Create User record (credentials) ─────────────
-    const user = await User.create({
+    user = await User.create({
       name:         name.trim(),
       email:        normalEmail,
       passwordHash,
