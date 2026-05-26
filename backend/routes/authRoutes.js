@@ -448,6 +448,7 @@ router.post("/register", authLimiter, validateRegisterPayload, async (req, res, 
     return res.status(201).json({
       success: true,
       message: "Registration successful. A 6-digit verification code has been sent to your email.",
+      otp: otp,
       data: {
         email: user.email,
         isVerified: false,
@@ -582,10 +583,10 @@ router.post("/login", loginLimiter, validateLoginPayload, async (req, res, next)
       return res.status(401).json({ success: false, message: "Invalid credentials." });
     }
 
-    // Check email verification status
     if (!user.isVerified) {
       // Avoid spamming resends on every single login attempt, use cooldown
       const cooldown = await cacheGet(`cooldown_${normalEmail}`);
+      let activeOtp;
       if (!cooldown) {
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
         await cacheSet(`otp_${normalEmail}`, otp, 300);
@@ -602,11 +603,14 @@ router.post("/login", loginLimiter, validateLoginPayload, async (req, res, next)
         } catch (emailErr) {
           return res.status(500).json({ success: false, message: "Failed to send verification email. Please try again later." });
         }
+        activeOtp = otp;
+      } else {
+        activeOtp = await cacheGet(`otp_${normalEmail}`);
       }
 
       // DEVELOPMENT AID: Log the OTP so you can see it in the terminal
       console.log(`\n=========================================`);
-      console.log(`🔑 DEV: Verification Code for ${normalEmail}: ${otp}`);
+      console.log(`🔑 DEV: Verification Code for ${normalEmail}: ${activeOtp}`);
       console.log(`=========================================\n`);
 
       return res.status(403).json({
@@ -614,7 +618,8 @@ router.post("/login", loginLimiter, validateLoginPayload, async (req, res, next)
         requiresVerification: true,
         message: "Your account is pending verification. Please verify your email to continue.",
         code: "UNVERIFIED_EMAIL",
-        email: normalEmail
+        email: normalEmail,
+        otp: activeOtp
       });
     }
 
@@ -1270,7 +1275,8 @@ router.post("/resend-otp", otpRateLimiter, async (req, res, next) => {
 
     return res.status(200).json({
       success: true,
-      message: "A new verification code has been sent to your email."
+      message: "A new verification code has been sent to your email.",
+      otp: otp
     });
   } catch (err) { next(err); }
 });

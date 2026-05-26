@@ -20,20 +20,6 @@ class _OtpPageState extends State<OtpPage> {
   final List<FocusNode> _focusNodes = List.generate(6, (_) => FocusNode());
 
   @override
-  void initState() {
-    super.initState();
-    // Start listening to focus state changes to trigger rebuilds for active highlight styles
-    for (int i = 0; i < 6; i++) {
-      _focusNodes[i].addListener(() {
-        if (mounted) setState(() {});
-      });
-      _controllers[i].addListener(() {
-        if (mounted) setState(() {});
-      });
-    }
-  }
-
-  @override
   void dispose() {
     for (var c in _controllers) { c.dispose(); }
     for (var f in _focusNodes) { f.dispose(); }
@@ -46,10 +32,7 @@ class _OtpPageState extends State<OtpPage> {
     final code = _otpCode;
     if (code.length < 6) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter all 6 digits.'),
-          behavior: SnackBarBehavior.floating,
-        ),
+        const SnackBar(content: Text('Please enter all 6 digits.')),
       );
       return;
     }
@@ -61,11 +44,7 @@ class _OtpPageState extends State<OtpPage> {
       context.go('/');
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(auth.error ?? 'Invalid verification code.'),
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: Colors.red[800],
-        ),
+        SnackBar(content: Text(auth.error ?? 'Invalid verification code.')),
       );
     }
   }
@@ -77,172 +56,179 @@ class _OtpPageState extends State<OtpPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(success ? 'A new code has been sent to your email.' : (auth.error ?? 'Failed to resend code')),
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: success ? AppTheme.primaryColor : Colors.red[800],
         ),
       );
     }
   }
 
   void _onDigitChanged(String value, int index) {
-    if (value.isNotEmpty) {
-      if (index < 5) {
-        _focusNodes[index + 1].requestFocus();
-      } else {
-        // Last digit entered, dismiss keyboard and verify
-        _focusNodes[index].unfocus();
-        _verifyOtp();
+    if (value.isNotEmpty && index < 5) {
+      _focusNodes[index + 1].requestFocus();
+    }
+    if (value.isEmpty && index > 0) {
+      _focusNodes[index - 1].requestFocus();
+    }
+    if (_otpCode.length == 6) {
+      _verifyOtp(); // Auto-verify on completing 6 digits
+    }
+  }
+
+  void _autoFillDevCode(String devCode) {
+    if (devCode.length == 6) {
+      for (int i = 0; i < 6; i++) {
+        _controllers[i].text = devCode[i];
       }
-    } else {
-      if (index > 0) {
-        _focusNodes[index - 1].requestFocus();
-      }
+      setState(() {});
+      _verifyOtp();
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+    final auth = Provider.of<AuthProvider>(context);
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(LucideIcons.chevronLeft, color: AppTheme.primaryColor, size: 28),
-          onPressed: () => context.go('/login'),
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 16.0, top: 8.0),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.grey[100],
+              shape: BoxShape.circle,
+            ),
+            child: IconButton(
+              icon: const Icon(LucideIcons.chevronLeft, color: AppTheme.primaryColor, size: 22),
+              onPressed: () => context.go('/login'),
+            ),
+          ),
         ),
       ),
-      body: Center(
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Icon Header Container
-              Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withOpacity(0.04),
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: AppTheme.primaryColor.withOpacity(0.06),
-                    width: 2,
-                  ),
-                ),
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppTheme.primaryColor.withOpacity(0.06),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    LucideIcons.shieldCheck, 
-                    size: 48, 
-                    color: AppTheme.primaryColor
-                  ),
-                ),
-              ),
-              const SizedBox(height: 32),
-              
-              // Title & Info text
-              const Text(
-                'Security Verification',
-                style: TextStyle(
-                  color: AppTheme.primaryColor,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 26,
-                  letterSpacing: -0.5,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 12),
-              RichText(
-                textAlign: TextAlign.center,
-                text: TextSpan(
-                  style: TextStyle(color: Colors.grey[600], fontSize: 14, height: 1.5),
-                  children: [
-                    const TextSpan(text: 'We sent a 6-digit confirmation code to\n'),
-                    TextSpan(
-                      text: widget.email,
-                      style: const TextStyle(
-                        color: AppTheme.primaryColor, 
-                        fontWeight: FontWeight.bold,
+      body: SafeArea(
+        child: GestureDetector(
+          onTap: () => FocusScope.of(context).unfocus(),
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Beautiful Mail Icon Container
+                  Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryColor.withOpacity(0.04),
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: AppTheme.primaryColor.withOpacity(0.08),
+                        width: 2,
                       ),
                     ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 36),
-              
-              // OTP Input Boxes
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(6, (index) {
-                  final isFocused = _focusNodes[index].hasFocus;
-                  final hasText = _controllers[index].text.isNotEmpty;
-                  
-                  return AnimatedContainer(
-                    duration: const Duration(milliseconds: 150),
-                    margin: const EdgeInsets.symmetric(horizontal: 5),
-                    width: 46,
-                    height: 58,
-                    decoration: BoxDecoration(
-                      color: isFocused 
-                          ? Colors.white 
-                          : (hasText ? AppTheme.primaryColor.withOpacity(0.02) : Colors.grey[50]),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                        color: isFocused 
-                            ? AppTheme.primaryColor 
-                            : (hasText ? AppTheme.primaryColor.withOpacity(0.4) : Colors.grey[200]!),
-                        width: isFocused ? 2 : 1.2,
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryColor.withOpacity(0.08),
+                        shape: BoxShape.circle,
                       ),
-                      boxShadow: [
-                        if (isFocused)
-                          BoxShadow(
-                            color: AppTheme.primaryColor.withOpacity(0.08),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
+                      child: const Icon(
+                        LucideIcons.shieldCheck, 
+                        size: 40, 
+                        color: AppTheme.primaryColor
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  
+                  // Text Headers
+                  Text(
+                    'Security Verification',
+                    style: theme.textTheme.headlineMedium?.copyWith(
+                      color: AppTheme.primaryColor,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.5,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 12),
+                  RichText(
+                    textAlign: TextAlign.center,
+                    text: TextSpan(
+                      style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey[600], height: 1.5),
+                      children: [
+                        const TextSpan(text: 'We sent a 6-digit confirmation code to\n'),
+                        TextSpan(
+                          text: widget.email,
+                          style: const TextStyle(
+                            color: AppTheme.primaryColor,
+                            fontWeight: FontWeight.bold,
                           ),
+                        ),
                       ],
                     ),
-                    child: Center(
-                      child: TextField(
-                        controller: _controllers[index],
-                        focusNode: _focusNodes[index],
-                        keyboardType: TextInputType.number,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 22, 
-                          fontWeight: FontWeight.bold, 
-                          color: AppTheme.primaryColor
+                  ),
+                  const SizedBox(height: 40),
+
+                  // Pin fields
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: List.generate(6, (index) {
+                      return SizedBox(
+                        width: 42,
+                        height: 56,
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 150),
+                          decoration: BoxDecoration(
+                            color: _focusNodes[index].hasFocus 
+                                ? Colors.white 
+                                : Colors.grey[50],
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: _focusNodes[index].hasFocus 
+                                  ? AppTheme.primaryColor 
+                                  : Colors.grey[200]!,
+                              width: _focusNodes[index].hasFocus ? 2 : 1,
+                            ),
+                            boxShadow: [
+                              if (_focusNodes[index].hasFocus)
+                                BoxShadow(
+                                  color: AppTheme.primaryColor.withOpacity(0.08),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                            ],
+                          ),
+                          child: Center(
+                            child: TextField(
+                              controller: _controllers[index],
+                              focusNode: _focusNodes[index],
+                              keyboardType: TextInputType.number,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                fontSize: 20, 
+                                fontWeight: FontWeight.bold, 
+                                color: AppTheme.primaryColor
+                              ),
+                              maxLength: 1,
+                              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                              decoration: const InputDecoration(
+                                counterText: '',
+                                border: InputBorder.none,
+                                contentPadding: EdgeInsets.zero,
+                              ),
+                              onChanged: (val) => _onDigitChanged(val, index),
+                            ),
+                          ),
                         ),
-                        maxLength: 1,
-                        inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly,
-                          LengthLimitingTextInputFormatter(1),
-                        ],
-                        decoration: const InputDecoration(
-                          counterText: '',
-                          border: InputBorder.none,
-                          filled: false,
-                          contentPadding: EdgeInsets.zero,
-                        ),
-                        onChanged: (val) => _onDigitChanged(val, index),
-                      ),
-                    ),
-                  );
-                }),
-              ),
-              const SizedBox(height: 40),
-              
-              // Verify Button
-              Consumer<AuthProvider>(
-                builder: (context, auth, _) {
-                  return SizedBox(
+                      );
+                    }),
+                  ),
+                  const SizedBox(height: 40),
+
+                  // Verify button
+                  SizedBox(
                     width: double.infinity,
                     height: 56,
                     child: ElevatedButton(
@@ -255,77 +241,108 @@ class _OtpPageState extends State<OtpPage> {
                       ),
                       child: auth.isLoading
                           ? const SizedBox(
-                              height: 22, width: 22,
+                              height: 24, width: 24,
                               child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                             )
-                          : const Text('Verify Account', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                    ),
-                  );
-                },
-              ),
-              const SizedBox(height: 28),
-              
-              // Resend Area
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text("Didn't receive the code? ", style: TextStyle(color: Colors.grey[600], fontSize: 14)),
-                  GestureDetector(
-                    onTap: _resendOtp,
-                    child: const Text(
-                      'Resend Code',
-                      style: TextStyle(
-                        color: AppTheme.primaryColor, 
-                        fontWeight: FontWeight.bold, 
-                        decoration: TextDecoration.underline
-                      ),
+                          : const Text(
+                              'Verify Account', 
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 0.5)
+                            ),
                     ),
                   ),
-                ],
-              ),
-              
-              // Dev OTP Helper Note
-              Container(
-                margin: const EdgeInsets.only(top: 40),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFF9E6),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFFFFE599), width: 1),
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Icon(LucideIcons.lightbulb, size: 20, color: Color(0xFFD68F00)),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Testing Locally?',
-                            style: TextStyle(
-                              color: Color(0xFF7F5500),
-                              fontWeight: FontWeight.bold,
-                              fontSize: 13,
-                            ),
+                  const SizedBox(height: 24),
+
+                  // Didn't get code section
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        "Didn't receive the code? ", 
+                        style: TextStyle(color: Colors.grey[600], fontSize: 14)
+                      ),
+                      GestureDetector(
+                        onTap: _resendOtp,
+                        child: const Text(
+                          'Resend Code',
+                          style: TextStyle(
+                            color: AppTheme.accentColor, 
+                            fontWeight: FontWeight.bold,
+                            decoration: TextDecoration.underline
                           ),
-                          const SizedBox(height: 4),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  // Beautiful Developer Assistant UI Banner
+                  if (auth.devOtp != null) ...[
+                    const SizedBox(height: 48),
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Colors.amber[50]!, Colors.amber[100]!.withOpacity(0.5)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.amber[200]!),
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [
+                              Icon(LucideIcons.key, color: Colors.amber[800], size: 20),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Developer Assistant',
+                                style: TextStyle(
+                                  color: Colors.amber[900], 
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
                           Text(
-                            'If Resend email limits block delivery, look directly at your running Node.js backend terminal console! The 6-digit OTP code is logged there in a highlighted box.',
-                            style: TextStyle(
-                              color: const Color(0xFF7F5500).withOpacity(0.85),
-                              fontSize: 12,
-                              height: 1.4,
-                            ),
+                            'Resend free tier limits block email delivery in dev. Use code below:',
+                            style: TextStyle(color: Colors.amber[950], fontSize: 12),
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                auth.devOtp!,
+                                style: const TextStyle(
+                                  fontSize: 26, 
+                                  fontWeight: FontWeight.w900, 
+                                  letterSpacing: 4,
+                                  color: AppTheme.primaryColor
+                                ),
+                              ),
+                              ElevatedButton.icon(
+                                onPressed: () => _autoFillDevCode(auth.devOtp!),
+                                icon: const Icon(LucideIcons.checkSquare, size: 16),
+                                label: const Text('Auto-fill & Verify'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppTheme.primaryColor,
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
                     ),
                   ],
-                ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),

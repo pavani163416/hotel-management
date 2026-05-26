@@ -5,7 +5,7 @@ abstract class AuthRemoteDataSource {
   Future<AuthResponse> login(String email, String password);
   Future<AuthResponse> register(String name, String email, String password, String phone);
   Future<AuthResponse> verifyOtp(String email, String code);
-  Future<void> resendOtp(String email);
+  Future<String?> resendOtp(String email);
   Future<AuthResponse> signInWithGoogle(String idToken);
   Future<UserModel> getMe(String token);
   Future<UserModel> updateProfile({
@@ -31,8 +31,9 @@ abstract class AuthRemoteDataSource {
 class AuthResponse {
   final UserModel user;
   final String token;
+  final String? otp;
 
-  AuthResponse({required this.user, required this.token});
+  AuthResponse({required this.user, required this.token, this.otp});
 }
 
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
@@ -78,6 +79,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     return AuthResponse(
       user: UserModel.fromJson(data),
       token: data['token'] ?? '',
+      otp: response.data['otp']?.toString(),
     );
   }
 
@@ -100,10 +102,11 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   }
 
   @override
-  Future<void> resendOtp(String email) async {
-    await _apiService.post('auth/resend-otp', data: {
+  Future<String?> resendOtp(String email) async {
+    final response = await _apiService.post('auth/resend-otp', data: {
       'email': email,
     });
+    return response.data['otp']?.toString();
   }
 
   @override

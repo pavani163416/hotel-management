@@ -4,9 +4,9 @@ import '../entities/user_entity.dart';
 
 abstract class AuthRepository {
   Future<Either<Failure, (UserEntity, String)>> login(String email, String password);
-  Future<Either<Failure, (UserEntity, String)>> register(String name, String email, String password, String phone);
+  Future<Either<Failure, (UserEntity, String, String?)>> register(String name, String email, String password, String phone);
   Future<Either<Failure, (UserEntity, String)>> verifyOtp(String email, String code);
-  Future<Either<Failure, void>> resendOtp(String email);
+  Future<Either<Failure, String?>> resendOtp(String email);
   Future<Either<Failure, (UserEntity, String)>> signInWithGoogle(String idToken);
   Future<Either<Failure, UserEntity>> getMe();
   Future<Either<Failure, UserEntity>> updateProfile({

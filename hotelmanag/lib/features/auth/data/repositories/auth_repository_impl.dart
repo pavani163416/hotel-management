@@ -17,16 +17,24 @@ class AuthRepositoryImpl implements AuthRepository {
       return Right((authResponse.user, authResponse.token));
     } on DioException catch (e) {
       String message = 'Login failed';
+      String? otp;
       
       if (e.response != null) {
         if (e.response?.data is Map) {
           message = e.response?.data['message'] ?? message;
+          otp = e.response?.data['otp']?.toString();
         } else if (e.response?.data is String) {
           message = e.response?.data;
         }
       } else if (e.type == DioExceptionType.connectionError || 
                  e.type == DioExceptionType.connectionTimeout) {
-        message = 'Unable to connect to the server. Please check your internet connection.';
+         message = 'Unable to connect to the server. Please check your internet connection.';
+      }
+
+      if (message.toLowerCase().contains('verify') || 
+          message.toLowerCase().contains('unverified') ||
+          (e.response?.data is Map && e.response?.data['code'] == 'UNVERIFIED_EMAIL')) {
+        return Left(UnverifiedEmailFailure(message, otp));
       }
       return Left(ServerFailure(message));
     } catch (e) {
@@ -35,10 +43,10 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<Either<Failure, (UserEntity, String)>> register(String name, String email, String password, String phone) async {
+  Future<Either<Failure, (UserEntity, String, String?)>> register(String name, String email, String password, String phone) async {
     try {
       final authResponse = await _remoteDataSource.register(name, email, password, phone);
-      return Right((authResponse.user, authResponse.token));
+      return Right((authResponse.user, authResponse.token, authResponse.otp));
     } on DioException catch (e) {
       String message = 'Registration failed';
       
@@ -77,10 +85,10 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<Either<Failure, void>> resendOtp(String email) async {
+  Future<Either<Failure, String?>> resendOtp(String email) async {
     try {
-      await _remoteDataSource.resendOtp(email);
-      return const Right(null);
+      final otp = await _remoteDataSource.resendOtp(email);
+      return Right(otp);
     } on DioException catch (e) {
       String message = 'Failed to resend OTP';
       if (e.response?.data is Map) {

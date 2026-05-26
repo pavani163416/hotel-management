@@ -7,6 +7,7 @@ import '../../features/auth/domain/repositories/auth_repository.dart';
 import '../../features/auth/domain/entities/user_entity.dart';
 import '../../features/auth/data/models/user_model.dart';
 import '../constants/app_constants.dart';
+import '../../core/errors/failures.dart';
 
 class AuthProvider extends ChangeNotifier {
   final AuthRepository _authRepository;
@@ -14,6 +15,7 @@ class AuthProvider extends ChangeNotifier {
   bool _isLoading = false;
   String? _error;
   String? _unverifiedEmail;
+  String? _devOtp;
 
   AuthProvider(this._authRepository);
 
@@ -21,19 +23,26 @@ class AuthProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
   String? get unverifiedEmail => _unverifiedEmail;
+  String? get devOtp => _devOtp;
   bool get isAuthenticated => _user != null;
 
   Future<void> login(String email, String password) async {
     _isLoading = true;
     _error = null;
     _unverifiedEmail = null;
+    _devOtp = null;
     notifyListeners();
 
     final result = await _authRepository.login(email, password);
 
     result.fold(
       (failure) {
-        if (failure.message.toLowerCase().contains('not verified')) {
+        if (failure is UnverifiedEmailFailure) {
+          _unverifiedEmail = email;
+          _error = failure.message;
+          _devOtp = failure.otp;
+        } else if (failure.message.toLowerCase().contains('not verified') || 
+                   failure.message.toLowerCase().contains('verify')) {
           _unverifiedEmail = email;
           _error = failure.message;
         } else {
@@ -56,6 +65,7 @@ class AuthProvider extends ChangeNotifier {
     _isLoading = true;
     _error = null;
     _unverifiedEmail = null;
+    _devOtp = null;
     notifyListeners();
 
     final result = await _authRepository.register(name, email, password, phone);
@@ -67,9 +77,10 @@ class AuthProvider extends ChangeNotifier {
         notifyListeners();
       },
       (data) async {
-        final (user, token) = data;
+        final (user, token, otp) = data;
         if (token.isEmpty) {
           _unverifiedEmail = email;
+          _devOtp = otp;
         } else {
           _user = user;
           await _saveAuthData(user, token);
@@ -98,6 +109,7 @@ class AuthProvider extends ChangeNotifier {
         final (user, token) = data;
         _user = user;
         _unverifiedEmail = null;
+        _devOtp = null;
         await _saveAuthData(user, token);
         _isLoading = false;
         notifyListeners();
@@ -109,6 +121,7 @@ class AuthProvider extends ChangeNotifier {
   Future<bool> resendOtp(String email) async {
     _isLoading = true;
     _error = null;
+    _devOtp = null;
     notifyListeners();
 
     final result = await _authRepository.resendOtp(email);
@@ -120,7 +133,8 @@ class AuthProvider extends ChangeNotifier {
         notifyListeners();
         return false;
       },
-      (_) {
+      (otp) {
+        _devOtp = otp;
         _isLoading = false;
         notifyListeners();
         return true;
