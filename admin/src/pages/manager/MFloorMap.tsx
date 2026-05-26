@@ -270,7 +270,7 @@ export default function FloorMap() {
                   <h3 className="font-semibold text-bright text-sm">Floor {floor}</h3>
                   <span className="text-xs text-dim">{floorBooked}/{floorRooms.length} occupied</span>
                 </div>
-                <div className="p-4 grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 gap-2">
+                <div className="p-4 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-3">
                   {floorRooms.map(room => {
                     const booking = getActiveBooking(room);
                     return (
@@ -278,16 +278,19 @@ export default function FloorMap() {
                         key={room._id}
                         onClick={() => setSelected(room)}
                         title={`${room.roomNumber} — ${room.type} — ${roomStatusOf(room)}${booking ? `\n${booking.guestSnapshot?.name || ""}` : ""}`}
-                        className={`relative aspect-square rounded-xl flex flex-col items-center justify-center
-                          text-white font-semibold text-[10px] transition-all shadow-sm
+                        className={`relative rounded-xl flex flex-col items-center justify-center gap-1
+                          text-white font-semibold transition-all shadow-sm overflow-hidden
+                          px-2 py-3 min-h-[70px]
                           ${STATUS_COLORS[roomStatusOf(room)] || "bg-white/10"}
                           ${selected?._id === room._id ? "ring-2 ring-gold scale-105" : ""}
                         `}
                       >
-                        <BedDouble className="w-3.5 h-3.5 mb-0.5" />
-                        <span className="leading-none">{room.roomNumber}</span>
+                        <BedDouble className="w-4 h-4 shrink-0" />
+                        <span className="text-[10px] leading-tight text-center w-full truncate px-1">
+                          {room.roomNumber}
+                        </span>
                         {booking && (
-                          <span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-white/80" />
+                          <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-white/80" />
                         )}
                       </button>
                     );
