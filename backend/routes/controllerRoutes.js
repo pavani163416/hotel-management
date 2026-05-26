@@ -200,14 +200,14 @@ router.use(authorizeRoles("admin", "Super Admin", "Controller"));
 router.get("/stats", getControllerStats);
 
 // Admin Users  →  controller.adminusers
-router.get("/users",       getAdminUsers);
-router.post("/users",      createAdminUser);
-router.patch("/users/:id", updateAdminUser);
+router.get("/users",       authorizeRoles("Super Admin", "admin"), getAdminUsers);
+router.post("/users",      authorizeRoles("Super Admin"), createAdminUser);
+router.patch("/users/:id", authorizeRoles("Super Admin"), updateAdminUser);
 
 // Transactions  →  controller.transactions
-router.get("/transactions",       getTransactions);
-router.post("/transactions",      createTransaction);
-router.patch("/transactions/:id", updateTransaction);
+router.get("/transactions",       authorizeRoles("Super Admin", "admin"), getTransactions);
+router.post("/transactions",      authorizeRoles("Super Admin", "admin"), createTransaction);
+router.patch("/transactions/:id", authorizeRoles("Super Admin", "admin"), updateTransaction);
 
 // Visitor Logs  →  controller.visitorlogs
 router.get("/visitors",          getVisitorLogs);

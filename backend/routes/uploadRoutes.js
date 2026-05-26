@@ -52,17 +52,26 @@ router.post("/image", protect, async (req, res) => {
 
     // ── Path Traversal & Directory Escape Sanitization ──
     if (folder) {
-      // Strip null bytes, directory escape sequences, and absolute path indicators
-      const sanitizedFolder = folder
-        .replace(/\0/g, "")           // Remove null bytes
-        .replace(/\.\./g, "")         // Remove ..
-        .replace(/[\\/]/g, "")        // Remove / and \
-        .replace(/[:*?"<>|]/g, "");   // Remove other shell-sensitive chars
-      
-      if (sanitizedFolder !== folder) {
-        return res.status(400).json({ success: false, message: "Invalid characters detected in folder path." });
+      if (typeof folder !== "string") {
+        return res.status(400).json({ success: false, message: "Folder must be a string." });
       }
-      folder = sanitizedFolder;
+      
+      let decodedFolder = folder;
+      try {
+        decodedFolder = decodeURIComponent(folder);
+      } catch (e) {
+        return res.status(400).json({ success: false, message: "Invalid URL encoding in folder path." });
+      }
+
+      if (decodedFolder.includes("\0")) {
+        return res.status(400).json({ success: false, message: "Security Violation: Null byte detected in folder path." });
+      }
+
+      if (decodedFolder.includes("..") || decodedFolder.includes("/") || decodedFolder.includes("\\")) {
+        return res.status(400).json({ success: false, message: "Security Violation: Directory escape detected in folder path." });
+      }
+
+      folder = decodedFolder.replace(/[:*?"<>|]/g, "");
     }
 
     // ── Advanced File Security (Base64 Sanitization) ──
