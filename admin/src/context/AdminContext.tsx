@@ -25,9 +25,21 @@ const Ctx = createContext<AdminCtx | null>(null);
 // ── Check if a JWT is expired without a library ──────────
 function isTokenExpired(token: string): boolean {
   try {
-    const payload = JSON.parse(atob(token.split(".")[1]));
+    const base64Url = token.split(".")[1];
+    let base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+    while (base64.length % 4) {
+      base64 += "=";
+    }
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split("")
+        .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+        .join("")
+    );
+    const payload = JSON.parse(jsonPayload);
     return payload.exp ? payload.exp * 1000 < Date.now() : false;
-  } catch {
+  } catch (err) {
+    console.error("Token parse error:", err);
     return true; // malformed token → treat as expired
   }
 }
