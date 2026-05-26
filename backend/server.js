@@ -261,9 +261,9 @@ if (isProd) {
 }
 
 // ── Body parsing — limit payload size ────────────────────
-app.use(express.json({ limit: "50mb" }));
-app.use(express.urlencoded({ extended: true, limit: "50mb" }));
-app.use(express.text({ type: "text/plain" }));
+app.use(express.json({ limit: "15mb" }));
+app.use(express.urlencoded({ extended: true, limit: "15mb" }));
+app.use(express.text({ type: "text/plain", limit: "15mb" }));
 
 // ── NoSQL injection sanitization ─────────────────────────
 app.use(mongoSanitize());
@@ -305,8 +305,6 @@ app.get("/api/health", (req, res) => {
 app.use(cors(corsOptions));
 // Use trust proxy 1 for express-rate-limit behind a single proxy (Railway/Vercel)
 app.set("trust proxy", 1);
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 // ── API Routes ────────────────────────────────────────────

@@ -72,6 +72,34 @@ router.post("/image", protect, async (req, res) => {
       return res.status(413).json({ success: false, message: "File too large. Maximum size is 10MB." });
     }
 
+    // 3. Deep Payload Inspection for XSS / Polyglot vectors
+    const base64Data = image.split(",")[1];
+    if (base64Data) {
+      const buffer = Buffer.from(base64Data, "base64");
+      const content = buffer.toString("utf8").toLowerCase();
+      if (
+        content.includes("<?php") ||
+        content.includes("<script") ||
+        content.includes("<?xml") ||
+        content.includes("<svg") ||
+        content.includes("javascript:") ||
+        content.includes("onload=") ||
+        content.includes("onerror=") ||
+        content.includes("data:text/html")
+      ) {
+        const AuditLog = (await import("../models/AuditLog.js")).default;
+        AuditLog.create({
+          event: "UnauthorizedAccess",
+          userId: req.user?.id,
+          userEmail: req.user?.email,
+          role: req.user?.role,
+          description: "Attempted to upload malicious file (XSS/Script payload detected in image data).",
+          severity: "High"
+        }).catch(() => {});
+        return res.status(400).json({ success: false, message: "Security Violation: Malicious content detected in image data." });
+      }
+    }
+
     const result = await uploadImage(image, folder || "hotels");
     res.json({ success: true, url: result.url, publicId: result.publicId });
   } catch (err) {
