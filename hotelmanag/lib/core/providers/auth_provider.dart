@@ -5,7 +5,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_auth_platform_interface/firebase_auth_platform_interface.dart';
 import 'dart:convert';
-import 'dart:js' as js;
+import '../utils/recaptcha_helper.dart';
 import '../../features/auth/domain/repositories/auth_repository.dart';
 import '../../features/auth/domain/entities/user_entity.dart';
 import '../../features/auth/data/models/user_model.dart';
@@ -38,8 +38,8 @@ class AuthProvider extends ChangeNotifier {
 
     final result = await _authRepository.login(email, password);
 
-    result.fold(
-      (failure) {
+    await result.fold(
+      (failure) async {
         if (failure is UnverifiedEmailFailure) {
           _unverifiedEmail = email;
           _error = failure.message;
@@ -51,6 +51,32 @@ class AuthProvider extends ChangeNotifier {
         } else {
           _error = failure.message;
         }
+
+        // If unverified, try to trigger Firebase Email Verification
+        if (_unverifiedEmail != null) {
+          try {
+            UserCredential credential;
+            try {
+              credential = await FirebaseAuth.instance.signInWithEmailAndPassword(
+                email: email,
+                password: password,
+              );
+            } on FirebaseAuthException catch (e) {
+              if (e.code == 'user-not-found' || e.code == 'invalid-credential') {
+                credential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+                  email: email,
+                  password: password,
+                );
+              } else {
+                rethrow;
+              }
+            }
+            await credential.user?.sendEmailVerification();
+          } catch (e) {
+            debugPrint("Firebase Verification Link error: $e");
+          }
+        }
+
         _isLoading = false;
         notifyListeners();
       },
@@ -73,8 +99,8 @@ class AuthProvider extends ChangeNotifier {
 
     final result = await _authRepository.register(name, email, password, phone);
 
-    result.fold(
-      (failure) {
+    await result.fold(
+      (failure) async {
         _error = failure.message;
         _isLoading = false;
         notifyListeners();
@@ -84,6 +110,29 @@ class AuthProvider extends ChangeNotifier {
         if (token.isEmpty) {
           _unverifiedEmail = email;
           _devOtp = otp;
+
+          // Register in Firebase and send verification link
+          try {
+            UserCredential credential;
+            try {
+              credential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+                email: email,
+                password: password,
+              );
+            } on FirebaseAuthException catch (e) {
+              if (e.code == 'email-already-in-use') {
+                credential = await FirebaseAuth.instance.signInWithEmailAndPassword(
+                  email: email,
+                  password: password,
+                );
+              } else {
+                rethrow;
+              }
+            }
+            await credential.user?.sendEmailVerification();
+          } catch (e) {
+            debugPrint("Firebase Registration Link error: $e");
+          }
         } else {
           _user = user;
           await _saveAuthData(user, token);
@@ -459,6 +508,32 @@ class AuthProvider extends ChangeNotifier {
     );
   }
 
+  Future<bool> signInWithFirebaseToken(String idToken) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    final result = await _authRepository.signInWithFirebase(idToken);
+
+    return result.fold(
+      (failure) {
+        _error = failure.message;
+        _isLoading = false;
+        notifyListeners();
+        return false;
+      },
+      (data) async {
+        final (user, token) = data;
+        _user = user;
+        _unverifiedEmail = null;
+        await _saveAuthData(user, token);
+        _isLoading = false;
+        notifyListeners();
+        return true;
+      },
+    );
+  }
+
   Future<bool> sendFirebaseSignInLink(String email, String name, String phone) async {
     _isLoading = true;
     _error = null;
@@ -575,15 +650,7 @@ class AuthProvider extends ChangeNotifier {
     try {
       if (kIsWeb) {
         // Inject recaptcha container if missing
-        js.context.callMethod('eval', [
-          '''
-          if (!document.getElementById('recaptcha-container')) {
-            var container = document.createElement('div');
-            container.id = 'recaptcha-container';
-            document.body.appendChild(container);
-          }
-          '''
-        ]);
+        injectRecaptchaContainer();
 
         final verifier = RecaptchaVerifier(
           auth: FirebaseAuthPlatform.instance,

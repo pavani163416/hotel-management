@@ -144,40 +144,20 @@ class _RegisterPageState extends State<RegisterPage> {
                               );
                               return;
                             }
-                            final success = await auth.sendFirebaseSignInLink(
-                              _emailController.text,
+                            await auth.register(
                               '${_firstNameController.text} ${_lastNameController.text}',
+                              _emailController.text,
+                              _passwordController.text,
                               _phoneController.text,
                             );
-                            if (success) {
+                            if (auth.isAuthenticated) {
                               if (context.mounted) {
-                                showDialog(
-                                  context: context,
-                                  barrierDismissible: false,
-                                  builder: (context) => AlertDialog(
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                                    title: const Row(
-                                      children: [
-                                        Icon(LucideIcons.mail, color: AppTheme.accentColor),
-                                        SizedBox(width: 8),
-                                        Text('Check Your Inbox', style: TextStyle(fontWeight: FontWeight.bold)),
-                                      ],
-                                    ),
-                                    content: Text(
-                                      'We sent a passwordless sign-in link to:\n${_emailController.text}\n\nClick the link in the email to verify and sign in.',
-                                      style: TextStyle(color: Colors.grey[700]),
-                                    ),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () {
-                                          Navigator.of(context).pop();
-                                          context.go('/login');
-                                        },
-                                        child: const Text('OK', style: TextStyle(color: AppTheme.accentColor, fontWeight: FontWeight.bold)),
-                                      ),
-                                    ],
-                                  ),
-                                );
+                                context.read<BookingProvider>().fetchMyBookings();
+                                context.go('/');
+                              }
+                            } else if (auth.unverifiedEmail != null) {
+                              if (context.mounted) {
+                                context.push('/otp', extra: auth.unverifiedEmail);
                               }
                             } else if (auth.error != null) {
                               if (context.mounted) {
