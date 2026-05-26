@@ -17,6 +17,7 @@ type Room = {
   displayStatus?: string;
   activeBooking?: any;
   hotelStringId?: string;
+  capacity?: number;
 };
 type Booking = { _id: string; guestSnapshot?: { name?: string }; status?: string; checkIn?: string; checkOut?: string; };
 
@@ -31,13 +32,13 @@ type Stats = {
 };
 
 const STATUS_CLASSES: Record<string, string> = {
-  Available: "bg-emerald-600 hover:bg-emerald-500",
-  Booked: "bg-red-600 hover:bg-red-500",
-  Occupied: "bg-red-600 hover:bg-red-500",
-  Reserved: "bg-purple-600 hover:bg-purple-500",
-  Maintenance: "bg-amber-500 hover:bg-amber-400",
-  Cleaning: "bg-sky-500 hover:bg-sky-400",
-  Blocked: "bg-slate-600 hover:bg-slate-500",
+  Available: "bg-emerald-600 hover:bg-emerald-500 border-emerald-700",
+  Reserved: "bg-yellow-500 hover:bg-yellow-400 border-yellow-600",
+  Occupied: "bg-red-600 hover:bg-red-500 border-red-700",
+  Booked: "bg-red-600 hover:bg-red-500 border-red-700",
+  Cleaning: "bg-blue-600 hover:bg-blue-500 border-blue-700",
+  Maintenance: "bg-gray-500 hover:bg-gray-400 border-gray-600",
+  Blocked: "bg-black hover:bg-zinc-900 border-zinc-800",
 };
 
 const STATUS_LABELS: string[] = ["Available", "Occupied", "Reserved", "Maintenance", "Cleaning", "Blocked"];
@@ -301,13 +302,39 @@ export default function HotelMap() {
                           <button
                             key={room._id}
                             onClick={() => openRoom(room)}
-                            className={`rounded-2xl border p-4 text-left transition ${STATUS_CLASSES[room.displayStatus || room.status] || "border-border bg-white"}`}
+                            className={`rounded-2xl border p-4 text-left transition hover:scale-[1.01] hover:shadow-md text-white ${STATUS_CLASSES[room.displayStatus || room.status] || "border-border bg-white"}`}
                           >
-                            <div className="flex items-center justify-between gap-2">
-                              <p className="font-semibold text-white">{room.roomNumber}</p>
-                              <StatusBadge status={room.displayStatus || room.status} />
+                            <div className="flex items-start justify-between gap-2">
+                              <div>
+                                <p className="text-lg font-bold">{room.roomNumber}</p>
+                                <p className="text-xs text-white/80">{room.type} (Floor {room.floor || 1})</p>
+                              </div>
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/20 uppercase tracking-wider">
+                                {room.displayStatus || room.status}
+                              </span>
                             </div>
-                            <p className="mt-2 text-sm text-white/80">{room.type}</p>
+
+                            {room.activeBooking ? (
+                              <div className="mt-4 pt-3 border-t border-white/10 space-y-1 text-xs text-white/90">
+                                <div className="flex justify-between">
+                                  <span className="opacity-75">Main Guest:</span>
+                                  <span className="font-semibold">{room.activeBooking.guestSnapshot?.name || "N/A"}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="opacity-75">Occupancy:</span>
+                                  <span>{room.activeBooking.totalGuests || 1} / {room.capacity || 4} Guests</span>
+                                </div>
+                                <div className="flex justify-between text-[11px] opacity-75 mt-1 border-t border-white/5 pt-1">
+                                  <span>In: {room.activeBooking.checkIn ? new Date(room.activeBooking.checkIn).toLocaleDateString(undefined, {month: 'short', day: 'numeric'}) : "-"}</span>
+                                  <span>Out: {room.activeBooking.checkOut ? new Date(room.activeBooking.checkOut).toLocaleDateString(undefined, {month: 'short', day: 'numeric'}) : "-"}</span>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="mt-4 pt-3 border-t border-white/10 flex justify-between text-xs text-white/85">
+                                <span>Capacity:</span>
+                                <span>{room.capacity || 4} Guests Max</span>
+                              </div>
+                            )}
                           </button>
                         ))}
                       </div>
@@ -343,6 +370,64 @@ export default function HotelMap() {
                   <p className="text-xl font-semibold text-text-primary">{selectedRoom.roomNumber}</p>
                   <p className="text-sm text-muted">{selectedRoom.type}</p>
                 </div>
+
+                {selectedRoom.activeBooking && (
+                  <div className="rounded-2xl bg-primary/5 border border-primary/10 p-4 space-y-3">
+                    <h3 className="text-sm font-semibold text-primary">Active Booking Details</h3>
+                    <div className="space-y-1.5 text-xs text-text-primary">
+                      <div className="flex justify-between">
+                        <span className="text-muted">Lead Guest:</span>
+                        <span className="font-semibold">{selectedRoom.activeBooking.guestSnapshot?.name}</span>
+                      </div>
+                      {selectedRoom.activeBooking.guestSnapshot?.email && (
+                        <div className="flex justify-between">
+                          <span className="text-muted">Email:</span>
+                          <span>{selectedRoom.activeBooking.guestSnapshot.email}</span>
+                        </div>
+                      )}
+                      {selectedRoom.activeBooking.guestSnapshot?.phone && (
+                        <div className="flex justify-between">
+                          <span className="text-muted">Phone:</span>
+                          <span>{selectedRoom.activeBooking.guestSnapshot.phone}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between border-t border-border pt-1.5 mt-1.5">
+                        <span className="text-muted">Dates:</span>
+                        <span className="font-medium">
+                          {new Date(selectedRoom.activeBooking.checkIn).toLocaleDateString()} → {new Date(selectedRoom.activeBooking.checkOut).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted">Occupancy Summary:</span>
+                        <span className="font-semibold">{selectedRoom.activeBooking.totalGuests || 1} / {selectedRoom.capacity || 4} Guests</span>
+                      </div>
+                      {selectedRoom.activeBooking.additionalAdults?.length > 0 && (
+                        <div className="mt-2 pt-2 border-t border-border">
+                          <span className="text-[10px] font-semibold text-muted uppercase">Additional Adults</span>
+                          <ul className="list-disc pl-4 mt-1 space-y-0.5">
+                            {selectedRoom.activeBooking.additionalAdults.map((adult: any, idx: number) => (
+                              <li key={idx}>{adult.name} ({adult.id})</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      {selectedRoom.activeBooking.additionalChildren?.length > 0 && (
+                        <div className="mt-2 pt-2 border-t border-border">
+                          <span className="text-[10px] font-semibold text-muted uppercase">Additional Children</span>
+                          <ul className="list-disc pl-4 mt-1 space-y-0.5">
+                            {selectedRoom.activeBooking.additionalChildren.map((child: any, idx: number) => (
+                              <li key={idx}>{child.name} (Age {child.age})</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      <div className="flex justify-between border-t border-border pt-1.5 mt-1.5">
+                        <span className="text-muted">Payment:</span>
+                        <span className="capitalize font-semibold text-emerald-600">{selectedRoom.activeBooking.paymentStatus || "Paid"}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-sm text-muted">
                     <span>Status</span>

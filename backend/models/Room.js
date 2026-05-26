@@ -57,6 +57,21 @@ const roomSchema = new mongoose.Schema(
       default: 2,
     },
 
+    maxAdults: {
+      type: Number,
+      default: 2,
+    },
+
+    maxChildren: {
+      type: Number,
+      default: 2,
+    },
+
+    maxGuests: {
+      type: Number,
+      default: 4,
+    },
+
     bedType: {
       type: String,
       enum: ["Single", "Double", "Queen", "King", "Twin"],

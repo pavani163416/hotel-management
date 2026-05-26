@@ -54,6 +54,11 @@ const bookingSchema = new mongoose.Schema(
       },
     ],
 
+    totalGuests: {
+      type: Number,
+      default: 1,
+    },
+
     // ── Dates ────────────────────────────────────────────
     checkIn: {
       type: Date,

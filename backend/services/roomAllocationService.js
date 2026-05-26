@@ -275,9 +275,9 @@ export async function getHotelMapOverview({ hotelStringId, hotelObjectId, date }
     else if (room.status === "Blocked") {
       op = "Blocked";
     }
-    // Priority 4: Booked (active booking in date range OR room already flagged Booked/Occupied)
+    // Priority 4: Occupied (active booking in date range OR room already flagged Booked/Occupied)
     else if (bookingByRoom.has(rid) || room.status === "Booked" || room.status === "Occupied") {
-      op = "Booked";   // ← standardized to "Booked" (matches frontend STATUS_COLORS)
+      op = "Occupied";
     } 
     // Priority 5: Available
     else {
@@ -297,13 +297,14 @@ export async function getHotelMapOverview({ hotelStringId, hotelObjectId, date }
   const stats = {
     total:       enrichedRooms.length,
     available:   enrichedRooms.filter((r) => r.displayStatus === "Available").length,
-    booked:      enrichedRooms.filter((r) => r.displayStatus === "Booked").length,      // ← fixed (was "Occupied")
+    occupied:    enrichedRooms.filter((r) => r.displayStatus === "Occupied").length,
+    booked:      enrichedRooms.filter((r) => r.displayStatus === "Occupied").length, // kept for backward compat
     maintenance: enrichedRooms.filter((r) => r.displayStatus === "Maintenance").length,
     cleaning:    enrichedRooms.filter((r) => r.displayStatus === "Cleaning").length,
     blocked:     enrichedRooms.filter((r) => r.displayStatus === "Blocked").length,
   };
   stats.occupancyPct = stats.total
-    ? Math.round((stats.booked / stats.total) * 100)
+    ? Math.round((stats.occupied / stats.total) * 100)
     : 0;
 
   return { rooms: enrichedRooms, bookings: allMatchedBookings, stats };

@@ -30,29 +30,35 @@ type Room = {
 type Booking = {
   _id: string;
   bookingRef?: string;
-  guestSnapshot: { name: string; email: string; phone?: string };
+  guestSnapshot: { name: string; email: string; phone?: string; id?: string };
   room?: { _id?: string; roomNumber?: string; type?: string };
   checkIn: string;
   checkOut: string;
   status: string;
   totalAmount: number;
+  totalGuests?: number;
+  additionalAdults?: { name: string; id: string; email?: string; phone?: string }[];
+  additionalChildren?: { name: string; id: string; age?: number }[];
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  Available:   "bg-emerald-600 hover:bg-emerald-500",
-  Booked:      "bg-red-600   hover:bg-red-500",
-  Occupied:    "bg-red-600   hover:bg-red-500",   // alias — backend may return either
-  Maintenance: "bg-amber-500 hover:bg-amber-400",
-  Blocked:     "bg-slate-600 hover:bg-slate-500",
-  Cleaning:    "bg-sky-500   hover:bg-sky-400",
+  Available:   "bg-emerald-600 hover:bg-emerald-500 border-emerald-700",
+  Reserved:    "bg-yellow-500 hover:bg-yellow-400 border-yellow-600",
+  Occupied:    "bg-red-600 hover:bg-red-500 border-red-700",
+  Booked:      "bg-red-600 hover:bg-red-500 border-red-700",
+  Cleaning:    "bg-blue-600 hover:bg-blue-500 border-blue-700",
+  Maintenance: "bg-gray-500 hover:bg-gray-400 border-gray-600",
+  Blocked:     "bg-black hover:bg-zinc-900 border-zinc-800",
 };
 
 const STATUS_DOT: Record<string, string> = {
   Available:   "bg-emerald-400",
+  Reserved:    "bg-yellow-400",
+  Occupied:    "bg-red-400",
   Booked:      "bg-red-400",
-  Maintenance: "bg-amber-400",
-  Blocked:     "bg-slate-400",
-  Cleaning:    "bg-sky-400",
+  Cleaning:    "bg-blue-400",
+  Maintenance: "bg-gray-400",
+  Blocked:     "bg-black",
 };
 
 export default function FloorMap() {
@@ -284,27 +290,49 @@ export default function FloorMap() {
                   <h3 className="font-semibold text-bright text-sm">Floor {floor}</h3>
                   <span className="text-xs text-dim">{floorBooked}/{floorRooms.length} occupied</span>
                 </div>
-                <div className="p-4 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-3">
+                <div className="p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
                   {floorRooms.map(room => {
                     const booking = getActiveBooking(room);
+                    const status = roomStatusOf(room);
                     return (
                       <button
                         key={room._id}
                         onClick={() => setSelected(room)}
-                        title={`${room.roomNumber} — ${room.type} — ${roomStatusOf(room)}${booking ? `\n${booking.guestSnapshot?.name || ""}` : ""}`}
-                        className={`relative rounded-xl flex flex-col items-center justify-center gap-1
-                          text-white font-semibold transition-all shadow-sm overflow-hidden
-                          px-2 py-3 min-h-[70px]
-                          ${STATUS_COLORS[roomStatusOf(room)] || "bg-white/10"}
+                        className={`relative rounded-xl border p-4 text-left transition text-white hover:scale-[1.01] hover:shadow-md
+                          ${STATUS_COLORS[status] || "bg-white/10"}
                           ${selected?._id === room._id ? "ring-2 ring-gold scale-105" : ""}
                         `}
                       >
-                        <BedDouble className="w-4 h-4 shrink-0" />
-                        <span className="text-[10px] leading-tight text-center w-full truncate px-1">
-                          {room.roomNumber}
-                        </span>
-                        {booking && (
-                          <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-white/80" />
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <p className="text-lg font-bold">{room.roomNumber}</p>
+                            <p className="text-xs text-white/80">{room.type} (Floor {room.floor || 1})</p>
+                          </div>
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/20 uppercase tracking-wider">
+                            {status}
+                          </span>
+                        </div>
+
+                        {booking ? (
+                          <div className="mt-4 pt-3 border-t border-white/10 space-y-1 text-xs text-white/90">
+                            <div className="flex justify-between">
+                              <span className="opacity-75">Main Guest:</span>
+                              <span className="font-semibold">{booking.guestSnapshot?.name || "N/A"}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="opacity-75">Guests:</span>
+                              <span>{(booking as any).totalGuests || 1} / {room.capacity || 4} Guests</span>
+                            </div>
+                            <div className="flex justify-between text-[11px] opacity-75 mt-1 border-t border-white/5 pt-1">
+                              <span>In: {booking.checkIn ? new Date(booking.checkIn).toLocaleDateString(undefined, {month: 'short', day: 'numeric'}) : "-"}</span>
+                              <span>Out: {booking.checkOut ? new Date(booking.checkOut).toLocaleDateString(undefined, {month: 'short', day: 'numeric'}) : "-"}</span>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="mt-4 pt-3 border-t border-white/10 flex justify-between text-xs text-white/85">
+                            <span>Capacity:</span>
+                            <span>{room.capacity || 4} Guests Max</span>
+                          </div>
                         )}
                       </button>
                     );
@@ -420,38 +448,86 @@ export default function FloorMap() {
                 </section>
               )}
 
-              {/* Current Guest */}
+              {/* Active Booking details */}
               {booking && (
-                <section>
-                  <h3 className="text-xs font-semibold text-dim uppercase tracking-wider mb-3">Current Guest</h3>
-                  <div className="rounded-xl p-4"
+                <section className="space-y-3">
+                  <h3 className="text-xs font-semibold text-dim uppercase tracking-wider mb-2">Active Booking Details</h3>
+                  <div className="rounded-xl p-4 space-y-4"
                     style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
-                    <div className="flex items-center gap-3 mb-3">
+                    <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-xl grid place-items-center"
                         style={{ background: "rgba(212,168,67,0.15)", border: "1px solid rgba(212,168,67,0.25)" }}>
                         <User className="w-5 h-5 text-gold" />
                       </div>
                       <div>
                         <p className="font-semibold text-bright">{booking.guestSnapshot.name}</p>
-                        <p className="text-xs text-dim">{booking.guestSnapshot.email}</p>
+                        <p className="text-xs text-dim">{booking.guestSnapshot.email || "No email"}</p>
                       </div>
                     </div>
-                    <div className="space-y-2 text-xs">
+
+                    <div className="space-y-2 text-xs border-t border-white/5 pt-3">
                       {booking.guestSnapshot.phone && (
-                        <div className="flex items-center gap-2 text-soft">
-                          <Phone className="w-3.5 h-3.5 text-gold" />
-                          {booking.guestSnapshot.phone}
+                        <div className="flex items-center justify-between text-soft">
+                          <span>Phone:</span>
+                          <span className="font-medium text-bright">{booking.guestSnapshot.phone}</span>
                         </div>
                       )}
-                      <div className="flex items-center gap-2 text-soft">
-                        <Calendar className="w-3.5 h-3.5 text-gold" />
-                        {new Date(booking.checkIn).toLocaleDateString()} → {new Date(booking.checkOut).toLocaleDateString()}
+                      {booking.guestSnapshot.id && (
+                        <div className="flex items-center justify-between text-soft">
+                          <span>Govt ID:</span>
+                          <span className="font-medium text-bright uppercase">{booking.guestSnapshot.id}</span>
+                        </div>
+                      )}
+                      <div className="flex items-center justify-between text-soft">
+                        <span>Check-In:</span>
+                        <span className="font-medium text-bright">{new Date(booking.checkIn).toLocaleDateString()}</span>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <StatusBadge status={booking.status} />
-                        <span className="font-semibold text-bright">${booking.totalAmount.toLocaleString()}</span>
+                      <div className="flex items-center justify-between text-soft">
+                        <span>Check-Out:</span>
+                        <span className="font-medium text-bright">{new Date(booking.checkOut).toLocaleDateString()}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-soft border-t border-white/5 pt-2">
+                        <span>Occupancy:</span>
+                        <span className="font-semibold text-bright">{booking.totalGuests || 1} / {selected.capacity || 4} Guests</span>
                       </div>
                     </div>
+
+                    {booking.additionalAdults && booking.additionalAdults.length > 0 && (
+                      <div className="border-t border-white/5 pt-3 space-y-1.5">
+                        <span className="text-[10px] font-bold text-dim uppercase tracking-wider">Additional Adults</span>
+                        <ul className="space-y-1">
+                          {booking.additionalAdults.map((adult, idx) => (
+                            <li key={idx} className="text-xs text-soft flex justify-between">
+                              <span>{adult.name}</span>
+                              <span className="opacity-75 uppercase">{adult.id}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {booking.additionalChildren && booking.additionalChildren.length > 0 && (
+                      <div className="border-t border-white/5 pt-3 space-y-1.5">
+                        <span className="text-[10px] font-bold text-dim uppercase tracking-wider">Additional Children</span>
+                        <ul className="space-y-1">
+                          {booking.additionalChildren.map((child, idx) => (
+                            <li key={idx} className="text-xs text-soft flex justify-between">
+                              <span>{child.name}</span>
+                              <span className="opacity-75">Age {child.age}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    <div className="flex items-center justify-between border-t border-white/5 pt-3 text-xs">
+                      <div className="flex items-center gap-1">
+                        <StatusBadge status={booking.status} />
+                        <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-emerald-500/10 text-emerald-400">Paid</span>
+                      </div>
+                      <span className="font-bold text-bright">${booking.totalAmount.toLocaleString()}</span>
+                    </div>
+
                     <button
                       onClick={() => openReassign(booking)}
                       className="w-full mt-3 flex items-center justify-center gap-2 border border-gold/30 text-gold rounded-xl py-2 text-xs font-semibold hover:bg-gold/10 transition-colors"

@@ -210,19 +210,33 @@ export const createBooking = async (req, res, next) => {
       });
     }
 
-    const guestCount = Number(req.body.guestCount) || 1 + (additionalAdults?.length || 0) + (additionalChildren?.length || 0);
-    if (guestCount > 8) {
-      await session.abortTransaction();
-      return res.status(400).json({
-        success: false,
-        message: "Total guest count cannot exceed 8 persons",
-      });
-    }
-    if (room.capacity && guestCount > room.capacity) {
+    const adultsCount = 1 + (additionalAdults?.length || 0);
+    const childrenCount = additionalChildren?.length || 0;
+    const totalGuests = adultsCount + childrenCount;
+
+    const maxGuests = room.maxGuests || room.capacity || 4;
+    const maxAdults = room.maxAdults || room.capacity || 2;
+    const maxChildren = room.maxChildren != null ? room.maxChildren : 2;
+
+    if (totalGuests > maxGuests) {
       await session.abortTransaction();
       return res.status(422).json({
         success: false,
-        message: `This room only accommodates up to ${room.capacity} guest${room.capacity === 1 ? "" : "s"}. You requested ${guestCount}.`,
+        message: `This room only accommodates up to ${maxGuests} guests. You requested ${totalGuests}.`,
+      });
+    }
+    if (adultsCount > maxAdults) {
+      await session.abortTransaction();
+      return res.status(422).json({
+        success: false,
+        message: `This room only accommodates up to ${maxAdults} adults. You requested ${adultsCount}.`,
+      });
+    }
+    if (childrenCount > maxChildren) {
+      await session.abortTransaction();
+      return res.status(422).json({
+        success: false,
+        message: `This room only accommodates up to ${maxChildren} children. You requested ${childrenCount}.`,
       });
     }
 
@@ -321,6 +335,7 @@ export const createBooking = async (req, res, next) => {
           },
           additionalAdults: additionalAdults || [],
           additionalChildren: additionalChildren || [],
+          totalGuests,
           checkIn: new Date(checkIn),
           checkOut: new Date(checkOut),
           pricePerNight,
