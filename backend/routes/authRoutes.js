@@ -925,6 +925,103 @@ router.post("/google", async (req, res, next) => {
   }
 });
 
+let firebasePublicKeys = null;
+let keysExpiry = 0;
+
+async function getFirebasePublicKeys() {
+  if (firebasePublicKeys && Date.now() < keysExpiry) {
+    return firebasePublicKeys;
+  }
+  const res = await fetch("https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com");
+  const data = await res.json();
+  firebasePublicKeys = data;
+  keysExpiry = Date.now() + 3600000;
+  return firebasePublicKeys;
+}
+
+async function verifyFirebaseIdToken(idToken) {
+  const decoded = jwt.decode(idToken, { complete: true });
+  if (!decoded || !decoded.header || !decoded.header.kid) {
+    throw new Error("Invalid token format");
+  }
+  const publicKeys = await getFirebasePublicKeys();
+  const cert = publicKeys[decoded.header.kid];
+  if (!cert) {
+    throw new Error("Invalid token signature key");
+  }
+  const projectId = "hotel-mgnt-8ffff";
+  const payload = jwt.verify(idToken, cert, {
+    algorithms: ["RS256"],
+    audience: projectId,
+    issuer: `https://securetoken.google.com/${projectId}`,
+  });
+  return payload;
+}
+
+// ── POST /api/auth/firebase ────────────────────────────────
+router.post("/firebase", async (req, res, next) => {
+  try {
+    const { idToken } = req.body;
+    if (!idToken) return res.status(400).json({ success: false, message: "ID Token is required" });
+
+    const payload = await verifyFirebaseIdToken(idToken);
+    const email = payload.email;
+    const name = payload.name || email.split("@")[0];
+    const picture = payload.picture || "";
+
+    let user = await User.findOne({ email });
+
+    if (!user) {
+      user = await User.create({
+        name,
+        email,
+        passwordHash: await bcrypt.hash(Math.random().toString(36), 10),
+        phone: "",
+        profileImage: picture,
+        isVerified: true,
+      });
+
+      const guest = await Guest.create({
+        name,
+        email,
+        phone: "",
+        profileImage: picture,
+      });
+
+      user.guestId = guest._id;
+      await user.save();
+      logger.info({ email, name }, "New Firebase user registered");
+    } else if (!user.isVerified) {
+      user.isVerified = true;
+      await user.save();
+    }
+
+    const token = jwt.sign(
+      { id: user._id, guestId: user.guestId, email: user.email, name: user.name, role: "customer" },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    res.json({
+      success: true,
+      data: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        city: user.city,
+        profileImage: user.profileImage,
+        coverImage: user.coverImage,
+        paymentMethods: user.paymentMethods,
+        token,
+      },
+    });
+  } catch (err) {
+    logger.error(err, "Firebase Auth Error");
+    res.status(401).json({ success: false, message: `Invalid Firebase Token: ${err.message}` });
+  }
+});
+
 // ── GET /api/auth/me ──────────────────────────────────────
 router.get("/me", verifyCustomerToken, async (req, res, next) => {
   try {

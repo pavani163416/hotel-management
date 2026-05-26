@@ -7,6 +7,7 @@ abstract class AuthRemoteDataSource {
   Future<AuthResponse> verifyOtp(String email, String code);
   Future<String?> resendOtp(String email);
   Future<AuthResponse> signInWithGoogle(String idToken);
+  Future<AuthResponse> signInWithFirebase(String idToken, {String? name, String? phone});
   Future<UserModel> getMe(String token);
   Future<UserModel> updateProfile({
     String? name,
@@ -118,6 +119,25 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     final data = response.data['data'];
     if (data == null) {
       throw Exception(response.data['message'] ?? 'Google login failed');
+    }
+
+    return AuthResponse(
+      user: UserModel.fromJson(data),
+      token: data['token'] ?? '',
+    );
+  }
+
+  @override
+  Future<AuthResponse> signInWithFirebase(String idToken, {String? name, String? phone}) async {
+    final response = await _apiService.post('auth/firebase', data: {
+      'idToken': idToken,
+      if (name != null) 'name': name,
+      if (phone != null) 'phone': phone,
+    });
+
+    final data = response.data['data'];
+    if (data == null) {
+      throw Exception(response.data['message'] ?? 'Firebase sign-in failed');
     }
 
     return AuthResponse(

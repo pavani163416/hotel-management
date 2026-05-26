@@ -8,6 +8,7 @@ abstract class AuthRepository {
   Future<Either<Failure, (UserEntity, String)>> verifyOtp(String email, String code);
   Future<Either<Failure, String?>> resendOtp(String email);
   Future<Either<Failure, (UserEntity, String)>> signInWithGoogle(String idToken);
+  Future<Either<Failure, (UserEntity, String)>> signInWithFirebase(String idToken, {String? name, String? phone});
   Future<Either<Failure, UserEntity>> getMe();
   Future<Either<Failure, UserEntity>> updateProfile({
     String? name,

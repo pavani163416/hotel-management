@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:convert';
 import '../../features/auth/domain/repositories/auth_repository.dart';
 import '../../features/auth/domain/entities/user_entity.dart';
@@ -454,5 +455,107 @@ class AuthProvider extends ChangeNotifier {
         return success;
       },
     );
+  }
+
+  Future<bool> sendFirebaseSignInLink(String email, String name, String phone) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final acs = ActionCodeSettings(
+        url: 'https://luxestay-backend-production.up.railway.app/firebase-auth?email=$email',
+        handleCodeInApp: true,
+        androidPackageName: 'com.example.hotelmanag',
+        androidInstallApp: true,
+        androidMinimumVersion: '12',
+      );
+
+      await FirebaseAuth.instance.sendSignInLinkToEmail(
+        email: email,
+        actionCodeSettings: acs,
+      );
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('email_for_link', email);
+      await prefs.setString('pending_name', name);
+      await prefs.setString('pending_phone', phone);
+
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = e.toString();
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> signInWithEmailLink(String emailLink) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final email = prefs.getString('email_for_link') ?? '';
+      final name = prefs.getString('pending_name');
+      final phone = prefs.getString('pending_phone');
+
+      if (email.isEmpty) {
+        throw Exception("No email found for verification link. Please sign up again.");
+      }
+
+      if (FirebaseAuth.instance.isSignInWithEmailLink(emailLink)) {
+        final userCredential = await FirebaseAuth.instance.signInWithEmailLink(
+          email: email,
+          emailLink: emailLink,
+        );
+
+        final firebaseUser = userCredential.user;
+        if (firebaseUser == null) {
+          throw Exception("Firebase authentication failed.");
+        }
+
+        final idToken = await firebaseUser.getIdToken() ?? '';
+        final result = await _authRepository.signInWithFirebase(
+          idToken,
+          name: name,
+          phone: phone,
+        );
+        
+        return result.fold(
+          (failure) {
+            _error = failure.message;
+            _isLoading = false;
+            notifyListeners();
+            return false;
+          },
+          (data) async {
+            final (user, token) = data;
+            _user = user;
+            _unverifiedEmail = null;
+            
+            // Clean up cached registration details
+            await prefs.remove('email_for_link');
+            await prefs.remove('pending_name');
+            await prefs.remove('pending_phone');
+
+            await _saveAuthData(user, token);
+            _isLoading = false;
+            notifyListeners();
+            return true;
+          },
+        );
+      } else {
+        throw Exception("Invalid sign-in link.");
+      }
+    } catch (e) {
+      _error = e.toString();
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
   }
 }

@@ -117,6 +117,22 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Future<Either<Failure, (UserEntity, String)>> signInWithFirebase(String idToken, {String? name, String? phone}) async {
+    try {
+      final authResponse = await _remoteDataSource.signInWithFirebase(idToken, name: name, phone: phone);
+      return Right((authResponse.user, authResponse.token));
+    } on DioException catch (e) {
+      String message = 'Firebase login failed';
+      if (e.response?.data is Map) {
+        message = e.response?.data['message'] ?? message;
+      }
+      return Left(ServerFailure(message));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
   Future<Either<Failure, UserEntity>> getMe() async {
     try {
       final user = await _remoteDataSource.getMe(''); // Token handled by ApiService

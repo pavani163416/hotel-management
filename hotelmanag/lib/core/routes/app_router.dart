@@ -7,6 +7,7 @@ import '../../features/home/presentation/pages/home_page.dart';
 import '../../features/auth/presentation/pages/login_page.dart';
 import '../../features/auth/presentation/pages/register_page.dart';
 import '../../features/auth/presentation/pages/otp_page.dart';
+import '../../features/auth/presentation/pages/firebase_auth_link_handler_page.dart';
 import '../../features/hotels/presentation/pages/hotels_page.dart';
 import '../../features/hotels/presentation/pages/hotel_details_page.dart';
 import '../../features/booking/presentation/pages/history_page.dart';
@@ -38,6 +39,7 @@ class AppRouter {
   static const String confirmation = '/confirmation';
   static const String favorites = '/favorites';
   static const String otp = '/otp';
+  static const String firebaseAuth = '/firebase-auth';
 
   static final GoRouter router = GoRouter(
     initialLocation: splash,
@@ -50,7 +52,8 @@ class AppRouter {
                                state.matchedLocation == welcome || 
                                state.matchedLocation == onboarding ||
                                state.matchedLocation == splash ||
-                               state.matchedLocation == otp;
+                               state.matchedLocation == otp ||
+                               state.matchedLocation == firebaseAuth;
 
       // If user is NOT authenticated
       if (!auth.isAuthenticated) {
@@ -96,6 +99,13 @@ class AppRouter {
         builder: (context, state) {
           final email = state.extra as String? ?? '';
           return OtpPage(email: email);
+        },
+      ),
+      GoRoute(
+        path: firebaseAuth,
+        builder: (context, state) {
+          final link = state.uri.toString();
+          return FirebaseAuthLinkHandlerPage(emailLink: link);
         },
       ),
       GoRoute(
