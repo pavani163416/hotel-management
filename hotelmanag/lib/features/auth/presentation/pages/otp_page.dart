@@ -20,6 +20,20 @@ class _OtpPageState extends State<OtpPage> {
   final List<FocusNode> _focusNodes = List.generate(6, (_) => FocusNode());
 
   @override
+  void initState() {
+    super.initState();
+    // Start listening to focus state changes to trigger rebuilds for active highlight styles
+    for (int i = 0; i < 6; i++) {
+      _focusNodes[i].addListener(() {
+        if (mounted) setState(() {});
+      });
+      _controllers[i].addListener(() {
+        if (mounted) setState(() {});
+      });
+    }
+  }
+
+  @override
   void dispose() {
     for (var c in _controllers) { c.dispose(); }
     for (var f in _focusNodes) { f.dispose(); }
@@ -32,7 +46,10 @@ class _OtpPageState extends State<OtpPage> {
     final code = _otpCode;
     if (code.length < 6) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter all 6 digits.')),
+        const SnackBar(
+          content: Text('Please enter all 6 digits.'),
+          behavior: SnackBarBehavior.floating,
+        ),
       );
       return;
     }
@@ -44,7 +61,11 @@ class _OtpPageState extends State<OtpPage> {
       context.go('/');
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(auth.error ?? 'Invalid verification code.')),
+        SnackBar(
+          content: Text(auth.error ?? 'Invalid verification code.'),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.red[800],
+        ),
       );
     }
   }
@@ -56,25 +77,35 @@ class _OtpPageState extends State<OtpPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(success ? 'A new code has been sent to your email.' : (auth.error ?? 'Failed to resend code')),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: success ? AppTheme.primaryColor : Colors.red[800],
         ),
       );
     }
   }
 
   void _onDigitChanged(String value, int index) {
-    if (value.isNotEmpty && index < 5) {
-      _focusNodes[index + 1].requestFocus();
-    }
-    if (value.isEmpty && index > 0) {
-      _focusNodes[index - 1].requestFocus();
+    if (value.isNotEmpty) {
+      if (index < 5) {
+        _focusNodes[index + 1].requestFocus();
+      } else {
+        // Last digit entered, dismiss keyboard and verify
+        _focusNodes[index].unfocus();
+        _verifyOtp();
+      }
+    } else {
+      if (index > 0) {
+        _focusNodes[index - 1].requestFocus();
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    
     return Scaffold(
-      backgroundColor: AppTheme.primaryColor.withOpacity(0.01),
+      backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -85,75 +116,95 @@ class _OtpPageState extends State<OtpPage> {
       ),
       body: Center(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              // Icon Header Container
               Container(
-                padding: const EdgeInsets.all(28),
+                padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [AppTheme.primaryColor.withOpacity(0.12), AppTheme.accentColor.withOpacity(0.10)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
+                  color: AppTheme.primaryColor.withOpacity(0.04),
                   shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppTheme.primaryColor.withOpacity(0.08),
-                      blurRadius: 16,
-                      offset: const Offset(0, 8),
+                  border: Border.all(
+                    color: AppTheme.primaryColor.withOpacity(0.06),
+                    width: 2,
+                  ),
+                ),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryColor.withOpacity(0.06),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    LucideIcons.shieldCheck, 
+                    size: 48, 
+                    color: AppTheme.primaryColor
+                  ),
+                ),
+              ),
+              const SizedBox(height: 32),
+              
+              // Title & Info text
+              const Text(
+                'Security Verification',
+                style: TextStyle(
+                  color: AppTheme.primaryColor,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 26,
+                  letterSpacing: -0.5,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              RichText(
+                textAlign: TextAlign.center,
+                text: TextSpan(
+                  style: TextStyle(color: Colors.grey[600], fontSize: 14, height: 1.5),
+                  children: [
+                    const TextSpan(text: 'We sent a 6-digit confirmation code to\n'),
+                    TextSpan(
+                      text: widget.email,
+                      style: const TextStyle(
+                        color: AppTheme.primaryColor, 
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ],
                 ),
-                child: const Icon(LucideIcons.mail, size: 54, color: AppTheme.primaryColor),
-              ),
-              const SizedBox(height: 32),
-              Text(
-                'Verify your email',
-                style: theme.textTheme.headlineSmall?.copyWith(
-                  color: AppTheme.primaryColor,
-                  fontWeight: FontWeight.bold,
-                  fontFamily: 'Serif',
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 14),
-              Text(
-                'Enter the 6-digit code sent to',
-                style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey[700]),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 2),
-              Text(
-                widget.email,
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  color: AppTheme.primaryColor,
-                  fontWeight: FontWeight.bold,
-                ),
-                textAlign: TextAlign.center,
               ),
               const SizedBox(height: 36),
+              
+              // OTP Input Boxes
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: List.generate(6, (index) {
+                  final isFocused = _focusNodes[index].hasFocus;
+                  final hasText = _controllers[index].text.isNotEmpty;
+                  
                   return AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    margin: const EdgeInsets.symmetric(horizontal: 4),
-                    width: 42,
-                    height: 54,
+                    duration: const Duration(milliseconds: 150),
+                    margin: const EdgeInsets.symmetric(horizontal: 5),
+                    width: 46,
+                    height: 58,
                     decoration: BoxDecoration(
-                      color: _controllers[index].text.isNotEmpty ? AppTheme.primaryColor.withOpacity(0.12) : Colors.white,
-                      borderRadius: BorderRadius.circular(12),
+                      color: isFocused 
+                          ? Colors.white 
+                          : (hasText ? AppTheme.primaryColor.withOpacity(0.02) : Colors.grey[50]),
+                      borderRadius: BorderRadius.circular(14),
                       border: Border.all(
-                        color: _focusNodes[index].hasFocus ? AppTheme.primaryColor : AppTheme.mutedColor,
-                        width: _focusNodes[index].hasFocus ? 2 : 1,
+                        color: isFocused 
+                            ? AppTheme.primaryColor 
+                            : (hasText ? AppTheme.primaryColor.withOpacity(0.4) : Colors.grey[200]!),
+                        width: isFocused ? 2 : 1.2,
                       ),
                       boxShadow: [
-                        if (_focusNodes[index].hasFocus)
+                        if (isFocused)
                           BoxShadow(
                             color: AppTheme.primaryColor.withOpacity(0.08),
-                            blurRadius: 8,
+                            blurRadius: 10,
                             offset: const Offset(0, 4),
                           ),
                       ],
@@ -164,9 +215,16 @@ class _OtpPageState extends State<OtpPage> {
                         focusNode: _focusNodes[index],
                         keyboardType: TextInputType.number,
                         textAlign: TextAlign.center,
-                        style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
+                        style: const TextStyle(
+                          fontSize: 22, 
+                          fontWeight: FontWeight.bold, 
+                          color: AppTheme.primaryColor
+                        ),
                         maxLength: 1,
-                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                          LengthLimitingTextInputFormatter(1),
+                        ],
                         decoration: const InputDecoration(
                           counterText: '',
                           border: InputBorder.none,
@@ -179,7 +237,9 @@ class _OtpPageState extends State<OtpPage> {
                   );
                 }),
               ),
-              const SizedBox(height: 36),
+              const SizedBox(height: 40),
+              
+              // Verify Button
               Consumer<AuthProvider>(
                 builder: (context, auth, _) {
                   return SizedBox(
@@ -190,7 +250,7 @@ class _OtpPageState extends State<OtpPage> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppTheme.primaryColor,
                         foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                         elevation: 0,
                       ),
                       child: auth.isLoading
@@ -198,24 +258,72 @@ class _OtpPageState extends State<OtpPage> {
                               height: 22, width: 22,
                               child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                             )
-                          : const Text('Verify', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                          : const Text('Verify Account', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                     ),
                   );
                 },
               ),
               const SizedBox(height: 28),
+              
+              // Resend Area
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text("Didn't get the code? ", style: TextStyle(color: Colors.grey)),
+                  Text("Didn't receive the code? ", style: TextStyle(color: Colors.grey[600], fontSize: 14)),
                   GestureDetector(
                     onTap: _resendOtp,
-                    child: Text(
-                      'Resend',
-                      style: TextStyle(color: AppTheme.accentColor, fontWeight: FontWeight.bold, decoration: TextDecoration.underline),
+                    child: const Text(
+                      'Resend Code',
+                      style: TextStyle(
+                        color: AppTheme.primaryColor, 
+                        fontWeight: FontWeight.bold, 
+                        decoration: TextDecoration.underline
+                      ),
                     ),
                   ),
                 ],
+              ),
+              
+              // Dev OTP Helper Note
+              Container(
+                margin: const EdgeInsets.only(top: 40),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF9E6),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFFFE599), width: 1),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(LucideIcons.lightbulb, size: 20, color: Color(0xFFD68F00)),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Testing Locally?',
+                            style: TextStyle(
+                              color: Color(0xFF7F5500),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'If Resend email limits block delivery, look directly at your running Node.js backend terminal console! The 6-digit OTP code is logged there in a highlighted box.',
+                            style: TextStyle(
+                              color: const Color(0xFF7F5500).withOpacity(0.85),
+                              fontSize: 12,
+                              height: 1.4,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
