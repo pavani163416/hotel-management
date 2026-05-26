@@ -36,6 +36,7 @@ export type Hotel = {
   amenities: string[];
   rooms: Room[];
   reviews: Review[];
+  activeBookings?: number;
 };
 
 const h1 = "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&q=80";

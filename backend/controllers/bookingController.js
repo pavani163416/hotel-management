@@ -272,7 +272,7 @@ export const createBooking = async (req, res, next) => {
       }
     }
 
-    if (room.status === "Booked" || NON_BOOKABLE_STATUSES.includes(room.status)) {
+    if (NON_BOOKABLE_STATUSES.includes(room.status)) {
       await session.abortTransaction();
       return res.status(409).json({
         success: false,

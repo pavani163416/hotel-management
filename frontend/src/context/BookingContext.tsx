@@ -22,6 +22,7 @@ function mapHotel(h: any): Hotel {
     reviewCount: actualReviewCount > 0
       ? actualReviewCount
       : (typeof h.reviewCount === "number" ? h.reviewCount : 0),
+    activeBookings: typeof h.activeBookings === "number" ? h.activeBookings : 0,
     rating: typeof h.rating === "number" ? h.rating : computedRating,
     pricePerNight: h.pricePerNight || 500,
     originalPrice: h.originalPrice,
