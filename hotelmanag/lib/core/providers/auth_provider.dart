@@ -464,7 +464,7 @@ class AuthProvider extends ChangeNotifier {
 
     try {
       final acs = ActionCodeSettings(
-        url: 'https://luxestay-backend-production.up.railway.app/firebase-auth?email=$email',
+        url: 'https://hotel-mgnt-8ffff.firebaseapp.com/firebase-auth?email=$email',
         handleCodeInApp: true,
         androidPackageName: 'com.example.hotelmanag',
         androidInstallApp: true,

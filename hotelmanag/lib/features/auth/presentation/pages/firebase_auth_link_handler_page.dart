@@ -27,8 +27,7 @@ class _FirebaseAuthLinkHandlerPageState extends State<FirebaseAuthLinkHandlerPag
     // Construct the absolute link if GoRouter stripped the host
     String absoluteLink = widget.emailLink;
     if (!absoluteLink.startsWith('http://') && !absoluteLink.startsWith('https://')) {
-      // Prepend our backend's URL or fallback host
-      absoluteLink = 'https://luxestay-backend-production.up.railway.app$absoluteLink';
+      absoluteLink = 'https://hotel-mgnt-8ffff.firebaseapp.com$absoluteLink';
     }
 
     final success = await authProvider.signInWithEmailLink(absoluteLink);
