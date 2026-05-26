@@ -219,11 +219,10 @@ export async function getHotelMapOverview({ hotelStringId, hotelObjectId, date }
     ? await Booking.find({
         room: { $in: roomIds },
         status: { $in: ACTIVE_BOOKING_STATUSES },
-        checkIn:  { $lte: dayEnd },
         checkOut: { $gt:  dayStart },
       })
         .populate("guest", "name email phone")
-        .select("guestSnapshot room checkIn checkOut status totalAmount nights createdAt")
+        .select("guestSnapshot room checkIn checkOut status totalAmount nights createdAt additionalAdults additionalChildren totalGuests")
         .lean()
     : [];
 
@@ -232,11 +231,10 @@ export async function getHotelMapOverview({ hotelStringId, hotelObjectId, date }
     ? await Booking.find({
         roomNumber: { $in: roomNumbers },
         status: { $in: ACTIVE_BOOKING_STATUSES },
-        checkIn:  { $lte: dayEnd },
         checkOut: { $gt:  dayStart },
       })
         .populate("guest", "name email phone")
-        .select("guestSnapshot room roomNumber checkIn checkOut status totalAmount nights createdAt")
+        .select("guestSnapshot room roomNumber checkIn checkOut status totalAmount nights createdAt additionalAdults additionalChildren totalGuests")
         .lean()
     : [];
 
@@ -245,22 +243,43 @@ export async function getHotelMapOverview({ hotelStringId, hotelObjectId, date }
     rooms.map((r) => [r.roomNumber, String(r._id)])
   );
 
-  // Merge both result sets; prefer ObjectId-linked booking
-  const bookingByRoom = new Map();
+  // Group all matching bookings by room id
+  const bookingsMap = new Map();
+
+  const addBookingToMap = (rid, b) => {
+    if (!bookingsMap.has(rid)) {
+      bookingsMap.set(rid, []);
+    }
+    bookingsMap.get(rid).push(b);
+  };
 
   for (const b of bookingsByRef) {
-    const rid = String(b.room);
-    if (!bookingByRoom.has(rid)) bookingByRoom.set(rid, b);
+    addBookingToMap(String(b.room), b);
   }
 
   for (const b of bookingsByNumber) {
-    // Resolve the room._id from roomNumber
     const rid = b.room ? String(b.room) : roomNumberToId.get(b.roomNumber);
-    if (rid && !bookingByRoom.has(rid)) bookingByRoom.set(rid, b);
+    if (rid) {
+      addBookingToMap(rid, b);
+    }
+  }
+
+  // Sort bookings for each room by checkIn ascending
+  for (const [rid, list] of bookingsMap.entries()) {
+    list.sort((a, b) => new Date(a.checkIn).getTime() - new Date(b.checkIn).getTime());
   }
 
   const enrichedRooms = rooms.map((room) => {
     const rid = String(room._id);
+    const roomBookings = bookingsMap.get(rid) || [];
+
+    // Find the primary booking to represent room status
+    // 1. Overlapping booking (checkIn <= dayEnd && checkOut > dayStart) -> Occupied
+    // 2. Next future booking (checkIn > dayEnd) -> Reserved
+    const activeBooking = roomBookings.find(b => new Date(b.checkIn) <= dayEnd);
+    const futureBooking = roomBookings.find(b => new Date(b.checkIn) > dayEnd);
+
+    const bookingToReport = activeBooking || futureBooking || null;
     let op = room.status || "Available";
 
     // Priority 1: Maintenance
@@ -275,11 +294,19 @@ export async function getHotelMapOverview({ hotelStringId, hotelObjectId, date }
     else if (room.status === "Blocked") {
       op = "Blocked";
     }
-    // Priority 4: Occupied (active booking in date range OR room already flagged Booked/Occupied)
-    else if (bookingByRoom.has(rid) || room.status === "Booked" || room.status === "Occupied") {
+    // Priority 4: Occupied / Reserved
+    else if (activeBooking) {
       op = "Occupied";
-    } 
-    // Priority 5: Available
+    }
+    else if (futureBooking) {
+      op = "Reserved";
+    }
+    else if (room.status === "Booked" || room.status === "Occupied") {
+      op = "Occupied";
+    }
+    else if (room.status === "Reserved") {
+      op = "Reserved";
+    }
     else {
       op = "Available";
     }
@@ -287,7 +314,7 @@ export async function getHotelMapOverview({ hotelStringId, hotelObjectId, date }
     return {
       ...room,
       displayStatus: op,
-      activeBooking: bookingByRoom.get(rid) || null,
+      activeBooking: bookingToReport,
     };
   });
 
@@ -298,7 +325,8 @@ export async function getHotelMapOverview({ hotelStringId, hotelObjectId, date }
     total:       enrichedRooms.length,
     available:   enrichedRooms.filter((r) => r.displayStatus === "Available").length,
     occupied:    enrichedRooms.filter((r) => r.displayStatus === "Occupied").length,
-    booked:      enrichedRooms.filter((r) => r.displayStatus === "Occupied").length, // kept for backward compat
+    reserved:    enrichedRooms.filter((r) => r.displayStatus === "Reserved").length,
+    booked:      enrichedRooms.filter((r) => r.displayStatus === "Occupied" || r.displayStatus === "Reserved").length, // kept for backward compat
     maintenance: enrichedRooms.filter((r) => r.displayStatus === "Maintenance").length,
     cleaning:    enrichedRooms.filter((r) => r.displayStatus === "Cleaning").length,
     blocked:     enrichedRooms.filter((r) => r.displayStatus === "Blocked").length,

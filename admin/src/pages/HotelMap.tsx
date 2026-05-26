@@ -25,6 +25,7 @@ type Stats = {
   total: number;
   available: number;
   occupied: number;
+  reserved: number;
   maintenance: number;
   cleaning: number;
   blocked: number;
@@ -50,7 +51,7 @@ export default function HotelMap() {
   const [selectedHotel, setSelectedHotel] = useState<string>("");
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [rooms, setRooms] = useState<Room[]>([]);
-  const [stats, setStats] = useState<Stats>({ total: 0, available: 0, occupied: 0, maintenance: 0, cleaning: 0, blocked: 0, occupancyPct: 0 });
+  const [stats, setStats] = useState<Stats>({ total: 0, available: 0, occupied: 0, reserved: 0, maintenance: 0, cleaning: 0, blocked: 0, occupancyPct: 0 });
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("All");
@@ -79,10 +80,10 @@ export default function HotelMap() {
       const res: any = await getHotelMapOverview({ hotelStringId: selectedHotel, date });
       const data = res?.data || {};
       setRooms(data.rooms || []);
-      setStats(data.stats || { total: 0, available: 0, occupied: 0, maintenance: 0, cleaning: 0, blocked: 0, occupancyPct: 0 });
+      setStats(data.stats || { total: 0, available: 0, occupied: 0, reserved: 0, maintenance: 0, cleaning: 0, blocked: 0, occupancyPct: 0 });
     } catch {
       setRooms([]);
-      setStats({ total: 0, available: 0, occupied: 0, maintenance: 0, cleaning: 0, blocked: 0, occupancyPct: 0 });
+      setStats({ total: 0, available: 0, occupied: 0, reserved: 0, maintenance: 0, cleaning: 0, blocked: 0, occupancyPct: 0 });
     }
     setLoading(false);
   }, [date, selectedHotel]);
@@ -236,12 +237,13 @@ export default function HotelMap() {
           </div>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
           {[
             { label: "Available", value: stats.available, color: "bg-emerald-400" },
+            { label: "Reserved", value: stats.reserved, color: "bg-yellow-400" },
             { label: "Occupied", value: stats.occupied, color: "bg-red-400" },
-            { label: "Maintenance", value: stats.maintenance, color: "bg-amber-400" },
             { label: "Cleaning", value: stats.cleaning, color: "bg-sky-400" },
+            { label: "Maintenance", value: stats.maintenance, color: "bg-gray-400" },
             { label: "Blocked", value: stats.blocked, color: "bg-slate-400" },
           ].map((item) => (
             <div key={item.label} className="rounded-2xl border border-border bg-white p-4 shadow-sm">

@@ -65,7 +65,7 @@ export default function FloorMap() {
   const [mapDate, setMapDate]     = useState(() => new Date().toISOString().slice(0, 10));
   const [rooms, setRooms]       = useState<Room[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
-  const [mapStats, setMapStats] = useState({ total: 0, available: 0, booked: 0, maintenance: 0, cleaning: 0, blocked: 0, occupancyPct: 0 });
+  const [mapStats, setMapStats] = useState({ total: 0, available: 0, booked: 0, reserved: 0, maintenance: 0, cleaning: 0, blocked: 0, occupancyPct: 0 });
   const [loading, setLoading]   = useState(true);
   const [selected, setSelected] = useState<Room | null>(null);
   const [filterFloor, setFilterFloor]   = useState("All");
@@ -90,8 +90,8 @@ export default function FloorMap() {
       const overview = res?.data || {};
       setRooms(overview.rooms || []);
       setBookings(overview.bookings || []);
-      setMapStats(overview.stats || { total: 0, available: 0, booked: 0, maintenance: 0, cleaning: 0, blocked: 0, occupancyPct: 0 });
-    } catch { setRooms([]); setBookings([]); }
+      setMapStats(overview.stats || { total: 0, available: 0, booked: 0, reserved: 0, maintenance: 0, cleaning: 0, blocked: 0, occupancyPct: 0 });
+    } catch { setRooms([]); setBookings([]); setMapStats({ total: 0, available: 0, booked: 0, reserved: 0, maintenance: 0, cleaning: 0, blocked: 0, occupancyPct: 0 }); }
     setLoading(false);
   }, [mapDate]);
 
@@ -175,6 +175,8 @@ export default function FloorMap() {
 
   const stats = {
     available:   mapStats.available,
+    occupied:    (mapStats as any).occupied || 0,
+    reserved:    (mapStats as any).reserved || 0,
     booked:      mapStats.booked,
     maintenance: mapStats.maintenance,
     cleaning:    mapStats.cleaning,
@@ -208,13 +210,14 @@ export default function FloorMap() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-5">
+      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3 mb-5">
         {[
           { label: "Available",   count: stats.available,   dot: "bg-emerald-400" },
-          { label: "Occupied",    count: stats.booked,      dot: "bg-red-400" },
-          { label: "Maintenance", count: stats.maintenance, dot: "bg-amber-400" },
+          { label: "Reserved",    count: stats.reserved,    dot: "bg-yellow-400" },
+          { label: "Occupied",    count: stats.occupied,    dot: "bg-red-400" },
           { label: "Cleaning",    count: stats.cleaning,    dot: "bg-sky-400" },
-          { label: "Blocked",     count: stats.blocked,     dot: "bg-slate-400" },
+          { label: "Maintenance", count: stats.maintenance, dot: "bg-gray-400" },
+          { label: "Blocked",     count: stats.blocked,     dot: "bg-black" },
         ].map(item => (
           <div key={item.label} className="glass-card rounded-xl p-3 flex items-center gap-3">
             <span className={`w-3 h-3 rounded-full shrink-0 ${item.dot}`} />
