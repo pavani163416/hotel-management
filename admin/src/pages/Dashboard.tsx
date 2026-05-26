@@ -22,6 +22,7 @@ export default function Dashboard() {
   const { bookings, addBooking, loading } = useBookings();
   const { hotels } = useHotels();
   const [stats, setStats] = useState<any>(null);
+  const [priceRequests, setPriceRequests] = useState<any[]>([]);
   const [showNewBooking, setShowNewBooking] = useState(false);
   const [actionBooking, setActionBooking] = useState<any>(null);
   const [nbSubmitted, setNbSubmitted] = useState(false);
@@ -42,6 +43,10 @@ export default function Dashboard() {
         // Backend unreachable — derive from loaded bookings (may still be loading)
         setStats(null);
       });
+
+    getAdminPriceRequests({ status: "pending" })
+      .then((res: any) => setPriceRequests(res?.data?.slice(0, 5) || []))
+      .catch(() => setPriceRequests([]));
   }, []);
 
   // ── Compute live revenue chart data from bookings ──
@@ -301,6 +306,56 @@ export default function Dashboard() {
                     </td>
                   </tr>
                 ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Recent Price Requests */}
+        <div className="bg-white rounded-xl border border-border shadow-card mt-6">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+            <h3 className="font-semibold text-text-primary">Global Recent Price Requests</h3>
+            <button onClick={() => navigate("/price-requests")}
+              className="text-xs text-primary font-semibold hover:underline">
+              View All
+            </button>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-border">
+                  {["Room", "Hotel", "Requested By", "Current", "Requested", "Status"].map((h) => (
+                    <th key={h} className="text-left text-xs font-semibold text-muted uppercase tracking-wider px-5 py-3">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {priceRequests.length > 0 ? priceRequests.map((req, i) => (
+                  <tr key={i} className="border-b border-border last:border-0 hover:bg-surface-2 transition-colors">
+                    <td className="px-5 py-3.5">
+                      <p className="text-sm font-semibold text-text-primary">#{req.roomNumber}</p>
+                    </td>
+                    <td className="px-5 py-3.5 text-sm text-text-secondary">{req.hotelName || "—"}</td>
+                    <td className="px-5 py-3.5 text-sm text-text-secondary">{req.createdByName || req.createdBy?.name || "—"}</td>
+                    <td className="px-5 py-3.5 text-sm font-semibold text-text-primary">${req.currentPrice.toLocaleString()}</td>
+                    <td className="px-5 py-3.5 text-sm font-bold text-text-primary">${req.requestedPrice.toLocaleString()}</td>
+                    <td className="px-5 py-3.5">
+                      <span className={`text-xs font-semibold px-2.5 py-1 rounded-full capitalize ${
+                        req.status === "pending" ? "bg-warning-light text-warning" : 
+                        req.status === "approved" ? "bg-success-light text-success" : 
+                        "bg-danger-light text-danger"
+                      }`}>
+                        {req.status}
+                      </span>
+                    </td>
+                  </tr>
+                )) : (
+                  <tr>
+                    <td colSpan={6} className="px-5 py-6 text-center text-muted text-sm">
+                      No pending price requests.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
