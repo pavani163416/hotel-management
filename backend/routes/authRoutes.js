@@ -347,12 +347,53 @@ router.post("/register", authLimiter, validateRegisterPayload, async (req, res, 
     const normalEmail = email.toLowerCase().trim();
 
     // Check if user account already exists
-    const existingUser = await User.findOne({ email: normalEmail });
-    if (existingUser) {
-      return res.status(409).json({
-        success: false,
-        message: "An account with this email already exists. Please sign in.",
-      });
+    let user = await User.findOne({ email: normalEmail });
+    if (user) {
+      if (user.isVerified) {
+        return res.status(409).json({
+          success: false,
+          message: "An account with this email already exists. Please sign in.",
+        });
+      } else {
+        // User exists but unverified. Update password and resend OTP.
+        user.passwordHash = await bcrypt.hash(password, 12);
+        user.name = name.trim();
+        user.phone = phone.trim();
+        user.city = city?.trim() || "";
+        user.verificationAttempts = (user.verificationAttempts || 0) + 1;
+        user.verificationSentAt = new Date();
+        await user.save();
+        
+        // Update Guest record
+        if (user.guestId) {
+          await Guest.findByIdAndUpdate(user.guestId, {
+            name: name.trim(),
+            phone: phone.trim(),
+            city: city?.trim() || "",
+          });
+        }
+
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        await cacheSet(`otp_${normalEmail}`, otp, 300);
+        await cacheSet(`cooldown_${normalEmail}`, "true", 60);
+
+        const otpEmailPayload = { to: normalEmail, name: user.name, otp };
+        const queued = await enqueueEmailJob("otpEmail", otpEmailPayload);
+        if (!queued) {
+          await sendOtpEmail(otpEmailPayload).catch((err) => {
+            logger.error("Failed to resend registration OTP email directly", { email: normalEmail, error: err.message });
+          });
+        }
+
+        return res.status(201).json({
+          success: true,
+          message: "Your account is pending verification. A verification code has been sent to your email.",
+          data: {
+            email: user.email,
+            isVerified: false,
+          },
+        });
+      }
     }
 
     const passwordHash = await bcrypt.hash(password, 12);
@@ -380,6 +421,8 @@ router.post("/register", authLimiter, validateRegisterPayload, async (req, res, 
 
     // Link user → guest
     user.guestId = guest._id;
+    user.verificationAttempts = 1;
+    user.verificationSentAt = new Date();
     await user.save();
 
     // ── Generate 6-digit OTP code ─────────────────────
@@ -535,20 +578,30 @@ router.post("/login", loginLimiter, validateLoginPayload, async (req, res, next)
 
     // Check email verification status
     if (!user.isVerified) {
-      const otp = Math.floor(100000 + Math.random() * 900000).toString();
-      await cacheSet(`otp_${normalEmail}`, otp, 300);
+      // Avoid spamming resends on every single login attempt, use cooldown
+      const cooldown = await cacheGet(`cooldown_${normalEmail}`);
+      if (!cooldown) {
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        await cacheSet(`otp_${normalEmail}`, otp, 300);
+        await cacheSet(`cooldown_${normalEmail}`, "true", 60);
+  
+        user.verificationAttempts = (user.verificationAttempts || 0) + 1;
+        user.verificationSentAt = new Date();
+        await user.save();
 
-      const otpEmailPayload = { to: normalEmail, name: user.name, otp };
-      const queued = await enqueueEmailJob("otpEmail", otpEmailPayload);
-      if (!queued) {
-        await sendOtpEmail(otpEmailPayload).catch((err) => {
-          logger.error("Failed to send login OTP email directly", { email: normalEmail, error: err.message });
-        });
+        const otpEmailPayload = { to: normalEmail, name: user.name, otp };
+        const queued = await enqueueEmailJob("otpEmail", otpEmailPayload);
+        if (!queued) {
+          await sendOtpEmail(otpEmailPayload).catch((err) => {
+            logger.error("Failed to send login OTP email directly", { email: normalEmail, error: err.message });
+          });
+        }
       }
 
       return res.status(403).json({
         success: false,
-        message: "Your email address is not verified. A verification code has been sent to your email.",
+        requiresVerification: true,
+        message: "Your account is pending verification. Please verify your email to continue.",
         code: "UNVERIFIED_EMAIL",
         email: normalEmail
       });
@@ -1088,6 +1141,7 @@ router.post("/verify-otp", otpRateLimiter, async (req, res, next) => {
     }
 
     user.isVerified = true;
+    user.accountStatus = "active";
     await user.save();
 
     // Delete OTP

@@ -39,6 +39,7 @@ import { roomNames, setNotificationIo } from "./utils/notificationService.js";
 import logger           from "./utils/logger.js";
 import swaggerUi        from "swagger-ui-express";
 import swaggerDocument  from "./swagger.js";
+import { initCleanupJobs } from "./cron/cleanupJobs.js";
 
 // ── Validate required env vars on startup ─────────────────
 // ADMIN_EMAIL and ADMIN_PASSWORD are now stored in the controller DB.
@@ -56,6 +57,9 @@ await initializeRedis();
 // ── Connect to both databases ─────────────────────────────
 connectDB();
 connectAdminDB();
+
+// ── Initialize scheduled cron jobs ─────────────────────────
+initCleanupJobs();
 
 // ── Startup: reset rooms whose booking checkout has passed ──
 // Runs once on server start so stale "Booked" rooms are freed immediately.

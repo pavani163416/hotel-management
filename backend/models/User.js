@@ -87,6 +87,22 @@ const userSchema = new mongoose.Schema(
       default: false,
     },
 
+    accountStatus: {
+      type: String,
+      enum: ["pending_verification", "active", "suspended", "deleted"],
+      default: "pending_verification"
+    },
+
+    verificationSentAt: {
+      type: Date,
+      default: null,
+    },
+
+    verificationAttempts: {
+      type: Number,
+      default: 0,
+    },
+
     role: {
       type:    String,
       enum:    ["customer", "manager", "admin"],

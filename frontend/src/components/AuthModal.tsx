@@ -40,11 +40,24 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
     };
   }, [resendCooldown]);
 
-  useEffect(() => { if (isOpen) { setMode(defaultMode); setError(""); } }, [isOpen, defaultMode]);
+  useEffect(() => {
+    if (isOpen) {
+      const pendingEmail = localStorage.getItem("luxe_pending_email");
+      if (pendingEmail) {
+        setMode("verify_email_otp");
+        setEmail(pendingEmail);
+        setOtpMessage("Your account is pending verification. Please verify your email to continue.");
+      } else {
+        setMode(defaultMode);
+      }
+      setError("");
+    }
+  }, [isOpen, defaultMode]);
 
   const resetForm = () => {
     setEmail(""); setPassword(""); setName(""); setPhone(""); setCity(""); setError("");
     setOtpSent(false); setVerificationCode(""); setOtpMessage(""); setResendCooldown(0);
+    // Don't clear localStorage pending email here, let explicit actions do it
   };
 
   const handleOpenChange = (open: boolean) => { if (!open) { onClose(); resetForm(); } };
@@ -60,12 +73,17 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
       setUser({ name: d.name, email: d.email, phone: d.phone || "", city: d.city || "" });
       onClose(); resetForm();
     } catch (err: any) {
-      if (err.code === "UNVERIFIED_EMAIL") {
+      const respData = err.response?.data;
+      if (respData?.requiresVerification || respData?.code === "UNVERIFIED_EMAIL" || err.code === "UNVERIFIED_EMAIL") {
+        const pendingEmail = respData?.email || email;
+        localStorage.setItem("luxe_pending_email", pendingEmail);
+        setEmail(pendingEmail);
         setMode("verify_email_otp");
-        setOtpMessage("Your email is not verified yet. We have sent a 6-digit verification code to " + email);
+        setOtpMessage(respData?.message || "Your account is pending verification. A verification code has been sent to your email.");
         setError("");
+        setResendCooldown(60); // Trigger cooldown on auto-resend
       } else {
-        setError(err.message || "Sign in failed. Please try again.");
+        setError(respData?.message || err.message || "Sign in failed. Please try again.");
       }
     } finally {
       setLoading(false);
@@ -81,8 +99,11 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
       const res: any = await api.post("/auth/register", { name, email, password, phone, city });
       const d = res.data?.data ?? res.data;
       if (d.isVerified === false) {
+        localStorage.setItem("luxe_pending_email", d.email || email);
+        setEmail(d.email || email);
         setMode("verify_email_otp");
-        setOtpMessage("Registration successful! A 6-digit verification code has been sent to " + email);
+        setOtpMessage(res.data?.message || "Registration successful! A verification code has been sent to your email.");
+        setResendCooldown(60);
       } else {
         localStorage.setItem("luxe_customer_token", d.token);
         setUser({ name: d.name, email: d.email, phone: d.phone || "", city: d.city || "" });
@@ -96,6 +117,7 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
   };
 
   const finishAuth = (d: any) => {
+    localStorage.removeItem("luxe_pending_email");
     localStorage.setItem("luxe_customer_token", d.token);
     setUser({ name: d.name, email: d.email, phone: d.phone || "", city: d.city || "" });
     onClose(); resetForm();
@@ -321,7 +343,7 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
             <AuthOptions />
             <p className="text-center text-sm text-muted-foreground mt-4">
               Already have an account?{" "}
-              <button type="button" onClick={() => { setMode("signin"); resetForm(); }}
+              <button type="button" onClick={() => { localStorage.removeItem("luxe_pending_email"); setMode("signin"); resetForm(); }}
                 className="text-primary hover:underline font-semibold">Sign In</button>
             </p>
           </form>
@@ -350,7 +372,7 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
             </button>
             <p className="text-center text-sm text-muted-foreground mt-4">
               Prefer email?{" "}
-              <button type="button" onClick={() => { setMode("signin"); resetForm(); }}
+              <button type="button" onClick={() => { localStorage.removeItem("luxe_pending_email"); setMode("signin"); resetForm(); }}
                 className="text-primary hover:underline font-semibold">Sign In</button>
             </p>
           </div>
@@ -394,6 +416,7 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
               <button
                 type="button"
                 onClick={() => {
+                  localStorage.removeItem("luxe_pending_email");
                   setMode("signin");
                   resetForm();
                 }}
