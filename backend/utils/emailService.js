@@ -31,6 +31,10 @@ const FROM = process.env.RESEND_FROM_EMAIL || "LuxeStay <onboarding@resend.dev>"
  * In production with a verified domain, remove RESEND_TEST_EMAIL and emails go to real recipients.
  */
 const resolveRecipient = (to) => {
+  if (process.env.RESEND_TEST_EMAIL) {
+    console.log(`📧 [Email] Redirecting to test email: ${process.env.RESEND_TEST_EMAIL}`);
+    return [process.env.RESEND_TEST_EMAIL];
+  }
   return [to];
 };
 
