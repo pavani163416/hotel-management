@@ -777,7 +777,14 @@ backgroundImage: (profileImage != null && profileImage.isNotEmpty)
                                       children: [
                                         Icon(LucideIcons.mapPin, size: 12, color: Colors.grey[400]),
                                         const SizedBox(width: 4),
-                                        Text(item.location, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                                        Expanded(
+                                          child: Text(
+                                            item.location,
+                                            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
                                       ],
                                     ),
                                     const SizedBox(height: 12),
