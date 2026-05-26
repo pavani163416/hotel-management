@@ -229,14 +229,18 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
           }
         },
       });
-      (window as any).google.accounts.id.prompt();
+      (window as any).google.accounts.id.prompt((notification: any) => {
+        if (notification.isNotDisplayed() || notification.isSkippedMoment() || notification.isDismissedMoment()) {
+          setLoading(false);
+        }
+      });
     } catch (err: any) {
       setError(err.message || "Google sign-in failed.");
       setLoading(false);
     }
   };
 
-  const AuthOptions = () => (
+  const renderAuthOptions = () => (
     <>
       <div className="relative my-5">
         <div className="absolute inset-0 flex items-center">
@@ -294,7 +298,7 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
               className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-3 rounded-xl font-semibold flex items-center justify-center transition-base mt-2">
               {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Sign In"}
             </button>
-            <AuthOptions />
+            {renderAuthOptions()}
             <p className="text-center text-sm text-muted-foreground mt-4">
               Don't have an account?{" "}
               <button type="button" onClick={() => { setMode("signup"); resetForm(); }}
@@ -340,7 +344,7 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
               className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-3 rounded-xl font-semibold flex items-center justify-center transition-base mt-2">
               {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Create Account"}
             </button>
-            <AuthOptions />
+            {renderAuthOptions()}
             <p className="text-center text-sm text-muted-foreground mt-4">
               Already have an account?{" "}
               <button type="button" onClick={() => { localStorage.removeItem("luxe_pending_email"); setMode("signin"); resetForm(); }}
