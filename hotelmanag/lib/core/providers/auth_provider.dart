@@ -558,4 +558,113 @@ class AuthProvider extends ChangeNotifier {
       return false;
     }
   }
+
+  Future<void> verifyPhoneNumber(
+    String phoneNumber, {
+    required Function(String verificationId) onCodeSent,
+    required Function(String error) onError,
+  }) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      await FirebaseAuth.instance.verifyPhoneNumber(
+        phoneNumber: phoneNumber,
+        verificationCompleted: (PhoneAuthCredential credential) async {
+          final userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
+          final firebaseUser = userCredential.user;
+          if (firebaseUser != null) {
+            final idToken = await firebaseUser.getIdToken() ?? '';
+            final result = await _authRepository.signInWithFirebase(
+              idToken,
+              phone: phoneNumber,
+            );
+            result.fold(
+              (failure) {
+                _error = failure.message;
+                _isLoading = false;
+                notifyListeners();
+                onError(failure.message);
+              },
+              (data) async {
+                final (user, token) = data;
+                _user = user;
+                await _saveAuthData(user, token);
+                _isLoading = false;
+                notifyListeners();
+              },
+            );
+          }
+        },
+        verificationFailed: (FirebaseAuthException e) {
+          _error = e.message;
+          _isLoading = false;
+          notifyListeners();
+          onError(e.message ?? 'Verification failed');
+        },
+        codeSent: (String verificationId, int? resendToken) {
+          _isLoading = false;
+          notifyListeners();
+          onCodeSent(verificationId);
+        },
+        codeAutoRetrievalTimeout: (String verificationId) {
+          _isLoading = false;
+          notifyListeners();
+        },
+      );
+    } catch (e) {
+      _error = e.toString();
+      _isLoading = false;
+      notifyListeners();
+      onError(e.toString());
+    }
+  }
+
+  Future<bool> signInWithPhoneOtp(String smsCode, {required String verificationId, required String phoneNumber}) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final credential = PhoneAuthProvider.credential(
+        verificationId: verificationId,
+        smsCode: smsCode,
+      );
+
+      final userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
+      final firebaseUser = userCredential.user;
+      if (firebaseUser == null) {
+        throw Exception("Firebase phone sign-in failed.");
+      }
+
+      final idToken = await firebaseUser.getIdToken() ?? '';
+      final result = await _authRepository.signInWithFirebase(
+        idToken,
+        phone: phoneNumber,
+      );
+
+      return result.fold(
+        (failure) {
+          _error = failure.message;
+          _isLoading = false;
+          notifyListeners();
+          return false;
+        },
+        (data) async {
+          final (user, token) = data;
+          _user = user;
+          await _saveAuthData(user, token);
+          _isLoading = false;
+          notifyListeners();
+          return true;
+        },
+      );
+    } catch (e) {
+      _error = e.toString();
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
 }

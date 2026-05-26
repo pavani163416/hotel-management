@@ -6,6 +6,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/custom_text_field.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/providers/booking_provider.dart';
+import '../widgets/phone_auth_bottom_sheet.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -207,6 +208,22 @@ class _RegisterPageState extends State<RegisterPage> {
                   onTap: () => context.go('/login'),
                   child: const Text(
                     'Sign In',
+                    style: TextStyle(color: AppTheme.accentColor, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text('Or ', style: TextStyle(color: AppTheme.primaryColor)),
+                GestureDetector(
+                  onTap: () {
+                    PhoneAuthBottomSheet.show(context);
+                  },
+                  child: const Text(
+                    'Sign In with Phone Number',
                     style: TextStyle(color: AppTheme.accentColor, fontWeight: FontWeight.bold),
                   ),
                 ),

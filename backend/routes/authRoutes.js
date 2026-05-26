@@ -965,8 +965,19 @@ router.post("/firebase", async (req, res, next) => {
     if (!idToken) return res.status(400).json({ success: false, message: "ID Token is required" });
 
     const payload = await verifyFirebaseIdToken(idToken);
-    const email = payload.email;
-    const name = payload.name || email.split("@")[0];
+    const phone = payload.phone_number || req.body.phone || "";
+    let email = payload.email || req.body.email || "";
+
+    if (!email) {
+      if (phone) {
+        // Construct a virtual unique email for phone authentication
+        email = `phone_${phone.replace(/[^0-9]/g, "")}@phone.luxestay.com`;
+      } else {
+        return res.status(400).json({ success: false, message: "Firebase token must contain email or phone number" });
+      }
+    }
+
+    const name = payload.name || req.body.name || (phone ? `Guest ${phone}` : email.split("@")[0]);
     const picture = payload.picture || "";
 
     let user = await User.findOne({ email });
@@ -976,7 +987,7 @@ router.post("/firebase", async (req, res, next) => {
         name,
         email,
         passwordHash: await bcrypt.hash(Math.random().toString(36), 10),
-        phone: "",
+        phone: phone,
         profileImage: picture,
         isVerified: true,
       });
@@ -984,16 +995,26 @@ router.post("/firebase", async (req, res, next) => {
       const guest = await Guest.create({
         name,
         email,
-        phone: "",
+        phone: phone,
         profileImage: picture,
       });
 
       user.guestId = guest._id;
       await user.save();
-      logger.info({ email, name }, "New Firebase user registered");
-    } else if (!user.isVerified) {
-      user.isVerified = true;
-      await user.save();
+      logger.info({ email, name, phone }, "New Firebase user registered");
+    } else {
+      let updated = false;
+      if (!user.isVerified) {
+        user.isVerified = true;
+        updated = true;
+      }
+      if (phone && !user.phone) {
+        user.phone = phone;
+        updated = true;
+      }
+      if (updated) {
+        await user.save();
+      }
     }
 
     const token = jwt.sign(

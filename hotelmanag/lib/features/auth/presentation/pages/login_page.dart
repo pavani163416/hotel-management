@@ -6,6 +6,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/custom_text_field.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/providers/booking_provider.dart';
+import '../widgets/phone_auth_bottom_sheet.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -163,22 +164,34 @@ class _LoginPageState extends State<LoginPage> {
             ),
             const SizedBox(height: 32),
             Consumer<AuthProvider>(
-              builder: (context, auth, _) => _buildSocialButton(
-                'Continue with Google',
-                LucideIcons.chrome,
-                isLoading: auth.isLoading,
-                onTap: () async {
-                  final success = await auth.signInWithGoogle();
-                  if (success && context.mounted) {
-                    // Fetch user-specific bookings after social sign-in
-                    context.read<BookingProvider>().fetchMyBookings();
-                    context.go('/');
-                  } else if (auth.error != null && context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(auth.error!)),
-                    );
-                  }
-                },
+              builder: (context, auth, _) => Column(
+                children: [
+                  _buildSocialButton(
+                    'Continue with Google',
+                    LucideIcons.chrome,
+                    isLoading: auth.isLoading,
+                    onTap: () async {
+                      final success = await auth.signInWithGoogle();
+                      if (success && context.mounted) {
+                        context.read<BookingProvider>().fetchMyBookings();
+                        context.go('/');
+                      } else if (auth.error != null && context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(auth.error!)),
+                        );
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  _buildSocialButton(
+                    'Continue with Phone Number',
+                    LucideIcons.phone,
+                    isLoading: auth.isLoading,
+                    onTap: () {
+                      PhoneAuthBottomSheet.show(context);
+                    },
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: 32),
