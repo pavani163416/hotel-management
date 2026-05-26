@@ -580,7 +580,7 @@ export const getAllBookings = async (req, res, next) => {
     const data = bookings.map((b) => ({
       ...b.toJSON(),
       hotelName: b.hotelName || resolveHotelName(b.room?.roomNumber || "") || "LuxeStay",
-      hotelImage: b.hotelImage || b.room?.images?.[0] || b.hotelId?.image || "",
+      hotelImage: b.hotelId?.image || b.hotelImage || b.room?.images?.[0] || "",
     }));
 
     res.status(200).json({
@@ -626,7 +626,7 @@ export const getBookingById = async (req, res, next) => {
     }
 
     const response = booking.toJSON();
-    response.hotelImage = response.hotelImage || booking.room?.images?.[0] || booking.hotelId?.image || "";
+    response.hotelImage = booking.hotelId?.image || response.hotelImage || booking.room?.images?.[0] || "";
 
     // Fetch additional guests stored in the AdditionalGuest collection
     const additionalGuestRecord = await AdditionalGuest.findOne({ bookingId: booking._id });

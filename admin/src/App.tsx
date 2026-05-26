@@ -23,12 +23,9 @@ import Revenue    from "@/pages/Revenue";
 import Insights   from "@/pages/Insights";
 import Managers   from "@/pages/Managers";
 import Profile    from "@/pages/Profile";
-import PriceRequests from "@/pages/PriceRequests";
 import Coupons       from "@/pages/Coupons";
 import TopDeals      from "@/pages/TopDeals";
 import Notifications from "@/pages/Notifications";
-import PublicSupportList from "@/pages/Support/PublicSupportList";
-import PublicSupportDetails from "@/pages/Support/PublicSupportDetails";
 
 // ── Manager pages (role === "Manager") ────────────────────
 import MDashboard     from "@/pages/manager/MDashboard";
@@ -85,13 +82,10 @@ export default function App() {
             <Route path="/analytics" element={<Analytics />} />
             <Route path="/insights" element={<Insights />} />
             <Route path="/managers" element={<Managers />} />
-            <Route path="/price-requests" element={<PriceRequests />} />
             <Route path="/coupons" element={<Coupons />} />
             <Route path="/top-deals" element={<TopDeals />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/notifications" element={<Notifications />} />
-            <Route path="/public-support" element={<PublicSupportList />} />
-            <Route path="/public-support/:id" element={<PublicSupportDetails />} />
 
             <Route path="/m/dashboard" element={<MDashboard />} />
             <Route path="/m/hotel-map" element={<MFloorMap />} />

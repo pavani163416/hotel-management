@@ -17,13 +17,11 @@ const links = [
   { to: "/analytics",     icon: BarChart3,       label: "Analytics" },
   { to: "/insights",      icon: Lightbulb,       label: "Insights" },
   { to: "/managers",      icon: UserCog,         label: "Managers" },
-  { to: "/price-requests",icon: BadgeDollarSign, label: "Price Requests" },
   { to: "/coupons",       icon: Tag,             label: "Coupons & Offers" },
   { to: "/top-deals",    icon: Flame,           label: "Top Deals" },
-  { to: "/public-support", icon: LifeBuoy,      label: "Support Requests" },
 ];
 
-const topLevel = new Set(["/dashboard", "/hotels", "/rooms", "/hotel-map", "/bookings", "/payments", "/guests", "/revenue", "/analytics", "/insights", "/managers", "/price-requests", "/coupons", "/top-deals", "/public-support"]);
+const topLevel = new Set(["/dashboard", "/hotels", "/rooms", "/hotel-map", "/bookings", "/payments", "/guests", "/revenue", "/analytics", "/insights", "/managers", "/coupons", "/top-deals"]);
 
 export default function Sidebar() {
   const { admin } = useAdmin();
