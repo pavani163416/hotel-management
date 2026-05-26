@@ -31,19 +31,6 @@ const FROM = process.env.RESEND_FROM_EMAIL || "LuxeStay <onboarding@resend.dev>"
  * In production with a verified domain, remove RESEND_TEST_EMAIL and emails go to real recipients.
  */
 const resolveRecipient = (to) => {
-  const override = process.env.RESEND_TEST_EMAIL;
-  if (override && override.trim()) {
-    console.log(`📧 [Email] Dev override: redirecting email from ${to} → ${override.trim()}`);
-    return [override.trim()];
-  }
-  
-  // Resend free tier check: if using the unverified onboarding@resend.dev sender, 
-  // we must send to the verified owner account to avoid API rejection.
-  if (FROM.includes("onboarding@resend.dev")) {
-    console.log(`📧 [Email] Free tier fallback: redirecting from ${to} → addepallipavani4@gmail.com`);
-    return ["addepallipavani4@gmail.com"];
-  }
-  
   return [to];
 };
 

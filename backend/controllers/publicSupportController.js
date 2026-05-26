@@ -1,6 +1,5 @@
 import PublicSupportRequest from "../models/PublicSupportRequest.js";
 import Notification from "../models/Notification.js";
-import { getIo } from "../utils/notificationService.js";
 import { Resend } from "resend";
 
 // Helper for Cloudinary stream upload
@@ -87,7 +86,7 @@ export const createPublicTicket = async (req, res) => {
     });
 
     // Emit Socket.IO event to admin room
-    const io = getIo();
+    const io = req.app.get("io");
     if (io) {
       io.to("role:admin").to("role:Super Admin").emit("support:new-public-ticket", {
         ticketId,
@@ -194,7 +193,7 @@ export const updateTicketStatus = async (req, res) => {
     }
 
     // Emit event if needed for realtime dashboard updates
-    const io = getIo();
+    const io = req.app.get("io");
     if (io) {
       io.to("role:admin").to("role:Super Admin").emit("support:public-ticket-updated", ticket);
     }
