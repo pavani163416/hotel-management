@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_auth_platform_interface/firebase_auth_platform_interface.dart';
 import 'dart:convert';
 import 'dart:js' as js;
 import '../../features/auth/domain/repositories/auth_repository.dart';
@@ -585,9 +586,9 @@ class AuthProvider extends ChangeNotifier {
         ]);
 
         final verifier = RecaptchaVerifier(
-          auth: FirebaseAuth.instance,
+          auth: FirebaseAuthPlatform.instance,
           container: 'recaptcha-container',
-          size: RecaptchaVerifierSize.invisible,
+          size: RecaptchaVerifierSize.normal,
         );
 
         final confirmationResult = await FirebaseAuth.instance.signInWithPhoneNumber(
