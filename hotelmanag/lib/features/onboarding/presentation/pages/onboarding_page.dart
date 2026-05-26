@@ -134,13 +134,13 @@ class _OnboardingPageState extends State<OnboardingPage> {
         Align(
           alignment: Alignment.bottomCenter,
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(24, 0, 24, 60),
+            padding: const EdgeInsets.fromLTRB(24, 0, 24, 30),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(24),
               child: BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
                 child: Container(
-                  padding: const EdgeInsets.all(32),
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.8),
                     borderRadius: BorderRadius.circular(24),
@@ -159,27 +159,27 @@ class _OnboardingPageState extends State<OnboardingPage> {
                           letterSpacing: 2,
                         ),
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 8),
                       Text(
                         data.title,
                         style: const TextStyle(
-                          fontSize: 42,
+                          fontSize: 32,
                           fontWeight: FontWeight.bold,
                           color: Color(0xFF1A1A1A),
                           fontFamily: 'Serif',
-                          height: 1.1,
+                          height: 1.2,
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 12),
                       Text(
                         data.description,
                         style: TextStyle(
                           fontSize: 14,
                           color: Colors.black.withOpacity(0.6),
-                          height: 1.6,
+                          height: 1.5,
                         ),
                       ),
-                      const SizedBox(height: 40),
+                      const SizedBox(height: 24),
                       Row(
                         children: [
                           _buildPageIndicator(),
@@ -229,7 +229,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                         ],
                       ),
                       if (isLast) ...[
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 16),
                         Center(
                           child: Text(
                             'Experience the art of living well.',

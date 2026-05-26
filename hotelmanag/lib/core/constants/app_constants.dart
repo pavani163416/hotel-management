@@ -19,12 +19,15 @@ class AppConstants {
     // Always use production in release mode
     if (!kDebugMode) return _productionApiUrl;
 
-    // In debug mode: web & Android emulator can reach localhost
+    // In debug mode: web can reach localhost directly
     if (kIsWeb) return _localApiUrl;
 
-    // Physical devices cannot reach the dev machine via "localhost" —
-    // use the production URL so the app works without extra setup.
-    return _productionApiUrl;
+    if (defaultTargetPlatform == TargetPlatform.windows || defaultTargetPlatform == TargetPlatform.macOS) {
+      return 'http://localhost:5000/api/';
+    }
+
+    // Physical Android device uses the host machine's LAN IP
+    return 'http://192.168.1.60:5000/api/';
   }
   
   // Storage Keys

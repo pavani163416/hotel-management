@@ -784,13 +784,22 @@ backgroundImage: (profileImage != null && profileImage.isNotEmpty)
                                     Row(
                                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                       children: [
-                                        Text('\$${item.pricePerNight}/night', style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+                                        Expanded(
+                                          child: Text(
+                                            '\$${item.pricePerNight}/night', 
+                                            style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 4),
                                         Row(
+                                          mainAxisSize: MainAxisSize.min,
                                           children: [
                                             const Icon(LucideIcons.star, size: 12, color: AppTheme.accentColor, fill: 1),
                                             const SizedBox(width: 4),
                                             Text(item.rating.toString(), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                                            const SizedBox(width: 12),
+                                            const SizedBox(width: 8),
                                             Consumer<FavoritesProvider>(
                                               builder: (context, provider, child) {
                                                 final isFav = provider.isFavorite(item);

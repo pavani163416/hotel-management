@@ -10,7 +10,6 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/main_layout.dart';
 import '../../../../core/widgets/custom_text_field.dart';
 import '../../../../core/providers/auth_provider.dart';
-import '../../../../core/providers/theme_provider.dart';
 import '../../../../core/utils/performance_utils.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -35,7 +34,6 @@ class _ProfilePageState extends State<ProfilePage> {
   late TextEditingController _phoneController;
 
   String _currentLanguage = 'English (US)';
-  String _currentTheme = 'System Default';
 
   bool _pushNotifications = true;
   bool _emailUpdates = true;
@@ -116,8 +114,6 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    final themeProvider = Provider.of<ThemeProvider>(context);
-    _currentTheme = themeProvider.themeModeName;
     return MainLayout(
       child: Column(
         children: [
@@ -159,15 +155,6 @@ class _ProfilePageState extends State<ProfilePage> {
                   'Security',
                   'Password, 2FA',
                   onTap: () => _showSecurity(context),
-                ),
-                const SizedBox(height: 32),
-                _buildSectionTitle('Preferences'),
-                const SizedBox(height: 16),
-                _buildSettingItem(
-                  LucideIcons.moon,
-                  'Modes & Themes',
-                  _currentTheme,
-                  onTap: () => _showThemePicker(context),
                 ),
                 const SizedBox(height: 32),
                 _buildSectionTitle('Support & Help'),
@@ -692,127 +679,6 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  void _showThemePicker(BuildContext context) {
-    // Capture brightness BEFORE the sheet opens — the builder's context
-    // may not reflect the correct theme, causing invisible text in dark mode.
-    final appIsDark =
-        Theme.of(context).colorScheme.brightness == Brightness.dark;
-
-    // Explicit colors — never rely on Theme.of inside the builder
-    final sheetBg     = appIsDark ? const Color(0xFF253040) : Colors.white;
-    final titleColor  = appIsDark ? const Color(0xFFEAE5DC) : const Color(0xFF454F5E);
-    final subColor    = appIsDark ? const Color(0xFFB0A898) : const Color(0xFF8A8A8A);
-    final handleColor = appIsDark ? const Color(0xFF4A5568) : const Color(0xFFDDDDDD);
-    final divColor    = appIsDark ? const Color(0xFF3A4A5C) : const Color(0xFFEEEEEE);
-    final tileBg      = appIsDark ? const Color(0xFF19222E) : const Color(0xFFF5F5F5);
-    final selectedBg  = appIsDark ? const Color(0xFF2E3D50) : const Color(0xFFECEAE4);
-    final checkBg     = appIsDark ? const Color(0xFFEAE5DC) : const Color(0xFF454F5E);
-    final checkIcon   = appIsDark ? const Color(0xFF253040) : Colors.white;
-
-    final themeOptions = [
-      {'label': 'Light',          'value': 'Light',          'icon': LucideIcons.sun,     'sub': 'Always use light appearance'},
-      {'label': 'Dark',           'value': 'Dark',           'icon': LucideIcons.moon,    'sub': 'Always use dark appearance'},
-    ];
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: sheetBg,
-      shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (_) => StatefulBuilder(
-        builder: (ctx, setSheetState) => Container(
-          padding: const EdgeInsets.symmetric(vertical: 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Handle bar
-              Container(
-                width: 40, height: 4,
-                margin: const EdgeInsets.only(bottom: 20),
-                decoration: BoxDecoration(
-                  color: handleColor,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              // Title
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Row(
-                  children: [
-                    Icon(LucideIcons.palette, size: 20, color: titleColor),
-                    const SizedBox(width: 12),
-                    Text('Modes & Themes',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: titleColor)),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 6),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text('Choose how LuxeStay looks to you',
-                      style: TextStyle(fontSize: 12, color: subColor)),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Divider(height: 1, color: divColor),
-              const SizedBox(height: 4),
-              // Options
-              ...themeOptions.map((opt) {
-                final isSelected = _currentTheme == opt['value'];
-                return ListTile(
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 24, vertical: 2),
-                  leading: Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: isSelected ? selectedBg : tileBg,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(
-                      opt['icon'] as IconData,
-                      size: 20,
-                      color: isSelected ? titleColor : subColor,
-                    ),
-                  ),
-                  title: Text(
-                    opt['label'] as String,
-                    style: TextStyle(
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                      fontSize: 15,
-                      color: titleColor,
-                    ),
-                  ),
-                  subtitle: Text(
-                    opt['sub'] as String,
-                    style: TextStyle(fontSize: 11, color: subColor),
-                  ),
-                  trailing: isSelected
-                      ? Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                            color: checkBg,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(LucideIcons.check, size: 14, color: checkIcon),
-                        )
-                      : null,
-                  onTap: () {
-                    setState(() => _currentTheme = opt['value'] as String);
-                    Provider.of<ThemeProvider>(context, listen: false)
-                        .setTheme(opt['value'] as String);
-                    Navigator.pop(ctx);
-                  },
-                );
-              }),
-              const SizedBox(height: 12),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 
   void _showPaymentMethods(BuildContext context) {
     showModalBottomSheet(

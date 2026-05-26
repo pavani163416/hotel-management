@@ -119,7 +119,15 @@ class FavoritesPage extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('\$${hotel.pricePerNight}/night', style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+                        Expanded(
+                          child: Text(
+                            '\$${hotel.pricePerNight}/night', 
+                            style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
                         Consumer<FavoritesProvider>(
                           builder: (context, provider, child) {
                             final isFav = provider.isFavorite(hotel);

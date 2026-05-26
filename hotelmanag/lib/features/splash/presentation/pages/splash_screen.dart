@@ -51,7 +51,13 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
       if (isLoggedIn) {
         context.go('/');
       } else {
-        context.go('/login');
+        final prefs = await SharedPreferences.getInstance();
+        final hasSeenOnboarding = prefs.getBool(AppConstants.onboardingKey) ?? false;
+        if (hasSeenOnboarding) {
+          context.go('/welcome');
+        } else {
+          context.go('/onboarding');
+        }
       }
     }
   }

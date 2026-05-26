@@ -201,15 +201,19 @@ class _BookingPageState extends State<BookingPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Subtotal (${provider.nights} nights)', style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                        Text(
-                          '\$${NumberFormat("#,###").format(provider.subtotal)}',
-                          style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
-                        ),
-                      ],
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Subtotal (${provider.nights} nights)', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                          Text(
+                            '\$${NumberFormat("#,###").format(provider.subtotal)}',
+                            style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
                     ),
                     ElevatedButton(
                       onPressed: () => context.push('/guest-details'),

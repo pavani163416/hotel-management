@@ -49,8 +49,8 @@ Future<void> init() async {
   );
 
   // Providers
-  sl.registerFactory(() => AuthProvider(sl()));
-  sl.registerFactory(() => HotelProvider(sl()));
-  sl.registerFactory(() => BookingProvider(sl()));
-  sl.registerFactory(() => PromoProvider(sl()));
+  sl.registerLazySingleton(() => AuthProvider(sl()));
+  sl.registerLazySingleton(() => HotelProvider(sl()));
+  sl.registerLazySingleton(() => BookingProvider(sl()));
+  sl.registerLazySingleton(() => PromoProvider(sl()));
 }

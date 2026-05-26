@@ -437,6 +437,11 @@ router.post("/register", authLimiter, validateRegisterPayload, async (req, res, 
       });
     }
 
+    // DEVELOPMENT AID: Log the OTP so you can see it in the terminal
+    console.log(`\n=========================================`);
+    console.log(`🔑 DEV: Verification Code for ${normalEmail}: ${otp}`);
+    console.log(`=========================================\n`);
+
     logger.info("Customer registered (unverified)", { email: normalEmail });
 
     return res.status(201).json({
@@ -597,6 +602,11 @@ router.post("/login", loginLimiter, validateLoginPayload, async (req, res, next)
           });
         }
       }
+
+      // DEVELOPMENT AID: Log the OTP so you can see it in the terminal
+      console.log(`\n=========================================`);
+      console.log(`🔑 DEV: Verification Code for ${normalEmail}: ${otp}`);
+      console.log(`=========================================\n`);
 
       return res.status(403).json({
         success: false,
@@ -844,7 +854,11 @@ router.post("/google", async (req, res, next) => {
       // It's an ID Token (JWT) (used on mobile devices)
       const ticket = await googleClient.verifyIdToken({
         idToken,
-        audience: process.env.GOOGLE_CLIENT_ID,
+        audience: [
+          process.env.GOOGLE_CLIENT_ID,
+          "239513848879-3d319eb0dp07rltmkhelp6qtqp4rhhpq.apps.googleusercontent.com", // Production signed Android
+          "239513848879-9f7e5ju597pgbl7p4isddckui4misecp.apps.googleusercontent.com", // Debug Android
+        ],
       });
       const payload = ticket.getPayload();
       email = payload.email;
@@ -900,8 +914,8 @@ router.post("/google", async (req, res, next) => {
       },
     });
   } catch (err) {
-    logger.error(err.message, "Google Auth Error");
-    res.status(401).json({ success: false, message: "Invalid Google Token" });
+    logger.error(err, "Google Auth Error");
+    res.status(401).json({ success: false, message: `Invalid Google Token: ${err.message}`, debug: err.stack, tokenReceived: req.body.idToken ? req.body.idToken.substring(0, 15) + '...' : 'none' });
   }
 });
 
