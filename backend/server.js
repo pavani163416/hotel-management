@@ -34,6 +34,7 @@ import assistanceRoutes from "./routes/assistanceRoutes.js";
 import maintenanceRoutes from "./routes/maintenanceRoutes.js";
 import publicSupportRoutes from "./routes/publicSupportRoutes.js";
 import errorHandler     from "./middleware/errorHandler.js";
+import csrfProtection  from "./middleware/csrfProtection.js";
 import { apiLimiter, bookingLimiter, promoLimiter } from "./middleware/rateLimiter.js";
 import { roomNames, setNotificationIo } from "./utils/notificationService.js";
 import logger           from "./utils/logger.js";
@@ -205,9 +206,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// ── Security headers ──────────────────────────────────────
-// CSP disabled — API server only, no HTML pages served.
-// Frontends (Vercel) handle their own CSP.
+// ── GLB-003: Content-Security-Policy (strict API-only) ───────
 app.use(helmet({
   hsts: isProd ? {
     maxAge:            31536000,
@@ -221,18 +220,46 @@ app.use(helmet({
   referrerPolicy:       { policy: "strict-origin-when-cross-origin" },
   contentSecurityPolicy: {
     directives: {
-      defaultSrc: ["'none'"],
-      scriptSrc: ["'none'"],
-      styleSrc: ["'none'"],
-      imgSrc: ["'none'"],
-      objectSrc: ["'none'"],
-      frameAncestors: ["'none'"],
-      formAction: ["'none'"],
-      baseUri: ["'none'"],
+      defaultSrc:              ["'none'"],
+      scriptSrc:               ["'none'"],
+      styleSrc:                ["'none'"],
+      imgSrc:                  ["'none'"],
+      fontSrc:                 ["'none'"],
+      connectSrc:              ["'self'"],
+      mediaSrc:                ["'none'"],
+      objectSrc:               ["'none'"],
+      childSrc:                ["'none'"],
+      frameSrc:                ["'none'"],
+      workerSrc:               ["'none'"],
+      manifestSrc:             ["'none'"],
+      frameAncestors:          ["'none'"],
+      formAction:              ["'none'"],
+      baseUri:                 ["'none'"],
       upgradeInsecureRequests: [],
     },
   },
 }));
+
+// ── GLB-007: HTTP Verb Tampering — allow only known methods ──
+const ALLOWED_METHODS = new Set(["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"]);
+app.use((req, res, next) => {
+  if (!ALLOWED_METHODS.has(req.method)) {
+    res.set("Allow", [...ALLOWED_METHODS].join(", "));
+    return res.status(405).json({ success: false, message: "Method Not Allowed" });
+  }
+  next();
+});
+
+// ── GLB-007: OPTIONS Disclosure — minimal response ────────────
+// The global cors() handler above already handles OPTIONS correctly.
+// Strip any extra header hints for non-CORS OPTIONS requests.
+app.use((req, res, next) => {
+  if (req.method === "OPTIONS") {
+    // Do not disclose internal headers; just let CORS middleware respond.
+    res.removeHeader("X-Powered-By");
+  }
+  next();
+});
 
 // ── Force HTTPS redirect in production ───────────────────
 // Railway terminates TLS and sets x-forwarded-proto.
@@ -260,13 +287,37 @@ if (isProd) {
   });
 }
 
-// ── Body parsing — limit payload size ────────────────────
-app.use(express.json({ limit: "15mb" }));
-app.use(express.urlencoded({ extended: true, limit: "15mb" }));
-app.use(express.text({ type: "text/plain", limit: "15mb" }));
+// ── GLB-005: Request Body Size Limit — tight cap ────────────
+// Limit to 100kb for JSON / urlencoded; allow up to 10mb only
+// for explicit upload endpoints (applied per-router in uploadRoutes.js).
+app.use(express.json({ limit: "100kb" }));
+app.use(express.urlencoded({ extended: true, limit: "100kb" }));
+app.use(express.text({ type: "text/plain", limit: "100kb" }));
 
 // ── NoSQL injection sanitization ─────────────────────────
 app.use(mongoSanitize());
+
+// ── GLB-006: Prototype Pollution Protection ───────────────
+// Strip __proto__, constructor, and prototype keys from req.body,
+// req.query and req.params to prevent prototype pollution attacks.
+app.use((req, res, next) => {
+  const DANGEROUS_KEYS = ["__proto__", "constructor", "prototype"];
+  const sanitize = (obj) => {
+    if (!obj || typeof obj !== "object" || Array.isArray(obj)) return;
+    for (const key of DANGEROUS_KEYS) {
+      if (Object.prototype.hasOwnProperty.call(obj, key)) {
+        delete obj[key];
+      }
+    }
+    for (const val of Object.values(obj)) {
+      if (val && typeof val === "object") sanitize(val);
+    }
+  };
+  sanitize(req.body);
+  sanitize(req.query);
+  sanitize(req.params);
+  next();
+});
 
 // ── HTTP request logging ──────────────────────────────────
 app.use(morgan(isProd ? "combined" : "dev", { stream: logger.stream }));
@@ -306,6 +357,10 @@ app.use(cors(corsOptions));
 // Use trust proxy 1 for express-rate-limit behind a single proxy (Railway/Vercel)
 app.set("trust proxy", 1);
 app.use(cookieParser());
+
+// ── GLB-008: CSRF Protection — applied globally before all API routes ──
+// Validates Origin / Referer on state-mutating requests (POST, PUT, PATCH, DELETE).
+app.use("/api", csrfProtection);
 
 // ── API Routes ────────────────────────────────────────────
 app.use("/api/rooms",         roomRoutes);
