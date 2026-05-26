@@ -120,6 +120,7 @@ class _HomePageState extends State<HomePage> {
                   final imageUrl = cityImageMap[city]!;
                   return InkWell(
                     onTap: () {
+                      provider.clearFilters();
                       provider.updateSearch(city);
                       context.push('/hotels');
                     },
@@ -270,24 +271,14 @@ class _HomePageState extends State<HomePage> {
                                   final isFav = provider.isFavorite(item);
                                   return GestureDetector(
                                     onTap: () {
-                                      if (isFav) {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          const SnackBar(
-                                            content: Text('Already in Favorites!'),
-                                            behavior: SnackBarBehavior.floating,
-                                            duration: Duration(seconds: 1),
-                                          ),
-                                        );
-                                      } else {
-                                        provider.toggleFavorite(item);
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          const SnackBar(
-                                            content: Text('Added to Favorites!'),
-                                            behavior: SnackBarBehavior.floating,
-                                            duration: Duration(seconds: 1),
-                                          ),
-                                        );
-                                      }
+                                      provider.toggleFavorite(item);
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text(isFav ? 'Removed from Favorites!' : 'Added to Favorites!'),
+                                          behavior: SnackBarBehavior.floating,
+                                          duration: const Duration(seconds: 1),
+                                        ),
+                                      );
                                     },
                                     child: Icon(
                                       LucideIcons.heart,
@@ -575,9 +566,15 @@ backgroundImage: (profileImage != null && profileImage.isNotEmpty)
           const Divider(height: 1, indent: 24, endIndent: 24),
           InkWell(
             onTap: () {
+              final provider = context.read<HotelProvider>();
+              provider.clearFilters();
               if (_location != 'Where are you going?') {
-                context.read<HotelProvider>().updateSearch(_location);
+                provider.updateSearch(_location);
               }
+              if (_dateRange != null) {
+                context.read<BookingProvider>().updateDates(_dateRange!.start, _dateRange!.end);
+              }
+              context.read<BookingProvider>().updateGuests(_guests);
               context.push('/hotels');
             },
             child: Padding(
@@ -626,6 +623,7 @@ backgroundImage: (profileImage != null && profileImage.isNotEmpty)
           final cat = categories[index];
           return InkWell(
             onTap: () {
+              context.read<HotelProvider>().clearFilters();
               context.read<HotelProvider>().updatePropertyType(cat['label'] as String);
               context.push('/hotels');
             },
@@ -713,12 +711,12 @@ backgroundImage: (profileImage != null && profileImage.isNotEmpty)
         const SizedBox(height: 8),
         Consumer<HotelProvider>(
           builder: (context, provider, child) {
-            if (provider.isLoading && provider.hotels.isEmpty) {
+            if (provider.isLoading && provider.allHotels.isEmpty) {
               return const Center(child: CircularProgressIndicator());
             }
-            final items = provider.hotels.length > 3
-                ? provider.hotels.skip(3).take(3).toList()
-                : provider.hotels.take(3).toList();
+            final items = provider.allHotels.length > 3
+                ? provider.allHotels.skip(3).take(3).toList()
+                : provider.allHotels.take(3).toList();
             if (items.isEmpty) {
               return const SizedBox.shrink();
             }
@@ -1336,7 +1334,10 @@ backgroundImage: (profileImage != null && profileImage.isNotEmpty)
                 ),
               ),
               TextButton(
-                onPressed: () => context.push('/hotels'),
+                onPressed: () {
+                  context.read<HotelProvider>().clearFilters();
+                  context.push('/hotels');
+                },
                 child: const Text('View all', style: TextStyle(color: AppTheme.primaryColor, fontWeight: FontWeight.bold)),
               ),
             ],

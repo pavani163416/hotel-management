@@ -6,6 +6,7 @@ import '../theme/app_theme.dart';
 import 'notification_modal.dart';
 import '../providers/notification_provider.dart';
 import '../providers/booking_provider.dart';
+import '../providers/hotel_provider.dart';
 import 'package:provider/provider.dart';
 
 class MainLayout extends StatelessWidget {
@@ -172,10 +173,16 @@ class MainLayout extends StatelessWidget {
     return Expanded(
       child: InkWell(
         onTap: () {
-          if (index == 0) context.go('/');
-          else if (index == 1) context.go('/hotels');
-          else if (index == 2) context.go('/history');
-          else if (index == 3) context.go('/profile');
+          if (index == 0) {
+            context.go('/');
+          } else if (index == 1) {
+            context.read<HotelProvider>().clearFilters();
+            context.go('/hotels');
+          } else if (index == 2) {
+            context.go('/history');
+          } else if (index == 3) {
+            context.go('/profile');
+          }
         },
         splashColor: Colors.transparent,
         highlightColor: Colors.transparent,
