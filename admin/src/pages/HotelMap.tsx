@@ -34,7 +34,7 @@ type Stats = {
 
 const STATUS_CLASSES: Record<string, string> = {
   Available: "bg-emerald-600 hover:bg-emerald-500 border-emerald-700",
-  Reserved: "bg-yellow-500 hover:bg-yellow-400 border-yellow-600",
+  Reserved: "bg-red-600 hover:bg-red-500 border-red-700",
   Occupied: "bg-red-600 hover:bg-red-500 border-red-700",
   Booked: "bg-red-600 hover:bg-red-500 border-red-700",
   Cleaning: "bg-blue-600 hover:bg-blue-500 border-blue-700",

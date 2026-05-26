@@ -332,7 +332,7 @@ export async function getHotelMapOverview({ hotelStringId, hotelObjectId, date }
     blocked:     enrichedRooms.filter((r) => r.displayStatus === "Blocked").length,
   };
   stats.occupancyPct = stats.total
-    ? Math.round((stats.occupied / stats.total) * 100)
+    ? Math.round(((stats.occupied + stats.reserved) / stats.total) * 100)
     : 0;
 
   return { rooms: enrichedRooms, bookings: allMatchedBookings, stats };
