@@ -464,7 +464,7 @@ router.get("/guests",            ...protect, getManagerGuests);
 // ── Function Halls ────────────────────────────────────────
 router.get("/halls",        ...protect, getManagerHalls);
 router.post("/halls",       ...protect, createManagerHall);
-router.put("/halls/:id",    ...protect, updateManagerHall);
+router.put("/halls/:id",    ...protect, requireObjectId(), updateManagerHall);
 
 // ── Price Requests ────────────────────────────────────────
 router.post("/price-requests", ...protect, validate(schemas.createPriceRequest), createPriceRequest);

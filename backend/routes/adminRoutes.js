@@ -307,8 +307,17 @@ router.post("/users", protect, async (req, res, next) => {
 router.patch("/users/:id", protect, requireObjectId(), async (req, res, next) => {
   try {
     const update = { ...req.body };
-    if (update.password) update.password = await bcrypt.hash(update.password, 12);
-    const user = await AdminUser.findByIdAndUpdate(req.params.id, update, { new: true }).select("-password");
+    // Whitelist safe updatable fields — prevent mass assignment
+    const { name, email, role, isActive, password } = update;
+    const safeUpdate = {};
+    if (name     !== undefined) safeUpdate.name     = name;
+    if (email    !== undefined) safeUpdate.email    = email.toLowerCase().trim();
+    if (role     !== undefined) safeUpdate.role     = role;
+    if (isActive !== undefined) safeUpdate.isActive = isActive;
+    if (password)               safeUpdate.password = await bcrypt.hash(password, 12);
+
+    const user = await AdminUser.findByIdAndUpdate(req.params.id, safeUpdate, { new: true, runValidators: true }).select("-password");
+    if (!user) return res.status(404).json({ success: false, message: "Admin user not found." });
     res.json({ success: true, data: user });
   } catch (e) { next(e); }
 });
@@ -480,7 +489,20 @@ router.put("/price-requests/:id/approve", protect, requireObjectId(), async (req
     request.status     = "approved";
     request.reviewedAt = new Date();
     await request.save();
-    await Room.findByIdAndUpdate(request.roomId, { pricePerNight: request.requestedPrice });
+
+    // Update the room price — warn if room no longer exists
+    const updatedRoom = await Room.findByIdAndUpdate(
+      request.roomId,
+      { pricePerNight: request.requestedPrice },
+      { new: true }
+    );
+    if (!updatedRoom) {
+      logger.warn("Price request approved but associated room not found", {
+        priceRequestId: req.params.id,
+        roomId: request.roomId,
+        requestedPrice: request.requestedPrice,
+      });
+    }
 
     sendNotification({
       userId:  request.createdBy?.toString(),

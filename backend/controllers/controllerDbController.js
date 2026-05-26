@@ -101,8 +101,14 @@ export const createVisitorLog = async (req, res, next) => {
 export const updateVisitorLog = async (req, res, next) => {
   try {
     const { VisitorLog } = await getModels();
-    await VisitorLog.findByIdAndUpdate(req.params.id, req.body);
-    res.json({ success: true });
+    // Visitor log IDs are MongoDB ObjectIds — validate before querying
+    const { default: mongoose } = await import("mongoose");
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ success: false, message: "Invalid visitor log id." });
+    }
+    const log = await VisitorLog.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (!log) return res.status(404).json({ success: false, message: "Visitor log not found." });
+    res.json({ success: true, data: log });
   } catch (e) { next(e); }
 };
 
@@ -142,8 +148,9 @@ export const upsertHotelSnapshot = async (req, res, next) => {
 export const deleteHotelSnapshot = async (req, res, next) => {
   try {
     const { HotelSnapshot } = await getModels();
-    await HotelSnapshot.findOneAndDelete({ hotelId: req.params.id });
-    res.json({ success: true });
+    const deleted = await HotelSnapshot.findOneAndDelete({ hotelId: req.params.id });
+    if (!deleted) return res.status(404).json({ success: false, message: "Hotel snapshot not found." });
+    res.json({ success: true, message: "Hotel snapshot deleted." });
   } catch (e) { next(e); }
 };
 
@@ -204,7 +211,8 @@ export const upsertRoomSnapshot = async (req, res, next) => {
 export const deleteRoomSnapshot = async (req, res, next) => {
   try {
     const { RoomSnapshot } = await getModels();
-    await RoomSnapshot.findOneAndDelete({ roomNumber: req.params.roomNumber });
-    res.json({ success: true });
+    const deleted = await RoomSnapshot.findOneAndDelete({ roomNumber: req.params.roomNumber });
+    if (!deleted) return res.status(404).json({ success: false, message: "Room snapshot not found." });
+    res.json({ success: true, message: "Room snapshot deleted." });
   } catch (e) { next(e); }
 };
