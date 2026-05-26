@@ -32,6 +32,7 @@ import authRoutes       from "./routes/authRoutes.js";
 import promoRoutes      from "./routes/promoRoutes.js";
 import assistanceRoutes from "./routes/assistanceRoutes.js";
 import maintenanceRoutes from "./routes/maintenanceRoutes.js";
+import publicSupportRoutes from "./routes/publicSupportRoutes.js";
 import errorHandler     from "./middleware/errorHandler.js";
 import { apiLimiter, bookingLimiter, promoLimiter } from "./middleware/rateLimiter.js";
 import { roomNames, setNotificationIo } from "./utils/notificationService.js";
@@ -312,6 +313,7 @@ app.use("/api/promo",         promoLimiter, promoRoutes);
 app.use("/api/assistance",    assistanceRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/maintenance",   maintenanceRoutes);
+app.use("/api",               publicSupportRoutes);
 
 // ── 404 handler ───────────────────────────────────────────
 app.use((req, res) => {

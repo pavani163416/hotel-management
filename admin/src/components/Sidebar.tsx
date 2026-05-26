@@ -1,7 +1,7 @@
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, Hotel, BedDouble, CalendarCheck,
-  Users, BarChart3, Building2, DollarSign, CreditCard, Lightbulb, ArrowLeft, UserCog, Tag, Flame, Map, BadgeDollarSign,
+  Users, BarChart3, Building2, DollarSign, CreditCard, Lightbulb, ArrowLeft, UserCog, Tag, Flame, Map, BadgeDollarSign, LifeBuoy
 } from "lucide-react";
 import { useAdmin } from "@/context/AdminContext";
 
@@ -20,9 +20,10 @@ const links = [
   { to: "/price-requests",icon: BadgeDollarSign, label: "Price Requests" },
   { to: "/coupons",       icon: Tag,             label: "Coupons & Offers" },
   { to: "/top-deals",    icon: Flame,           label: "Top Deals" },
+  { to: "/public-support", icon: LifeBuoy,      label: "Support Requests" },
 ];
 
-const topLevel = new Set(["/dashboard", "/hotels", "/rooms", "/hotel-map", "/bookings", "/payments", "/guests", "/revenue", "/analytics", "/insights", "/managers", "/price-requests", "/coupons", "/top-deals"]);
+const topLevel = new Set(["/dashboard", "/hotels", "/rooms", "/hotel-map", "/bookings", "/payments", "/guests", "/revenue", "/analytics", "/insights", "/managers", "/price-requests", "/coupons", "/top-deals", "/public-support"]);
 
 export default function Sidebar() {
   const { admin } = useAdmin();

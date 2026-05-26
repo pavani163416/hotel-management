@@ -4,6 +4,7 @@ import { useBooking } from "@/context/BookingContext";
 import { Loader2, Smartphone } from "lucide-react";
 import PasswordInput from "@/components/PasswordInput";
 import api from "@/services/api";
+import { ContactAdminModal } from "./auth/ContactAdminModal";
 
 type AuthModalProps = {
   isOpen: boolean;
@@ -25,6 +26,7 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
   const [verificationCode, setVerificationCode] = useState("");
   const [otpMessage, setOtpMessage] = useState("");
   const [resendCooldown, setResendCooldown] = useState(0);
+  const [showContactAdmin, setShowContactAdmin] = useState(false);
 
   useEffect(() => {
     let timer: any;
@@ -402,7 +404,22 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
             </div>
           </form>
         )}
+        <div className="mt-4 pt-4 border-t border-border flex justify-center">
+          <button 
+            type="button"
+            onClick={() => setShowContactAdmin(true)}
+            className="text-xs text-muted-foreground hover:text-primary transition-colors flex items-center gap-1.5"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+            Contact System Admin
+          </button>
+        </div>
       </DialogContent>
+      <ContactAdminModal 
+        isOpen={showContactAdmin} 
+        onClose={() => setShowContactAdmin(false)}
+        defaultEmail={email}
+      />
     </Dialog>
   );
 }
