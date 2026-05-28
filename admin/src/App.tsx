@@ -38,6 +38,7 @@ import MHotelsOverview from "@/pages/manager/MHotelsOverview";
 import MHalls         from "@/pages/manager/MHalls";
 import MPricing       from "@/pages/manager/MPricing";
 import MProfile       from "@/pages/manager/MProfile";
+import MNotifications from "@/pages/manager/MNotifications";
 
 function AuthenticatedProviders({ children }: { children: React.ReactNode }) {
   return (
@@ -99,6 +100,7 @@ export default function App() {
             <Route path="/m/halls" element={<MHalls />} />
             <Route path="/m/pricing" element={<MPricing />} />
             <Route path="/m/profile" element={<MProfile />} />
+            <Route path="/m/notifications" element={<MNotifications />} />
           </Route>
 
           <Route path="/" element={<Navigate to="/dashboard" replace />} />

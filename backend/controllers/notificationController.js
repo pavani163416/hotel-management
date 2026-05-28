@@ -93,7 +93,7 @@ export const createNotification = async (req, res, next) => {
       });
     }
 
-    let { hotelId, userId, message, type } = req.body;
+    let { hotelId, userId, message, type, role: targetRole } = req.body;
 
     // Managers can only create notifications for their own hotel
     if (role === "manager") {
@@ -106,14 +106,24 @@ export const createNotification = async (req, res, next) => {
       }
       // Force-override any hotelId the client sent — prevent cross-tenant injection
       hotelId = assignedHotelId;
+
+      // Managers can only target customer (their guests) or manager (their staff)
+      if (!targetRole || (targetRole !== "customer" && targetRole !== "manager" && targetRole !== "admin")) {
+        targetRole = "manager";
+      }
+    } else {
+      // Admins can target customer, manager, or admin
+      if (!targetRole || (targetRole !== "customer" && targetRole !== "manager" && targetRole !== "admin")) {
+        targetRole = "admin";
+      }
     }
 
     const notification = await sendNotification({
-      role: role === "manager" ? "manager" : "admin",
+      role: targetRole,
       hotelId,
       userId,
       message,
-      type: type || "assistance",
+      type: type || "system",
     });
 
     res.status(201).json({ success: true, data: notification });

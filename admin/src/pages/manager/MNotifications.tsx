@@ -3,12 +3,12 @@ import { useNavigate } from "react-router-dom";
 import {
   Search, X, Bell, Clock, CheckCircle, Eye,
   MessageSquare, DollarSign, CalendarCheck, ShieldAlert,
-  Send, Smartphone, UserCheck, Users
+  Send, Smartphone, UserCheck
 } from "lucide-react";
-import AdminLayout from "@/components/AdminLayout";
-import Topbar from "@/components/Topbar";
+import ManagerLayout from "@/components/ManagerLayout";
 import PageHeader from "@/components/PageHeader";
 import StatsCard from "@/components/StatsCard";
+import { useAdmin } from "@/context/AdminContext";
 import { getNotifications, markNotificationRead, createNotification } from "@/services/api";
 
 interface NotificationItem {
@@ -22,8 +22,11 @@ interface NotificationItem {
   createdAt: string;
 }
 
-export default function Notifications() {
+export default function MNotifications() {
   const navigate = useNavigate();
+  const { admin } = useAdmin();
+  const scopedHotelId = admin?.assignedHotelId || admin?.hotelId || "";
+  
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -33,59 +36,29 @@ export default function Notifications() {
   const [statusFilter, setStatusFilter] = useState<"all" | "unread">("all");
   const [typeFilter, setTypeFilter] = useState<string>("all");
 
-  // Push Notification Form State
+  // Push Form State
   const [pushRole, setPushRole] = useState<"customer" | "manager" | "admin">("customer");
   const [pushMessage, setPushMessage] = useState("");
   const [pushType, setPushType] = useState("system");
-  const [pushHotelId, setPushHotelId] = useState("");
   const [pushUserId, setPushUserId] = useState("");
   const [pushLoading, setPushLoading] = useState(false);
   const [pushSuccess, setPushSuccess] = useState<string | null>(null);
   const [pushError, setPushError] = useState<string | null>(null);
 
-  const handlePushNotification = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!pushMessage.trim()) {
-      setPushError("Notification message is required.");
-      return;
-    }
-    setPushLoading(true);
-    setPushError(null);
-    setPushSuccess(null);
-    try {
-      await createNotification({
-        role: pushRole,
-        message: pushMessage.trim(),
-        type: pushType,
-        hotelId: pushHotelId.trim() || undefined,
-        userId: pushUserId.trim() || undefined,
-      });
-      setPushSuccess("Notification pushed successfully in real-time!");
-      setPushMessage("");
-      setPushHotelId("");
-      setPushUserId("");
-      // Refresh list to show the new notification if we are admin
-      fetchNotifications();
-    } catch (err: any) {
-      setPushError(err.message || "Failed to push notification.");
-    } finally {
-      setPushLoading(false);
-    }
-  };
-
   const fetchNotifications = useCallback(async () => {
+    if (!scopedHotelId) return;
     setLoading(true);
     setError(null);
     try {
-      // Admin notifications scope is { role: "admin" }
-      const res: any = await getNotifications({ role: "admin" });
+      // Manager notifications are scoped to their hotel
+      const res: any = await getNotifications({ role: "manager", hotelId: scopedHotelId });
       setNotifications(res?.data || []);
     } catch (err: any) {
       setError(err.message || "Failed to fetch notifications.");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [scopedHotelId]);
 
   useEffect(() => {
     fetchNotifications();
@@ -115,6 +88,34 @@ export default function Notifications() {
     }
   };
 
+  const handlePushNotification = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!pushMessage.trim()) {
+      setPushError("Notification message is required.");
+      return;
+    }
+    setPushLoading(true);
+    setPushError(null);
+    setPushSuccess(null);
+    try {
+      await createNotification({
+        role: pushRole,
+        message: pushMessage.trim(),
+        type: pushType,
+        hotelId: scopedHotelId, // Strictly enforced scope
+        userId: pushUserId.trim() || undefined,
+      });
+      setPushSuccess("Notification pushed successfully in real-time!");
+      setPushMessage("");
+      setPushUserId("");
+      fetchNotifications();
+    } catch (err: any) {
+      setPushError(err.message || "Failed to push notification.");
+    } finally {
+      setPushLoading(false);
+    }
+  };
+
   const timeAgo = (iso?: string) => {
     if (!iso) return "just now";
     const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
@@ -126,22 +127,18 @@ export default function Notifications() {
 
   // Filter logic
   const filtered = notifications.filter(n => {
-    // Search filter
     if (search && !n.message.toLowerCase().includes(search.toLowerCase())) {
       return false;
     }
-    // Status filter
     if (statusFilter === "unread" && n.isRead) {
       return false;
     }
-    // Type filter
     if (typeFilter !== "all" && n.type !== typeFilter) {
       return false;
     }
     return true;
   });
 
-  // Stats calculation
   const totalCount = notifications.length;
   const unreadCount = notifications.filter(n => !n.isRead).length;
   const assistanceCount = notifications.filter(n => n.type === "assistance").length;
@@ -177,21 +174,20 @@ export default function Notifications() {
 
   const getActionTarget = (n: NotificationItem) => {
     if (n.type === "price" || n.type === "price-request") {
-      return { label: "Review Request", path: "/price-requests" };
+      return { label: "Review Pricing", path: "/m/pricing" };
     }
-    if (n.type === "booking") {
-      return { label: "View Bookings", path: "/bookings" };
+    if (n.type === "booking" || n.type === "assistance") {
+      return { label: "View Bookings", path: "/m/bookings" };
     }
     return null;
   };
 
   return (
-    <AdminLayout>
-      <Topbar title="Notifications" />
-      <div className="p-6 space-y-6">
+    <ManagerLayout>
+      <div className="space-y-6">
         <PageHeader
-          title="System Notifications"
-          subtitle="View and manage administrative and operational notifications across all hotel properties."
+          title="Hotel Alerts & Notifications"
+          subtitle={`Manage guest assistance, reservations, and pricing updates for ${admin?.assignedHotelName || "your property"}.`}
           actions={
             unreadCount > 0 && (
               <button
@@ -208,7 +204,7 @@ export default function Notifications() {
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
           <StatsCard
-            title="Total Notifications"
+            title="Total Property Notifications"
             value={totalCount}
             icon={<Bell className="w-5 h-5 text-bright" />}
           />
@@ -220,20 +216,20 @@ export default function Notifications() {
             change={unreadCount > 0 ? `${unreadCount} active` : "All read"}
           />
           <StatsCard
-            title="Assistance Requests"
+            title="Assistance Tickets"
             value={assistanceCount}
             icon={<ShieldAlert className="w-5 h-5 text-warning" />}
             iconBg="rgba(212,168,67,0.15)"
           />
           <StatsCard
-            title="Price Requests"
+            title="Pricing Requests"
             value={priceCount}
             icon={<DollarSign className="w-5 h-5 text-gold" />}
             iconBg="rgba(212,168,67,0.15)"
           />
         </div>
 
-        {/* Push Notification Console */}
+        {/* Push Notification Console (Manager Scoped) */}
         <div className="bg-[#112240] rounded-xl border border-border shadow-card overflow-hidden"
           style={{ background: "rgba(255,255,255,0.03)", borderColor: "rgba(255,255,255,0.08)" }}>
           <div className="px-5 py-4 border-b border-border flex items-center justify-between"
@@ -241,8 +237,8 @@ export default function Notifications() {
             <div className="flex items-center gap-2">
               <Bell className="w-5 h-5 text-gold" />
               <div>
-                <h3 className="text-sm font-semibold text-bright">Push Notification Console</h3>
-                <p className="text-xs text-dim">Broadcast real-time push alerts to user segments</p>
+                <h3 className="text-sm font-semibold text-bright">Push Property Notification</h3>
+                <p className="text-xs text-dim">Send real-time updates directly to your hotel guests or staff</p>
               </div>
             </div>
           </div>
@@ -265,7 +261,7 @@ export default function Notifications() {
                     }`}
                   >
                     <Smartphone className="w-4 h-4" />
-                    All Customers
+                    Hotel Guests (Mobile)
                   </button>
                   <button
                     type="button"
@@ -277,11 +273,11 @@ export default function Notifications() {
                     }`}
                   >
                     <UserCheck className="w-4 h-4" />
-                    All Managers
+                    Hotel Staff
                   </button>
                   <button
                     type="button"
-                    onClick={() => { setPushRole("admin"); setPushType("system"); }}
+                    onClick={() => { setPushRole("admin"); setPushType("assistance"); }}
                     className={`flex items-center justify-center gap-2 py-2.5 rounded-md text-xs font-semibold transition-all ${
                       pushRole === "admin"
                         ? "bg-primary text-white shadow-lg"
@@ -289,12 +285,12 @@ export default function Notifications() {
                     }`}
                   >
                     <ShieldAlert className="w-4 h-4" />
-                    All Admins
+                    Alert Admins (Support)
                   </button>
                 </div>
               </div>
 
-              {/* Dynamic Optional Inputs based on target audience */}
+              {/* Dynamic inputs */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-soft uppercase tracking-wider mb-2">
@@ -306,17 +302,16 @@ export default function Notifications() {
                     className="w-full bg-surface-3 border border-border rounded-lg px-3 py-2 text-sm text-bright outline-none cursor-pointer"
                     style={{ background: "rgba(255,255,255,0.05)", borderColor: "rgba(255,255,255,0.08)" }}
                   >
-                    <option value="system" className="bg-[#0f1d30]">System Alert</option>
+                    <option value="system" className="bg-[#0f1d30]">System/Alert</option>
                     {pushRole === "customer" && (
                       <>
                         <option value="booking" className="bg-[#0f1d30]">Booking Update</option>
-                        <option value="price" className="bg-[#0f1d30]">Price / Offer Alert</option>
+                        <option value="price" className="bg-[#0f1d30]">Special Offer</option>
                       </>
                     )}
                     {pushRole === "manager" && (
                       <>
-                        <option value="manager" className="bg-[#0f1d30]">Manager Notice</option>
-                        <option value="price" className="bg-[#0f1d30]">Price Request Alert</option>
+                        <option value="manager" className="bg-[#0f1d30]">Staff Directive</option>
                       </>
                     )}
                     <option value="assistance" className="bg-[#0f1d30]">Assistance Request</option>
@@ -325,15 +320,14 @@ export default function Notifications() {
 
                 <div>
                   <label className="block text-xs font-semibold text-soft uppercase tracking-wider mb-2">
-                    Hotel Scope (Optional)
+                    Hotel Code (Locked)
                   </label>
                   <input
                     type="text"
-                    value={pushHotelId}
-                    onChange={(e) => setPushHotelId(e.target.value)}
-                    placeholder="e.g. H001, H002"
-                    className="w-full bg-transparent border border-border rounded-lg px-3 py-2 text-sm text-bright outline-none"
-                    style={{ background: "rgba(255,255,255,0.05)", borderColor: "rgba(255,255,255,0.08)" }}
+                    value={scopedHotelId}
+                    disabled
+                    className="w-full bg-transparent border border-border rounded-lg px-3 py-2 text-sm text-dim outline-none opacity-60"
+                    style={{ background: "rgba(255,255,255,0.02)", borderColor: "rgba(255,255,255,0.08)" }}
                   />
                 </div>
               </div>
@@ -346,7 +340,7 @@ export default function Notifications() {
                   type="text"
                   value={pushUserId}
                   onChange={(e) => setPushUserId(e.target.value)}
-                  placeholder="Enter specific user's email or database user ID"
+                  placeholder="Enter specific guest email or ID to target"
                   className="w-full bg-transparent border border-border rounded-lg px-3 py-2 text-sm text-bright outline-none"
                   style={{ background: "rgba(255,255,255,0.05)", borderColor: "rgba(255,255,255,0.08)" }}
                 />
@@ -386,7 +380,7 @@ export default function Notifications() {
                   className="flex items-center gap-2 text-xs font-semibold bg-primary text-white px-5 py-2.5 rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   <Send className="w-4 h-4" />
-                  {pushLoading ? "Pushing..." : "Push Real-Time Alert"}
+                  {pushLoading ? "Pushing..." : "Push Property Alert"}
                 </button>
               </div>
             </form>
@@ -407,7 +401,7 @@ export default function Notifications() {
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search notification messages..."
+                placeholder="Search property alerts..."
                 className="bg-transparent text-sm outline-none w-full text-bright placeholder:text-muted"
               />
               {search && (
@@ -457,7 +451,7 @@ export default function Notifications() {
                 <option value="all" className="bg-[#0f1d30]">All Types</option>
                 <option value="booking" className="bg-[#0f1d30]">Bookings</option>
                 <option value="assistance" className="bg-[#0f1d30]">Assistance</option>
-                <option value="price" className="bg-[#0f1d30]">Price Requests</option>
+                <option value="price" className="bg-[#0f1d30]">Pricing</option>
               </select>
             </div>
           </div>
@@ -474,7 +468,7 @@ export default function Notifications() {
               </div>
             ) : filtered.length === 0 ? (
               <div className="p-12 text-center text-muted text-sm">
-                No notifications found.
+                No alerts found for this property.
               </div>
             ) : (
               filtered.map((notif) => {
@@ -548,12 +542,12 @@ export default function Notifications() {
           {!loading && !error && filtered.length > 0 && (
             <div className="px-5 py-3 border-t border-border" style={{ borderColor: "rgba(255,255,255,0.08)" }}>
               <p className="text-xs text-muted">
-                Showing {filtered.length} of {notifications.length} notification{notifications.length !== 1 ? "s" : ""}
+                Showing {filtered.length} of {notifications.length} alert{notifications.length !== 1 ? "s" : ""}
               </p>
             </div>
           )}
         </div>
       </div>
-    </AdminLayout>
+    </ManagerLayout>
   );
 }

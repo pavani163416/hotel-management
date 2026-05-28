@@ -23,6 +23,7 @@ const TABS = [
   { id: "hotels",       label: "Hotels",       icon: BarChart2,       path: "/m/hotels-overview" },
   { id: "halls",        label: "Halls",        icon: Presentation,    path: "/m/halls" },
   { id: "pricing",      label: "Pricing",      icon: Tag,             path: "/m/pricing" },
+  { id: "notifications", label: "Notifications", icon: Bell,            path: "/m/notifications" },
 ];
 
 export default function ManagerLayout({ children }: { children: React.ReactNode }) {

@@ -107,6 +107,13 @@ export const getNotifications = (params?: Record<string, any>) =>
   api.get("/notifications", { params });
 export const markNotificationRead = (id: string) =>
   api.put(`/notifications/${id}/read`);
+export const createNotification = (data: {
+  role?: string;
+  hotelId?: string;
+  userId?: string;
+  message: string;
+  type?: string;
+}) => api.post("/notifications", data);
 
 export const getAdminPriceRequests = (params?: Record<string, any>) =>
   api.get("/admin/price-requests", { params });
