@@ -8,7 +8,7 @@ import { useHotels } from "@/context/HotelsContext";
 import { useBookings } from "@/context/BookingsContext";
 import { useState, useEffect } from "react";
 
-const API = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+import { API } from "@/services/api";
 
 export default function HotelDetail() {
   const { id } = useParams<{ id: string }>();

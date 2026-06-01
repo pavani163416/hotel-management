@@ -6,8 +6,27 @@
 
 import axios from "axios";
 
+export const getApiUrl = () => {
+  let url = import.meta.env.VITE_API_URL;
+  if (!url) {
+    const isLocal = typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
+    if (isLocal) {
+      return "http://localhost:5000/api";
+    }
+    return "https://hotel-management-production-2225.up.railway.app/api";
+  }
+  url = url.trim().replace(/\/+$/, "");
+  if (!url.toLowerCase().endsWith("/api")) {
+    url = url + "/api";
+  }
+  return url;
+};
+
+export const API_URL = getApiUrl();
+export const API = API_URL;
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "http://localhost:5000/api",
+  baseURL: API_URL,
   headers: { "Content-Type": "application/json" },
   timeout: 15000,
 });

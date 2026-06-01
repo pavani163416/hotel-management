@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Search, X, CheckCircle, Clock, AlertTriangle, PenTool } from "lucide-react";
 import StatusBadge from "@/components/StatusBadge";
 
-const API = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+import { API } from "@/services/api";
 
 type MaintenanceRequest = {
   _id: string;

@@ -4,10 +4,9 @@
  */
 import { useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
+import { API_URL } from "../services/api";
 
-const WS_URL = (import.meta.env.VITE_API_URL || "http://localhost:5000/api")
-  .replace(/^http/, "ws")
-  .replace("/api", "");
+const WS_URL = API_URL.replace(/^http/, "ws").replace(/\/api$/, "");
 
 function getDevice(): string {
   const ua = navigator.userAgent;
@@ -180,9 +179,7 @@ export function useVisitorTracker() {
 
 export function markSessionConverted() {
   const sessionId = getSessionId();
-  const wsUrl = (import.meta.env.VITE_API_URL || "http://localhost:5000/api")
-    .replace(/^http/, "ws")
-    .replace("/api", "");
+  const wsUrl = API_URL.replace(/^http/, "ws").replace(/\/api$/, "");
   try {
     const ws = new WebSocket(`${wsUrl}/ws?role=user`);
     ws.onopen = () => {

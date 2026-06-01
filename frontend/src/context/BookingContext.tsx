@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
 import type { Hotel, Room } from "@/data/hotels";
+import { API } from "../services/api";
 
-const API = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 const HOTEL_CACHE_KEY = "luxe_hotels_cache";
 
 function mapHotel(h: any): Hotel {
@@ -288,10 +288,9 @@ export const BookingProvider = ({ children }: { children: ReactNode }) => {
 
   const applyPromo = async (code: string): Promise<boolean> => {
     try {
-      const base = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
       // Pass user email so backend can check first-time status
       const userEmail = user?.email || "";
-      const res = await fetch(`${base}/promo/validate`, {
+      const res = await fetch(`${API}/promo/validate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ code, subtotal: 0, userEmail }),
@@ -326,8 +325,7 @@ export const BookingProvider = ({ children }: { children: ReactNode }) => {
     hotelId: string,
     review: { author: string; rating: number; comment: string }
   ) => {
-    const base = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
-    const response = await fetch(`${base}/hotels/${hotelId}/reviews`, {
+    const response = await fetch(`${API}/hotels/${hotelId}/reviews`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(review),

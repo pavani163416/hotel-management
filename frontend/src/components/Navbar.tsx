@@ -4,7 +4,7 @@ import { Bell, Hotel, UserCircle, LogOut, Mail, CheckCircle2 } from "lucide-reac
 import { useBooking } from "@/context/BookingContext";
 import { AuthModal } from "@/components/AuthModal";
 import socket from "@/services/socket";
-import api, { getNotifications, markNotificationRead, createNotification } from "@/services/api";
+import api, { getNotifications, markNotificationRead, createNotification, API } from "@/services/api";
 import { toast } from "sonner";
 import {
   DropdownMenu,
@@ -99,7 +99,6 @@ const Navbar = () => {
 
     setRequesting(true);
     try {
-      const base = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
       // Always fetch the latest bookings from API to get the correct hotelId
       // (local context bookings may be stale or missing hotelId)
@@ -126,7 +125,7 @@ const Navbar = () => {
       parts.push(data.message);
       const fullMessage = parts.join(" | ");
 
-      const res = await fetch(`${base}/assistance`, {
+      const res = await fetch(`${API}/assistance`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -293,11 +292,10 @@ const Navbar = () => {
                       // Pre-fetch room number and floor from active booking
                       if (user?.email) {
                         try {
-                          const base = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
                           const token = localStorage.getItem("luxe_customer_token");
                           const headers: Record<string, string> = { "Content-Type": "application/json" };
                           if (token) headers["Authorization"] = `Bearer ${token}`;
-                          const bRes = await fetch(`${base}/bookings?guestEmail=${encodeURIComponent(user.email)}&limit=5`, { headers });
+                          const bRes = await fetch(`${API}/bookings?guestEmail=${encodeURIComponent(user.email)}&limit=5`, { headers });
                           const bJson = await bRes.json();
                           const apiBookings: any[] = bJson?.data || [];
                           const confirmed = apiBookings.find((b: any) => b.status === "Confirmed") || apiBookings[0];

@@ -14,7 +14,7 @@ import AdminLayout from "@/components/AdminLayout";
 import Topbar from "@/components/Topbar";
 import PageHeader from "@/components/PageHeader";
 
-const API = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+import { API } from "@/services/api";
 
 type HotelDeal = {
   hotelId:       string;

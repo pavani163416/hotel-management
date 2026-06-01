@@ -11,7 +11,7 @@ import Modal from "@/components/Modal";
 import { useHotels, Hotel } from "@/context/HotelsContext";
 import MaintenanceTab from "./MaintenanceTab";
 
-const API = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+import { API } from "@/services/api";
 
 export default function Hotels() {
   const navigate = useNavigate();

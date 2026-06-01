@@ -4,6 +4,7 @@ import { ArrowRight, Tag, Check } from "lucide-react";
 import Layout from "@/components/Layout";
 import Stepper from "@/components/Stepper";
 import { useBooking, calcNights } from "@/context/BookingContext";
+import { API } from "@/services/api";
 
 const Review = () => {
   const nav = useNavigate();
@@ -21,20 +22,19 @@ const Review = () => {
       return;
     }
     setAvailableCodes(null);
-    const base = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
     // Check each code to see if it's valid for this user
     Promise.all([
-      fetch(`${base}/promo/validate`, {
+      fetch(`${API}/promo/validate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ code: "LUXE10", subtotal: 0, userEmail: user.email }),
       }).then(r => r.json()).then(j => j?.valid ? "LUXE10" : null),
-      fetch(`${base}/promo/validate`, {
+      fetch(`${API}/promo/validate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ code: "WELCOME15", subtotal: 0, userEmail: user.email }),
       }).then(r => r.json()).then(j => j?.valid ? "WELCOME15" : null),
-      fetch(`${base}/promo/validate`, {
+      fetch(`${API}/promo/validate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ code: "VIP20", subtotal: 0, userEmail: user.email }),
@@ -57,9 +57,8 @@ const Review = () => {
   const apply = async () => {
     const cleaned = code.replace(/\s+/g, "").toUpperCase();
     if (!cleaned) { setMsg({ type: "err", text: "Please enter a promo code." }); return; }
-    const base = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
     try {
-      const res = await fetch(`${base}/promo/validate`, {
+      const res = await fetch(`${API}/promo/validate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ code: cleaned, subtotal, userEmail: user?.email || "" }),

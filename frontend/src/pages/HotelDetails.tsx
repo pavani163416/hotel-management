@@ -4,6 +4,7 @@ import Layout from "@/components/Layout";
 import { useBooking } from "@/context/BookingContext";
 import { useState, useEffect, type FormEvent } from "react";
 import { AuthModal } from "@/components/AuthModal";
+import { API } from "@/services/api";
 
 // Map amenity name → lucide icon
 const amenityIcon = (name: string) => {
@@ -64,10 +65,8 @@ const HotelDetails = () => {
     }
   }, [user, pendingRoomId, hotel, setSelectedHotel, setSelectedRoom, nav]);
 
-  // Fetch live available counts when dates are present
   useEffect(() => {
     if (!hotel || !search.checkIn || !search.checkOut) return;
-    const base = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
     hotel.rooms.forEach(async (r) => {
       try {
         const params = new URLSearchParams({
@@ -76,7 +75,7 @@ const HotelDetails = () => {
           checkIn: search.checkIn,
           checkOut: search.checkOut,
         });
-        const res = await fetch(`${base}/rooms/available-count?${params}`);
+        const res = await fetch(`${API}/rooms/available-count?${params}`);
         const json = await res.json();
         if (json.success && typeof json.available === "number") {
           setAvailCount(prev => ({ ...prev, [r.id]: json.available }));
@@ -101,11 +100,9 @@ const HotelDetails = () => {
       return;
     }
 
-    // Check availability for selected dates before navigating
     setRoomStatus((prev) => ({ ...prev, [roomId]: { checking: true, error: "" } }));
     try {
-      const base = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
-      const res = await fetch(`${base}/rooms/availability`, {
+      const res = await fetch(`${API}/rooms/availability`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

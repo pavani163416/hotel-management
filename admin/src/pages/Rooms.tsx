@@ -8,7 +8,7 @@ import StatsCard from "@/components/StatsCard";
 import StatusBadge from "@/components/StatusBadge";
 import Modal from "@/components/Modal";
 
-const API = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+import { API } from "@/services/api";
 
 type HotelOption = { hotelId: string; name: string };
 

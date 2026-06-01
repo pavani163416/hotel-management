@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Building2, Mail, Lock, Eye, EyeOff, ArrowRight, Shield } from "lucide-react";
 import { useAdmin } from "@/context/AdminContext";
+import { API } from "@/services/api";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -26,8 +27,6 @@ export default function Login() {
     setError("");
     if (!email || !password) { setError("Please enter email and password."); return; }
     setLoading(true);
-
-    const API = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
     try {
       // ── Try manager login first ───────────────────────
@@ -87,7 +86,6 @@ export default function Login() {
     }
 
     setResetLoading(true);
-    const API = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
     try {
       const res = await fetch(`${API}/auth/forgot-password`, {

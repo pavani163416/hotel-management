@@ -1,8 +1,25 @@
 import axios from "axios";
 
-const BASE = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+export const getApiUrl = () => {
+  let url = import.meta.env.VITE_API_URL;
+  if (!url) {
+    const isLocal = typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
+    if (isLocal) {
+      return "http://localhost:5000/api";
+    }
+    return "https://hotel-management-production-2225.up.railway.app/api";
+  }
+  url = url.trim().replace(/\/+$/, "");
+  if (!url.toLowerCase().endsWith("/api")) {
+    url = url + "/api";
+  }
+  return url;
+};
 
-const api = axios.create({ baseURL: BASE, timeout: 15000 });
+export const API_URL = getApiUrl();
+export const API = API_URL;
+
+const api = axios.create({ baseURL: API_URL, timeout: 15000 });
 
 // ── Attach JWT to every request ───────────────────────────
 api.interceptors.request.use((config) => {

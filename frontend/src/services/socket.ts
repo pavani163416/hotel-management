@@ -1,8 +1,7 @@
 import { io } from "socket.io-client";
+import { API_URL } from "./api";
 
-const BACKEND_URL = import.meta.env.VITE_API_URL
-  ? import.meta.env.VITE_API_URL.replace("/api", "")
-  : "http://localhost:5000";
+const BACKEND_URL = API_URL.replace(/\/api$/, "");
 
 const transports = ["websocket"]; // Force websocket transport
 

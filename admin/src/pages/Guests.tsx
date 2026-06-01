@@ -9,7 +9,7 @@ import StatusBadge from "@/components/StatusBadge";
 import Modal from "@/components/Modal";
 import { Guest } from "@/context/GuestsContext";
 import { useBookings } from "@/context/BookingsContext";
-import { getGuests as apiGetGuests, getGuestById as apiGetGuestById } from "@/services/api";
+import { getGuests as apiGetGuests, getGuestById as apiGetGuestById, API } from "@/services/api";
 import socket from "@/services/socket";
 
 const HOTEL_INITIALS_MAP: Record<string, string> = {
@@ -162,8 +162,7 @@ export default function Guests() {
         setDetailAdditional(guestData.additionalGuests);
       } else {
         // Fallback: fetch from /api/guests/additional
-        const BASE = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
-        fetch(`${BASE}/guests/additional?email=${encodeURIComponent(g.email)}`)
+        fetch(`${API}/guests/additional?email=${encodeURIComponent(g.email)}`)
           .then((res) => res.json())
           .then((d) => setDetailAdditional(d?.data || []))
           .catch(() => {});

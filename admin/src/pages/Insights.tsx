@@ -11,6 +11,7 @@ import { useBookings } from "@/context/BookingsContext";
 import { Visitor } from "@/context/VisitorContext";
 import { useAdmin } from "@/context/AdminContext";
 import socket from "@/services/socket";
+import { API } from "@/services/api";
 
 interface ManagerInsight {
   _id: string;
@@ -76,7 +77,7 @@ export default function Insights() {
   const [hotelManagerMap, setHotelManagerMap] = useState<any>(null);
   const [loadingInsights, setLoadingInsights] = useState(true);
 
-  const API = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+
 
   const [visitorStats, setVisitorStats] = useState({ active: 0, converted: 0, bounced: 0, avgDur: 0 });
   const [totalVisitors, setTotalVisitors] = useState(0);
