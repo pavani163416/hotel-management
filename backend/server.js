@@ -344,7 +344,8 @@ app.use((req, res, next) => {
   const DANGEROUS_KEYS = ["__proto__", "constructor", "prototype"];
   const sanitize = (obj) => {
     if (!obj || typeof obj !== "object") return;
-    for (const key in obj) {
+    const keys = Object.getOwnPropertyNames(obj);
+    for (const key of keys) {
       if (DANGEROUS_KEYS.includes(key)) {
         try {
           delete obj[key];
@@ -357,6 +358,20 @@ app.use((req, res, next) => {
   sanitize(req.body);
   sanitize(req.query);
   sanitize(req.params);
+
+  // PCI DSS Sanitization: mask credit card numbers if submitted in body
+  const maskPCI = (obj) => {
+    if (!obj || typeof obj !== "object") return;
+    for (const key of Object.keys(obj)) {
+      if (/cardnumber|ccnum|pan/i.test(key) && typeof obj[key] === "string" && obj[key].length >= 13) {
+        obj[key] = obj[key].slice(0, 4) + "********" + obj[key].slice(-4);
+      } else if (obj[key] && typeof obj[key] === "object") {
+        maskPCI(obj[key]);
+      }
+    }
+  };
+  maskPCI(req.body);
+
   next();
 });
 

@@ -255,8 +255,9 @@ export const createBooking = async (req, res, next) => {
     // ── Generate placeholders for missing lead guest fields ──
     const actualEmail = guestData?.email?.toLowerCase().trim() || "";
     let normalizedEmail = actualEmail;
+    const crypto = await import("crypto");
     if (!normalizedEmail) {
-      normalizedEmail = `guest_${Date.now()}_${Math.floor(Math.random() * 1000000)}@placeholder.com`;
+      normalizedEmail = `guest_${Date.now()}_${crypto.randomInt(100000, 999999)}@placeholder.com`;
     }
 
     const actualPhone = guestData?.phone?.trim() || "";

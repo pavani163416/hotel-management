@@ -85,11 +85,12 @@ export const createNotification = async (req, res, next) => {
     const user = req.user;
     const role = user.role?.toLowerCase();
 
-    // Customers are never allowed to create notifications
-    if (role === "customer") {
+    // Only staff roles are allowed to create notifications
+    const allowedRoles = ["manager", "admin", "super admin", "controller"];
+    if (!role || !allowedRoles.includes(role)) {
       return res.status(403).json({
         success: false,
-        message: "Forbidden: Customers cannot create notifications.",
+        message: "Forbidden: You do not have permission to create notifications.",
       });
     }
 

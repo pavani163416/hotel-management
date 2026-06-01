@@ -298,6 +298,14 @@ router.get("/users", protect, async (req, res, next) => {
 router.post("/users", protect, async (req, res, next) => {
   try {
     const { password, ...rest } = req.body;
+    if (password) {
+      if (password.length < 8) return res.status(400).json({ success: false, message: "Password must be at least 8 characters long." });
+      if (password.length > 72) return res.status(400).json({ success: false, message: "Password must be at most 72 characters long." });
+      if (!/[A-Z]/.test(password)) return res.status(400).json({ success: false, message: "Password must contain at least one uppercase letter." });
+      if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) return res.status(400).json({ success: false, message: "Password must contain at least one special character." });
+    } else {
+      return res.status(400).json({ success: false, message: "Password is required." });
+    }
     const hashed = await bcrypt.hash(password, 12);
     const user   = await AdminUser.create({ ...rest, password: hashed });
     res.status(201).json({ success: true, data: { ...user.toJSON(), password: undefined } });
@@ -314,7 +322,13 @@ router.patch("/users/:id", protect, requireObjectId(), async (req, res, next) =>
     if (email    !== undefined) safeUpdate.email    = email.toLowerCase().trim();
     if (role     !== undefined) safeUpdate.role     = role;
     if (isActive !== undefined) safeUpdate.isActive = isActive;
-    if (password)               safeUpdate.password = await bcrypt.hash(password, 12);
+    if (password) {
+      if (password.length < 8) return res.status(400).json({ success: false, message: "Password must be at least 8 characters long." });
+      if (password.length > 72) return res.status(400).json({ success: false, message: "Password must be at most 72 characters long." });
+      if (!/[A-Z]/.test(password)) return res.status(400).json({ success: false, message: "Password must contain at least one uppercase letter." });
+      if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) return res.status(400).json({ success: false, message: "Password must contain at least one special character." });
+      safeUpdate.password = await bcrypt.hash(password, 12);
+    }
 
     const user = await AdminUser.findByIdAndUpdate(req.params.id, safeUpdate, { new: true, runValidators: true }).select("-password");
     if (!user) return res.status(404).json({ success: false, message: "Admin user not found." });

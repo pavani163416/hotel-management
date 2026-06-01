@@ -90,7 +90,8 @@ export const buildCacheKey = (...parts) => parts
   .join(":");
 
 export const acquireLock = async (lockKey, ttlMs = 5000) => {
-  const lockValue = `${Date.now()}_${Math.random()}`;
+  const crypto = await import("crypto");
+  const lockValue = `${Date.now()}_${crypto.randomBytes(16).toString("hex")}`;
   if (!isRedisReady()) {
     const now = Date.now();
     const existing = localCache.get(lockKey);

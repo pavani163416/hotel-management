@@ -38,6 +38,9 @@ router.post("/validate", async (req, res) => {
   if (!code || typeof code !== "string") {
     return res.status(400).json({ success: false, valid: false, message: "Promo code is required." });
   }
+  if (userEmail && typeof userEmail !== "string") {
+    return res.status(400).json({ success: false, valid: false, message: "Invalid userEmail format." });
+  }
 
   const key = code.replace(/\s+/g, "").toUpperCase();
   const sub = Number(subtotal) || 0;

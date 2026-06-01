@@ -124,6 +124,7 @@ export const managerLogin = async (req, res, next) => {
   try {
     const { email, password } = req.body;
     if (!email || !password) return res.status(400).json({ success:false, message:"Email and password are required." });
+    if (password.length > 72) return res.status(400).json({ success:false, message:"Password exceeds maximum allowed length." });
     const manager = await Manager.findOne({ email: email.toLowerCase().trim(), isActive: true });
     const DUMMY_HASH = "$2b$12$abcdefghijklmnopqrstuvwxyz12345678901234567890";
     if (!manager) {
@@ -421,7 +422,7 @@ export const createWalkInBooking = async (req, res, next) => {
     const checkOutDate = new Date(checkOut);
     const msPerDay = 1000 * 60 * 60 * 24;
     const nights = Math.max(1, Math.ceil((checkOutDate - checkInDate) / msPerDay));
-    const nightlyRate = pricePerNight || room.pricePerNight;
+    const nightlyRate = room.pricePerNight;
     const calculatedTotal = nightlyRate * nights;
     const totalAmount = calculatedTotal + (taxes || 0) - (discount || 0);
 
@@ -430,7 +431,7 @@ export const createWalkInBooking = async (req, res, next) => {
       guestSnapshot: { name:guestData.name, email:guestData.email, phone:guestData.phone },
       checkIn: checkInDate, checkOut: checkOutDate,
       pricePerNight: nightlyRate,
-      subtotal: subtotal || calculatedTotal,
+      subtotal: calculatedTotal,
       taxes, discount, totalAmount, paymentMethod, specialRequests,
       hotelName: req.scopedHotelName || "",
       hotelStringId: req.scopedHotelId || null,

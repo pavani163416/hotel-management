@@ -45,6 +45,15 @@ export const verifyManagerToken = (req, res, next) => {
       return res.status(401).json({ success: false, message });
     }
 
+    const allowedRoles = ["manager", "admin", "super admin", "controller"];
+    const userRole = decoded.role?.toLowerCase();
+    if (!userRole || !allowedRoles.includes(userRole)) {
+      return res.status(403).json({
+        success: false,
+        message: "Forbidden: Access restricted to authorized staff roles.",
+      });
+    }
+
     req.manager = decoded;
     next();
   } catch (error) {

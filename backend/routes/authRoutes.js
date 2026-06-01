@@ -388,7 +388,7 @@ router.post("/register", authLimiter, validateRegisterPayload, async (req, res, 
         });
       } else {
         // User exists but unverified. Re-send email first before saving updates.
-        const otp = crypto.randomInt(100000, 1000000).toString();
+        const otp = crypto.randomBytes(3).toString("hex").toUpperCase();
         const otpEmailPayload = { to: normalEmail, name: name.trim(), otp };
 
         try {
@@ -428,7 +428,7 @@ router.post("/register", authLimiter, validateRegisterPayload, async (req, res, 
       }
     }
 
-    const otp = crypto.randomInt(100000, 1000000).toString();
+    const otp = crypto.randomBytes(3).toString("hex").toUpperCase();
     const otpEmailPayload = { to: normalEmail, name: name.trim(), otp };
 
     // Attempt email send first
@@ -855,7 +855,7 @@ router.post("/phone/verify", authLimiter, async (req, res, next) => {
       const safePhone = normalizedPhone.replace(/\D/g, "") || "unknown";
       const generatedEmail = `${safePhone || "no-phone"}@phone.luxe`;
       const generatedName = `Guest ${safePhone.slice(-4) || safePhone}`;
-      const passwordHash = await bcrypt.hash(Math.random().toString(36) + Date.now(), 12);
+      const passwordHash = await bcrypt.hash(crypto.randomBytes(32).toString("hex"), 12);
 
       user = await User.create({
         name: generatedName,
@@ -958,7 +958,7 @@ router.post("/google", async (req, res, next) => {
       user = await User.create({
         name,
         email,
-        passwordHash: await bcrypt.hash(Math.random().toString(36), 10),
+        passwordHash: await bcrypt.hash(crypto.randomBytes(32).toString("hex"), 10),
         phone: "",
         profileImage: picture || "",
       });
@@ -1064,7 +1064,7 @@ router.post("/firebase", async (req, res, next) => {
       user = await User.create({
         name,
         email,
-        passwordHash: await bcrypt.hash(Math.random().toString(36), 10),
+        passwordHash: await bcrypt.hash(crypto.randomBytes(32).toString("hex"), 10),
         phone: phone,
         profileImage: picture,
         isVerified: true,

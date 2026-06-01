@@ -23,10 +23,11 @@ import Hotel   from "../models/Hotel.js";
 import Manager from "../models/Manager.js";
 import { sendNotification } from "../utils/notificationService.js";
 import logger from "../utils/logger.js";
+import { protect } from "../middleware/auth.js";
 
 const router = express.Router();
 
-router.post("/", async (req, res) => {
+router.post("/", protect, async (req, res) => {
   try {
     const { hotelId, userId, message } = req.body;
 
@@ -34,6 +35,15 @@ router.post("/", async (req, res) => {
       return res.status(400).json({
         success: false,
         message: "hotelId, userId and message are required.",
+      });
+    }
+
+    // Validate that the user is only requesting assistance for their own user ID or email
+    const currentUser = req.user;
+    if (currentUser.role === "customer" && currentUser.id !== String(userId) && currentUser.email?.toLowerCase() !== String(userId).toLowerCase()) {
+      return res.status(403).json({
+        success: false,
+        message: "Forbidden: You cannot request assistance on behalf of another user.",
       });
     }
 

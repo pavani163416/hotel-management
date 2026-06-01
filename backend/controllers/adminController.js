@@ -47,6 +47,9 @@ export const adminLogin = async (req, res, next) => {
     if (!email || !password) {
       return res.status(400).json({ success: false, message: "Email and password are required." });
     }
+    if (password.length > 72) {
+      return res.status(400).json({ success: false, message: "Password exceeds maximum allowed length." });
+    }
 
     let adminName = process.env.ADMIN_NAME || "Super Admin";
     let passwordMatch = false;
