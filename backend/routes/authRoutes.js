@@ -265,11 +265,39 @@ const createResetToken = () => {
 };
 
 const normalizePhoneNumber = (phone) => {
-  if (!phone) return "";
-  const normalized = phone.trim().replace(/[\s()\-]/g, "");
-  if (!normalized.startsWith("+")) {
-    throw new Error("Phone number must include a country code and start with +.");
+  if (!phone) {
+    throw new Error("Phone number is required.");
   }
+
+  // Reject URLs/SSRF or any script/HTML payloads immediately
+  if (phone.includes("http://") || phone.includes("https://") || phone.includes("<") || phone.includes(">")) {
+    throw new Error("Invalid phone number format.");
+  }
+
+  const normalized = phone.trim().replace(/[\s()\-]/g, "");
+
+  // Strict E.164 phone validation (starts with +, followed by 1-9, and 7 to 14 digits)
+  const e164Regex = /^\+[1-9]\d{7,14}$/;
+  if (!e164Regex.test(normalized)) {
+    throw new Error("Phone number must be a valid E.164 number starting with + and contain 8 to 15 digits.");
+  }
+
+  // Reject premium-rate phone numbers
+  const premiumRatePatterns = [
+    /^\+449[0-8]/, // UK premium rate
+    /^\+4470/,     // UK personal numbers (often abused/premium)
+    /^\+1900/,     // US premium rate
+    /^\+881/,      // Global Mobile Satellite System
+    /^\+882/,      // International Networks
+    /^\+888/,      // Disaster Relief
+  ];
+
+  for (const pattern of premiumRatePatterns) {
+    if (pattern.test(normalized)) {
+      throw new Error("Premium-rate numbers are not allowed.");
+    }
+  }
+
   return normalized;
 };
 
@@ -582,7 +610,9 @@ router.post("/login", loginLimiter, validateLoginPayload, async (req, res, next)
     // Look up user with passwordHash explicitly included
     const user = await User.findOne({ email: normalEmail }).select("+passwordHash");
 
+    const DUMMY_HASH = "$2b$12$abcdefghijklmnopqrstuvwxyz12345678901234567890";
     if (!user || !user.passwordHash) {
+      await bcrypt.compare(password, DUMMY_HASH);
       return res.status(401).json({ success: false, message: "Invalid credentials." });
     }
 

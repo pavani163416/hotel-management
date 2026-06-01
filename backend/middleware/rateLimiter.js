@@ -46,12 +46,11 @@ export const apiLimiter = rateLimit({
 // ── Auth limiter — login endpoints ────────────────────────
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,          // 15 minutes
-  max:      isProd ? 200 : 999999,        // increased for testing
+  max:      15,                      // maximum 15 attempts
   store: isRedisReady() ? createRateLimitStore(15 * 60 * 1000) : undefined,
   standardHeaders: true,
   legacyHeaders:   false,
   skipSuccessfulRequests: true,       // only count failures
-  skip: (req) => isLocalRequest(req),
   message: {
     success: false,
     message: "Too many login attempts. Please try again in 15 minutes.",
@@ -91,11 +90,10 @@ export const promoLimiter = rateLimit({
 // ── Strict Login specific limiter ────────────────────────
 export const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,          // 15 minutes
-  max:      isProd ? 5 : 999999,            // 5 attempts per 15 minutes
+  max:      5,                       // 5 attempts per 15 minutes
   store: isRedisReady() ? createRateLimitStore(15 * 60 * 1000) : undefined,
   standardHeaders: true,
   legacyHeaders:   false,
-  skip: (req) => isLocalRequest(req),
   message: {
     success: false,
     message: "Too many login attempts. Please try again in 15 minutes.",
@@ -105,11 +103,10 @@ export const loginLimiter = rateLimit({
 // ── Strict OTP specific limiter ──────────────────────────
 export const otpRateLimiter = rateLimit({
   windowMs: 5 * 60 * 1000,           // 5 minutes
-  max:      isProd ? 3 : 999999,            // 3 attempts per 5 minutes
+  max:      5,                       // 5 attempts per 5 minutes
   store: isRedisReady() ? createRateLimitStore(5 * 60 * 1000) : undefined,
   standardHeaders: true,
   legacyHeaders:   false,
-  skip: (req) => isLocalRequest(req),
   message: {
     success: false,
     message: "Too many OTP requests. Please try again in 5 minutes.",

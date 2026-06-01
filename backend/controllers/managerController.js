@@ -24,13 +24,39 @@ import {
 } from "../services/roomAllocationService.js";
 
 const normalizePhoneNumber = (phone) => {
-  if (!phone) return "";
-  // Strip whitespace, parentheses, dashes, and ensure it starts with +
-  const normalized = phone.trim().replace(/[\s()\-]/g, "");
-  if (!normalized.startsWith("+")) {
-    // Assume missing country code; prepend a default '+'
-    return `+${normalized}`;
+  if (!phone) {
+    throw new Error("Phone number is required.");
   }
+
+  // Reject URLs/SSRF or any script/HTML payloads immediately
+  if (phone.includes("http://") || phone.includes("https://") || phone.includes("<") || phone.includes(">")) {
+    throw new Error("Invalid phone number format.");
+  }
+
+  const normalized = phone.trim().replace(/[\s()\-]/g, "");
+
+  // Strict E.164 phone validation (starts with +, followed by 1-9, and 7 to 14 digits)
+  const e164Regex = /^\+[1-9]\d{7,14}$/;
+  if (!e164Regex.test(normalized)) {
+    throw new Error("Phone number must be a valid E.164 number starting with + and contain 8 to 15 digits.");
+  }
+
+  // Reject premium-rate phone numbers
+  const premiumRatePatterns = [
+    /^\+449[0-8]/, // UK premium rate
+    /^\+4470/,     // UK personal numbers (often abused/premium)
+    /^\+1900/,     // US premium rate
+    /^\+881/,      // Global Mobile Satellite System
+    /^\+882/,      // International Networks
+    /^\+888/,      // Disaster Relief
+  ];
+
+  for (const pattern of premiumRatePatterns) {
+    if (pattern.test(normalized)) {
+      throw new Error("Premium-rate numbers are not allowed.");
+    }
+  }
+
   return normalized;
 };
 
@@ -99,7 +125,11 @@ export const managerLogin = async (req, res, next) => {
     const { email, password } = req.body;
     if (!email || !password) return res.status(400).json({ success:false, message:"Email and password are required." });
     const manager = await Manager.findOne({ email: email.toLowerCase().trim(), isActive: true });
-    if (!manager) return res.status(401).json({ success:false, message:"Invalid credentials." });
+    const DUMMY_HASH = "$2b$12$abcdefghijklmnopqrstuvwxyz12345678901234567890";
+    if (!manager) {
+      await bcrypt.compare(password, DUMMY_HASH);
+      return res.status(401).json({ success:false, message:"Invalid credentials." });
+    }
     const valid = manager.password.startsWith("$2")
       ? await bcrypt.compare(password, manager.password)
       : manager.password === password;

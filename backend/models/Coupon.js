@@ -12,11 +12,12 @@ const couponSchema = new mongoose.Schema(
       unique: true, 
       uppercase: true, 
       trim: true,
+      maxlength: 50,
       validate: {
         validator: function(v) {
-          return /^[A-Z0-9_-]+$/i.test(v);
+          return /^[A-Z0-9_-]{1,50}$/i.test(v);
         },
-        message: "Coupon code must contain only alphanumeric characters, dashes, or underscores."
+        message: "Coupon code must contain only alphanumeric characters, dashes, or underscores, and be up to 50 characters long."
       }
     },
     description: { 

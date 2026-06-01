@@ -647,9 +647,10 @@ const validateAndSanitizeCoupon = (body, isUpdate = false, existingCoupon = null
 
   // 2. Strict code regex
   if (code !== undefined) {
-    const couponCodeRegex = /^[A-Z0-9_-]+$/i;
-    if (!couponCodeRegex.test(code)) {
-      return { isValid: false, status: 400, message: "Coupon code must contain only alphanumeric characters, dashes, or underscores." };
+    body.code = code.toUpperCase();
+    const couponCodeRegex = /^[A-Z0-9_-]{1,50}$/i;
+    if (!couponCodeRegex.test(body.code)) {
+      return { isValid: false, status: 400, message: "Coupon code must contain only alphanumeric characters, dashes, or underscores, and be up to 50 characters long." };
     }
   }
 

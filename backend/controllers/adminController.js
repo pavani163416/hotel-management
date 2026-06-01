@@ -89,6 +89,11 @@ export const adminLogin = async (req, res, next) => {
       }
     }
 
+    const DUMMY_HASH = "$2b$12$abcdefghijklmnopqrstuvwxyz12345678901234567890";
+    if (!emailMatch) {
+      await bcrypt.compare(password, DUMMY_HASH);
+    }
+
     if (!emailMatch || !passwordMatch) {
       logger.warn("Failed admin login attempt", { ip: req.ip, email });
       return res.status(401).json({ success: false, message: "Invalid credentials." });
