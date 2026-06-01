@@ -2,6 +2,7 @@
   "name": "hotel-mgnt-root",
   "private": true,
   "version": "1.0.0",
+  "type": "module",
   "workspaces": [
     "admin",
     "frontend"
@@ -9,7 +10,8 @@
   "scripts": {
     "build:admin": "npm --prefix admin run build",
     "build:frontend": "npm --prefix frontend run build",
-    "build": "npm run build:admin"
+    "build": "npm run build:admin",
+    "test": "node --test tests/bola.spec.js"
   },
   "dependencies": {
     "connect-redis": "^9.0.0",
