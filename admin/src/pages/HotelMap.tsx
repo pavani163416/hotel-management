@@ -3,7 +3,7 @@ import { BedDouble, CalendarDays, ChevronDown, RefreshCw, Search, X } from "luci
 import AdminLayout from "@/components/AdminLayout";
 import Topbar from "@/components/Topbar";
 import StatusBadge from "@/components/StatusBadge";
-import { getHotels, getHotelMapOverview, getRoomBookingHistory, updateAdminRoom, updateRoomCleaningStatus, updateRoomMaintenanceStatus } from "@/services/api";
+import { API, getHotels, getHotelMapOverview, getRoomBookingHistory, updateAdminRoom, updateRoomCleaningStatus, updateRoomMaintenanceStatus } from "@/services/api";
 
 type Hotel = { hotelId: string; name: string };
 type Room = {
@@ -93,7 +93,7 @@ export default function HotelMap() {
 
   // Socket.IO Listener for real-time room updates
   useEffect(() => {
-    const wsUrl = import.meta.env.VITE_WS_URL || "ws://localhost:5000/ws?role=admin";
+    const wsUrl = import.meta.env.VITE_WS_URL || API.replace(/^http/, "ws").replace(/\/api$/, "") + "/ws?role=admin";
     const ws = new WebSocket(wsUrl);
 
     ws.onmessage = (event) => {
