@@ -313,9 +313,27 @@ app.use((req, res, next) => {
   }
   next();
 });
-app.use(express.json({ limit: "100kb" }));
-app.use(express.urlencoded({ extended: true, limit: "100kb" }));
-app.use(express.text({ type: "text/plain", limit: "100kb" }));
+
+app.use((req, res, next) => {
+  if (req.path.startsWith("/api/upload/image")) {
+    return next();
+  }
+  express.json({ limit: "100kb" })(req, res, next);
+});
+
+app.use((req, res, next) => {
+  if (req.path.startsWith("/api/upload/image")) {
+    return next();
+  }
+  express.urlencoded({ extended: true, limit: "100kb" })(req, res, next);
+});
+
+app.use((req, res, next) => {
+  if (req.path.startsWith("/api/upload/image")) {
+    return next();
+  }
+  express.text({ type: "text/plain", limit: "100kb" })(req, res, next);
+});
 
 // ── NoSQL injection sanitization ─────────────────────────
 app.use(mongoSanitize());
