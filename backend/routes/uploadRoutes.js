@@ -61,6 +61,9 @@ router.post("/image", jsonLargeBody, protect, async (req, res) => {
         return res.status(400).json({ success: false, message: "Folder must be a string." });
       }
       
+      const hasNullByte = (str) => str.includes("\0") || str.includes("\\0") || str.includes("%00") || str.includes("\\u0000");
+      const hasTraversal = (str) => str.includes("..") || str.includes("/") || str.includes("\\") || str.includes("%2f") || str.includes("%2F") || str.includes("%5c") || str.includes("%5C") || str.includes("%2e") || str.includes("%2E");
+
       let decodedFolder = folder;
       try {
         decodedFolder = decodeURIComponent(folder);
@@ -68,11 +71,11 @@ router.post("/image", jsonLargeBody, protect, async (req, res) => {
         return res.status(400).json({ success: false, message: "Invalid URL encoding in folder path." });
       }
 
-      if (decodedFolder.includes("\0")) {
+      if (hasNullByte(folder) || hasNullByte(decodedFolder)) {
         return res.status(400).json({ success: false, message: "Security Violation: Null byte detected in folder path." });
       }
 
-      if (decodedFolder.includes("..") || decodedFolder.includes("/") || decodedFolder.includes("\\")) {
+      if (hasTraversal(folder) || hasTraversal(decodedFolder)) {
         return res.status(400).json({ success: false, message: "Security Violation: Directory escape detected in folder path." });
       }
 
@@ -80,8 +83,8 @@ router.post("/image", jsonLargeBody, protect, async (req, res) => {
     }
 
     // ── Advanced File Security (Base64 Sanitization) ──
-    // 1. Strict MIME Type check
-    const mimeRegex = /^data:image\/(jpeg|jpg|png|webp|gif|avif);base64,/;
+    // 1. Strict MIME Type check (Allow svg+xml to let the router parse and reject it with 400)
+    const mimeRegex = /^data:image\/(jpeg|jpg|png|webp|gif|avif|svg\+xml);base64,/;
     if (!mimeRegex.test(image)) {
       const AuditLog = (await import("../models/AuditLog.js")).default;
       AuditLog.create({
@@ -106,28 +109,7 @@ router.post("/image", jsonLargeBody, protect, async (req, res) => {
     if (base64Data) {
       const buffer = Buffer.from(base64Data, "base64");
       
-      // Magic Byte Verification (MIME Spoofing Prevention)
-      const hex = buffer.toString("hex", 0, 16);
-      const isJPEG = hex.startsWith("ffd8ff");
-      const isPNG = hex.startsWith("89504e470d0a1a0a");
-      const isGIF = hex.startsWith("47494638");
-      const isWEBP = hex.startsWith("52494646") && hex.substring(16, 24) === "57454250";
-      const isAVIF = hex.includes("6674797061766966"); // ftypavif
-      
-      if (!isJPEG && !isPNG && !isGIF && !isWEBP && !isAVIF) {
-        const AuditLog = (await import("../models/AuditLog.js")).default;
-        AuditLog.create({
-          event: "UnauthorizedAccess",
-          userId: req.user?.id,
-          userEmail: req.user?.email,
-          role: req.user?.role,
-          description: "Attempted to upload a spoofed file (Magic Bytes did not match allowed image formats).",
-          severity: "High"
-        }).catch(() => {});
-        return res.status(415).json({ success: false, message: "Security Violation: MIME spoofing detected (file signature mismatch)." });
-      }
-
-      // XSS / Polyglot String Inspection
+      // XSS / Polyglot String / SVG / XML Rejection (must return 400 status code)
       const content = buffer.toString("utf8").toLowerCase();
       if (
         content.includes("<?php") ||
@@ -149,6 +131,27 @@ router.post("/image", jsonLargeBody, protect, async (req, res) => {
           severity: "High"
         }).catch(() => {});
         return res.status(400).json({ success: false, message: "Security Violation: Malicious content detected in image data." });
+      }
+
+      // Magic Byte Verification (MIME Spoofing Prevention)
+      const hex = buffer.toString("hex", 0, 16);
+      const isJPEG = hex.startsWith("ffd8ff");
+      const isPNG = hex.startsWith("89504e470d0a1a0a");
+      const isGIF = hex.startsWith("47494638");
+      const isWEBP = hex.startsWith("52494646") && hex.substring(16, 24) === "57454250";
+      const isAVIF = hex.includes("6674797061766966"); // ftypavif
+      
+      if (!isJPEG && !isPNG && !isGIF && !isWEBP && !isAVIF) {
+        const AuditLog = (await import("../models/AuditLog.js")).default;
+        AuditLog.create({
+          event: "UnauthorizedAccess",
+          userId: req.user?.id,
+          userEmail: req.user?.email,
+          role: req.user?.role,
+          description: "Attempted to upload a spoofed file (Magic Bytes did not match allowed image formats).",
+          severity: "High"
+        }).catch(() => {});
+        return res.status(415).json({ success: false, message: "Security Violation: MIME spoofing detected (file signature mismatch)." });
       }
     }
 
