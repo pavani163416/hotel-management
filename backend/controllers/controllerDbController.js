@@ -35,6 +35,24 @@ export const getAdminUsers = async (req, res, next) => {
 
 export const createAdminUser = async (req, res, next) => {
   try {
+    const { email, password } = req.body;
+    if (email && !email.toLowerCase().trim().endsWith("@gmail.com")) {
+      return res.status(400).json({ success: false, message: "Only @gmail.com email addresses are allowed." });
+    }
+    if (password) {
+      if (password.length < 8) {
+        return res.status(400).json({ success: false, message: "Password must be at least 8 characters long." });
+      }
+      if (password.length > 72) {
+        return res.status(400).json({ success: false, message: "Password must be at most 72 characters long." });
+      }
+      if (!/[A-Z]/.test(password)) {
+        return res.status(400).json({ success: false, message: "Password must contain at least one uppercase letter." });
+      }
+      if (!/[!@#$%^&*(),.?\":{}|<>]/.test(password)) {
+        return res.status(400).json({ success: false, message: "Password must contain at least one special character." });
+      }
+    }
     const { AdminUser } = await getModels();
     const user = await AdminUser.create(req.body);
     const { password: _, ...safe } = user.toJSON();
@@ -44,6 +62,24 @@ export const createAdminUser = async (req, res, next) => {
 
 export const updateAdminUser = async (req, res, next) => {
   try {
+    const { email, password } = req.body;
+    if (email && !email.toLowerCase().trim().endsWith("@gmail.com")) {
+      return res.status(400).json({ success: false, message: "Only @gmail.com email addresses are allowed." });
+    }
+    if (password) {
+      if (password.length < 8) {
+        return res.status(400).json({ success: false, message: "Password must be at least 8 characters long." });
+      }
+      if (password.length > 72) {
+        return res.status(400).json({ success: false, message: "Password must be at most 72 characters long." });
+      }
+      if (!/[A-Z]/.test(password)) {
+        return res.status(400).json({ success: false, message: "Password must contain at least one uppercase letter." });
+      }
+      if (!/[!@#$%^&*(),.?\":{}|<>]/.test(password)) {
+        return res.status(400).json({ success: false, message: "Password must contain at least one special character." });
+      }
+    }
     const { AdminUser } = await getModels();
     const user = await AdminUser.findByIdAndUpdate(req.params.id, req.body, { new: true }).select("-password");
     if (!user) return res.status(404).json({ success: false, message: "User not found" });

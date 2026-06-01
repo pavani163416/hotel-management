@@ -1240,17 +1240,31 @@ router.post("/change-password", verifyCustomerToken, async (req, res, next) => {
       });
     }
 
-    if (newPassword.length < 6) {
+    if (newPassword.length < 8) {
       return res.status(400).json({
         success: false,
-        message: "New password must be at least 6 characters.",
+        message: "New password must be at least 8 characters long.",
       });
     }
 
     if (newPassword.length > 72 || oldPassword.length > 72) {
       return res.status(400).json({
         success: false,
-        message: "Password must be at most 72 characters.",
+        message: "Password must be at most 72 characters long.",
+      });
+    }
+
+    if (!/[A-Z]/.test(newPassword)) {
+      return res.status(400).json({
+        success: false,
+        message: "New password must contain at least one uppercase letter.",
+      });
+    }
+
+    if (!/[!@#$%^&*(),.?\":{}|<>]/.test(newPassword)) {
+      return res.status(400).json({
+        success: false,
+        message: "New password must contain at least one special character.",
       });
     }
 

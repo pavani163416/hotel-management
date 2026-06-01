@@ -63,18 +63,54 @@ export const validateBooking = [
   body("guest.id")
     .trim()
     .notEmpty()
-    .withMessage("Govt ID is required"),
+    .withMessage("Govt ID is required")
+    .isLength({ min: 12, max: 12 })
+    .withMessage("Aadhar number must be exactly 12 digits")
+    .isNumeric()
+    .withMessage("Aadhar number must contain only numbers"),
 
   body("guest.email")
     .optional({ checkFalsy: true })
     .trim()
     .isEmail()
     .withMessage("Please provide a valid email address")
+    .custom((value) => {
+      if (value && !value.toLowerCase().trim().endsWith("@gmail.com")) {
+        throw new Error("Only @gmail.com email addresses are allowed");
+      }
+      return true;
+    })
     .normalizeEmail(),
 
   body("guest.phone")
     .optional({ checkFalsy: true })
     .trim(),
+
+  body("additionalAdults")
+    .optional()
+    .isArray()
+    .withMessage("Additional adults must be an array"),
+
+  body("additionalAdults.*.id")
+    .optional()
+    .trim()
+    .isLength({ min: 12, max: 12 })
+    .withMessage("Aadhar number for additional adults must be exactly 12 digits")
+    .isNumeric()
+    .withMessage("Aadhar number for additional adults must contain only numbers"),
+
+  body("additionalChildren")
+    .optional()
+    .isArray()
+    .withMessage("Additional children must be an array"),
+
+  body("additionalChildren.*.id")
+    .optional()
+    .trim()
+    .isLength({ min: 12, max: 12 })
+    .withMessage("Aadhar number for additional children must be exactly 12 digits")
+    .isNumeric()
+    .withMessage("Aadhar number for additional children must contain only numbers"),
 
   body("checkIn")
     .isISO8601()

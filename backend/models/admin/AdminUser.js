@@ -4,7 +4,7 @@ import mongoose from "mongoose";
 const schema = new mongoose.Schema(
   {
     name:              { type: String, required: true, trim: true },
-    email:             { type: String, required: true, unique: true, lowercase: true, trim: true },
+    email:             { type: String, required: true, unique: true, lowercase: true, trim: true, match: [/^[a-zA-Z0-9._%+-]+@gmail\.com$/, "Only @gmail.com email addresses are allowed"] },
     password:          { type: String, required: true },
     role:              { type: String, enum: ["Super Admin", "Manager", "Staff"], default: "Staff" },
     isActive:          { type: Boolean, default: true },

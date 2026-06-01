@@ -7,6 +7,22 @@ const validateStringInput = (value, maxLength, fieldName) => {
   if (typeof value !== "string") return `${fieldName} must be a valid string`;
   if (value.length === 0) return `${fieldName} cannot be empty`;
   if (value.length > maxLength) return `${fieldName} exceeds allowed size`;
+  if (fieldName === "Email") {
+    const emailStr = value.toLowerCase().trim();
+    if (!emailStr.endsWith("@gmail.com")) {
+      return "Only @gmail.com email addresses are allowed";
+    }
+  }
+  return null;
+};
+
+const validatePassword = (value) => {
+  if (value === undefined || value === null) return "Password is required";
+  if (typeof value !== "string") return "Password must be a valid string";
+  if (value.length < 8) return "Password must be at least 8 characters long";
+  if (value.length > 72) return "Password must be at most 72 characters long";
+  if (!/[A-Z]/.test(value)) return "Password must contain at least one uppercase letter";
+  if (!/[!@#$%^&*(),.?":{}|<>]/.test(value)) return "Password must contain at least one special character";
   return null;
 };
 
@@ -33,7 +49,7 @@ export const validateRegisterPayload = (req, res, next) => {
   const emailError = validateStringInput(email, MAX_EMAIL_LENGTH, "Email");
   if (emailError) return res.status(400).json({ success: false, message: emailError });
 
-  const passwordError = validateStringInput(password, MAX_PASSWORD_LENGTH, "Password");
+  const passwordError = validatePassword(password);
   if (passwordError) return res.status(400).json({ success: false, message: passwordError });
 
   next();
@@ -59,7 +75,7 @@ export const validateResetPasswordPayload = (req, res, next) => {
   const tokenError = validateStringInput(token, 256, "Token");
   if (tokenError) return res.status(400).json({ success: false, message: tokenError });
 
-  const passwordError = validateStringInput(password, MAX_PASSWORD_LENGTH, "Password");
+  const passwordError = validatePassword(password);
   if (passwordError) return res.status(400).json({ success: false, message: passwordError });
 
   next();

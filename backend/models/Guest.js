@@ -17,8 +17,8 @@ const guestSchema = new mongoose.Schema(
       lowercase: true,
       trim: true,
       match: [
-        /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-        "Please provide a valid email address",
+        /^[a-zA-Z0-9._%+-]+@gmail\.com$/,
+        "Only @gmail.com email addresses are allowed",
       ],
     },
 

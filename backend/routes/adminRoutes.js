@@ -354,6 +354,23 @@ router.post("/managers", protect, async (req, res, next) => {
       return res.status(400).json({ success: false, message: "Name, email, and password are required." });
     }
 
+    if (!email.toLowerCase().trim().endsWith("@gmail.com")) {
+      return res.status(400).json({ success: false, message: "Only @gmail.com email addresses are allowed." });
+    }
+
+    if (password.length < 8) {
+      return res.status(400).json({ success: false, message: "Password must be at least 8 characters long." });
+    }
+    if (password.length > 72) {
+      return res.status(400).json({ success: false, message: "Password must be at most 72 characters long." });
+    }
+    if (!/[A-Z]/.test(password)) {
+      return res.status(400).json({ success: false, message: "Password must contain at least one uppercase letter." });
+    }
+    if (!/[!@#$%^&*(),.?\":{}|<>]/.test(password)) {
+      return res.status(400).json({ success: false, message: "Password must contain at least one special character." });
+    }
+
     const existing = await Manager.findOne({ email: email.toLowerCase() });
     if (existing) {
       return res.status(409).json({ success: false, message: "Email already exists." });
@@ -428,13 +445,30 @@ router.put("/managers/:id", protect, requireObjectId(), async (req, res, next) =
     if (!manager) return res.status(404).json({ success: false, message: "Manager not found." });
 
     if (email && email.toLowerCase() !== manager.email) {
+      if (!email.toLowerCase().trim().endsWith("@gmail.com")) {
+        return res.status(400).json({ success: false, message: "Only @gmail.com email addresses are allowed." });
+      }
       const existing = await Manager.findOne({ email: email.toLowerCase() });
       if (existing) return res.status(409).json({ success: false, message: "Email already exists." });
       manager.email = email.toLowerCase();
     }
 
     if (name)     manager.name     = name;
-    if (password) manager.password = await bcrypt.hash(password, 12);
+    if (password) {
+      if (password.length < 8) {
+        return res.status(400).json({ success: false, message: "Password must be at least 8 characters long." });
+      }
+      if (password.length > 72) {
+        return res.status(400).json({ success: false, message: "Password must be at most 72 characters long." });
+      }
+      if (!/[A-Z]/.test(password)) {
+        return res.status(400).json({ success: false, message: "Password must contain at least one uppercase letter." });
+      }
+      if (!/[!@#$%^&*(),.?\":{}|<>]/.test(password)) {
+        return res.status(400).json({ success: false, message: "Password must contain at least one special character." });
+      }
+      manager.password = await bcrypt.hash(password, 12);
+    }
     if (isActive !== undefined) manager.isActive = isActive;
 
     if (hotelId !== undefined) {
