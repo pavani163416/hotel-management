@@ -619,6 +619,93 @@ router.get("/hotel-manager-map", protect, async (req, res, next) => {
 // PUT    /api/admin/coupons/:id      — update
 // DELETE /api/admin/coupons/:id      — delete
 
+const validateAndSanitizeCoupon = (body, isUpdate = false, existingCoupon = null) => {
+  const { code, description, internalNotes, title, value, type, validUntil, usageLimit, maxUses } = body;
+
+  // 1. XSS checks
+  const xssPattern = /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>|on\w+\s*=|javascript:/i;
+  const genericHtmlPattern = /<[^>]*>/;
+
+  const checkXss = (val, fieldName) => {
+    if (typeof val === 'string') {
+      if (xssPattern.test(val) || genericHtmlPattern.test(val)) {
+        return `${fieldName} contains invalid HTML or script content.`;
+      }
+    }
+    return null;
+  };
+
+  let xssErr = null;
+  if (code) xssErr = checkXss(code, "code");
+  if (!xssErr && description) xssErr = checkXss(description, "description");
+  if (!xssErr && internalNotes) xssErr = checkXss(internalNotes, "internalNotes");
+  if (!xssErr && title) xssErr = checkXss(title, "title");
+
+  if (xssErr) {
+    return { isValid: false, status: 400, message: xssErr };
+  }
+
+  // 2. Strict code regex
+  if (code !== undefined) {
+    const couponCodeRegex = /^[A-Z0-9_-]+$/i;
+    if (!couponCodeRegex.test(code)) {
+      return { isValid: false, status: 400, message: "Coupon code must contain only alphanumeric characters, dashes, or underscores." };
+    }
+  }
+
+  // 3. Business logic
+  const mergedType = type !== undefined ? type : (existingCoupon ? existingCoupon.type : "percentage");
+  const mergedValue = value !== undefined ? value : (existingCoupon ? existingCoupon.value : null);
+
+  if (mergedValue !== null && mergedValue !== undefined) {
+    if (mergedValue <= 0) {
+      return { isValid: false, status: 400, message: "Discount must be greater than 0" };
+    }
+    if (mergedType === "percentage" && mergedValue > 100) {
+      return { isValid: false, status: 400, message: "Percentage discount cannot exceed 100%" };
+    }
+  } else if (!isUpdate) {
+    return { isValid: false, status: 400, message: "Discount value is required" };
+  }
+
+  if (validUntil) {
+    if (new Date(validUntil) <= new Date()) {
+      return { isValid: false, status: 400, message: "Coupon expiry must be in the future" };
+    }
+  }
+
+  // Map maxUses to usageLimit
+  if (maxUses !== undefined && usageLimit === undefined) {
+    body.usageLimit = maxUses;
+  }
+
+  const limitToCheck = body.usageLimit !== undefined ? body.usageLimit : maxUses;
+  if (limitToCheck !== undefined && limitToCheck !== null && limitToCheck !== "") {
+    const numLimit = Number(limitToCheck);
+    if (numLimit <= 0) {
+      return { isValid: false, status: 400, message: "maxUses must be greater than 0" };
+    }
+  }
+
+  // Sanitize fields
+  const sanitize = (val) => {
+    if (typeof val !== 'string') return val;
+    return val
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#x27;")
+      .replace(/\//g, "&#x2F;");
+  };
+
+  if (body.description) body.description = sanitize(body.description);
+  if (body.internalNotes) body.internalNotes = sanitize(body.internalNotes);
+  if (body.title) body.title = sanitize(body.title);
+
+  return { isValid: true };
+};
+
 router.get("/coupons", protect, async (req, res, next) => {
   try {
     const filter = {};
@@ -630,6 +717,10 @@ router.get("/coupons", protect, async (req, res, next) => {
 
 router.post("/coupons", protect, async (req, res, next) => {
   try {
+    const check = validateAndSanitizeCoupon(req.body, false);
+    if (!check.isValid) {
+      return res.status(check.status).json({ success: false, message: check.message });
+    }
     const coupon = await Coupon.create({ ...req.body, createdBy: req.admin?.email || "admin" });
     logger.info("Coupon created", { code: coupon.code });
     res.status(201).json({ success: true, data: coupon });
@@ -646,8 +737,15 @@ router.get("/coupons/:id", protect, requireObjectId(), async (req, res, next) =>
 
 router.put("/coupons/:id", protect, requireObjectId(), async (req, res, next) => {
   try {
+    const existingCoupon = await Coupon.findById(req.params.id);
+    if (!existingCoupon) return res.status(404).json({ success: false, message: "Coupon not found." });
+
+    const check = validateAndSanitizeCoupon(req.body, true, existingCoupon);
+    if (!check.isValid) {
+      return res.status(check.status).json({ success: false, message: check.message });
+    }
+
     const coupon = await Coupon.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
-    if (!coupon) return res.status(404).json({ success: false, message: "Coupon not found." });
     res.json({ success: true, data: coupon });
   } catch (e) { next(e); }
 });
@@ -668,7 +766,9 @@ router.get("/coupons-public", async (req, res, next) => {
     const coupons = await Coupon.find({
       isActive: true,
       $or: [{ validUntil: null }, { validUntil: { $gte: now } }],
-    }).select("-createdBy").sort({ createdAt: -1 });
+    })
+    .select("_id code description type value minBookingAmount maxDiscount applicableHotelIds validFrom validUntil usageLimit firstTimeOnly isActive")
+    .sort({ createdAt: -1 });
     res.json({ success: true, count: coupons.length, data: coupons });
   } catch (e) { next(e); }
 });
