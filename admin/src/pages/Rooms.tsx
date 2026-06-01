@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Search, Plus, Edit2, Trash2, X, Download, ChevronDown } from "lucide-react";
+import { Search, Plus, Edit2, Trash2, X, Download, ChevronDown, Loader2 } from "lucide-react";
 import { BedDouble, CheckCircle, Wrench, DollarSign, Building2 } from "lucide-react";
 import AdminLayout from "@/components/AdminLayout";
 import Topbar from "@/components/Topbar";
@@ -47,6 +47,7 @@ export default function Rooms() {
   const [addOpen, setAddOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<EmbeddedRoom | null>(null);
   const [submitted, setSubmitted] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [form, setForm] = useState<FormState>({
     name: "", type: "Standard", price: "",
     capacity: "2", bed: "1 King Bed", features: "WiFi, AC", floor: "1",
@@ -134,7 +135,8 @@ export default function Rooms() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedHotelId) return;
+    if (!selectedHotelId || saving) return;
+    setSaving(true);
 
     // Auto-generate room ID using hotel name initials + next room number
     const initials = (hotels.find((h) => h.hotelId === selectedHotelId)?.name || selectedHotelId)
@@ -201,12 +203,13 @@ export default function Rooms() {
         }
       }
       fetchHotelRooms(selectedHotelId);
+      setSubmitted(true);
+      setTimeout(() => { setAddOpen(false); setSubmitted(false); }, 1000);
     } catch (err) {
       console.error("Room save error:", err);
+    } finally {
+      setSaving(false);
     }
-
-    setSubmitted(true);
-    setTimeout(() => { setAddOpen(false); setSubmitted(false); }, 1000);
   };
 
   const handleDelete = async (roomId: string) => {
@@ -469,9 +472,16 @@ export default function Rooms() {
                 className="flex-1 py-2.5 border border-border rounded-lg text-sm font-medium text-text-secondary hover:bg-surface-3 transition-colors">
                 Cancel
               </button>
-              <button type="submit"
-                className="flex-1 py-2.5 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-primary-dark transition-colors">
-                {editTarget ? "Update Room" : "Add Room"}
+              <button type="submit" disabled={saving}
+                className="flex-1 py-2.5 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+                {saving ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    {editTarget ? "Updating..." : "Adding..."}
+                  </>
+                ) : (
+                  editTarget ? "Update Room" : "Add Room"
+                )}
               </button>
             </div>
           </form>

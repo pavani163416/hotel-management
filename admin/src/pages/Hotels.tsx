@@ -81,6 +81,7 @@ export default function Hotels() {
   };
 
   const [saveError, setSaveError] = useState("");
+  const [saving, setSaving] = useState(false);
   const [uploadedImage, setUploadedImage] = useState<string>("");
   const [uploadedImage2, setUploadedImage2] = useState<string>("");
   const [uploadedImage3, setUploadedImage3] = useState<string>("");
@@ -182,6 +183,8 @@ export default function Hotels() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (saving) return;
+    setSaving(true);
     setSaveError("");
     const newHotelId = `h${Date.now()}`;
     const defaultImage = "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&q=80";
@@ -232,6 +235,7 @@ export default function Hotels() {
           errMsg = luxData.errors.map((e: any) => `${e.field}: ${e.message}`).join(" | ");
         }
         setSaveError(errMsg);
+        setSaving(false);
         return; // stop — don't show success
       }
       // Success — backend already syncs controller snapshot automatically
@@ -239,7 +243,7 @@ export default function Hotels() {
 
       // ── Auto-generate manager credentials for new hotels ──
       if (!editTarget) {
-        const slug = form.name
+         const slug = form.name
           .toLowerCase()
           .replace(/[^a-z0-9\s]/g, "")
           .split(/\s+/)
@@ -269,12 +273,14 @@ export default function Hotels() {
       }
 
       setSubmitted(true);
+      setSaving(false);
       setTimeout(() => {
         if (editTarget) { setAddOpen(false); setSubmitted(false); }
         // For new hotels, keep modal open to show credentials
       }, editTarget ? 1200 : 0);
     } catch (err: any) {
       setSaveError("Cannot reach server. Check backend is running.");
+      setSaving(false);
     }
   };
 
@@ -410,8 +416,6 @@ export default function Hotels() {
 
           <div className="flex items-center justify-between px-5 py-3 border-t border-border">
             <p className="text-xs text-muted">Showing {filtered.length} of {hotels.length} properties</p>
-            <button onClick={() => navigate("/notifications")}
-              className="text-xs text-primary font-semibold hover:underline">View All Notifications →</button>
           </div>
         </div>
         </>
@@ -674,9 +678,16 @@ export default function Hotels() {
                 className="flex-1 py-2.5 border border-border rounded-lg text-sm font-medium text-text-secondary hover:bg-surface-3 transition-colors">
                 Cancel
               </button>
-              <button type="submit"
-                className="flex-1 py-2.5 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-primary-dark transition-colors">
-                {editTarget ? "Update Hotel" : "Add Hotel"}
+              <button type="submit" disabled={saving}
+                className="flex-1 py-2.5 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+                {saving ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    {editTarget ? "Updating..." : "Adding..."}
+                  </>
+                ) : (
+                  editTarget ? "Update Hotel" : "Add Hotel"
+                )}
               </button>
             </div>
           </form>
