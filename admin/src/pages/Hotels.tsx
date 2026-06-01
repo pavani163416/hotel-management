@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Search, Plus, Download, MoreVertical, Edit2, Trash2, X, ImagePlus, Loader2, Clipboard, Check } from "lucide-react";
 import { Hotel as HotelIcon, Building2, TrendingUp, AlertTriangle } from "lucide-react";
 import AdminLayout from "@/components/AdminLayout";
@@ -18,6 +18,14 @@ export default function Hotels() {
   const { hotels, addHotel, updateHotel, deleteHotel, reloadHotels } = useHotels();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("Any Status");
+
+  // Pre-fill search from URL query param (e.g. from Topbar)
+  const [searchParams] = useSearchParams();
+  useEffect(() => {
+    const q = searchParams.get("q");
+    if (q) setSearch(q);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [addOpen, setAddOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<Hotel | null>(null);
   const [actionTarget, setActionTarget] = useState<Hotel | null>(null);
@@ -198,7 +206,8 @@ export default function Hotels() {
     if (uploadedImage2) gallery.push(uploadedImage2);
     if (uploadedImage3) gallery.push(uploadedImage3);
 
-    const luxestayPayload = {
+    // For PATCH (edit), don't send rooms/reviews — they're managed separately and would overwrite existing data
+    const basePayload = {
       hotelId,
       name:          form.name,
       location:      form.location,
@@ -212,14 +221,17 @@ export default function Hotels() {
       type:          "Hotel",
       coords:        [0, 0],
       amenities:     form.amenities,
-      rooms:         [],
-      reviews:       [],
       isActive:      form.status === "Active",
       country:       form.country.toUpperCase(),
       totalRooms:    Number(form.floors) * Number(form.roomsPerFloor),
       floors:        Number(form.floors),
       roomsPerFloor: Number(form.roomsPerFloor),
     };
+
+    // Only include rooms/reviews when creating a new hotel
+    const luxestayPayload = editTarget
+      ? basePayload
+      : { ...basePayload, rooms: [], reviews: [] };
 
     try {
       const token = localStorage.getItem("luxe_admin_token");
@@ -712,7 +724,7 @@ export default function Hotels() {
               className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-text-primary hover:bg-surface-2 border border-border transition-colors">
               <Edit2 className="w-4 h-4 text-primary" /> Edit Hotel Details
             </button>
-            <button onClick={() => { setActionTarget(null); navigate("/bookings"); }}
+            <button onClick={() => { const hotelName = actionTarget.name; setActionTarget(null); navigate(`/bookings?hotel=${encodeURIComponent(hotelName)}`); }}
               className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-text-primary hover:bg-surface-2 border border-border transition-colors">
               <HotelIcon className="w-4 h-4 text-success" /> View Bookings
             </button>

@@ -1,15 +1,17 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, User, Mail, Shield, Edit2, Save, X, KeyRound } from "lucide-react";
+import { ArrowLeft, User, Mail, Shield, Edit2, Save, X, KeyRound, Loader2 } from "lucide-react";
 import PasswordInput from "@/components/PasswordInput";
 import AdminLayout from "@/components/AdminLayout";
 import Topbar from "@/components/Topbar";
 import { useAdmin } from "@/context/AdminContext";
+import { API } from "@/services/api";
 
 export default function Profile() {
   const navigate = useNavigate();
   const { admin, login, token } = useAdmin();
   const [editing, setEditing] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [form, setForm] = useState({
     name:  admin?.name  || "",
     email: admin?.email || "",
@@ -17,6 +19,39 @@ export default function Profile() {
   });
   const [pwForm, setPwForm] = useState({ current: "", next: "", confirm: "" });
   const [saved, setSaved] = useState(false);
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) return;
+    setUploading(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        const base64 = event.target?.result as string;
+        try {
+          const res = await fetch(`${API}/upload/image`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`
+            },
+            body: JSON.stringify({ image: base64, folder: "profiles" })
+          });
+          const data = await res.json();
+          if (data.success) {
+            login({ ...admin!, profileImage: data.url }, token || "");
+          }
+        } catch (err) {
+          console.error("Profile picture upload failed:", err);
+        }
+        setUploading(false);
+      };
+      reader.readAsDataURL(file);
+    } catch {
+      setUploading(false);
+    }
+  };
 
   const handleSave = () => {
     if (!form.name.trim() || !form.email.trim()) return;
@@ -48,9 +83,23 @@ export default function Profile() {
         {/* Avatar + name */}
         <div className="bg-white rounded-xl border border-border shadow-card p-6 mb-4">
           <div className="flex items-center gap-5">
-            <div className="w-16 h-16 rounded-full bg-primary grid place-items-center shrink-0">
-              <span className="text-white text-xl font-bold">{initials}</span>
+            <div className="relative group cursor-pointer w-16 h-16 rounded-full overflow-hidden shrink-0 border border-border" onClick={() => document.getElementById("avatar-upload")?.click()}>
+              {admin?.profileImage ? (
+                <img src={admin.profileImage} alt="Avatar" className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full bg-primary grid place-items-center">
+                  <span className="text-white text-xl font-bold">{initials}</span>
+                </div>
+              )}
+              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                {uploading ? (
+                  <Loader2 className="w-5 h-5 text-white animate-spin" />
+                ) : (
+                  <span className="text-white text-[10px] font-semibold text-center leading-tight">Change<br/>Photo</span>
+                )}
+              </div>
             </div>
+            <input id="avatar-upload" type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} disabled={uploading} />
             <div className="flex-1">
               <h2 className="text-lg font-bold text-text-primary">{admin?.name || "Admin"}</h2>
               <p className="text-sm text-muted">{admin?.email || ""}</p>

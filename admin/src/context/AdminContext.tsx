@@ -9,6 +9,7 @@ export type Admin = {
   hotelName?: string;
   assignedHotelId?: string;
   assignedHotelName?: string;
+  profileImage?: string;
 };
 
 type AdminCtx = {

@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Search, Download, Plus, MoreVertical,
   CalendarCheck, Clock, LogIn, DollarSign, Filter, X,
@@ -62,6 +62,16 @@ export default function Bookings() {
   const [showNewBooking, setShowNewBooking] = useState(false);
   const [nbSubmitted, setNbSubmitted] = useState(false);
   const PER_PAGE = 8;
+
+  // Read hotel filter from URL query param (e.g. ?hotel=HotelName)
+  const [searchParams] = useSearchParams();
+  useEffect(() => {
+    const hotelParam = searchParams.get("hotel");
+    if (hotelParam) {
+      setPropertyFilter(hotelParam);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Simple cancel confirmation state (no reason required for admin)
   const [confirmCancel, setConfirmCancel] = useState(false);

@@ -1,6 +1,6 @@
 import { Bell, Search, Hotel, X, UserCircle } from "lucide-react";
 import { useEffect, useState, useCallback, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAdmin } from "@/context/AdminContext";
 import { useBookings } from "@/context/BookingsContext";
 import { useHotels } from "@/context/HotelsContext";
@@ -35,6 +35,7 @@ export default function Topbar({ searchPlaceholder }: Props) {
   const { liveAlerts, pushLiveAlert, clearLiveAlerts } = useBookings();
   const { hotels } = useHotels();
   const navigate = useNavigate();
+  const location = useLocation();
   const [search, setSearch]                   = useState("");
   const [showNotifs, setShowNotifs]           = useState(false);
   const [showSettings, setShowSettings]       = useState(false);
@@ -91,7 +92,20 @@ export default function Topbar({ searchPlaceholder }: Props) {
 
   const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && search.trim()) {
-      navigate("/bookings");
+      const q = search.trim();
+      // Navigate to the relevant page based on context
+      const path = location.pathname;
+      if (path.startsWith("/rooms")) {
+        navigate(`/rooms?q=${encodeURIComponent(q)}`);
+      } else if (path.startsWith("/guests")) {
+        navigate(`/guests?q=${encodeURIComponent(q)}`);
+      } else if (path.startsWith("/hotels")) {
+        navigate(`/hotels?q=${encodeURIComponent(q)}`);
+      } else if (path.startsWith("/m/")) {
+        navigate(`/m/bookings?q=${encodeURIComponent(q)}`);
+      } else {
+        navigate(`/bookings?q=${encodeURIComponent(q)}`);
+      }
       setSearch("");
     }
   };
@@ -360,13 +374,13 @@ export default function Topbar({ searchPlaceholder }: Props) {
                 <p className="text-xs text-dim">{admin?.email || ""}</p>
               </div>
               {[
-                { label: "Profile",   path: "/profile" },
+                { label: "Profile",   path: admin?.role === "Manager" ? "/m/profile" : "/profile" },
                 { label: "Hotels",    path: "/hotels" },
                 { label: "Rooms",     path: "/rooms" },
                 { label: "Revenue",   path: "/revenue" },
                 { label: "Analytics", path: "/analytics" },
                 { label: "Insights",  path: "/insights" },
-                { label: "Settings",  path: "/profile" },
+                { label: "Settings",  path: "/settings" },
               ].map((item) => (
                 <button key={item.label}
                   onClick={() => { setShowSettings(false); navigate(item.path); }}

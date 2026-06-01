@@ -124,12 +124,16 @@ export default function Sidebar() {
           onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.06)"}
           onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = "transparent"}
         >
-          <div className="w-8 h-8 rounded-full grid place-items-center shrink-0"
+          <div className="w-8 h-8 rounded-full overflow-hidden shrink-0"
             style={{
               background: "linear-gradient(135deg, rgba(212,168,67,0.2) 0%, rgba(212,168,67,0.08) 100%)",
               border: "1px solid rgba(212,168,67,0.3)",
             }}>
-            <span className="text-gold text-xs font-bold">{initials}</span>
+            {admin?.profileImage ? (
+              <img src={admin.profileImage} alt="Avatar" className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-gold text-xs font-bold w-full h-full grid place-items-center">{initials}</span>
+            )}
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-bright text-xs font-semibold truncate">{admin?.name || "Admin"}</p>
