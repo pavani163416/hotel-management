@@ -74,12 +74,6 @@ export const validateBooking = [
     .trim()
     .isEmail()
     .withMessage("Please provide a valid email address")
-    .custom((value) => {
-      if (value && !value.toLowerCase().trim().endsWith("@gmail.com")) {
-        throw new Error("Only @gmail.com email addresses are allowed");
-      }
-      return true;
-    })
     .normalizeEmail(),
 
   body("guest.phone")

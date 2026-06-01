@@ -7,13 +7,6 @@ const validateStringInput = (value, maxLength, fieldName, req) => {
   if (typeof value !== "string") return `${fieldName} must be a valid string`;
   if (value.length === 0) return `${fieldName} cannot be empty`;
   if (value.length > maxLength) return `${fieldName} exceeds allowed size`;
-  if (fieldName === "Email") {
-    const emailStr = value.toLowerCase().trim();
-    const isAdminOrManager = req && (req.originalUrl.includes("/api/admin") || req.originalUrl.includes("/api/manager"));
-    if (!isAdminOrManager && !emailStr.endsWith("@gmail.com")) {
-      return "Only @gmail.com email addresses are allowed";
-    }
-  }
   return null;
 };
 
