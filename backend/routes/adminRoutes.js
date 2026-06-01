@@ -297,7 +297,10 @@ router.get("/users", protect, async (req, res, next) => {
 
 router.post("/users", protect, async (req, res, next) => {
   try {
-    const { password, ...rest } = req.body;
+    const { password, name, email, role, isActive, assignedHotelId, assignedHotelName } = req.body;
+    if (!name || !email) {
+      return res.status(400).json({ success: false, message: "Name and email are required." });
+    }
     if (password) {
       if (password.length < 8) return res.status(400).json({ success: false, message: "Password must be at least 8 characters long." });
       if (password.length > 72) return res.status(400).json({ success: false, message: "Password must be at most 72 characters long." });
@@ -306,8 +309,24 @@ router.post("/users", protect, async (req, res, next) => {
     } else {
       return res.status(400).json({ success: false, message: "Password is required." });
     }
+
+    // ── Hotel referential integrity for Manager-role admin users ──
+    const safeData = { name, email: email.toLowerCase().trim(), role: role || "Staff", isActive: isActive !== false };
+    if (safeData.role === "Manager") {
+      if (!assignedHotelId || typeof assignedHotelId !== "string" || assignedHotelId.trim() === "") {
+        return res.status(400).json({ success: false, message: "Manager role requires a valid assignedHotelId." });
+      }
+      const hotel = await Hotel.findOne({ hotelId: assignedHotelId.trim() });
+      if (!hotel) {
+        return res.status(404).json({ success: false, message: `Hotel with hotelId '${assignedHotelId}' does not exist.` });
+      }
+      safeData.assignedHotelId   = hotel.hotelId;
+      safeData.assignedHotelName = hotel.name;
+      safeData.hotelObjectId     = hotel._id;
+    }
+
     const hashed = await bcrypt.hash(password, 12);
-    const user   = await AdminUser.create({ ...rest, password: hashed });
+    const user   = await AdminUser.create({ ...safeData, password: hashed });
     res.status(201).json({ success: true, data: { ...user.toJSON(), password: undefined } });
   } catch (e) { next(e); }
 });
@@ -316,7 +335,7 @@ router.patch("/users/:id", protect, requireObjectId(), async (req, res, next) =>
   try {
     const update = { ...req.body };
     // Whitelist safe updatable fields — prevent mass assignment
-    const { name, email, role, isActive, password } = update;
+    const { name, email, role, isActive, password, assignedHotelId } = update;
     const safeUpdate = {};
     if (name     !== undefined) safeUpdate.name     = name;
     if (email    !== undefined) safeUpdate.email    = email.toLowerCase().trim();
@@ -328,6 +347,32 @@ router.patch("/users/:id", protect, requireObjectId(), async (req, res, next) =>
       if (!/[A-Z]/.test(password)) return res.status(400).json({ success: false, message: "Password must contain at least one uppercase letter." });
       if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) return res.status(400).json({ success: false, message: "Password must contain at least one special character." });
       safeUpdate.password = await bcrypt.hash(password, 12);
+    }
+
+    // ── Hotel referential integrity on admin user update ──
+    if (assignedHotelId !== undefined) {
+      if (assignedHotelId === null || (typeof assignedHotelId === "string" && assignedHotelId.trim() === "")) {
+        return res.status(400).json({ success: false, message: "assignedHotelId cannot be null or empty." });
+      }
+      if (typeof assignedHotelId !== "string") {
+        return res.status(400).json({ success: false, message: "assignedHotelId must be a non-empty string." });
+      }
+      const hotel = await Hotel.findOne({ hotelId: assignedHotelId.trim() });
+      if (!hotel) {
+        return res.status(404).json({ success: false, message: `Hotel with hotelId '${assignedHotelId}' does not exist.` });
+      }
+      safeUpdate.assignedHotelId   = hotel.hotelId;
+      safeUpdate.assignedHotelName = hotel.name;
+      safeUpdate.hotelObjectId     = hotel._id;
+    }
+
+    // If role is being changed to Manager, ensure hotel assignment exists
+    const effectiveRole = role || (await AdminUser.findById(req.params.id))?.role;
+    if (effectiveRole === "Manager" && assignedHotelId === undefined) {
+      const existingUser = await AdminUser.findById(req.params.id);
+      if (existingUser && !existingUser.assignedHotelId) {
+        return res.status(400).json({ success: false, message: "Manager role requires a valid hotel assignment. Please provide assignedHotelId." });
+      }
     }
 
     const user = await AdminUser.findByIdAndUpdate(req.params.id, safeUpdate, { new: true, runValidators: true }).select("-password");
@@ -368,8 +413,6 @@ router.post("/managers", protect, async (req, res, next) => {
       return res.status(400).json({ success: false, message: "Name, email, and password are required." });
     }
 
-
-
     if (password.length < 8) {
       return res.status(400).json({ success: false, message: "Password must be at least 8 characters long." });
     }
@@ -383,27 +426,34 @@ router.post("/managers", protect, async (req, res, next) => {
       return res.status(400).json({ success: false, message: "Password must contain at least one special character." });
     }
 
+    // ── Hotel referential integrity validation ──
+    if (hotelId === null || (typeof hotelId === "string" && hotelId.trim() === "")) {
+      return res.status(400).json({ success: false, message: "A valid hotel assignment is required. hotelId cannot be null or empty." });
+    }
+    if (!hotelId || typeof hotelId !== "string") {
+      return res.status(400).json({ success: false, message: "hotelId is required and must be a non-empty string." });
+    }
+
     const existing = await Manager.findOne({ email: email.toLowerCase() });
     if (existing) {
       return res.status(409).json({ success: false, message: "Email already exists." });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 12);
-
-    let hotelObjectId = null;
-    if (hotelId) {
-      const hotel = await Hotel.findOne({ hotelId });
-      if (hotel) hotelObjectId = hotel._id;
+    const hotel = await Hotel.findOne({ hotelId: hotelId.trim() });
+    if (!hotel) {
+      return res.status(404).json({ success: false, message: `Hotel with hotelId '${hotelId}' does not exist.` });
     }
+
+    const hashedPassword = await bcrypt.hash(password, 12);
 
     const manager = await Manager.create({
       name,
       email:             email.toLowerCase(),
       password:          hashedPassword,
       role:              "Manager",
-      assignedHotelId:   hotelId   || null,
-      assignedHotelName: hotelName || null,
-      hotelObjectId,
+      assignedHotelId:   hotel.hotelId,
+      assignedHotelName: hotel.name,
+      hotelObjectId:     hotel._id,
       isActive:          isActive !== false,
     });
 
@@ -415,11 +465,11 @@ router.post("/managers", protect, async (req, res, next) => {
       type:    "manager",
     }).catch(() => {});
 
-    logger.info("Manager created", { managerId: manager._id, email: manager.email, hotelId });
+    logger.info("Manager created", { managerId: manager._id, email: manager.email, hotelId: hotel.hotelId });
 
     res.status(201).json({
       success: true,
-      data: { ...manager.toJSON(), password: undefined, hotelName: hotelName || null },
+      data: { ...manager.toJSON(), password: undefined, hotelName: hotel.name },
     });
   } catch (e) { next(e); }
 });
@@ -457,7 +507,6 @@ router.put("/managers/:id", protect, requireObjectId(), async (req, res, next) =
     if (!manager) return res.status(404).json({ success: false, message: "Manager not found." });
 
     if (email && email.toLowerCase() !== manager.email) {
-
       const existing = await Manager.findOne({ email: email.toLowerCase() });
       if (existing) return res.status(409).json({ success: false, message: "Email already exists." });
       manager.email = email.toLowerCase();
@@ -481,20 +530,22 @@ router.put("/managers/:id", protect, requireObjectId(), async (req, res, next) =
     }
     if (isActive !== undefined) manager.isActive = isActive;
 
+    // ── Hotel referential integrity validation on update ──
     if (hotelId !== undefined) {
-      manager.assignedHotelId = hotelId;
-      if (hotelId) {
-        const hotel = await Hotel.findOne({ hotelId });
-        if (hotel) {
-          manager.hotelObjectId     = hotel._id;
-          manager.assignedHotelName = hotelName || hotel.name;
-        }
-      } else {
-        manager.hotelObjectId     = null;
-        manager.assignedHotelName = null;
+      if (hotelId === null || (typeof hotelId === "string" && hotelId.trim() === "")) {
+        return res.status(400).json({ success: false, message: "hotelId cannot be null or empty when updating hotel assignment." });
       }
+      if (typeof hotelId !== "string") {
+        return res.status(400).json({ success: false, message: "hotelId must be a non-empty string." });
+      }
+      const hotel = await Hotel.findOne({ hotelId: hotelId.trim() });
+      if (!hotel) {
+        return res.status(404).json({ success: false, message: `Hotel with hotelId '${hotelId}' does not exist.` });
+      }
+      manager.assignedHotelId   = hotel.hotelId;
+      manager.hotelObjectId     = hotel._id;
+      manager.assignedHotelName = hotelName || hotel.name;
     }
-    if (hotelName !== undefined) manager.assignedHotelName = hotelName;
 
     await manager.save();
     res.json({ success: true, data: { ...manager.toJSON(), password: undefined } });
