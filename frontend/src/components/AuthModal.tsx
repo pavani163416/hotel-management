@@ -7,7 +7,7 @@ import api from "@/services/api";
 import { ContactAdminModal } from "./auth/ContactAdminModal";
 import { GoogleOAuthProvider, useGoogleLogin } from "@react-oauth/google";
 
-const GOOGLE_CLIENT_ID_FALLBACK = "70312411330-jo6eo462a26qo7gcici4nr1csaoa8v0q.apps.googleusercontent.com";
+const GOOGLE_CLIENT_ID_FALLBACK = "70312411330-8givsb0ktr8f09u8ullo157vkppkoqqv.apps.googleusercontent.com";
 
 type AuthModalProps = {
   isOpen: boolean;
