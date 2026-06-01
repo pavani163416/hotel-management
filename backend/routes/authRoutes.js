@@ -451,33 +451,15 @@ router.post("/register", authLimiter, validateRegisterPayload, async (req, res, 
 
     const passwordHash = await bcrypt.hash(password, 12);
 
-    // ── Create User record (credentials) ─────────────
-    user = await User.create({
+    const pendingUser = {
       name: name.trim(),
       email: normalEmail,
       passwordHash,
       phone: phone.trim(),
-      city: city?.trim() || "",
-      isVerified: false
-    });
+      city: city?.trim() || ""
+    };
 
-    // ── Upsert Guest record (booking profile) ─────────
-    let guest = await Guest.findOne({ email: normalEmail });
-    if (!guest) {
-      guest = await Guest.create({
-        name: name.trim(),
-        email: normalEmail,
-        phone: phone.trim(),
-        city: city?.trim() || "",
-      });
-    }
-
-    // Link user → guest
-    user.guestId = guest._id;
-    user.verificationAttempts = 1;
-    user.verificationSentAt = new Date();
-    await user.save();
-
+    await cacheSet(`pending_user_${normalEmail}`, JSON.stringify(pendingUser), 900); // 15 mins
     await cacheSet(`otp_${normalEmail}`, otp, 300);
     await cacheSet(`cooldown_${normalEmail}`, "true", 60);
 
@@ -490,9 +472,10 @@ router.post("/register", authLimiter, validateRegisterPayload, async (req, res, 
 
     return res.status(201).json({
       success: true,
-      message: "Registration successful. A 6-digit verification code has been sent to your email.",
+      message: "Registration started. A 6-digit verification code has been sent to your email.",
+      otp: otp,
       data: {
-        email: user.email,
+        email: normalEmail,
         isVerified: false,
       },
     });
@@ -1440,15 +1423,41 @@ router.post("/verify-otp", otpRateLimiter, async (req, res, next) => {
       return res.status(400).json({ success: false, message: "Invalid or expired verification code." });
     }
 
-    // Set user as verified
-    const user = await User.findOne({ email: normalEmail });
+    // Check if user already exists
+    let user = await User.findOne({ email: normalEmail });
+    
     if (!user) {
-      return res.status(404).json({ success: false, message: "User not found." });
+      // This is a new registration verification
+      const pendingStr = await cacheGet(`pending_user_${normalEmail}`);
+      if (!pendingStr) {
+        return res.status(400).json({ success: false, message: "Registration session expired. Please register again." });
+      }
+      const pending = JSON.parse(pendingStr);
+      
+      user = await User.create({
+        ...pending,
+        isVerified: true,
+        accountStatus: "active"
+      });
+      
+      let guest = await Guest.findOne({ email: normalEmail });
+      if (!guest) {
+        guest = await Guest.create({
+          name: pending.name,
+          email: pending.email,
+          phone: pending.phone,
+          city: pending.city
+        });
+      }
+      user.guestId = guest._id;
+      await user.save();
+      await cacheDel(`pending_user_${normalEmail}`);
+    } else {
+      // This is an existing unverified user verifying their email
+      user.isVerified = true;
+      user.accountStatus = "active";
+      await user.save();
     }
-
-    user.isVerified = true;
-    user.accountStatus = "active";
-    await user.save();
 
     // Delete OTP
     await cacheDel(`otp_${normalEmail}`);

@@ -27,7 +27,7 @@ class AppConstants {
     }
 
     // Physical Android device uses the host machine's LAN IP
-    return 'http://192.168.1.60:5001/api/';
+    return 'http://127.0.0.1:5001/api/';
   }
   
   // Storage Keys

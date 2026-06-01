@@ -11,6 +11,7 @@ class ApiService {
     _dio.options.connectTimeout = const Duration(seconds: 30);
     _dio.options.receiveTimeout = const Duration(seconds: 30);
     _dio.options.headers['Content-Type'] = 'application/json';
+    _dio.options.headers['Origin'] = 'https://luxestay-frontend.vercel.app';
 
     _dio.interceptors.add(
       InterceptorsWrapper(
