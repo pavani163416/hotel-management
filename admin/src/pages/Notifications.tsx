@@ -10,6 +10,8 @@ import Topbar from "@/components/Topbar";
 import PageHeader from "@/components/PageHeader";
 import StatsCard from "@/components/StatsCard";
 import { getNotifications, markNotificationRead, createNotification } from "@/services/api";
+import socket from "@/services/socket";
+import { useSocket } from "@/hooks/useSocket";
 
 interface NotificationItem {
   _id: string;
@@ -90,6 +92,12 @@ export default function Notifications() {
   useEffect(() => {
     fetchNotifications();
   }, [fetchNotifications]);
+
+  const handleIncomingNotification = useCallback((data: NotificationItem) => {
+    setNotifications(prev => [data, ...prev.filter(item => item._id !== data._id)].slice(0, 100));
+  }, []);
+
+  useSocket<NotificationItem>("notification", handleIncomingNotification);
 
   const handleMarkRead = async (id: string) => {
     try {

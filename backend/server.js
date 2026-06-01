@@ -478,17 +478,20 @@ io.on("connection", (socket) => {
     const u = socket.data.user;
     if (!u) return;
 
+    const uRole = u.role?.toLowerCase();
+    const reqRole = role?.toLowerCase();
+
     // Strict Role & Ownership Enforcement for Rooms
-    if (userId && (u.id === userId || u.role === "admin" || u.role === "Super Admin")) {
+    if (userId && (String(u.id).toLowerCase() === String(userId).toLowerCase() || uRole === "admin" || uRole === "super admin" || uRole === "controller")) {
       socket.join(roomNames.user(userId));
     }
     
-    if (hotelId && (u.assignedHotelId === hotelId || u.hotelObjectId === hotelId || u.role === "admin" || u.role === "Super Admin")) {
+    if (hotelId && (String(u.assignedHotelId) === String(hotelId) || String(u.hotelObjectId) === String(hotelId) || uRole === "admin" || uRole === "super admin" || uRole === "controller")) {
       socket.join(roomNames.hotel(hotelId));
     }
     
-    if (role && (u.role === role || u.role === "admin" || u.role === "Super Admin")) {
-      socket.join(roomNames.role(role));
+    if (reqRole && (uRole === reqRole || uRole === "admin" || uRole === "super admin" || uRole === "controller")) {
+      socket.join(roomNames.role(reqRole));
     }
   });
 

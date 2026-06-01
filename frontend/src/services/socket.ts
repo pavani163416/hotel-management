@@ -17,6 +17,10 @@ const socket = io(BACKEND_URL, {
   autoConnect: true,
   forceNew: false,
   multiplex: true,
+  auth: (cb) => {
+    const token = localStorage.getItem("luxe_customer_token");
+    cb({ token });
+  },
 });
 
 socket.on("connect", () => {

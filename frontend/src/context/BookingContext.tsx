@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
 import type { Hotel, Room } from "@/data/hotels";
 import { API } from "../services/api";
+import socket from "@/services/socket";
 
 const HOTEL_CACHE_KEY = "luxe_hotels_cache";
 
@@ -314,6 +315,11 @@ export const BookingProvider = ({ children }: { children: ReactNode }) => {
       setBookings([]);
       localStorage.removeItem("luxe_bookings");
       localStorage.removeItem("luxe_customer_token");
+      socket.auth = { token: null };
+      socket.disconnect().connect();
+    } else {
+      socket.auth = { token: localStorage.getItem("luxe_customer_token") };
+      socket.disconnect().connect();
     }
   };
 

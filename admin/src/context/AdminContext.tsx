@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, ReactNode } from "react";
+import socket from "@/services/socket";
 
 export type Admin = {
   name: string;
@@ -69,12 +70,16 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
     setAdmin(a); setToken(t);
     localStorage.setItem("luxe_admin", JSON.stringify(a));
     localStorage.setItem("luxe_admin_token", t);
+    socket.auth = { token: t };
+    socket.disconnect().connect();
   };
 
   const logout = () => {
     setAdmin(null); setToken(null);
     localStorage.removeItem("luxe_admin");
     localStorage.removeItem("luxe_admin_token");
+    socket.auth = { token: null };
+    socket.disconnect().connect();
   };
 
   const setHotel = (hotelId: string, hotelName: string) => {
