@@ -1,10 +1,9 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:lucide_icons/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../core/theme/app_theme.dart';
-import '../../../../core/constants/app_constants.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:lucide_icons/lucide_icons.dart';
+import '../../../../core/constants/app_constants.dart';
+import '../../../../core/theme/app_theme.dart';
 
 class OnboardingPage extends StatefulWidget {
   const OnboardingPage({super.key});
@@ -15,17 +14,15 @@ class OnboardingPage extends StatefulWidget {
 
 class OnboardingData {
   final String title;
-  final String description;
-  final String image;
-  final String step;
   final String subtitle;
+  final String imagePath;
+  final List<Widget>? extraContent;
 
   OnboardingData({
     required this.title,
-    required this.description,
-    required this.image,
-    required this.step,
     required this.subtitle,
+    required this.imagePath,
+    this.extraContent,
   });
 }
 
@@ -41,63 +38,73 @@ class _OnboardingPageState extends State<OnboardingPage> {
     }
   }
 
-  final List<OnboardingData> _pages = [
-    OnboardingData(
-      subtitle: 'INTRODUCING',
-      title: 'A New Standard of Luxury Living',
-      description: 'Access an ultra-curated portfolio of the world\'s most architectural masterpieces.',
-      image: 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?q=80&w=1600',
-      step: '1 of 3',
-    ),
-    OnboardingData(
-      subtitle: 'EXCLUSIVE SERVICE',
-      title: 'Your Personal Elite Concierge',
-      description: 'From private jet charters to exclusive dinner reservations, our team handles every detail of your journey.',
-      image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=1600',
-      step: '2 of 3',
-    ),
-    OnboardingData(
-      subtitle: 'STEP 03',
-      title: 'Extraordinary Experiences',
-      description: 'Discover hidden gems and once-in-a-lifetime moments curated exclusively for LuxeStay members.',
-      image: 'https://images.unsplash.com/photo-1571896349842-33c89424de2d?q=80&w=1600',
-      step: '3 of 3',
-    ),
-  ];
+  void _nextPage() {
+    if (_currentPage < 2) {
+      _pageController.nextPage(
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeInOut,
+      );
+    } else {
+      _completeOnboarding();
+    }
+  }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Stack(
-        children: [
-          PageView.builder(
-            controller: _pageController,
-            itemCount: _pages.length,
-            onPageChanged: (index) => setState(() => _currentPage = index),
-            itemBuilder: (context, index) => _buildPage(_pages[index]),
+  Widget _buildInfoCard({
+    required IconData icon,
+    required String title,
+    required String desc,
+    required BuildContext context,
+    bool isRoundedRect = false,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.withOpacity(0.15)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
-          // Top bar with Logo and Skip
-          Positioned(
-            top: 60,
-            left: 24,
-            right: 24,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppTheme.accentColor,
+              borderRadius: BorderRadius.circular(isRoundedRect ? 12 : 30),
+            ),
+            child: Icon(icon, size: 20, color: AppTheme.primaryColor),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'LUXESTAY',
-                  style: TextStyle(
-                    color: Color(0xFF6D4C41),
-                    fontSize: 18,
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 14,
                     fontWeight: FontWeight.bold,
-                    letterSpacing: 4,
+                    color: AppTheme.primaryColor,
                   ),
                 ),
-                if (_currentPage < 2)
-                  TextButton(
-                    onPressed: _completeOnboarding,
-                    child: const Text('SKIP', style: TextStyle(color: Color(0xFF6D4C41), fontSize: 12, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 4),
+                Text(
+                  desc,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[700],
+                    height: 1.4,
                   ),
+                ),
               ],
             ),
           ),
@@ -106,145 +113,249 @@ class _OnboardingPageState extends State<OnboardingPage> {
     );
   }
 
-  Widget _buildPage(OnboardingData data) {
-    final bool isLast = _currentPage == 2;
-
-    return Stack(
-      children: [
-        Positioned.fill(
-          child: Image.network(
-            data.image,
-            fit: BoxFit.cover,
+  List<OnboardingData> get _pages {
+    return [
+      OnboardingData(
+        title: 'Find Your Perfect\nStay.',
+        subtitle: 'Discover luxury hotels and boutique\nstays right in your neighborhood or at\nyour next destination.',
+        imagePath: 'assets/images/Onboarding_screen_1.png',
+        extraContent: [
+          _buildInfoCard(
+            icon: LucideIcons.crosshair,
+            title: '\'Near Me\' Search',
+            desc: 'Real-time location-based suggestions tailored to your current vicinity.',
+            context: context,
           ),
-        ),
-        Positioned.fill(
-          child: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Colors.transparent,
-                  Colors.black.withOpacity(0.5),
+          _buildInfoCard(
+            icon: LucideIcons.map,
+            title: 'Interactive Maps',
+            desc: 'Explore amenities and surroundings visually with our high-fidelity map interface.',
+            context: context,
+          ),
+        ],
+      ),
+      OnboardingData(
+        title: 'Unlock Elite Benefits',
+        subtitle: 'Access member-only rates, seasonal\npromotions, and curated packages designed for\nthe discerning traveler.',
+        imagePath: 'assets/images/Onboarding_screen_2.png',
+        extraContent: [
+          _buildInfoCard(
+            icon: LucideIcons.tag,
+            title: 'Member Rates',
+            desc: 'Save up to 25% on every booking automatically.',
+            context: context,
+            isRoundedRect: true,
+          ),
+          _buildInfoCard(
+            icon: LucideIcons.sparkles,
+            title: 'Curated Deals',
+            desc: 'Tailored offers based on your preferences and travel history.',
+            context: context,
+            isRoundedRect: true,
+          ),
+        ],
+      ),
+      OnboardingData(
+        title: 'Effortless Stay\nManagement.',
+        subtitle: 'Book your suite in seconds and manage\nyour entire experience, from check-in to\ndigital keys, all in one place.',
+        imagePath: 'assets/images/Onboarding_screen_3.png',
+        extraContent: [
+          _buildInfoCard(
+            icon: LucideIcons.mousePointer2,
+            title: 'Instant Booking',
+            desc: 'Secure your room with a single tap through our streamlined luxury portal.',
+            context: context,
+            isRoundedRect: true,
+          ),
+          _buildInfoCard(
+            icon: LucideIcons.key,
+            title: 'Digital Key',
+            desc: 'Skip the front desk with mobile room access directly from your phone.',
+            context: context,
+            isRoundedRect: true,
+          ),
+        ],
+      ),
+    ];
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFFDFDFD),
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Top Bar
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Row(
+                    children: [
+                      Icon(LucideIcons.bedDouble, size: 24, color: AppTheme.primaryColor),
+                      SizedBox(width: 8),
+                      Text(
+                        'LuxeStay',
+                        style: TextStyle(
+                          color: AppTheme.primaryColor,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (_currentPage < 2)
+                    TextButton(
+                      onPressed: _completeOnboarding,
+                      child: const Text(
+                        'SKIP',
+                        style: TextStyle(
+                          color: AppTheme.primaryColor,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1,
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),
-          ),
-        ),
-        Align(
-          alignment: Alignment.bottomCenter,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(24, 0, 24, 30),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(24),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.8),
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(color: Colors.white.withOpacity(0.2)),
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        data.subtitle,
-                        style: const TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF6D4C41),
-                          letterSpacing: 2,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        data.title,
-                        style: const TextStyle(
-                          fontSize: 32,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF1A1A1A),
-                          fontFamily: 'Serif',
-                          height: 1.2,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        data.description,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.black.withOpacity(0.6),
-                          height: 1.5,
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      Row(
+
+            // Page Content
+            Expanded(
+              child: PageView.builder(
+                physics: const NeverScrollableScrollPhysics(), // Disables swiping
+                controller: _pageController,
+                itemCount: _pages.length,
+                onPageChanged: (index) => setState(() => _currentPage = index),
+                itemBuilder: (context, index) {
+                  final page = _pages[index];
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: SingleChildScrollView(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.start,
                         children: [
-                          _buildPageIndicator(),
-                          const SizedBox(width: 8),
-                          Text(
-                            data.step,
-                            style: TextStyle(fontSize: 10, color: Colors.black.withOpacity(0.4)),
-                          ),
-                          const Spacer(),
-                          Flexible(
-                            child: SizedBox(
-                              height: 56,
-                              child: ElevatedButton(
-                                onPressed: () {
-                                  if (isLast) {
-                                    _completeOnboarding();
-                                  } else {
-                                    _pageController.nextPage(
-                                      duration: const Duration(milliseconds: 400),
-                                      curve: Curves.easeInOut,
-                                    );
-                                  }
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF6D4C41),
-                                  foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                  elevation: 0,
-                                ),
-                                child: FittedBox(
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text(
-                                        isLast ? 'BEGIN JOURNEY' : 'Continue',
-                                        style: const TextStyle(fontWeight: FontWeight.bold),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      const Icon(LucideIcons.arrowRight, size: 16),
-                                    ],
-                                  ),
-                                ),
-                              ),
+                          // Illustration Image
+                          SizedBox(
+                            height: MediaQuery.of(context).size.height * 0.35,
+                            width: double.infinity,
+                            child: Image.asset(
+                              page.imagePath,
+                              fit: BoxFit.contain,
                             ),
                           ),
+                          const SizedBox(height: 24),
+                          // Texts
+                          Text(
+                            page.title,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.primaryColor,
+                              height: 1.2,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            page.subtitle,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey[700],
+                              height: 1.5,
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          if (page.extraContent != null) ...page.extraContent!,
+                          const SizedBox(height: 24), // Bottom padding
                         ],
                       ),
-                      if (isLast) ...[
-                        const SizedBox(height: 16),
-                        Center(
-                          child: Text(
-                            'Experience the art of living well.',
-                            style: TextStyle(fontSize: 11, color: Colors.black.withOpacity(0.4), fontStyle: FontStyle.italic),
+                    ),
+                  );
+                },
+              ),
+            ),
+
+            // Bottom Bar
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+              child: _currentPage == 2
+                  ? Column(
+                      children: [
+                        _buildPageIndicator(),
+                        const SizedBox(height: 24),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 56,
+                          child: ElevatedButton(
+                            onPressed: _completeOnboarding,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTheme.primaryColor,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(28),
+                              ),
+                            ),
+                            child: const Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  'Get Started',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                SizedBox(width: 8),
+                                Icon(LucideIcons.checkCircle2, color: Colors.white, size: 20),
+                              ],
+                            ),
                           ),
                         ),
                       ],
-                    ],
-                  ),
-                ),
-              ),
+                    )
+                  : Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        _buildPageIndicator(),
+                        SizedBox(
+                          height: 50,
+                          child: ElevatedButton(
+                            onPressed: _nextPage,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTheme.primaryColor,
+                              padding: const EdgeInsets.symmetric(horizontal: 24),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(25),
+                              ),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  'NEXT',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 1,
+                                  ),
+                                ),
+                                SizedBox(width: 8),
+                                Icon(LucideIcons.arrowRight, color: Colors.white, size: 16),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
             ),
-          ),
+          ],
         ),
-      ],
+      ),
     );
   }
 
@@ -255,15 +366,16 @@ class _OnboardingPageState extends State<OnboardingPage> {
         final isSelected = _currentPage == index;
         return AnimatedContainer(
           duration: const Duration(milliseconds: 300),
-          margin: const EdgeInsets.only(right: 8),
-          height: 4,
-          width: isSelected ? 24 : 4,
+          margin: const EdgeInsets.only(right: 6),
+          height: 6,
+          width: isSelected ? 24 : 6,
           decoration: BoxDecoration(
-            color: isSelected ? const Color(0xFF6D4C41) : Colors.black.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(2),
+            color: isSelected ? AppTheme.primaryColor : Colors.grey.withOpacity(0.3),
+            borderRadius: BorderRadius.circular(3),
           ),
         );
       }),
     );
   }
 }
+

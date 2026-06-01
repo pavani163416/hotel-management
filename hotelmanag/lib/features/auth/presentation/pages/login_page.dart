@@ -19,6 +19,7 @@ class _LoginPageState extends State<LoginPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _rememberMe = false;
+  bool _obscurePassword = true;
 
   @override
   void dispose() {
@@ -73,9 +74,13 @@ class _LoginPageState extends State<LoginPage> {
               CustomTextField(
                 label: 'Password *',
                 hint: '.......',
-                obscureText: true,
+                obscureText: _obscurePassword,
                 controller: _passwordController,
                 autofillHints: const [AutofillHints.password],
+                suffixIcon: IconButton(
+                  icon: Icon(_obscurePassword ? LucideIcons.eyeOff : LucideIcons.eye, color: AppTheme.primaryColor.withOpacity(0.5)),
+                  onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                ),
               ),
               const SizedBox(height: 16),
             Row(
@@ -139,7 +144,7 @@ class _LoginPageState extends State<LoginPage> {
                   height: 56,
                   child: ElevatedButton(
                     onPressed: auth.isLoading
-                        ? null
+                        ? () {}
                         : () async {
                             await auth.login(_emailController.text, _passwordController.text);
                             if (auth.isAuthenticated) {
@@ -252,7 +257,7 @@ class _LoginPageState extends State<LoginPage> {
       width: double.infinity,
       height: 56,
       child: OutlinedButton.icon(
-        onPressed: isLoading ? null : (onTap ?? () {
+        onPressed: isLoading ? () {} : (onTap ?? () {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('$label coming soon!')),
           );

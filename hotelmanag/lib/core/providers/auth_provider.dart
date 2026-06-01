@@ -224,20 +224,19 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<bool> signInWithGoogle() async {
-    _isLoading = true;
-    _error = null;
-    notifyListeners();
-
     print('DEBUG: Google Sign-In button pressed. Initializing flow...');
     try {
       final GoogleSignIn googleSignIn = _googleSignIn;
 
-      // Sign out first to force the account picker to show every time
-      print('DEBUG: Signing out from existing session...');
-      await googleSignIn.signOut();
-
       print('DEBUG: Requesting Google Sign-In Dialog...');
+      // IMPORTANT: Call signIn() immediately without any preceding awaits or notifyListeners
+      // to prevent the browser from blocking the popup.
       final GoogleSignInAccount? account = await googleSignIn.signIn();
+
+      // Now it's safe to update the UI
+      _isLoading = true;
+      _error = null;
+      notifyListeners();
 
       if (account == null) {
         print('DEBUG: User cancelled the account selection dialog.');

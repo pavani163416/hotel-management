@@ -70,9 +70,7 @@ class _OtpPageState extends State<OtpPage> {
     if (value.isEmpty && index > 0) {
       _focusNodes[index - 1].requestFocus();
     }
-    if (_otpCode.length == 6) {
-      _verifyOtp(); // Auto-verify on completing 6 digits
-    }
+    // User must click Verify button manually
   }
 
   void _autoFillDevCode(String devCode) {
@@ -276,72 +274,7 @@ class _OtpPageState extends State<OtpPage> {
                     ],
                   ),
 
-                  // Beautiful Developer Assistant UI Banner
-                  if (auth.devOtp != null) ...[
-                    const SizedBox(height: 48),
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [Colors.amber[50]!, Colors.amber[100]!.withOpacity(0.5)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: Colors.amber[200]!),
-                      ),
-                      child: Column(
-                        children: [
-                          Row(
-                            children: [
-                              Icon(LucideIcons.key, color: Colors.amber[800], size: 20),
-                              const SizedBox(width: 8),
-                              Text(
-                                'Developer Assistant',
-                                style: TextStyle(
-                                  color: Colors.amber[900], 
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Resend free tier limits block email delivery in dev. Use code below:',
-                            style: TextStyle(color: Colors.amber[950], fontSize: 12),
-                          ),
-                          const SizedBox(height: 12),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                auth.devOtp!,
-                                style: const TextStyle(
-                                  fontSize: 26, 
-                                  fontWeight: FontWeight.w900, 
-                                  letterSpacing: 4,
-                                  color: AppTheme.primaryColor
-                                ),
-                              ),
-                              ElevatedButton.icon(
-                                onPressed: () => _autoFillDevCode(auth.devOtp!),
-                                icon: const Icon(LucideIcons.checkSquare, size: 16),
-                                label: const Text('Auto-fill & Verify'),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppTheme.primaryColor,
-                                  foregroundColor: Colors.white,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                  textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+
                 ],
               ),
             ),

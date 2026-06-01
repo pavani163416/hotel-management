@@ -104,7 +104,7 @@ class PushNotificationService {
 
     // Get the FCM token (useful for the backend)
     String? token = await _firebaseMessaging.getToken();
-    debugPrint("FCM Token: $token");
+    debugPrint("FCM Token: [REDACTED_FOR_SECURITY]");
   }
 
   static void _showLocalNotification(RemoteMessage message, AndroidNotificationChannel channel) {

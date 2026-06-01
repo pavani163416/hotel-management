@@ -8,7 +8,7 @@ class AppConstants {
       'https://luxestay-backend-production.up.railway.app/api/';
 
   // ── Local dev fallback (only used in debug builds on web/emulator) ──
-  static const String _localApiUrl = 'http://localhost:5000/api/';
+  static const String _localApiUrl = 'http://localhost:5001/api/';
 
   /// Returns the correct base URL for the current build/platform.
   /// - Release builds always use the production Railway URL.
@@ -23,11 +23,11 @@ class AppConstants {
     if (kIsWeb) return _localApiUrl;
 
     if (defaultTargetPlatform == TargetPlatform.windows || defaultTargetPlatform == TargetPlatform.macOS) {
-      return 'http://localhost:5000/api/';
+      return 'http://localhost:5001/api/';
     }
 
     // Physical Android device uses the host machine's LAN IP
-    return 'http://192.168.1.60:5000/api/';
+    return 'http://192.168.1.60:5001/api/';
   }
   
   // Storage Keys

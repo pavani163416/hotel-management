@@ -23,6 +23,8 @@ class _RegisterPageState extends State<RegisterPage> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   bool _rememberMe = false;
+  bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
 
   @override
   void dispose() {
@@ -103,26 +105,35 @@ class _RegisterPageState extends State<RegisterPage> {
               const SizedBox(height: 16),
               CustomTextField(
                 label: 'Phone *',
-                hint: '+8801724649510',
+                hint: '+919765968585',
                 keyboardType: TextInputType.phone,
                 controller: _phoneController,
+                maxLength: 13,
                 autofillHints: const [AutofillHints.telephoneNumber],
               ),
               const SizedBox(height: 16),
               CustomTextField(
                 label: 'Password *',
                 hint: '.......',
-                obscureText: true,
+                obscureText: _obscurePassword,
                 controller: _passwordController,
                 autofillHints: const [AutofillHints.newPassword],
+                suffixIcon: IconButton(
+                  icon: Icon(_obscurePassword ? LucideIcons.eyeOff : LucideIcons.eye, color: AppTheme.primaryColor.withOpacity(0.5)),
+                  onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                ),
               ),
               const SizedBox(height: 16),
               CustomTextField(
                 label: 'Confirm Password *',
                 hint: '.......',
-                obscureText: true,
+                obscureText: _obscureConfirmPassword,
                 controller: _confirmPasswordController,
                 autofillHints: const [AutofillHints.newPassword],
+                suffixIcon: IconButton(
+                  icon: Icon(_obscureConfirmPassword ? LucideIcons.eyeOff : LucideIcons.eye, color: AppTheme.primaryColor.withOpacity(0.5)),
+                  onPressed: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
+                ),
               ),
               const SizedBox(height: 16),
               Row(

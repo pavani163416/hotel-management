@@ -364,10 +364,10 @@ class _HomePageState extends State<HomePage> {
                                   ),
                                   child: CircleAvatar(
                                     radius: 18,
-backgroundImage: (profileImage != null && profileImage.isNotEmpty)
+                                    backgroundImage: (profileImage != null && profileImage.isNotEmpty)
                                         ? CachedNetworkImageProvider(profileImage)
                                         : CachedNetworkImageProvider(
-                                            'https://ui-avatars.com/api/?name=${(name.isEmpty ? 'Guest' : name).toString()}&background=F5E6CA&color=2C3E50',
+                                            'https://ui-avatars.com/api/?name=${Uri.encodeComponent(name.isEmpty ? 'Guest' : name)}&background=F5E6CA&color=2C3E50',
                                           ),
                                   ),
                                 );

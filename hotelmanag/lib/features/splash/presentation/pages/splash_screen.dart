@@ -121,7 +121,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                           'LUXESTAY',
                           style: const TextStyle(
                             color: Colors.white,
-                            fontSize: 54,
+                            fontSize: 48,
                             fontWeight: FontWeight.w300,
                             letterSpacing: 10,
                             fontFamily: 'Serif',

@@ -10,6 +10,8 @@ class CustomTextField extends StatelessWidget {
   final IconData? prefixIcon;
   final String? Function(String?)? validator;
   final Iterable<String>? autofillHints;
+  final int? maxLength;
+  final Widget? suffixIcon;
 
   const CustomTextField({
     super.key,
@@ -21,6 +23,8 @@ class CustomTextField extends StatelessWidget {
     this.prefixIcon,
     this.validator,
     this.autofillHints,
+    this.maxLength,
+    this.suffixIcon,
   });
 
   @override
@@ -31,6 +35,7 @@ class CustomTextField extends StatelessWidget {
       keyboardType: keyboardType,
       validator: validator,
       autofillHints: autofillHints,
+      maxLength: maxLength,
       cursorColor: AppTheme.primaryColor,
       decoration: InputDecoration(
         labelText: label,
@@ -38,6 +43,8 @@ class CustomTextField extends StatelessWidget {
         hintText: hint,
         hintStyle: TextStyle(color: AppTheme.primaryColor.withOpacity(0.3)),
         prefixIcon: prefixIcon != null ? Icon(prefixIcon, size: 20, color: AppTheme.primaryColor) : null,
+        suffixIcon: suffixIcon,
+        counterText: maxLength != null ? '' : null,
         filled: true,
         fillColor: Colors.white,
         enabledBorder: OutlineInputBorder(

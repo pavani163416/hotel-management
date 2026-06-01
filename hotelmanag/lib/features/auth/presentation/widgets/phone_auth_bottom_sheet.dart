@@ -198,7 +198,7 @@ class _PhoneAuthBottomSheetState extends State<PhoneAuthBottomSheet> {
               width: double.infinity,
               height: 56,
               child: ElevatedButton(
-                onPressed: authProvider.isLoading ? null : _sendVerificationCode,
+                onPressed: authProvider.isLoading ? () {} : _sendVerificationCode,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.primaryColor,
                   foregroundColor: Colors.white,
@@ -265,7 +265,7 @@ class _PhoneAuthBottomSheetState extends State<PhoneAuthBottomSheet> {
               width: double.infinity,
               height: 56,
               child: ElevatedButton(
-                onPressed: authProvider.isLoading ? null : _verifyOtp,
+                onPressed: authProvider.isLoading ? () {} : _verifyOtp,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.primaryColor,
                   foregroundColor: Colors.white,
@@ -277,75 +277,7 @@ class _PhoneAuthBottomSheetState extends State<PhoneAuthBottomSheet> {
               ),
             ),
           ],
-          if (authProvider.devOtp != null) ...[
-            const SizedBox(height: 24),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Colors.amber[50]!, Colors.amber[100]!.withOpacity(0.5)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.amber[200]!),
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      Icon(LucideIcons.key, color: Colors.amber[800], size: 20),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Developer Assistant',
-                        style: TextStyle(
-                          color: Colors.amber[900],
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Twilio trial account limits block SMS delivery in dev. Use code below:',
-                    style: TextStyle(color: Colors.amber[950], fontSize: 12),
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        authProvider.devOtp!,
-                        style: const TextStyle(
-                          fontSize: 26,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 4,
-                          color: AppTheme.primaryColor,
-                        ),
-                      ),
-                      ElevatedButton.icon(
-                        onPressed: () {
-                          _otpController.text = authProvider.devOtp!;
-                          setState(() {});
-                          _verifyOtp();
-                        },
-                        icon: const Icon(LucideIcons.checkSquare, size: 16),
-                        label: const Text('Auto-fill & Verify'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.primaryColor,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                          textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
+
           const SizedBox(height: 16),
         ],
       ),
