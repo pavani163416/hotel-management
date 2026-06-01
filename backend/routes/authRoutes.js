@@ -344,7 +344,11 @@ export const verifyCustomerToken = (req, res, next) => {
     return res.status(401).json({ success: false, message: "Authentication required." });
   }
   try {
-    req.customer = jwt.verify(header.split(" ")[1], getSecret());
+    const decoded = jwt.verify(header.split(" ")[1], getSecret());
+    if (decoded.role !== "customer") {
+      return res.status(403).json({ success: false, message: "Access forbidden: customer role required." });
+    }
+    req.customer = decoded;
     next();
   } catch (err) {
     const msg = err.name === "TokenExpiredError"
@@ -1145,9 +1149,49 @@ router.patch("/profile", verifyCustomerToken, async (req, res, next) => {
     const user = await User.findById(req.customer.id);
     if (!user) return res.status(404).json({ success: false, message: "User not found." });
 
-    if (name) user.name = name.trim();
-    if (phone) user.phone = phone.trim();
-    if (city) user.city = city.trim();
+    const xssPattern = /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>|on\w+\s*=|javascript:/i;
+    const genericHtmlPattern = /<[^>]*>/;
+
+    const checkXss = (val, fieldName) => {
+      if (typeof val === 'string') {
+        if (xssPattern.test(val) || genericHtmlPattern.test(val)) {
+          return `${fieldName} contains invalid HTML or script content.`;
+        }
+      }
+      return null;
+    };
+
+    const sanitize = (val) => {
+      if (typeof val !== 'string') return val;
+      return val
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#x27;")
+        .replace(/\//g, "&#x2F;");
+    };
+
+    if (name) {
+      const err = checkXss(name, "name");
+      if (err) return res.status(400).json({ success: false, message: err });
+      user.name = sanitize(name.trim());
+    }
+
+    if (phone) {
+      try {
+        user.phone = normalizePhoneNumber(phone);
+      } catch (err) {
+        return res.status(400).json({ success: false, message: err.message });
+      }
+    }
+
+    if (city) {
+      const err = checkXss(city, "city");
+      if (err) return res.status(400).json({ success: false, message: err });
+      user.city = sanitize(city.trim());
+    }
+
     if (profileImage !== undefined) user.profileImage = profileImage;
     if (coverImage !== undefined) user.coverImage = coverImage;
 
@@ -1158,9 +1202,9 @@ router.patch("/profile", verifyCustomerToken, async (req, res, next) => {
     if (user.guestId) {
       const guest = await Guest.findById(user.guestId);
       if (guest) {
-        if (name) guest.name = name.trim();
-        if (phone) guest.phone = phone.trim();
-        if (city) guest.city = city.trim();
+        if (name) guest.name = user.name;
+        if (phone) guest.phone = user.phone;
+        if (city) guest.city = user.city;
         if (profileImage !== undefined) guest.profileImage = profileImage;
         if (coverImage !== undefined) guest.coverImage = coverImage;
         await guest.save();

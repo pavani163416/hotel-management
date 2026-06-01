@@ -494,13 +494,14 @@ httpServer.on("upgrade", (request, socket, head) => {
   // Socket.IO handles its own upgrade event for /socket.io/
 });
 
-// ── Start server ──────────────────────────────────────────
-httpServer.listen(PORT, "0.0.0.0", () => {
-  logger.info(`LuxeStay API running on port ${PORT}`, {
-    port:        PORT,
-    environment: process.env.NODE_ENV,
+if (process.env.NODE_ENV !== "test") {
+  httpServer.listen(PORT, "0.0.0.0", () => {
+    logger.info(`LuxeStay API running on port ${PORT}`, {
+      port:        PORT,
+      environment: process.env.NODE_ENV,
+    });
   });
-});
+}
 
 // ── Graceful shutdown ─────────────────────────────────────
 const shutdown = async (signal) => {
