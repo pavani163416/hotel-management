@@ -168,6 +168,44 @@ export const getHotelSnapshots = async (req, res, next) => {
 export const upsertHotelSnapshot = async (req, res, next) => {
   try {
     const { HotelSnapshot } = await getModels();
+    
+    // --- SYNC TO USER DB ---
+    // Ensure that hotels created/updated in the admin panel also exist in the user database
+    try {
+      const { default: Hotel } = await import("../models/Hotel.js");
+      const { invalidateAllCaches } = await import("../cache/redisCache.js");
+      const { broadcastHotels } = await import("../routes/sseRoutes.js");
+
+      // Normalize status mapping
+      let isActive = true;
+      if (req.body.status !== undefined) {
+        isActive = req.body.status === "Active" || req.body.status === true;
+      } else if (req.body.isActive !== undefined) {
+        isActive = req.body.isActive === true || req.body.isActive === "true";
+      }
+
+      // Prepare payload with fallbacks for required User DB Hotel schema fields
+      const userHotelPayload = {
+        ...req.body,
+        isActive,
+        pricePerNight: req.body.pricePerNight || 0,
+      };
+
+      // Upsert into user DB
+      await Hotel.findOneAndUpdate(
+        { hotelId: req.body.hotelId },
+        { $set: userHotelPayload },
+        { upsert: true, new: true, setDefaultsOnInsert: true, runValidators: false }
+      );
+      
+      // Invalidate caches and broadcast updates to connected frontend clients
+      await invalidateAllCaches();
+      broadcastHotels();
+    } catch (syncErr) {
+      console.error("Failed to sync Admin Hotel to User DB:", syncErr.message);
+    }
+    // --- END SYNC TO USER DB ---
+
     const hotel = await HotelSnapshot.findOneAndUpdate(
       { hotelId: req.body.hotelId },
       req.body,

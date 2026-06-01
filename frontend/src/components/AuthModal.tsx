@@ -9,13 +9,42 @@ import { GoogleOAuthProvider, useGoogleLogin } from "@react-oauth/google";
 
 const GOOGLE_CLIENT_ID_FALLBACK = "70312411330-8givsb0ktr8f09u8ullo157vkppkoqqv.apps.googleusercontent.com";
 
+const COUNTRY_CODES = [
+  { code: "+1", name: "USA/Canada" },
+  { code: "+7", name: "Kazakhstan" },
+  { code: "+36", name: "Hungary" },
+  { code: "+39", name: "Italy" },
+  { code: "+44", name: "UK" },
+  { code: "+62", name: "Indonesia" },
+  { code: "+81", name: "Japan" },
+  { code: "+91", name: "India" },
+  { code: "+98", name: "Iran" },
+  { code: "+224", name: "Guinea" },
+  { code: "+245", name: "Guinea-Bissau" },
+  { code: "+254", name: "Kenya" },
+  { code: "+353", name: "Ireland" },
+  { code: "+354", name: "Iceland" },
+  { code: "+502", name: "Guatemala" },
+  { code: "+504", name: "Honduras" },
+  { code: "+509", name: "Haiti" },
+  { code: "+590", name: "Guadeloupe" },
+  { code: "+592", name: "Guyana" },
+  { code: "+686", name: "Kiribati" },
+  { code: "+852", name: "Hong Kong" },
+  { code: "+962", name: "Jordan" },
+  { code: "+964", name: "Iraq" },
+  { code: "+971", name: "UAE" },
+  { code: "+972", name: "Israel" }
+].sort((a, b) => a.name.localeCompare(b.name));
+
+
 type AuthModalProps = {
   isOpen: boolean;
   onClose: () => void;
   defaultMode?: "signin" | "signup";
 };
 
-function AuthModalInner({ isOpen, onClose, defaultMode, mode, setMode, loading, setLoading, error, setError, email, setEmail, password, setPassword, name, setName, phone, setPhone, city, setCity, otpSent, setOtpSent, verificationCode, setVerificationCode, otpMessage, setOtpMessage, resendCooldown, setResendCooldown, showContactAdmin, setShowContactAdmin, resetForm, handleOpenChange, handleSignIn, handleSignUp, finishAuth, handleSendPhoneOTP, handleVerifyPhoneOTP, handleVerifyEmailOTP, handleResendEmailOTP, renderAuthOptions }: any) {
+function AuthModalInner({ isOpen, onClose, defaultMode, mode, setMode, loading, setLoading, error, setError, email, setEmail, password, setPassword, name, setName, phone, setPhone, countryCode, setCountryCode, city, setCity, otpSent, setOtpSent, verificationCode, setVerificationCode, otpMessage, setOtpMessage, resendCooldown, setResendCooldown, showContactAdmin, setShowContactAdmin, resetForm, handleOpenChange, handleSignIn, handleSignUp, finishAuth, handleSendPhoneOTP, handleVerifyPhoneOTP, handleVerifyEmailOTP, handleResendEmailOTP, renderAuthOptions }: any) {
   // We extract the Google Login hook into a child component wrapped in GoogleOAuthProvider
   const login = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
@@ -121,11 +150,22 @@ function AuthModalInner({ isOpen, onClose, defaultMode, mode, setMode, loading, 
               placeholder="Min. 6 characters" autoComplete="new-password" />
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
+            <div className="space-y-2 col-span-2 sm:col-span-1">
               <label className="block text-sm font-medium">Phone <span className="text-destructive">*</span></label>
-              <input type="tel" value={phone} onChange={e => setPhone(e.target.value)}
-                className="w-full px-4 py-2 border border-border rounded-lg outline-none focus:border-accent"
-                placeholder="+1 555 000 0000" autoComplete="tel" />
+              <div className="flex gap-2">
+                <select 
+                  value={countryCode} 
+                  onChange={e => setCountryCode(e.target.value)}
+                  className="w-[110px] px-2 py-2 border border-border rounded-lg outline-none focus:border-accent bg-background text-sm"
+                >
+                  {COUNTRY_CODES.map(c => (
+                    <option key={c.code} value={c.code}>{c.name} {c.code}</option>
+                  ))}
+                </select>
+                <input type="tel" value={phone} onChange={e => setPhone(e.target.value.replace(/\D/g, ""))}
+                  className="flex-1 w-full px-4 py-2 border border-border rounded-lg outline-none focus:border-accent"
+                  placeholder="555 000 0000" autoComplete="tel" />
+              </div>
             </div>
             <div className="space-y-2">
               <label className="block text-sm font-medium">City</label>
@@ -149,10 +189,21 @@ function AuthModalInner({ isOpen, onClose, defaultMode, mode, setMode, loading, 
       ) : mode === "phone" ? (
         <div className="space-y-4 mt-4">
           <div className="space-y-2">
-            <label className="block text-sm font-medium">Phone Number</label>
-            <input type="tel" value={phone} onChange={e => setPhone(e.target.value)}
-              className="w-full px-4 py-2 border border-border rounded-lg outline-none focus:border-accent"
-              placeholder="+1 555 000 0000" autoComplete="tel" />
+            <label className="block text-sm font-medium">Mobile number</label>
+            <div className="flex gap-2">
+              <select 
+                value={countryCode} 
+                onChange={e => setCountryCode(e.target.value)}
+                className="w-[120px] px-2 py-2 border border-border rounded-lg outline-none focus:border-accent bg-background text-sm"
+              >
+                {COUNTRY_CODES.map(c => (
+                  <option key={c.code} value={c.code}>{c.name} {c.code}</option>
+                ))}
+              </select>
+              <input type="tel" value={phone} onChange={e => setPhone(e.target.value.replace(/\D/g, ""))}
+                className="flex-1 w-full px-4 py-2 border border-border rounded-lg outline-none focus:border-accent"
+                placeholder="Mobile number" autoComplete="tel" />
+            </div>
           </div>
           {otpSent && (
             <div className="space-y-2">
@@ -249,6 +300,7 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
   const [password, setPassword] = useState("");
   const [name, setName]         = useState("");
   const [phone, setPhone]       = useState("");
+  const [countryCode, setCountryCode] = useState("+91");
   const [city, setCity]         = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [verificationCode, setVerificationCode] = useState("");
@@ -308,17 +360,7 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
         setEmail(pendingEmail);
         setMode("verify_email_otp");
         
-        if (respData?.otp) {
-          setVerificationCode(respData.otp);
-          const showOtpDev = import.meta.env.VITE_SHOW_OTP_DEV === "true";
-          setOtpMessage(
-            showOtpDev
-              ? `DEV MODE: Your verification code is ${respData.otp}`
-              : "A verification code has been sent to your email."
-          );
-        } else {
-          setOtpMessage(respData?.message || "Your account is pending verification. A verification code has been sent to your email.");
-        }
+        setOtpMessage(respData?.message || "Your account is pending verification. A verification code has been sent to your email.");
         setError("");
         setResendCooldown(60); // Trigger cooldown on auto-resend
       } else {
@@ -335,23 +377,14 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
     if (password.length < 6) { setError("Password must be at least 6 characters."); return; }
     setError(""); setLoading(true);
     try {
-      const res: any = await api.post("/auth/register", { name, email, password, phone, city });
+      const fullPhone = `${countryCode}${phone.trim()}`;
+      const res: any = await api.post("/auth/register", { name, email, password, phone: fullPhone, city });
       const d = res.data?.data ?? res.data;
       if (d.isVerified === false) {
         localStorage.setItem("luxe_pending_email", d.email || email);
         setEmail(d.email || email);
         setMode("verify_email_otp");
-        if (res.data?.otp) {
-          setVerificationCode(res.data.otp);
-          const showOtpDev = import.meta.env.VITE_SHOW_OTP_DEV === "true";
-          setOtpMessage(
-            showOtpDev
-              ? `DEV MODE: Your verification code is ${res.data.otp}`
-              : "A verification code has been sent to your email."
-          );
-        } else {
-          setOtpMessage(res.data?.message || "Registration successful! A verification code has been sent to your email.");
-        }
+        setOtpMessage(res.data?.message || "Registration successful! A verification code has been sent to your email.");
         setResendCooldown(60);
       } else {
         localStorage.setItem("luxe_customer_token", d.token);
@@ -379,7 +412,8 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
     }
     setError(""); setLoading(true);
     try {
-      const res: any = await api.post("/auth/phone/send", { phone: phone.trim() });
+      const fullPhone = `${countryCode}${phone.trim()}`;
+      const res: any = await api.post("/auth/phone/send", { phone: fullPhone });
       setOtpSent(true);
       const data = res.data?.data ?? res.data;
       if (res.data?.otp || data?.otp) {
@@ -403,8 +437,9 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
     }
     setError(""); setLoading(true);
     try {
+      const fullPhone = `${countryCode}${phone.trim()}`;
       const res: any = await api.post("/auth/phone/verify", {
-        phone: phone.trim(),
+        phone: fullPhone,
         code: verificationCode.trim(),
       });
       finishAuth(res.data?.data ?? res.data);
@@ -439,12 +474,7 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
     setError(""); setLoading(true);
     try {
       const res: any = await api.post("/auth/resend-otp", { email: email.trim() });
-      if (res.data?.otp) {
-        setVerificationCode(res.data.otp);
-        setOtpMessage(`DEV MODE: Your new verification code is ${res.data.otp}`);
-      } else {
-        setOtpMessage("A new verification code has been sent to your email.");
-      }
+      setOtpMessage("A new verification code has been sent to your email.");
       setResendCooldown(60);
     } catch (err: any) {
       setError(err.message || "Resend failed. Please try again.");
@@ -463,7 +493,7 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
           mode={mode} setMode={setMode} loading={loading} setLoading={setLoading}
           error={error} setError={setError} email={email} setEmail={setEmail}
           password={password} setPassword={setPassword} name={name} setName={setName}
-          phone={phone} setPhone={setPhone} city={city} setCity={setCity}
+          phone={phone} setPhone={setPhone} countryCode={countryCode} setCountryCode={setCountryCode} city={city} setCity={setCity}
           otpSent={otpSent} setOtpSent={setOtpSent} verificationCode={verificationCode} setVerificationCode={setVerificationCode}
           otpMessage={otpMessage} setOtpMessage={setOtpMessage} resendCooldown={resendCooldown} setResendCooldown={setResendCooldown}
           showContactAdmin={showContactAdmin} setShowContactAdmin={setShowContactAdmin} resetForm={resetForm}

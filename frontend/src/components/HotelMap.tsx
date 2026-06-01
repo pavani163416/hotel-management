@@ -33,7 +33,10 @@ const HotelMap = ({ hotels, height = "100%", onHotelClick, className }: Props) =
   <div className={className} style={{ height, width: "100%" }}>
     <MapContainer center={[20, 0]} zoom={2} scrollWheelZoom={false}
       style={{ height: "100%", width: "100%", borderRadius: "0.75rem", background: "hsl(30 12% 96%)" }}>
-      <TileLayer attribution='&copy; OpenStreetMap' url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png" />
+      <TileLayer 
+        attribution='&copy; Google Maps' 
+        url="https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}" 
+      />
       <FitBounds hotels={hotels} />
       {hotels.map((h) => (
         <Marker key={h.id} position={h.coords} icon={goldIcon}>

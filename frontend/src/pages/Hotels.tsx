@@ -39,7 +39,9 @@ const Hotels = () => {
   const filtered = useMemo(() => {
     let list = hotels.filter((h) => {
       const ratingValue = typeof h.rating === "number" ? h.rating : 0;
-      if (search.location && !h.location.toLowerCase().includes(search.location.toLowerCase()) && !h.city.toLowerCase().includes(search.location.toLowerCase())) return false;
+      const loc = h.location || "";
+      const cty = h.city || "";
+      if (search.location && !loc.toLowerCase().includes(search.location.toLowerCase()) && !cty.toLowerCase().includes(search.location.toLowerCase())) return false;
       if (h.pricePerNight > maxPrice) return false;
       if (ratingValue < minRating) return false;
       if (amenities.length && !amenities.every((a) => h.amenities.includes(a))) return false;
@@ -52,7 +54,7 @@ const Hotels = () => {
     return list;
   }, [hotels, search.location, maxPrice, minRating, amenities, types, sort]);
 
-  const deals = useMemo(() => hotels.filter((h) => h.isDeal), [hotels]);
+  const deals = useMemo(() => filtered.filter((h) => h.isDeal), [filtered]);
   const toggle = (a: string, set: (v: string[]) => void, list: string[]) => set(list.includes(a) ? list.filter((x) => x !== a) : [...list, a]);
   const clearAll = () => { setMaxPrice(5000); setMinRating(0); setAmenities([]); setTypes([]); };
   const activeFilterCount = (maxPrice !== 5000 ? 1 : 0) + (minRating ? 1 : 0) + amenities.length + types.length;

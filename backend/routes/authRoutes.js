@@ -186,27 +186,28 @@
  */
 
 import express from "express";
-import bcrypt  from "bcryptjs";
-import jwt     from "jsonwebtoken";
-import crypto  from "crypto";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import crypto from "crypto";
 import mongoose from "mongoose";
-import User    from "../models/User.js";
-import Guest   from "../models/Guest.js";
+import User from "../models/User.js";
+import Guest from "../models/Guest.js";
 import Booking from "../models/Booking.js";
 import Manager from "../models/Manager.js";
+import twilio from "twilio";
 import connectAdminDB from "../config/adminDb.js";
 import { authLimiter, loginLimiter, otpRateLimiter } from "../middleware/rateLimiter.js";
-import logger  from "../utils/logger.js";
+import logger from "../utils/logger.js";
 import { sendPasswordResetEmail, sendOtpEmail } from "../utils/emailService.js";
 import { cacheGet, cacheSet, cacheDel } from "../cache/redisCache.js";
 import { getRedisClient, isRedisReady } from "../config/redis.js";
 import { enqueueEmailJob } from "../queues/emailQueue.js";
 import AuditLog from "../models/AuditLog.js";
-import { 
-  validateLoginPayload, 
-  validateRegisterPayload, 
-  validateEmailPayload, 
-  validateResetPasswordPayload 
+import {
+  validateLoginPayload,
+  validateRegisterPayload,
+  validateEmailPayload,
+  validateResetPasswordPayload
 } from "../middleware/authValidator.js";
 
 import { OAuth2Client } from "google-auth-library";
@@ -217,7 +218,7 @@ const router = express.Router();
 // Local fallback for tracking user refresh tokens (if Redis is down)
 const localUserRefreshTokens = new Map();
 
-const getSecret  = () => {
+const getSecret = () => {
   const s = process.env.JWT_SECRET;
   if (!s) throw new Error("JWT_SECRET missing");
   return s;
@@ -227,13 +228,14 @@ const JWT_EXPIRES = "7d";
 const twilioAuthHeaders = () => {
   const sid = process.env.TWILIO_ACCOUNT_SID;
   const token = process.env.TWILIO_AUTH_TOKEN;
-  const serviceSid = process.env.TWILIO_VERIFY_SERVICE_SID;
-  if (!sid || !token || !serviceSid) {
-    throw new Error("Twilio verification is not configured.");
+  const fromNumber = process.env.TWILIO_PHONE_NUMBER;
+  if (!sid || !token || !fromNumber) {
+    throw new Error("Twilio SMS is not configured.");
   }
   return {
     auth: `Basic ${Buffer.from(`${sid}:${token}`).toString("base64")}`,
-    serviceSid,
+    sid,
+    fromNumber,
   };
 };
 
@@ -244,13 +246,13 @@ const getAdminUserModel = async () => {
   if (!conn) return null;
 
   const schema = new mongoose.Schema({
-    name:                String,
-    email:               { type: String, lowercase: true, trim: true },
-    password:            String,
-    role:                String,
-    isActive:            Boolean,
-    lastLogin:           Date,
-    resetPasswordToken:   String,
+    name: String,
+    email: { type: String, lowercase: true, trim: true },
+    password: String,
+    role: String,
+    isActive: Boolean,
+    lastLogin: Date,
+    resetPasswordToken: String,
     resetPasswordExpires: Date,
   }, { collection: "adminusers" });
 
@@ -301,40 +303,26 @@ const normalizePhoneNumber = (phone) => {
   return normalized;
 };
 
-const sendTwilioVerification = async (normalizedPhone) => {
-  const { auth, serviceSid } = twilioAuthHeaders();
-  const body = new URLSearchParams({ To: normalizedPhone, Channel: "sms" }).toString();
-  const response = await fetch(`https://verify.twilio.com/v2/Services/${serviceSid}/Verifications`, {
-    method: "POST",
-    headers: {
-      Authorization: auth,
-      "Content-Type": "application/x-www-form-urlencoded",
-    },
-    body,
-  });
-  const data = await response.json();
-  if (!response.ok || data.status !== "pending") {
-    throw new Error(data.message || "Unable to send OTP. Please try again.");
+const sendTwilioSMS = async (normalizedPhone, otpCode) => {
+  const sid = process.env.TWILIO_ACCOUNT_SID;
+  const token = process.env.TWILIO_AUTH_TOKEN;
+  const fromNumber = process.env.TWILIO_PHONE_NUMBER;
+  
+  if (!sid || !token || !fromNumber) {
+    throw new Error("Twilio SMS is not configured.");
   }
-  return data;
-};
 
-const verifyTwilioCode = async (normalizedPhone, code) => {
-  const { auth, serviceSid } = twilioAuthHeaders();
-  const body = new URLSearchParams({ To: normalizedPhone, Code: code }).toString();
-  const response = await fetch(`https://verify.twilio.com/v2/Services/${serviceSid}/VerificationCheck`, {
-    method: "POST",
-    headers: {
-      Authorization: auth,
-      "Content-Type": "application/x-www-form-urlencoded",
-    },
-    body,
-  });
-  const data = await response.json();
-  if (!response.ok) {
-    throw new Error(data.message || "Unable to verify OTP.");
+  const client = twilio(sid, token);
+  try {
+    const message = await client.messages.create({
+      body: `Your LuxeStay verification code is: ${otpCode}`,
+      from: fromNumber,
+      to: normalizedPhone,
+    });
+    return message;
+  } catch (error) {
+    throw new Error(error.message || "Unable to send SMS via Twilio.");
   }
-  return data;
 };
 
 // ── Middleware: verify customer JWT ──────────────────────
@@ -404,7 +392,7 @@ router.post("/register", authLimiter, validateRegisterPayload, async (req, res, 
         user.verificationAttempts = (user.verificationAttempts || 0) + 1;
         user.verificationSentAt = new Date();
         await user.save();
-        
+
         // Update Guest record
         if (user.guestId) {
           await Guest.findByIdAndUpdate(user.guestId, {
@@ -442,22 +430,22 @@ router.post("/register", authLimiter, validateRegisterPayload, async (req, res, 
 
     // ── Create User record (credentials) ─────────────
     user = await User.create({
-      name:         name.trim(),
-      email:        normalEmail,
+      name: name.trim(),
+      email: normalEmail,
       passwordHash,
-      phone:        phone.trim(),
-      city:         city?.trim() || "",
-      isVerified:   false
+      phone: phone.trim(),
+      city: city?.trim() || "",
+      isVerified: false
     });
 
     // ── Upsert Guest record (booking profile) ─────────
     let guest = await Guest.findOne({ email: normalEmail });
     if (!guest) {
       guest = await Guest.create({
-        name:  name.trim(),
+        name: name.trim(),
         email: normalEmail,
         phone: phone.trim(),
-        city:  city?.trim() || "",
+        city: city?.trim() || "",
       });
     }
 
@@ -480,7 +468,6 @@ router.post("/register", authLimiter, validateRegisterPayload, async (req, res, 
     return res.status(201).json({
       success: true,
       message: "Registration successful. A 6-digit verification code has been sent to your email.",
-      otp: otp,
       data: {
         email: user.email,
         isVerified: false,
@@ -637,13 +624,13 @@ router.post("/login", loginLimiter, validateLoginPayload, async (req, res, next)
         const otp = crypto.randomInt(100000, 1000000).toString();
         await cacheSet(`otp_${normalEmail}`, otp, 300);
         await cacheSet(`cooldown_${normalEmail}`, "true", 60);
-  
+
         user.verificationAttempts = (user.verificationAttempts || 0) + 1;
         user.verificationSentAt = new Date();
         await user.save();
 
         const otpEmailPayload = { to: normalEmail, name: user.name, otp };
-        
+
         try {
           await sendOtpEmail(otpEmailPayload);
         } catch (emailErr) {
@@ -664,8 +651,7 @@ router.post("/login", loginLimiter, validateLoginPayload, async (req, res, next)
         requiresVerification: true,
         message: "Your account is pending verification. Please verify your email to continue.",
         code: "UNVERIFIED_EMAIL",
-        email: normalEmail,
-        otp: activeOtp
+        email: normalEmail
       });
     }
 
@@ -718,11 +704,11 @@ router.post("/login", loginLimiter, validateLoginPayload, async (req, res, next)
 
     // Issue tokens
     const accessToken = jwt.sign(
-      { 
-        id: user._id, 
-        guestId: user.guestId?.toString() || user.guestId, 
-        email: user.email, 
-        name: user.name, 
+      {
+        id: user._id,
+        guestId: user.guestId?.toString() || user.guestId,
+        email: user.email,
+        name: user.name,
         role: "customer",
         jti,
         ip,
@@ -774,13 +760,13 @@ router.post("/login", loginLimiter, validateLoginPayload, async (req, res, next)
       success: true,
       message: "Login successful.",
       data: {
-        id:    user._id,
-        name:  user.name,
+        id: user._id,
+        name: user.name,
         email: user.email,
         phone: user.phone,
-        city:  user.city,
+        city: user.city,
         profileImage: user.profileImage,
-        coverImage:   user.coverImage,
+        coverImage: user.coverImage,
         paymentMethods: user.paymentMethods,
         token: accessToken,
         refreshToken
@@ -797,22 +783,19 @@ router.post("/phone/send", authLimiter, async (req, res, next) => {
     }
 
     const normalizedPhone = normalizePhoneNumber(phone);
+    const otpCode = crypto.randomInt(100000, 1000000).toString();
+    await cacheSet(`mock_phone_otp_${normalizedPhone}`, otpCode, 300);
+
     try {
-      await sendTwilioVerification(normalizedPhone);
+      await sendTwilioSMS(normalizedPhone, otpCode);
       return res.status(200).json({ success: true, message: "OTP sent successfully." });
     } catch (twilioErr) {
-      logger.warn(`Twilio verify fail, generating mock OTP: ${twilioErr.message}`);
-      const mockCode = crypto.randomInt(100000, 1000000).toString();
-      await cacheSet(`mock_phone_otp_${normalizedPhone}`, mockCode, 300);
+      logger.warn(`Twilio SMS fail: ${twilioErr.message}`);
 
-      console.log(`\n=========================================`);
-      console.log(`🔑 DEV: Phone Verification OTP for ${normalizedPhone}: ${mockCode}`);
-      console.log(`=========================================\n`);
-
-      return res.status(200).json({
-        success: true,
-        message: "OTP sent successfully (development fallback).",
-        otp: mockCode
+      // We surface the real Twilio error to the frontend so you can see exactly why it fails!
+      return res.status(400).json({
+        success: false,
+        message: `Twilio Error: ${twilioErr.message}`
       });
     }
   } catch (err) {
@@ -831,19 +814,14 @@ router.post("/phone/verify", authLimiter, async (req, res, next) => {
     }
 
     const normalizedPhone = normalizePhoneNumber(phone);
-    
-    // Check if there is a dev mock OTP
-    const mockCode = await cacheGet(`mock_phone_otp_${normalizedPhone}`);
+
+    // Check if there is an OTP stored
+    const storedCode = await cacheGet(`mock_phone_otp_${normalizedPhone}`);
     let isApproved = false;
 
-    if (mockCode && mockCode === code) {
+    if (storedCode && storedCode === code) {
       isApproved = true;
       await cacheDel(`mock_phone_otp_${normalizedPhone}`);
-    } else {
-      const verification = await verifyTwilioCode(normalizedPhone, code);
-      if (verification.status === "approved") {
-        isApproved = true;
-      }
     }
 
     if (!isApproved) {
@@ -896,13 +874,13 @@ router.post("/phone/verify", authLimiter, async (req, res, next) => {
       success: true,
       message: "Phone verification successful.",
       data: {
-        id:    user._id,
-        name:  user.name,
+        id: user._id,
+        name: user.name,
         email: user.email,
         phone: user.phone,
-        city:  user.city,
+        city: user.city,
         profileImage: user.profileImage,
-        coverImage:   user.coverImage,
+        coverImage: user.coverImage,
         paymentMethods: user.paymentMethods,
         token,
       },
@@ -973,7 +951,7 @@ router.post("/google", async (req, res, next) => {
 
       user.guestId = guest._id;
       await user.save();
-      
+
       logger.info({ email, name }, "New Google user registered with Guest record");
     }
 
@@ -986,13 +964,13 @@ router.post("/google", async (req, res, next) => {
     res.json({
       success: true,
       data: {
-        id:    user._id,
-        name:  user.name,
+        id: user._id,
+        name: user.name,
         email: user.email,
         phone: user.phone,
-        city:  user.city,
+        city: user.city,
         profileImage: user.profileImage,
-        coverImage:   user.coverImage,
+        coverImage: user.coverImage,
         paymentMethods: user.paymentMethods,
         token,
       },
@@ -1128,15 +1106,15 @@ router.get("/me", verifyCustomerToken, async (req, res, next) => {
     res.json({
       success: true,
       data: {
-        id:      user._id,
-        name:    user.name,
-        email:   user.email,
-        phone:   user.phone,
-        city:    user.city,
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        city: user.city,
         profileImage: user.profileImage,
-        coverImage:   user.coverImage,
+        coverImage: user.coverImage,
         paymentMethods: user.paymentMethods,
-        guestId:      user.guestId,
+        guestId: user.guestId,
       },
     });
   } catch (err) { next(err); }
@@ -1146,7 +1124,7 @@ router.get("/me", verifyCustomerToken, async (req, res, next) => {
 router.patch("/profile", verifyCustomerToken, async (req, res, next) => {
   try {
     const { name, phone, city, profileImage, coverImage } = req.body;
-    
+
     const user = await User.findById(req.customer.id);
     if (!user) return res.status(404).json({ success: false, message: "User not found." });
 
@@ -1216,15 +1194,15 @@ router.patch("/profile", verifyCustomerToken, async (req, res, next) => {
       success: true,
       message: "Profile updated successfully.",
       data: {
-        id:      user._id,
-        name:    user.name,
-        email:   user.email,
-        phone:   user.phone,
-        city:    user.city,
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        city: user.city,
         profileImage: user.profileImage,
-        coverImage:   user.coverImage,
+        coverImage: user.coverImage,
         paymentMethods: user.paymentMethods,
-        guestId:      user.guestId,
+        guestId: user.guestId,
       },
     });
   } catch (err) { next(err); }
@@ -1296,7 +1274,7 @@ router.post("/change-password", verifyCustomerToken, async (req, res, next) => {
 router.post("/payment-methods", verifyCustomerToken, async (req, res, next) => {
   try {
     const { type, brand, last4, expiry, upiId, bankName, isDefault } = req.body;
-    
+
     if (!type) return res.status(400).json({ success: false, message: "Type is required." });
 
     if ((type === 'card' || type === 'credit') && (!brand || !last4 || !expiry)) {
@@ -1340,19 +1318,19 @@ router.post("/payment-methods", verifyCustomerToken, async (req, res, next) => {
 // ── GET /api/auth/bookings — fetch bookings for logged-in user ──
 router.get("/bookings", verifyCustomerToken, async (req, res, next) => {
   try {
-    const page  = Math.max(1, parseInt(req.query.page)  || 1);
+    const page = Math.max(1, parseInt(req.query.page) || 1);
     const limit = Math.min(50, parseInt(req.query.limit) || 20);
-    const skip  = (page - 1) * limit;
+    const skip = (page - 1) * limit;
 
     // We want to fetch all bookings associated with this user's email across both website and app!
     const userEmail = req.customer.email ? req.customer.email.toLowerCase().trim() : "";
-    
+
     let guestIds = [];
     if (userEmail) {
       const matchingGuests = await Guest.find({ email: userEmail });
       guestIds = matchingGuests.map(g => g._id);
     }
-    
+
     if (req.customer.guestId && mongoose.Types.ObjectId.isValid(req.customer.guestId)) {
       const tokenGuestId = new mongoose.Types.ObjectId(req.customer.guestId);
       if (!guestIds.some(id => id.equals(tokenGuestId))) {
@@ -1387,10 +1365,10 @@ router.get("/bookings", verifyCustomerToken, async (req, res, next) => {
 
     res.json({
       success: true,
-      count:   data.length,
+      count: data.length,
       total,
       page,
-      pages:   Math.ceil(total / limit),
+      pages: Math.ceil(total / limit),
       data,
     });
   } catch (err) { next(err); }
@@ -1473,13 +1451,13 @@ router.post("/verify-otp", otpRateLimiter, async (req, res, next) => {
       success: true,
       message: "Email verified successfully.",
       data: {
-        id:    user._id,
-        name:  user.name,
+        id: user._id,
+        name: user.name,
         email: user.email,
         phone: user.phone,
-        city:  user.city,
+        city: user.city,
         profileImage: user.profileImage,
-        coverImage:   user.coverImage,
+        coverImage: user.coverImage,
         paymentMethods: user.paymentMethods,
         token: accessToken,
         refreshToken
@@ -1532,8 +1510,7 @@ router.post("/resend-otp", otpRateLimiter, async (req, res, next) => {
 
     return res.status(200).json({
       success: true,
-      message: "A new verification code has been sent to your email.",
-      otp: otp
+      message: "A new verification code has been sent to your email."
     });
   } catch (err) { next(err); }
 });
@@ -1646,7 +1623,7 @@ router.post("/logout", async (req, res, next) => {
             }
           }
         }
-      } catch (e) {}
+      } catch (e) { }
     }
 
     // ── Access Token Blacklist ───────────────
@@ -1662,7 +1639,7 @@ router.post("/logout", async (req, res, next) => {
             await client.set(`blacklist:${decoded.jti}`, "true", "EX", exp);
           }
         }
-      } catch (e) {}
+      } catch (e) { }
     }
 
     // Clear cookie
@@ -1723,7 +1700,7 @@ router.post("/logout-all", verifyCustomerToken, async (req, res, next) => {
             await client.set(`blacklist:${decoded.jti}`, "true", "EX", exp);
           }
         }
-      } catch (e) {}
+      } catch (e) { }
     }
 
     AuditLog.create({
