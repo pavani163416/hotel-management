@@ -921,7 +921,9 @@ router.post("/google", async (req, res, next) => {
 
     let email, name, picture, googleId;
 
-    if (idToken.startsWith("ya29.")) {
+    const isJWT = idToken.split('.').length === 3;
+
+    if (!isJWT) {
       // It's a Google Access Token (implicit flow on Web)
       const response = await fetch(`https://www.googleapis.com/oauth2/v3/userinfo?access_token=${idToken}`);
       if (!response.ok) {

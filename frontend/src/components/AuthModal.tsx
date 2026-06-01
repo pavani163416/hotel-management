@@ -379,9 +379,16 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
     }
     setError(""); setLoading(true);
     try {
-      await api.post("/auth/phone/send", { phone: phone.trim() });
+      const res: any = await api.post("/auth/phone/send", { phone: phone.trim() });
       setOtpSent(true);
-      setOtpMessage("OTP sent. Please check your phone and enter the code below.");
+      const data = res.data?.data ?? res.data;
+      if (res.data?.otp || data?.otp) {
+        const otpCode = res.data?.otp || data?.otp;
+        setVerificationCode(otpCode);
+        setOtpMessage(`DEV MODE: Your phone verification code is ${otpCode}`);
+      } else {
+        setOtpMessage("OTP sent. Please check your phone and enter the code below.");
+      }
     } catch (err: any) {
       setError(err.response?.data?.message || err.message || "Unable to send OTP.");
     } finally {
