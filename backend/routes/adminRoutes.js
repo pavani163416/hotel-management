@@ -354,9 +354,7 @@ router.post("/managers", protect, async (req, res, next) => {
       return res.status(400).json({ success: false, message: "Name, email, and password are required." });
     }
 
-    if (!email.toLowerCase().trim().endsWith("@gmail.com")) {
-      return res.status(400).json({ success: false, message: "Only @gmail.com email addresses are allowed." });
-    }
+
 
     if (password.length < 8) {
       return res.status(400).json({ success: false, message: "Password must be at least 8 characters long." });
@@ -445,9 +443,7 @@ router.put("/managers/:id", protect, requireObjectId(), async (req, res, next) =
     if (!manager) return res.status(404).json({ success: false, message: "Manager not found." });
 
     if (email && email.toLowerCase() !== manager.email) {
-      if (!email.toLowerCase().trim().endsWith("@gmail.com")) {
-        return res.status(400).json({ success: false, message: "Only @gmail.com email addresses are allowed." });
-      }
+
       const existing = await Manager.findOne({ email: email.toLowerCase() });
       if (existing) return res.status(409).json({ success: false, message: "Email already exists." });
       manager.email = email.toLowerCase();

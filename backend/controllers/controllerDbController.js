@@ -36,9 +36,7 @@ export const getAdminUsers = async (req, res, next) => {
 export const createAdminUser = async (req, res, next) => {
   try {
     const { email, password } = req.body;
-    if (email && !email.toLowerCase().trim().endsWith("@gmail.com")) {
-      return res.status(400).json({ success: false, message: "Only @gmail.com email addresses are allowed." });
-    }
+
     if (password) {
       if (password.length < 8) {
         return res.status(400).json({ success: false, message: "Password must be at least 8 characters long." });
@@ -63,9 +61,7 @@ export const createAdminUser = async (req, res, next) => {
 export const updateAdminUser = async (req, res, next) => {
   try {
     const { email, password } = req.body;
-    if (email && !email.toLowerCase().trim().endsWith("@gmail.com")) {
-      return res.status(400).json({ success: false, message: "Only @gmail.com email addresses are allowed." });
-    }
+
     if (password) {
       if (password.length < 8) {
         return res.status(400).json({ success: false, message: "Password must be at least 8 characters long." });
