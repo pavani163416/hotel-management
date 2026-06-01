@@ -388,7 +388,7 @@ router.post("/register", authLimiter, validateRegisterPayload, async (req, res, 
         });
       } else {
         // User exists but unverified. Re-send email first before saving updates.
-        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const otp = crypto.randomInt(100000, 1000000).toString();
         const otpEmailPayload = { to: normalEmail, name: name.trim(), otp };
 
         try {
@@ -428,7 +428,7 @@ router.post("/register", authLimiter, validateRegisterPayload, async (req, res, 
       }
     }
 
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otp = crypto.randomInt(100000, 1000000).toString();
     const otpEmailPayload = { to: normalEmail, name: name.trim(), otp };
 
     // Attempt email send first
@@ -615,13 +615,12 @@ router.post("/login", loginLimiter, validateLoginPayload, async (req, res, next)
     const user = await User.findOne({ email: normalEmail }).select("+passwordHash");
 
     const DUMMY_HASH = "$2b$12$abcdefghijklmnopqrstuvwxyz12345678901234567890";
-    if (!user || !user.passwordHash) {
+    if (!user || !user.passwordHash || !user.isActive) {
       await bcrypt.compare(password, DUMMY_HASH);
+      if (user && !user.isActive) {
+        return res.status(403).json({ success: false, message: "Account is disabled. Please contact support." });
+      }
       return res.status(401).json({ success: false, message: "Invalid credentials." });
-    }
-
-    if (!user.isActive) {
-      return res.status(403).json({ success: false, message: "Account is disabled. Please contact support." });
     }
 
     const valid = await bcrypt.compare(password, user.passwordHash);
@@ -635,7 +634,7 @@ router.post("/login", loginLimiter, validateLoginPayload, async (req, res, next)
       const cooldown = await cacheGet(`cooldown_${normalEmail}`);
       let activeOtp;
       if (!cooldown) {
-        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const otp = crypto.randomInt(100000, 1000000).toString();
         await cacheSet(`otp_${normalEmail}`, otp, 300);
         await cacheSet(`cooldown_${normalEmail}`, "true", 60);
   
@@ -803,7 +802,7 @@ router.post("/phone/send", authLimiter, async (req, res, next) => {
       return res.status(200).json({ success: true, message: "OTP sent successfully." });
     } catch (twilioErr) {
       logger.warn(`Twilio verify fail, generating mock OTP: ${twilioErr.message}`);
-      const mockCode = Math.floor(100000 + Math.random() * 900000).toString();
+      const mockCode = crypto.randomInt(100000, 1000000).toString();
       await cacheSet(`mock_phone_otp_${normalizedPhone}`, mockCode, 300);
 
       console.log(`\n=========================================`);
@@ -1248,6 +1247,13 @@ router.post("/change-password", verifyCustomerToken, async (req, res, next) => {
       });
     }
 
+    if (newPassword.length > 72 || oldPassword.length > 72) {
+      return res.status(400).json({
+        success: false,
+        message: "Password must be at most 72 characters.",
+      });
+    }
+
     const user = await User.findById(req.customer.id).select("+passwordHash");
     if (!user || !user.passwordHash) {
       return res.status(404).json({ success: false, message: "User not found." });
@@ -1495,7 +1501,7 @@ router.post("/resend-otp", otpRateLimiter, async (req, res, next) => {
     }
 
     // Generate new OTP and set cooldown
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otp = crypto.randomInt(100000, 1000000).toString();
     await cacheSet(`otp_${normalEmail}`, otp, 300);
     await cacheSet(`cooldown_${normalEmail}`, "true", 60);
 

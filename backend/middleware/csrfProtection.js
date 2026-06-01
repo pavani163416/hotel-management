@@ -63,10 +63,11 @@ const csrfProtection = (req, res, next) => {
   }
 
   // No origin at all — allow server-to-server / Postman / curl in non-prod.
-  // In production, require an origin for mutating requests.
+  // In production or if cookies/credentials are present, require an origin for mutating requests.
   const isProd = process.env.NODE_ENV === "production";
+  const hasCookies = req.headers.cookie || (req.cookies && Object.keys(req.cookies).length > 0);
   if (!effectiveOrigin) {
-    if (!isProd) return next();
+    if (!isProd && !hasCookies) return next();
     return res.status(403).json({
       success: false,
       message: "Forbidden: missing origin header.",

@@ -7,10 +7,9 @@ const normalizeKey = (email) => String(email || "").toLowerCase().trim();
 const hashValue = (value) => crypto.createHash("sha256").update(String(value)).digest("hex");
 
 export const generateOtpCode = (length = 6) => {
-  const digits = "0123456789";
   let code = "";
   while (code.length < length) {
-    code += digits[Math.floor(Math.random() * digits.length)];
+    code += crypto.randomInt(0, 10).toString();
   }
   return code;
 };

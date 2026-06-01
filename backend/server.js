@@ -166,8 +166,9 @@ const allowedOrigins = [
 
 const corsOptions = {
   origin: function (origin, callback) {
+    if (origin === "null" || origin === "undefined") return callback(new Error("CORS not allowed for null/undefined origin"));
     // Allow requests with no origin (Postman, curl, server-to-server)
-    if (!origin || origin === "null" || origin === "undefined") return callback(null, true);
+    if (!origin) return callback(null, true);
     if (allowedOrigins.includes(origin)) return callback(null, true);
     // Allow any localhost port for development (e.g., Flutter Web)
     if (origin.startsWith("http://localhost:") || origin.startsWith("http://127.0.0.1:")) return callback(null, true);
@@ -181,7 +182,8 @@ const corsOptions = {
 };
 
 const socketCorsOrigin = (origin, callback) => {
-  if (!origin || origin === "null" || origin === "undefined") return callback(null, true);
+  if (origin === "null" || origin === "undefined") return callback(new Error("Socket.IO CORS not allowed for null/undefined origin"));
+  if (!origin) return callback(null, true);
   if (allowedOrigins.includes(origin)) return callback(null, true);
   if (origin.startsWith("http://localhost:") || origin.startsWith("http://127.0.0.1:")) return callback(null, true);
   if (origin.endsWith(".vercel.app")) return callback(null, true);
@@ -189,6 +191,21 @@ const socketCorsOrigin = (origin, callback) => {
 };
 
 // Handle preflight for all routes FIRST — before any other middleware
+app.use((req, res, next) => {
+  if (req.method === "OPTIONS") {
+    const origin = req.headers["origin"];
+    if (origin && origin !== "null" && origin !== "undefined") {
+      res.setHeader("Access-Control-Allow-Origin", origin);
+    }
+    res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With, Upgrade");
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+    res.removeHeader("X-Powered-By");
+    res.removeHeader("Server");
+    return res.sendStatus(204);
+  }
+  next();
+});
 app.options("*", cors(corsOptions));
 app.use(cors(corsOptions));
 
@@ -216,25 +233,21 @@ app.use(helmet({
   noSniff:              true,
   frameguard:           { action: "deny" },
   hidePoweredBy:        true,
+  permissionsPolicy: {
+    features: { geolocation: ["'none'"], microphone: ["'none'"], camera: ["'none'"] }
+  },
   xssFilter:            true,
   referrerPolicy:       { policy: "strict-origin-when-cross-origin" },
   contentSecurityPolicy: {
     directives: {
-      defaultSrc:              ["'none'"],
-      scriptSrc:               ["'none'"],
-      styleSrc:                ["'none'"],
-      imgSrc:                  ["'none'"],
-      fontSrc:                 ["'none'"],
-      connectSrc:              ["'self'"],
-      mediaSrc:                ["'none'"],
-      objectSrc:               ["'none'"],
-      childSrc:                ["'none'"],
-      frameSrc:                ["'none'"],
-      workerSrc:               ["'none'"],
-      manifestSrc:             ["'none'"],
-      frameAncestors:          ["'none'"],
-      formAction:              ["'none'"],
-      baseUri:                 ["'none'"],
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'"],
+      styleSrc: ["'self'"],
+      imgSrc: ["'self'", "data:", "https:"],
+      objectSrc: ["'none'"],
+      frameAncestors: ["'none'"],
+      formAction: ["'self'"],
+      baseUri: ["'self'"],
       upgradeInsecureRequests: [],
     },
   },
@@ -288,14 +301,19 @@ if (isProd) {
 }
 
 // ── GLB-005: Request Body Size Limit — tight cap ────────────
-// Limit to 100kb for JSON / urlencoded; allow up to 10mb only
+// Limit to 100kb for JSON / urlencoded / text; allow up to 10mb only
 // for explicit upload endpoints (applied per-router in uploadRoutes.js).
 app.use((req, res, next) => {
   if (req.path.startsWith("/api/upload/image")) {
     return next();
   }
-  express.json({ limit: "100kb" })(req, res, next);
+  const contentLength = req.headers["content-length"];
+  if (contentLength && parseInt(contentLength, 10) > 102400) {
+    return res.status(413).json({ success: false, message: "Request payload is too large." });
+  }
+  next();
 });
+app.use(express.json({ limit: "100kb" }));
 app.use(express.urlencoded({ extended: true, limit: "100kb" }));
 app.use(express.text({ type: "text/plain", limit: "100kb" }));
 
@@ -303,19 +321,19 @@ app.use(express.text({ type: "text/plain", limit: "100kb" }));
 app.use(mongoSanitize());
 
 // ── GLB-006: Prototype Pollution Protection ───────────────
-// Strip __proto__, constructor, and prototype keys from req.body,
-// req.query and req.params to prevent prototype pollution attacks.
+// Strip __proto__, constructor, and prototype keys recursively to prevent prototype pollution.
 app.use((req, res, next) => {
   const DANGEROUS_KEYS = ["__proto__", "constructor", "prototype"];
   const sanitize = (obj) => {
-    if (!obj || typeof obj !== "object" || Array.isArray(obj)) return;
-    for (const key of DANGEROUS_KEYS) {
-      if (Object.prototype.hasOwnProperty.call(obj, key)) {
-        delete obj[key];
+    if (!obj || typeof obj !== "object") return;
+    for (const key in obj) {
+      if (DANGEROUS_KEYS.includes(key)) {
+        try {
+          delete obj[key];
+        } catch (e) {}
+      } else if (obj[key] && typeof obj[key] === "object") {
+        sanitize(obj[key]);
       }
-    }
-    for (const val of Object.values(obj)) {
-      if (val && typeof val === "object") sanitize(val);
     }
   };
   sanitize(req.body);

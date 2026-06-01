@@ -59,19 +59,12 @@ const errorHandler = (err, req, res, next) => {
     logger.warn(message, logMeta);
   }
 
-  // ── GLB-004: Response — never expose any internal detail in production ──
-  const isProduction = process.env.NODE_ENV === "production";
-
-  // In production: suppress all messages for 5xx (generic) and strip stack always.
-  const safeMessage = isProduction
-    ? (statusCode >= 500 ? "An unexpected error occurred. Please try again later." : message)
-    : message;
+  // ── GLB-004: Response — never expose any internal detail or stack trace ──
+  const safeMessage = statusCode >= 500 ? "An unexpected error occurred. Please try again later." : message;
 
   res.status(statusCode).json({
     success: false,
     message: safeMessage,
-    // Stack trace only in non-production environments
-    ...(isProduction ? {} : { stack: err.stack }),
   });
 };
 

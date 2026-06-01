@@ -164,7 +164,7 @@ router.post("/image", jsonLargeBody, protect, async (req, res) => {
 });
 
 // GET /api/upload/test-email?to=your@email.com
-router.get("/test-email", async (req, res) => {
+router.get("/test-email", protect, authorizeRoles("Super Admin", "admin"), async (req, res) => {
   const to = req.query.to || "addepallipavani4@gmail.com";
   const resend = new Resend(process.env.RESEND_API_KEY);
   try {

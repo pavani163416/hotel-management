@@ -1,5 +1,5 @@
 const MAX_EMAIL_LENGTH = 254;
-const MAX_PASSWORD_LENGTH = 128;
+const MAX_PASSWORD_LENGTH = 72;
 const MAX_NAME_LENGTH = 100;
 
 const validateStringInput = (value, maxLength, fieldName) => {
