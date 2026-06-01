@@ -422,6 +422,7 @@ const io = new SocketIOServer(httpServer, {
   path: "/socket.io/",
   transports: ["websocket", "polling"],  // Prioritize websocket, fallback to polling
   allowUpgrades: true,
+  destroyUpgrade: false,
   pingInterval: 25000,
   pingTimeout: 60000,
   connectTimeout: 45000,
