@@ -138,6 +138,7 @@ export default function Dashboard() {
         checkIn: nbCheckIn,
         checkOut: nbCheckOut,
         totalAmount: parseFloat(nbAmount) || 0,
+        subtotal: parseFloat(nbAmount) || 0,
         pricePerNight: resolvedPPN,
         paymentMethod: "card",
       });

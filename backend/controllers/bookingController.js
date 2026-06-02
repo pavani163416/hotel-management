@@ -595,7 +595,7 @@ export const getAllBookings = async (req, res, next) => {
 
     const data = bookings.map((b) => ({
       ...b.toJSON(),
-      hotelName: b.hotelId?.name || b.hotelName || resolveHotelName(b.room?.roomNumber || "") || "Unknown Hotel",
+      hotelName: b.hotelId?.name || b.hotelName || resolveHotelName(b.room?.roomNumber || "") || "Other Properties",
       hotelImage: b.hotelId?.image || b.hotelImage || b.room?.images?.[0] || "",
     }));
 
