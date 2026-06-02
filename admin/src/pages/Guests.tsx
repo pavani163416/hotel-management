@@ -69,10 +69,9 @@ export default function Guests() {
     apiGetGuests()
       .then((r: any) => {
         if (seq !== fetchSeq.current || controller.signal.aborted) return;
-        const guestsWithBookings = Array.isArray(r?.data)
-          ? r.data.filter((g: any) => Array.isArray(g?.bookings) && g.bookings.length > 0)
-          : [];
-        setBackendGuests(guestsWithBookings);
+        // Show ALL guests, not just those with bookings
+        const allGuests = Array.isArray(r?.data) ? r.data : [];
+        setBackendGuests(allGuests);
       })
       .catch(() => {
         if (seq !== fetchSeq.current || controller.signal.aborted) return;
@@ -214,14 +213,15 @@ export default function Guests() {
     try {
       const token = localStorage.getItem("luxe_admin_token");
       const headers = { "Content-Type": "application/json", Authorization: `Bearer ${token}` };
-      const res = await fetch(`${API}/guests`, {
+      // Use /api/admin/guests — uses admin JWT auth
+      const res = await fetch(`${API}/admin/guests`, {
         method: "POST",
         headers,
         body: JSON.stringify({
-          name:  form.name,
+          name:  form.name.trim(),
           email: form.email.toLowerCase().trim(),
-          phone: form.phone,
-          city:  form.city,
+          phone: form.phone.trim() || "N/A",
+          city:  form.city.trim(),
         }),
       });
       const data = await res.json();

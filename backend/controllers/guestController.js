@@ -37,11 +37,10 @@ export const getAllGuests = async (req, res, next) => {
       })
       .sort({ createdAt: -1 });
 
-    // For guests with no linked bookings, find by guestSnapshot.email as fallback
+    // Enrich guests that have no linked bookings via fallback email match
     const enriched = await Promise.all(guests.map(async (g) => {
       const json = g.toJSON();
       if (json.bookings && json.bookings.length > 0) return json;
-      // Fallback: find bookings where guestSnapshot.email matches
       const fallbackBookings = await Booking.find({
         "guestSnapshot.email": g.email.toLowerCase(),
       })
@@ -54,12 +53,11 @@ export const getAllGuests = async (req, res, next) => {
       return json;
     }));
 
-    const bookedGuests = enriched.filter((g) => Array.isArray(g.bookings) && g.bookings.length > 0);
-
+    // Return ALL guests (including those with no bookings)
     res.status(200).json({
       success: true,
-      count: bookedGuests.length,
-      data: bookedGuests,
+      count: enriched.length,
+      data: enriched,
     });
   } catch (error) {
     next(error);

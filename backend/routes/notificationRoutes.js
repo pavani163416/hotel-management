@@ -38,14 +38,22 @@
  */
 import express from "express";
 import { getNotifications, markNotificationRead, createNotification } from "../controllers/notificationController.js";
-import { protect, validateOwnership, requireObjectId } from "../middleware/auth.js";
+import { protect, authorizeRoles, validateOwnership, requireObjectId } from "../middleware/auth.js";
 
 const router = express.Router();
 
-router.use(protect); // Ensure all routes require authentication
+router.use(protect); // All routes require authentication
 
-router.get("/", getNotifications); // Fetches notifications bounded to req.user internally
-router.post("/", createNotification);
+router.get("/", getNotifications);
+
+// POST /notifications — ONLY admin/manager roles can create notifications
+// Prevents phishing: customers cannot send fake system notifications to arbitrary userIds
+router.post(
+  "/",
+  authorizeRoles("admin", "Super Admin", "Controller", "Manager", "manager"),
+  createNotification
+);
+
 router.put("/:id/read", requireObjectId(), validateOwnership("Notification"), markNotificationRead);
 
 export default router;

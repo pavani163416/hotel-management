@@ -270,6 +270,7 @@ import Manager            from "../models/Manager.js";
 import Hotel              from "../models/Hotel.js";
 import Room               from "../models/Room.js";
 import Booking            from "../models/Booking.js";
+import Guest              from "../models/Guest.js";
 import PriceRequest       from "../models/PriceRequest.js";
 import CancellationRefund from "../models/CancellationRefund.js";
 import Coupon             from "../models/Coupon.js";
@@ -286,6 +287,30 @@ const protect = [verifyAdminToken, requireAdmin];
 
 router.get("/stats",     protect, getAdminStats);
 router.get("/analytics", protect, getAdminAnalytics);
+
+// ── Guest registration by admin ───────────────────────────
+// POST /api/admin/guests  { name, email, phone?, city? }
+router.post("/guests", protect, async (req, res, next) => {
+  try {
+    const { name, email, phone, city, status } = req.body;
+    if (!name || !email) {
+      return res.status(400).json({ success: false, message: "Name and email are required" });
+    }
+    const normalizedEmail = email.toLowerCase().trim();
+    const existing = await Guest.findOne({ email: normalizedEmail });
+    if (existing) {
+      return res.status(200).json({ success: true, message: "Guest already exists", data: existing });
+    }
+    const guest = await Guest.create({
+      name:  name.trim(),
+      email: normalizedEmail,
+      phone: phone?.trim() || "N/A",
+      city:  city?.trim()  || "",
+    });
+    logger.info("Admin registered guest", { email: normalizedEmail });
+    res.status(201).json({ success: true, message: "Guest registered successfully", data: guest });
+  } catch (e) { next(e); }
+});
 
 // ── Admin users ───────────────────────────────────────────
 router.get("/users", protect, async (req, res, next) => {
