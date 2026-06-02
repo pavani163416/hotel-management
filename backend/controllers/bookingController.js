@@ -347,7 +347,7 @@ export const createBooking = async (req, res, next) => {
           totalAmount,
           paymentMethod: paymentMethod || "card",
           specialRequests: specialRequests ? String(specialRequests).replace(/</g, "&lt;").replace(/>/g, "&gt;") : "",
-          hotelName: req.body.hotelName || resolveHotelName(room.roomNumber),
+          hotelName: req.body.hotelName || resolveHotelName(room.roomNumber) || "",
           hotelStringId: room.hotelStringId || null,
           hotelImage,
           hotelId: actualHotel ? actualHotel._id : (room.hotelId || null),
@@ -484,7 +484,7 @@ export const createBooking = async (req, res, next) => {
     sendBookingConfirmation({
       to:          guestData.email,
       guestName:   guestData.name,
-      hotelName:   req.body.hotelName || resolveHotelName(room.roomNumber),
+      hotelName:   req.body.hotelName || resolveHotelName(room.roomNumber) || "Unknown Hotel",
       bookingRef:  `LS-${booking._id.toString().slice(-5).toUpperCase()}`,
       checkIn,
       checkOut,
@@ -521,7 +521,7 @@ function resolveHotelName(roomNumber = "") {
   const prefix = roomNumber.split("-")[0]?.toLowerCase();
   if (HOTEL_INITIALS[prefix]) return HOTEL_INITIALS[prefix];
   const legacy = roomNumber.split("_")[0]?.toLowerCase();
-  return HOTEL_IDS[legacy] || "LuxeStay";
+  return HOTEL_IDS[legacy] || "";
 }
 
 // ─────────────────────────────────────────────────────────
@@ -586,7 +586,7 @@ export const getAllBookings = async (req, res, next) => {
       Booking.find(filter)
         .populate("room",  "roomNumber type pricePerNight images hotelStringId")
         .populate("guest", "name email phone")
-        .populate("hotelId", "image")
+        .populate("hotelId", "name image")
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit),
@@ -595,7 +595,7 @@ export const getAllBookings = async (req, res, next) => {
 
     const data = bookings.map((b) => ({
       ...b.toJSON(),
-      hotelName: b.hotelName || resolveHotelName(b.room?.roomNumber || "") || "LuxeStay",
+      hotelName: b.hotelId?.name || b.hotelName || resolveHotelName(b.room?.roomNumber || "") || "Unknown Hotel",
       hotelImage: b.hotelId?.image || b.hotelImage || b.room?.images?.[0] || "",
     }));
 
@@ -625,7 +625,7 @@ export const getBookingById = async (req, res, next) => {
     const booking = await Booking.findById(req.params.id)
       .populate("room", "roomNumber type pricePerNight images amenities")
       .populate("guest", "name email phone city")
-      .populate("hotelId", "image");
+      .populate("hotelId", "name image");
 
     if (!booking) {
       return res.status(404).json({

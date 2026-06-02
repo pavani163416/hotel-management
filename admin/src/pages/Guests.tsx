@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Search, Download, UserPlus, Users, Crown, DollarSign, Star, Edit2, X } from "lucide-react";
 import AdminLayout from "@/components/AdminLayout";
 import Topbar from "@/components/Topbar";
@@ -123,7 +123,17 @@ export default function Guests() {
           status: "Active" as Guest["status"],
         };
       });
+  const [searchParams] = useSearchParams();
   const [search, setSearch] = useState("");
+  useEffect(() => {
+    const qParam = searchParams.get("q");
+    if (qParam) {
+      setSearch(qParam);
+    } else {
+      setSearch("");
+    }
+  }, [searchParams]);
+
   const [tierFilter, setTierFilter] = useState("All Preferences");
   const [detailGuest, setDetailGuest] = useState<Guest | null>(null);
   const [detailAdditional, setDetailAdditional] = useState<any[]>([]);

@@ -40,7 +40,11 @@ api.interceptors.response.use(
         window.location.href = "/login";
       }
     }
-    return Promise.reject(new Error(e.response?.data?.message || e.message));
+    let errMsg = e.response?.data?.message || e.message;
+    if (e.response?.data?.errors && Array.isArray(e.response.data.errors)) {
+      errMsg += ": " + e.response.data.errors.map((err: any) => err.message || err.msg).join(", ");
+    }
+    return Promise.reject(new Error(errMsg));
   }
 );
 

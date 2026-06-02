@@ -25,7 +25,7 @@ export default function Hotels() {
     const q = searchParams.get("q");
     if (q) setSearch(q);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [searchParams]);
   const [addOpen, setAddOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<Hotel | null>(null);
   const [actionTarget, setActionTarget] = useState<Hotel | null>(null);

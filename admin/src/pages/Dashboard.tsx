@@ -13,28 +13,32 @@ import StatusBadge from "@/components/StatusBadge";
 import Modal from "@/components/Modal";
 import { useBookings } from "@/context/BookingsContext";
 import { useHotels } from "@/context/HotelsContext";
-import { getStats, getAdminPriceRequests } from "@/services/api";
+import { getStats, getAdminPriceRequests, createBooking } from "@/services/api";
 
 const PIE_COLORS = ["#6366f1", "#a8977a", "#10b981", "#f59e0b", "#e11d48", "#0ea5e9"];
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { bookings, addBooking, loading } = useBookings();
+  const { bookings, refetch, loading } = useBookings();
   const { hotels } = useHotels();
   const [stats, setStats] = useState<any>(null);
   const [priceRequests, setPriceRequests] = useState<any[]>([]);
   const [showNewBooking, setShowNewBooking] = useState(false);
   const [actionBooking, setActionBooking] = useState<any>(null);
   const [nbSubmitted, setNbSubmitted] = useState(false);
+  const [nbSaving, setNbSaving] = useState(false);
+  const [nbError, setNbError] = useState("");
 
   // form fields
   const [nbGuest, setNbGuest] = useState("");
   const [nbEmail, setNbEmail] = useState("");
+  const [nbAadhaar, setNbAadhaar] = useState("");
   const [nbProperty, setNbProperty] = useState("");
   const [nbRoom, setNbRoom] = useState("Deluxe");
   const [nbCheckIn, setNbCheckIn] = useState("");
   const [nbCheckOut, setNbCheckOut] = useState("");
   const [nbAmount, setNbAmount] = useState("");
+  const [nbPricePerNight, setNbPricePerNight] = useState("");
 
   useEffect(() => {
     getStats()
@@ -110,29 +114,49 @@ export default function Dashboard() {
     URL.revokeObjectURL(url);
   };
 
-  const handleNewBookingSubmit = (e: React.FormEvent) => {
+  const handleNewBookingSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setNbError("");
+    setNbSaving(true);
     const checkInDate = new Date(nbCheckIn);
     const checkOutDate = new Date(nbCheckOut);
     const nights = Math.max(1, Math.round((checkOutDate.getTime() - checkInDate.getTime()) / 86400000));
-    addBooking({
-      guestSnapshot: { name: nbGuest, email: nbEmail },
-      room: { type: nbRoom, roomNumber: nbProperty },
-      checkIn: nbCheckIn,
-      checkOut: nbCheckOut,
-      nights,
-      totalAmount: parseFloat(nbAmount) || 0,
-      status: "Confirmed",
-      property: nbProperty,
-    });
-    setNbSubmitted(true);
-    setTimeout(() => {
-      setShowNewBooking(false);
-      setNbSubmitted(false);
-      setNbGuest(""); setNbEmail(""); setNbProperty("");
-      setNbRoom("Deluxe"); setNbCheckIn(""); setNbCheckOut(""); setNbAmount("");
-      navigate("/bookings");
-    }, 1200);
+    const selectedHotel = hotels.find(h => h.name === nbProperty);
+    // Derive pricePerNight from total if not explicitly provided
+    const resolvedPPN = parseFloat(nbPricePerNight) || Math.round((parseFloat(nbAmount) || 0) / nights) || 100;
+    try {
+      await createBooking({
+        roomId: nbRoom,          // room type used as identifier; backend resolves to physical room
+        roomTypeId: nbRoom,
+        hotelName: nbProperty,
+        hotelId: selectedHotel?.hotelId,
+        guest: {
+          name: nbGuest,
+          email: nbEmail,
+          id: nbAadhaar,
+        },
+        checkIn: nbCheckIn,
+        checkOut: nbCheckOut,
+        totalAmount: parseFloat(nbAmount) || 0,
+        pricePerNight: resolvedPPN,
+        paymentMethod: "card",
+      });
+      refetch(); // refresh bookings list from backend
+      setNbSubmitted(true);
+      setTimeout(() => {
+        setShowNewBooking(false);
+        setNbSubmitted(false);
+        setNbGuest(""); setNbEmail(""); setNbAadhaar("");
+        setNbProperty(hotels[0]?.name || "");
+        setNbRoom("Deluxe"); setNbCheckIn(""); setNbCheckOut("");
+        setNbAmount(""); setNbPricePerNight(""); setNbError("");
+        navigate("/bookings");
+      }, 1200);
+    } catch (err: any) {
+      setNbError(err.message || "Failed to create booking. Please try again.");
+    } finally {
+      setNbSaving(false);
+    }
   };
 
   return (
@@ -378,7 +402,7 @@ export default function Dashboard() {
               <div className="col-span-2">
                 <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">Guest Name *</label>
                 <input required value={nbGuest} onChange={(e) => setNbGuest(e.target.value)}
-                  placeholder="Full name"
+                  placeholder="Full name" minLength={2}
                   className="w-full border border-border rounded-lg px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10" />
               </div>
               <div className="col-span-2">
@@ -387,9 +411,15 @@ export default function Dashboard() {
                   placeholder="guest@email.com"
                   className="w-full border border-border rounded-lg px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10" />
               </div>
+              <div className="col-span-2">
+                <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">Aadhaar Number * <span className="text-muted normal-case font-normal">(12 digits)</span></label>
+                <input required value={nbAadhaar} onChange={(e) => setNbAadhaar(e.target.value.replace(/\D/g, "").slice(0, 12))}
+                  placeholder="12-digit Aadhaar" pattern="[0-9]{12}" maxLength={12}
+                  className="w-full border border-border rounded-lg px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10" />
+              </div>
               <div>
                 <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">Property *</label>
-                <select value={nbProperty} onChange={(e) => setNbProperty(e.target.value)}
+                <select required value={nbProperty} onChange={(e) => setNbProperty(e.target.value)}
                   className="w-full border border-border rounded-lg px-3 py-2.5 text-sm outline-none focus:border-primary">
                   {hotels.length > 0
                     ? hotels.map((h) => <option key={h.id || h.hotelId} value={h.name}>{h.name}</option>)
@@ -418,16 +448,27 @@ export default function Dashboard() {
                 <input required type="date" value={nbCheckOut} onChange={(e) => setNbCheckOut(e.target.value)}
                   className="w-full border border-border rounded-lg px-3 py-2.5 text-sm outline-none focus:border-primary" />
               </div>
-              <div className="col-span-2">
+              <div>
+                <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">Price / Night ($) *</label>
+                <input required type="number" min="1" value={nbPricePerNight} onChange={(e) => setNbPricePerNight(e.target.value)}
+                  placeholder="e.g. 200"
+                  className="w-full border border-border rounded-lg px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10" />
+              </div>
+              <div>
                 <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">Total Amount ($) *</label>
                 <input required type="number" min="0" value={nbAmount} onChange={(e) => setNbAmount(e.target.value)}
                   placeholder="e.g. 1200"
                   className="w-full border border-border rounded-lg px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10" />
               </div>
             </div>
-            <button type="submit"
-              className="w-full bg-primary text-white py-3 rounded-xl font-semibold text-sm hover:bg-primary-dark transition-colors">
-              Create Booking
+            {nbError && (
+              <div className="text-xs text-danger bg-danger-light border border-danger/20 rounded-lg px-3 py-2">
+                {nbError}
+              </div>
+            )}
+            <button type="submit" disabled={nbSaving}
+              className="w-full bg-primary text-white py-3 rounded-xl font-semibold text-sm hover:bg-primary-dark transition-colors disabled:opacity-60 disabled:cursor-not-allowed">
+              {nbSaving ? "Creating Booking..." : "Create Booking"}
             </button>
           </form>
         )}

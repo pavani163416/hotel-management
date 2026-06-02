@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Search, Plus, Edit2, Trash2, X, Download, ChevronDown, Loader2 } from "lucide-react";
 import { BedDouble, CheckCircle, Wrench, DollarSign, Building2 } from "lucide-react";
 import AdminLayout from "@/components/AdminLayout";
@@ -42,7 +43,17 @@ export default function Rooms() {
   const [rooms, setRooms] = useState<EmbeddedRoom[]>([]);
   const [loading, setLoading] = useState(false);
 
+  const [searchParams] = useSearchParams();
   const [search, setSearch] = useState("");
+  useEffect(() => {
+    const qParam = searchParams.get("q");
+    if (qParam) {
+      setSearch(qParam);
+    } else {
+      setSearch("");
+    }
+  }, [searchParams]);
+
   const [statusFilter, setStatusFilter] = useState("All");
   const [addOpen, setAddOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<EmbeddedRoom | null>(null);
@@ -358,7 +369,7 @@ export default function Rooms() {
                     </td>
                   </tr>
                 ) : filtered.map((r, idx) => (
-                  <tr key={r.id} className="border-b border-border last:border-0 hover:bg-surface-2 transition-colors">
+                  <tr key={`${r.id}-${idx}`} className="border-b border-border last:border-0 hover:bg-surface-2 transition-colors">
                     <td className="px-5 py-3.5 text-sm text-muted w-10">{idx + 1}</td>
                     <td className="px-5 py-3.5 text-sm font-semibold text-text-primary">{r.name}</td>
                     <td className="px-5 py-3.5">

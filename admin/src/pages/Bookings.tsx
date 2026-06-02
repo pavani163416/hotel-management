@@ -63,15 +63,23 @@ export default function Bookings() {
   const [nbSubmitted, setNbSubmitted] = useState(false);
   const PER_PAGE = 8;
 
-  // Read hotel filter from URL query param (e.g. ?hotel=HotelName)
+  // Read hotel filter and search term from URL query params (e.g. ?hotel=HotelName&q=term)
   const [searchParams] = useSearchParams();
   useEffect(() => {
     const hotelParam = searchParams.get("hotel");
     if (hotelParam) {
       setPropertyFilter(hotelParam);
+    } else {
+      setPropertyFilter("All Properties");
+    }
+    const qParam = searchParams.get("q");
+    if (qParam) {
+      setSearch(qParam);
+    } else {
+      setSearch("");
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [searchParams]);
 
   // Simple cancel confirmation state (no reason required for admin)
   const [confirmCancel, setConfirmCancel] = useState(false);
@@ -104,7 +112,7 @@ export default function Bookings() {
     const q = search.toLowerCase();
     const matchSearch = !q || name.includes(q) || email.includes(q) || b.id.toLowerCase().includes(q);
     const matchStatus = statusFilter === "All Statuses" || b.status === statusFilter;
-    const matchProperty = propertyFilter === "All Properties" || b.property === propertyFilter;
+    const matchProperty = propertyFilter === "All Properties" || b.property.trim().toLowerCase() === propertyFilter.trim().toLowerCase();
     return matchSearch && matchStatus && matchProperty;
   });
 
@@ -217,7 +225,13 @@ export default function Bookings() {
             <select value={propertyFilter} onChange={(e) => { setPropertyFilter(e.target.value); setPage(1); }}
               className="text-sm border border-border rounded-lg px-3 py-2 outline-none text-text-secondary">
               <option>All Properties</option>
-              {properties.map((p) => <option key={p}>{p}</option>)}
+              {(() => {
+                const opts = [...properties];
+                if (propertyFilter && propertyFilter !== "All Properties" && !opts.some(o => o.toLowerCase() === propertyFilter.toLowerCase())) {
+                  opts.push(propertyFilter);
+                }
+                return opts.map((p) => <option key={p} value={p}>{p}</option>);
+              })()}
             </select>
             <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
               className="text-sm border border-border rounded-lg px-3 py-2 outline-none text-text-secondary">
