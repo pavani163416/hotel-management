@@ -8,7 +8,7 @@ import Layout from "@/components/Layout";
 import Stepper from "@/components/Stepper";
 import PasswordInput from "@/components/PasswordInput";
 import { useBooking, calcNights, Booking } from "@/context/BookingContext";
-import { createBooking } from "@/services/api";
+import { createBooking, createPaymentOrder, verifyPaymentSignature } from "@/services/api";
 
 type Method = "card" | "upi" | "netbanking";
 
@@ -117,29 +117,115 @@ const Payment = () => {
         });
         mongoBookingId = response.data._id;
       } catch (bookingErr: any) {
-        // Surface real errors (room unavailable, etc.) — don't silently proceed
         const msg = bookingErr?.message || "";
         if (msg.toLowerCase().includes("room") || msg.toLowerCase().includes("unavailable") || msg.toLowerCase().includes("booked")) {
           setError(msg || "This room is no longer available. Please select a different room.");
           setProcessing(false);
           return;
         }
-        // Network/server error — still proceed with local booking so user isn't stuck
+        setError("Unable to create booking reservation. Please try again.");
+        setProcessing(false);
+        return;
       }
 
-      const booking: Booking = {
-        id: mongoBookingId || ("LS-" + Math.floor(10000 + Math.random() * 90000)),
-        hotel: selectedHotel, room: selectedRoom, search,
-        guest: { ...guest, email: user?.email || guest.email },
-        nights, subtotal, taxes: taxes + serviceFee, discount, total,
-        status: "Confirmed", createdAt: new Date().toISOString(),
+      if (!mongoBookingId) {
+        setError("Invalid booking reference. Please try again.");
+        setProcessing(false);
+        return;
+      }
+
+      // Load Razorpay SDK Script
+      const isLoaded = await new Promise((resolve) => {
+        const script = document.createElement("script");
+        script.src = "https://checkout.razorpay.com/v1/checkout.js";
+        script.onload = () => resolve(true);
+        script.onerror = () => resolve(false);
+        document.body.appendChild(script);
+      });
+
+      if (!isLoaded) {
+        setError("Failed to load payment gateway script. Please check your network connection.");
+        setProcessing(false);
+        return;
+      }
+
+      // Create Razorpay Order on the backend
+      let rzpOrder;
+      try {
+        const rzpRes = await createPaymentOrder(mongoBookingId);
+        if (!rzpRes.success || !rzpRes.orderId) {
+          throw new Error(rzpRes.message || "Failed to create payment order.");
+        }
+        rzpOrder = rzpRes;
+      } catch (orderErr: any) {
+        setError(orderErr.message || "Unable to initialize payment gateway order.");
+        setProcessing(false);
+        return;
+      }
+
+      // Open Razorpay Checkout
+      const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID || "rzp_test_dummy",
+        amount: rzpOrder.amount, // in paise
+        currency: rzpOrder.currency,
+        name: "LuxeStay",
+        description: `Booking payment for ${selectedHotel.name}`,
+        order_id: rzpOrder.orderId,
+        prefill: {
+          name: guest.name,
+          email: user?.email || guest.email,
+          contact: guest.phone,
+        },
+        theme: {
+          color: "#0F172A",
+        },
+        handler: async function (response: any) {
+          setProcessing(true);
+          try {
+            const verifyRes = await verifyPaymentSignature({
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+            });
+
+            if (verifyRes.success) {
+              const booking: Booking = {
+                id: mongoBookingId!,
+                hotel: selectedHotel,
+                room: selectedRoom,
+                search,
+                guest: { ...guest, email: user?.email || guest.email },
+                nights,
+                subtotal,
+                taxes: taxes + serviceFee,
+                discount,
+                total,
+                status: "Confirmed",
+                createdAt: new Date().toISOString(),
+              };
+
+              addBooking(booking);
+              nav("/confirmation");
+            } else {
+              setError("Payment signature verification failed.");
+            }
+          } catch (verifyErr: any) {
+            setError(verifyErr.message || "Signature verification failed. Please contact support.");
+          } finally {
+            setProcessing(false);
+          }
+        },
+        modal: {
+          ondismiss: function () {
+            setProcessing(false);
+          },
+        },
       };
 
-      addBooking(booking);
-      nav("/confirmation");
+      const rzp = new (window as any).Razorpay(options);
+      rzp.open();
     } catch (err: any) {
       setError(err.message || "Payment failed. Please try again.");
-    } finally {
       setProcessing(false);
     }
   };

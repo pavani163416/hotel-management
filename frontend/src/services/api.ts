@@ -206,3 +206,25 @@ export const cancelBooking = async (bookingId: string, reason?: string) => {
   const { data } = await api.patch(`/bookings/${bookingId}/cancel`, { reason });
   return data;
 };
+
+/** POST /api/payments/create-order */
+export const createPaymentOrder = async (bookingId: string) => {
+  const { data } = await api.post("/payments/create-order", { bookingId });
+  return data;
+};
+
+/** POST /api/payments/verify */
+export const verifyPaymentSignature = async (payload: {
+  razorpay_order_id: string;
+  razorpay_payment_id: string;
+  razorpay_signature: string;
+}) => {
+  const { data } = await api.post("/payments/verify", payload);
+  return data;
+};
+
+/** GET /api/payments/status/:orderId */
+export const getPaymentStatus = async (orderId: string) => {
+  const { data } = await api.get(`/payments/status/${orderId}`);
+  return data;
+};

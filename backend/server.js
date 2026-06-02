@@ -18,6 +18,8 @@ import { initializeRedis, createRedisAdapterClients, isRedisReady } from "./conf
 import { createSessionMiddleware } from "./config/session.js";
 import roomRoutes       from "./routes/roomRoutes.js";
 import bookingRoutes    from "./routes/bookingRoutes.js";
+import paymentRoutes    from "./routes/paymentRoutes.js";
+import webhookRoutes    from "./routes/webhookRoutes.js";
 import guestRoutes      from "./routes/guestRoutes.js";
 import adminRoutes      from "./routes/adminRoutes.js";
 import visitorRoutes    from "./routes/visitorRoutes.js";
@@ -453,6 +455,8 @@ app.use("/api", csrfProtection);
 // ── API Routes ────────────────────────────────────────────
 app.use("/api/rooms",         roomRoutes);
 app.use("/api/bookings",      bookingRoutes);
+app.use("/api/payments",      paymentRoutes);
+app.use("/api/webhooks",      webhookRoutes);
 app.use("/api/guests",        guestRoutes);
 app.use("/api/admin",         adminRoutes);
 app.use("/api/manager",       managerRoutes);

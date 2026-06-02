@@ -125,6 +125,13 @@ const bookingSchema = new mongoose.Schema(
       default: "card",
     },
 
+    paymentStatus: {
+      type: String,
+      enum: ["PENDING", "PAID", "FAILED", "REFUNDED"],
+      default: "PENDING",
+      index: true,
+    },
+
     specialRequests: {
       type: String,
       maxlength: [500, "Special requests cannot exceed 500 characters"],

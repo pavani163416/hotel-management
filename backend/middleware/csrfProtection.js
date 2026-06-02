@@ -66,6 +66,11 @@ const csrfProtection = (req, res, next) => {
   // Safe methods don't mutate state — skip check
   if (SAFE_METHODS.has(req.method)) return next();
 
+  // Bypass CSRF validation for webhook routes
+  if (req.path.startsWith("/webhooks") || req.path.startsWith("/api/webhooks")) {
+    return next();
+  }
+
   const origin  = req.headers["origin"];
   const referer = req.headers["referer"];
 
