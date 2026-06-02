@@ -1300,7 +1300,14 @@ router.post("/change-password", verifyCustomerToken, async (req, res, next) => {
 // ── POST /api/auth/payment-methods ────────────────────────
 router.post("/payment-methods", verifyCustomerToken, async (req, res, next) => {
   try {
-    const { type, brand, last4, expiry, upiId, bankName, isDefault } = req.body;
+    const { type, brand, last4, expiry, upiId, bankName, isDefault, cardNumber, cvv, pan } = req.body;
+
+    if (cardNumber || cvv || pan) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "PCI DSS Violation: Raw card numbers and CVVs must not be transmitted to the backend. Please use Stripe Elements to tokenize payment data on the client side." 
+      });
+    }
 
     if (!type) return res.status(400).json({ success: false, message: "Type is required." });
 

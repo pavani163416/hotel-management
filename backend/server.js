@@ -359,6 +359,22 @@ app.use((req, res, next) => {
   sanitize(req.query);
   sanitize(req.params);
 
+  // XSS Sanitization: Globally escape or strip basic HTML tags from string inputs
+  const sanitizeXSS = (obj) => {
+    if (!obj || typeof obj !== "object") return;
+    for (const key of Object.keys(obj)) {
+      if (typeof obj[key] === "string") {
+        // Simple HTML stripping to prevent basic XSS reflection
+        obj[key] = obj[key].replace(/<[^>]*>?/gm, '');
+      } else if (obj[key] && typeof obj[key] === "object") {
+        sanitizeXSS(obj[key]);
+      }
+    }
+  };
+  sanitizeXSS(req.body);
+  sanitizeXSS(req.query);
+  sanitizeXSS(req.params);
+
   // PCI DSS Sanitization: mask credit card numbers if submitted in body
   const maskPCI = (obj) => {
     if (!obj || typeof obj !== "object") return;
