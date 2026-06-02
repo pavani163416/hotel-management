@@ -261,9 +261,10 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'"],
-      styleSrc: ["'self'"],
+      scriptSrc: ["'self'", "https://accounts.google.com", "https://checkout.razorpay.com"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       imgSrc: ["'self'", "data:", "https:"],
+      frameSrc: ["'self'", "https://accounts.google.com", "https://*.razorpay.com"],
       objectSrc: ["'none'"],
       frameAncestors: ["'none'"],
       formAction: ["'self'"],
