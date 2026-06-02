@@ -357,10 +357,16 @@ router.post("/register", authLimiter, validateRegisterPayload, async (req, res, 
         message: "Name, email, password and phone are required.",
       });
     }
-    if (password.length < 6) {
+    if (password.length < 8) {
       return res.status(400).json({
         success: false,
-        message: "Password must be at least 6 characters.",
+        message: "Password must be at least 8 characters.",
+      });
+    }
+    if (!/[A-Z]/.test(password)) {
+      return res.status(400).json({
+        success: false,
+        message: "Password must contain at least one capital letter.",
       });
     }
 
@@ -540,8 +546,11 @@ router.post("/reset-password", authLimiter, validateResetPasswordPayload, async 
     if (!email || !token || !password) {
       return res.status(400).json({ success: false, message: "Email, token, and new password are required." });
     }
-    if (password.length < 6) {
-      return res.status(400).json({ success: false, message: "Password must be at least 6 characters." });
+    if (password.length < 8) {
+      return res.status(400).json({ success: false, message: "Password must be at least 8 characters." });
+    }
+    if (!/[A-Z]/.test(password)) {
+      return res.status(400).json({ success: false, message: "Password must contain at least one capital letter." });
     }
 
     const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
