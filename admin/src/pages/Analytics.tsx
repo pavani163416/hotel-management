@@ -11,6 +11,7 @@ import StatsCard from "@/components/StatsCard";
 import { useBookings } from "@/context/BookingsContext";
 import { useHotels } from "@/context/HotelsContext";
 import { useState } from "react";
+import HotelMap from "@/components/HotelMap";
 
 const PIE_COLORS = ["#6366f1", "#a8977a", "#10b981", "#e5e7f0", "#f59e0b", "#e11d48"];
 
@@ -301,16 +302,9 @@ export default function Analytics() {
           <div className="bg-gradient-to-br from-[#1a1f2e] to-[#2d3748] rounded-xl p-5 text-white">
             <h3 className="font-semibold text-sm mb-1">Global Presence</h3>
             <p className="text-white/50 text-xs mb-4">Live booking activity worldwide</p>
-            {/* Demo map via OpenStreetMap */}
+            {/* Interactive HotelMap displaying all hotels */}
             <div className="rounded-lg overflow-hidden mb-4" style={{ height: 160 }}>
-              <iframe
-                title="Global Presence Map"
-                width="100%"
-                height="100%"
-                style={{ border: 0, filter: "invert(90%) hue-rotate(180deg)" }}
-                src="https://www.openstreetmap.org/export/embed.html?bbox=-180,-85,180,85&layer=mapnik"
-                loading="lazy"
-              />
+              <HotelMap hotels={hotels} height="100%" />
             </div>
             <div className="flex gap-3 flex-wrap">
               {globalPresence.length > 0 ? globalPresence.map((p) => (

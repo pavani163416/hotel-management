@@ -17,6 +17,7 @@ export type Hotel = {
   img: string;
   amenities: string[];
   floors: number;
+  coords?: [number, number];
 };
 
 type HotelsCtx = {
@@ -45,6 +46,7 @@ function mapBackend(h: any): Hotel {
     img:            h.image || h.img || "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=60&q=80",
     amenities:      Array.isArray(h.amenities) ? h.amenities : [],
     floors:         h.floors || 1,
+    coords:         h.coords || [0, 0],
   };
 }
 

@@ -76,11 +76,21 @@ export const createOrder = async (req, res, next) => {
     };
 
     let order;
-    try {
-      order = await razorpay.orders.create(options);
-    } catch (rzpErr) {
-      logger.error("Razorpay order creation failed", { error: rzpErr.message });
-      return res.status(502).json({ success: false, message: "Payment gateway error. Unable to initialize order." });
+    const isMockMode = !process.env.RAZORPAY_KEY_ID || process.env.RAZORPAY_KEY_ID === "rzp_test_dummy";
+
+    if (isMockMode) {
+      order = {
+        id: `order_mock_${crypto.randomBytes(8).toString("hex")}`,
+        amount: amountInINR * 100, // in paise
+        currency: "INR",
+      };
+    } else {
+      try {
+        order = await razorpay.orders.create(options);
+      } catch (rzpErr) {
+        logger.error("Razorpay order creation failed", { error: rzpErr.message });
+        return res.status(502).json({ success: false, message: "Payment gateway error. Unable to initialize order." });
+      }
     }
 
     // 4. Save Payment record in database as PENDING
@@ -99,7 +109,7 @@ export const createOrder = async (req, res, next) => {
       userId: user.id,
       userEmail: user.email,
       role: user.role,
-      description: `Razorpay order ${order.id} created for booking ${booking._id} with amount ${amountInINR} INR`,
+      description: `Razorpay order ${order.id} created for booking ${booking._id} with amount ${amountInINR} INR (Mock Mode: ${isMockMode})`,
     }).catch(() => {});
 
     return res.status(201).json({
@@ -128,16 +138,22 @@ export const verifyPayment = async (req, res, next) => {
       });
     }
 
-    // 1. Signature Verification (HMAC SHA256)
-    const secret = process.env.RAZORPAY_KEY_SECRET || "dummy_secret";
-    const generatedSignature = crypto
-      .createHmac("sha256", secret)
-      .update(`${razorpay_order_id}|${razorpay_payment_id}`)
-      .digest("hex");
+    const isMockMode = !process.env.RAZORPAY_KEY_ID || process.env.RAZORPAY_KEY_ID === "rzp_test_dummy";
 
-    if (generatedSignature !== razorpay_signature) {
-      logger.warn("Invalid payment signature received", { razorpay_order_id, razorpay_payment_id });
-      return res.status(400).json({ success: false, message: "Payment verification failed. Invalid signature." });
+    if (isMockMode && razorpay_order_id.startsWith("order_mock_")) {
+      logger.info("Mock payment verification signature bypassed in Sandbox Mode", { razorpay_order_id });
+    } else {
+      // 1. Signature Verification (HMAC SHA256)
+      const secret = process.env.RAZORPAY_KEY_SECRET || "dummy_secret";
+      const generatedSignature = crypto
+        .createHmac("sha256", secret)
+        .update(`${razorpay_order_id}|${razorpay_payment_id}`)
+        .digest("hex");
+
+      if (generatedSignature !== razorpay_signature) {
+        logger.warn("Invalid payment signature received", { razorpay_order_id, razorpay_payment_id });
+        return res.status(400).json({ success: false, message: "Payment verification failed. Invalid signature." });
+      }
     }
 
     // 2. Idempotency Protection: check if payment is already processed successfully
