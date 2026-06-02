@@ -328,7 +328,6 @@ const sendTwilioSMS = async (normalizedPhone, otpCode) => {
   } catch (error) {
     throw new Error(error.message || "Unable to send SMS via Twilio.");
   }
-};
 
 // ── Middleware: verify customer JWT ──────────────────────
 export const verifyCustomerToken = (req, res, next) => {

@@ -88,6 +88,13 @@ class _OtpPageState extends State<OtpPage> {
     final theme = Theme.of(context);
     final auth = Provider.of<AuthProvider>(context);
 
+    // Auto-fill development OTP if available
+    if (auth.devOtp != null && _otpCode.isEmpty && !auth.isLoading) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _autoFillDevCode(auth.devOtp!);
+      });
+    }
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
