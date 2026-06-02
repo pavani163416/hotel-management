@@ -78,7 +78,7 @@ export default function Coupons() {
 
   const stats = {
     total:   coupons.length,
-    active:  coupons.filter((c) => c.isActive).length,
+    active:  coupons.filter((c) => c.isActive && (!c.validUntil || new Date(c.validUntil) >= new Date())).length,
     used:    coupons.reduce((s, c) => s + c.usedCount, 0),
   };
 
@@ -272,8 +272,8 @@ export default function Coupons() {
                       </td>
                       <td className="px-4 py-3.5">
                         <button onClick={() => toggleActive(c)}
-                          className={`flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full transition-colors ${c.isActive ? "bg-success-light text-success hover:bg-success hover:text-white" : "bg-danger-light text-danger hover:bg-danger hover:text-white"}`}>
-                          {c.isActive ? <><CheckCircle className="w-3 h-3" /> Active</> : <><XCircle className="w-3 h-3" /> Inactive</>}
+                          className={`flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full transition-colors ${c.isActive && !isExpired ? "bg-success-light text-success hover:bg-success hover:text-white" : "bg-danger-light text-danger hover:bg-danger hover:text-white"}`}>
+                          {c.isActive && !isExpired ? <><CheckCircle className="w-3 h-3" /> Active</> : <><XCircle className="w-3 h-3" /> Inactive</>}
                         </button>
                       </td>
                       <td className="px-4 py-3.5">
