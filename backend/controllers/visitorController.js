@@ -123,7 +123,7 @@ export const convertVisitor = async (req, res, next) => {
 export const getVisitors = async (req, res, next) => {
   try {
     const page = parseInt(req.query.page, 10) || 1;
-    const limit = parseInt(req.query.limit, 10) || 5;
+    const limit = 10; // Enforce 10 visitors per page
     const skip = (page - 1) * limit;
 
     const query = {};
@@ -140,11 +140,19 @@ export const getVisitors = async (req, res, next) => {
       ];
     }
 
+    // Limit query range so we never exceed 100 documents
+    let fetchLimit = limit;
+    if (skip + limit > 100) {
+      fetchLimit = Math.max(0, 100 - skip);
+    }
+
     const [visitors, total, statsAgg] = await Promise.all([
-      Visitor.find(query)
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limit),
+      fetchLimit > 0
+        ? Visitor.find(query)
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(fetchLimit)
+        : Promise.resolve([]),
       Visitor.countDocuments(query),
       Visitor.aggregate([
         { $match: query },
@@ -164,12 +172,14 @@ export const getVisitors = async (req, res, next) => {
     const stats = statsAgg[0] || { active: 0, converted: 0, bounced: 0, totalDuration: 0, count: 0 };
     const avgDuration = stats.count > 0 ? Math.round(stats.totalDuration / stats.count) : 0;
 
+    const cappedTotal = Math.min(total, 100);
+
     res.status(200).json({
       success: true,
       count: visitors.length,
-      total,
+      total: cappedTotal,
       page,
-      totalPages: Math.ceil(total / limit),
+      totalPages: Math.ceil(cappedTotal / limit),
       data: visitors,
       stats: {
         active: stats.active,

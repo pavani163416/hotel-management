@@ -85,7 +85,7 @@ export default function Insights() {
   const [visitorSearch, setVisitorSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [page, setPage] = useState(1);
-  const PER_PAGE = 5;
+  const PER_PAGE = 10;
 
   // ── Fetch real visitors from HTTP first, then layer Socket.IO updates ──
   useEffect(() => {
@@ -442,7 +442,7 @@ export default function Insights() {
                   className="px-3 py-1.5 text-xs border border-border rounded-lg text-muted hover:bg-surface-3 disabled:opacity-40">
                   Previous
                 </button>
-                {[...Array(Math.min(totalPages, 5))].map((_, i) => (
+                {[...Array(Math.min(totalPages, 10))].map((_, i) => (
                   <button key={i} onClick={() => setPage(i + 1)}
                     className={`px-3 py-1.5 text-xs rounded-lg ${page === i + 1 ? "bg-primary text-white" : "border border-border text-muted hover:bg-surface-3"}`}>
                     {i + 1}

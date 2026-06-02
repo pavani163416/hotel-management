@@ -147,13 +147,13 @@ function AuthModalInner({ isOpen, onClose, defaultMode, mode, setMode, loading, 
             <label className="block text-sm font-medium">Password <span className="text-destructive">*</span></label>
             <PasswordInput value={password} onChange={e => setPassword((e.target as HTMLInputElement).value)}
               className="w-full px-4 py-2 border border-border rounded-lg outline-none focus:border-accent"
-              placeholder="Min. 8 characters" autoComplete="new-password" />
+              placeholder="8 - 15 characters" autoComplete="new-password" />
             <div className="grid grid-cols-1 sm:grid-cols-2 text-xs gap-y-1.5 gap-x-2 mt-2">
-              <div className={`flex items-center gap-1.5 ${password.length >= 8 ? "text-green-600 font-medium" : "text-muted-foreground"}`}>
-                <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${password.length >= 8 ? 'border-green-600 bg-green-600' : 'border-muted-foreground'}`}>
-                  {password.length >= 8 && <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
+              <div className={`flex items-center gap-1.5 ${(password.length >= 8 && password.length <= 15) ? "text-green-600 font-medium" : "text-muted-foreground"}`}>
+                <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${(password.length >= 8 && password.length <= 15) ? 'border-green-600 bg-green-600' : 'border-muted-foreground'}`}>
+                  {(password.length >= 8 && password.length <= 15) && <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
                 </div>
-                Min. 8 characters
+                8 - 15 characters
               </div>
               <div className={`flex items-center gap-1.5 ${/[A-Z]/.test(password) ? "text-green-600 font-medium" : "text-muted-foreground"}`}>
                 <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${/[A-Z]/.test(password) ? 'border-green-600 bg-green-600' : 'border-muted-foreground'}`}>
@@ -399,6 +399,7 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
     e.preventDefault();
     if (!name || !email || !password || !phone) { setError("Please fill all required fields."); return; }
     if (password.length < 8) { setError("Password must be at least 8 characters."); return; }
+    if (password.length > 15) { setError("Password must not exceed 15 characters."); return; }
     if (!/[A-Z]/.test(password)) { setError("Password must contain at least one capital letter."); return; }
     if (!/[0-9]/.test(password)) { setError("Password must contain at least one number."); return; }
     if (!/[^A-Za-z0-9]/.test(password)) { setError("Password must contain at least one special character."); return; }
