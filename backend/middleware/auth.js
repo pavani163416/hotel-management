@@ -142,9 +142,9 @@ export const validateOwnership = (modelName) => {
             }
           } else {
             // Customer checks
-            const isGuestOwner = booking.guest?.toString() === user.guestId || 
-                                 booking.guestSnapshot?.id === user.guestId ||
-                                 booking.guestSnapshot?.email?.toLowerCase().trim() === userEmail;
+            const isGuestOwner = (user.guestId && booking.guest && booking.guest.toString() === user.guestId) || 
+                                 (user.guestId && booking.guestSnapshot?.id && booking.guestSnapshot.id === user.guestId) ||
+                                 (userEmail && booking.guestSnapshot?.email && booking.guestSnapshot.email.toLowerCase().trim() === userEmail);
 
             if (!isGuestOwner) {
               return res.status(403).json({
@@ -252,7 +252,7 @@ export const validateOwnership = (modelName) => {
           }
 
           if (user.role === "customer") {
-            const isGuestOwner = guest.email?.toLowerCase().trim() === userEmail || guest._id.toString() === user.guestId;
+            const isGuestOwner = (userEmail && guest.email?.toLowerCase().trim() === userEmail) || (user.guestId && guest._id.toString() === user.guestId);
             if (!isGuestOwner) {
               return res.status(403).json({
                 success: false,

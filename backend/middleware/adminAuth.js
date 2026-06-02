@@ -44,6 +44,10 @@ export const verifyAdminToken = (req, res, next) => {
       return res.status(401).json({ success: false, message });
     }
 
+    if (decoded.role === "customer") {
+      return res.status(403).json({ success: false, message: "Access denied. Admin privileges required." });
+    }
+
     req.admin = decoded;
     next();
   } catch (error) {
