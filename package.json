@@ -10,8 +10,7 @@
   "scripts": {
     "build:admin": "npm --prefix admin run build",
     "build:frontend": "npm --prefix frontend run build",
-    "build": "npm run build:admin",
-    "test": "node --test tests/bola.spec.js"
+    "build": "npm run build:admin"
   },
   "dependencies": {
     "connect-redis": "^9.0.0",

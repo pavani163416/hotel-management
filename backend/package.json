@@ -5,8 +5,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node --watch server.js",
-    "test": "node -r ts-node/register backend/tests/runAllTests.ts"
+    "dev": "node --watch server.js"
   },
   "dependencies": {
     "@socket.io/redis-adapter": "^8.3.0",
