@@ -166,7 +166,7 @@ const allowedOrigins = [
 
 const corsOptions = {
   origin: function (origin, callback) {
-    if (origin === "null" || origin === "undefined") return callback(new Error("CORS not allowed for null/undefined origin"));
+    if (origin === "null" || origin === "undefined") return callback(null, false);
     // Allow requests with no origin (Postman, curl, server-to-server)
     if (!origin) return callback(null, true);
     if (allowedOrigins.includes(origin)) return callback(null, true);
@@ -174,7 +174,7 @@ const corsOptions = {
     if (origin.startsWith("http://localhost:") || origin.startsWith("http://127.0.0.1:")) return callback(null, true);
     // Allow any vercel.app subdomain for preview deployments
     if (origin.endsWith(".vercel.app")) return callback(null, true);
-    callback(new Error("CORS not allowed: " + origin));
+    callback(null, false);
   },
   methods:        ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
@@ -182,12 +182,12 @@ const corsOptions = {
 };
 
 const socketCorsOrigin = (origin, callback) => {
-  if (origin === "null" || origin === "undefined") return callback(new Error("Socket.IO CORS not allowed for null/undefined origin"));
+  if (origin === "null" || origin === "undefined") return callback(null, false);
   if (!origin) return callback(null, true);
   if (allowedOrigins.includes(origin)) return callback(null, true);
   if (origin.startsWith("http://localhost:") || origin.startsWith("http://127.0.0.1:")) return callback(null, true);
   if (origin.endsWith(".vercel.app")) return callback(null, true);
-  callback(new Error("Socket.IO CORS not allowed: " + origin));
+  callback(null, false);
 };
 
 // Handle preflight for all routes FIRST — before any other middleware
