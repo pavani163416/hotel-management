@@ -543,19 +543,25 @@ export const getAllBookings = async (req, res, next) => {
     if (status) filter.status = status;
 
     if (req.user.role === "customer") {
-      const userEmail = req.user.email?.toLowerCase().trim();
-      const orConditions = [];
+      const userEmail = req.user.email?.toLowerCase().trim() || "";
+      let guestIds = [];
       if (userEmail) {
-        orConditions.push({ "guestSnapshot.email": userEmail });
+        const matchingGuests = await Guest.find({ email: userEmail });
+        guestIds = matchingGuests.map(g => g._id);
       }
-      if (req.user.guestId) {
-        orConditions.push({ guest: req.user.guestId });
+      if (req.user.guestId && mongoose.Types.ObjectId.isValid(req.user.guestId)) {
+        const tokenGuestId = new mongoose.Types.ObjectId(req.user.guestId);
+        if (!guestIds.some(id => id.equals(tokenGuestId))) {
+          guestIds.push(tokenGuestId);
+        }
       }
-      if (orConditions.length > 0) {
-        filter.$or = orConditions;
-      } else {
+      if (guestIds.length === 0 && !userEmail) {
         return res.status(200).json({ success: true, count: 0, total: 0, page, pages: 0, data: [] });
       }
+      filter.$or = [
+        { guest: { $in: guestIds } },
+        { "guestSnapshot.email": userEmail }
+      ];
     } else if (req.user.role === "Manager") {
       const managerHotelId = req.user.assignedHotelId;
       const managerHotelObjId = req.user.hotelObjectId;

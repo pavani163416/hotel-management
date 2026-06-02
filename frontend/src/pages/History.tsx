@@ -177,6 +177,12 @@ const History = () => {
 
   // For API bookings: match by email. For local bookings: also match by guest email.
   const userBookings = merged.filter((b: any) => {
+    // If this booking came from the backend API, it is already authenticated and verified to belong to the user.
+    const isApiBooking = apiBookings.some((ab) => ab._id === b._id || ab.id === b.id || (b._id && ab._id === b._id));
+    if (isApiBooking) {
+      return true;
+    }
+
     const uEmail = user.email?.toLowerCase() || "";
     // Local booking shape — guest is a GuestDetails object with direct .email
     if (b.hotel && b.room && b.search) {
