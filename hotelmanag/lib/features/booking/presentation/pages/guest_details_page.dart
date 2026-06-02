@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -259,9 +260,9 @@ class _GuestDetailsPageState extends State<GuestDetailsPage> {
           const SizedBox(height: 8),
           _buildTextField('e.g. James Wilson', _leadNameController, required: true),
           const SizedBox(height: 24),
-          _buildLabel('GOVT ID (AADHAAR / VOTER / PASSPORT) *'),
+          _buildLabel('AADHAAR NUMBER *'),
           const SizedBox(height: 8),
-          _buildTextField('e.g. Aadhaar 1234 5678 9012', _leadIdController, required: true),
+          _buildTextField('12-digit Aadhaar Number', _leadIdController, required: true, isAadhar: true),
           const SizedBox(height: 24),
           Row(
             children: [
@@ -341,9 +342,9 @@ class _GuestDetailsPageState extends State<GuestDetailsPage> {
           const SizedBox(height: 8),
           _buildTextField('Full Name', controllers['name']!, required: true),
           const SizedBox(height: 24),
-          _buildLabel('GOVT ID (AADHAAR / VOTER / PASSPORT) *'),
+          _buildLabel('AADHAAR NUMBER *'),
           const SizedBox(height: 8),
-          _buildTextField('Aadhaar / Voter ID / Passport number', controllers['id']!, required: true),
+          _buildTextField('12-digit Aadhaar Number', controllers['id']!, required: true, isAadhar: true),
           const SizedBox(height: 24),
           Row(
             children: [
@@ -430,9 +431,9 @@ class _GuestDetailsPageState extends State<GuestDetailsPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildLabel('GOVT ID (AADHAAR / VOTER / PASSPORT) *'),
+                    _buildLabel('AADHAAR NUMBER *'),
                     const SizedBox(height: 8),
-                    _buildTextField('Aadhaar / Voter ID / Passport number', controllers['id']!, required: true),
+                    _buildTextField('12-digit Aadhaar Number', controllers['id']!, required: true, isAadhar: true),
                   ],
                 ),
               ),
@@ -463,10 +464,13 @@ class _GuestDetailsPageState extends State<GuestDetailsPage> {
     return Text(text, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.primaryColor.withOpacity(0.5), letterSpacing: 0.5));
   }
 
-  Widget _buildTextField(String hint, TextEditingController controller, {int maxLines = 1, bool required = false, bool isEmail = false}) {
+  Widget _buildTextField(String hint, TextEditingController controller, {int maxLines = 1, bool required = false, bool isEmail = false, bool isAadhar = false}) {
     return TextFormField(
       controller: controller,
       maxLines: maxLines,
+      maxLength: isAadhar ? 12 : null,
+      inputFormatters: isAadhar ? [FilteringTextInputFormatter.digitsOnly] : null,
+      keyboardType: isAadhar ? TextInputType.number : (isEmail ? TextInputType.emailAddress : TextInputType.text),
       validator: (value) {
         if (required && (value == null || value.isEmpty)) {
           return 'This field is required';
@@ -475,6 +479,12 @@ class _GuestDetailsPageState extends State<GuestDetailsPage> {
           final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
           if (!emailRegex.hasMatch(value)) {
             return 'Please enter a valid email';
+          }
+        }
+        if (isAadhar && value != null && value.isNotEmpty) {
+          final aadharRegex = RegExp(r'^\d{12}$');
+          if (!aadharRegex.hasMatch(value.replaceAll(' ', ''))) {
+            return 'Aadhaar must be exactly 12 digits';
           }
         }
         return null;
