@@ -170,7 +170,7 @@ class _LoginPageState extends State<LoginPage> {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                     ),
                     child: auth.isLoading
-                        ? const CircularProgressIndicator(color: Colors.white)
+                        ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
                         : const Text('Log In', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                   ),
                 );

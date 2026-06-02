@@ -17,6 +17,7 @@ import '../../features/booking/presentation/pages/guest_details_page.dart';
 import '../../features/booking/presentation/pages/payment_page.dart';
 import '../../features/booking/presentation/pages/review_page.dart';
 import '../../features/booking/presentation/pages/confirmation_page.dart';
+import '../../features/booking/presentation/pages/promo_codes_page.dart';
 import '../../features/profile/presentation/pages/favorites_page.dart';
 
 import '../utils/injection_container.dart' as di;
@@ -40,6 +41,7 @@ class AppRouter {
   static const String favorites = '/favorites';
   static const String otp = '/otp';
   static const String firebaseAuth = '/firebase-auth';
+  static const String promoCodes = '/promo-codes';
 
   static final GoRouter router = GoRouter(
     initialLocation: splash,
@@ -139,6 +141,10 @@ class AppRouter {
       GoRoute(
         path: confirmation,
         builder: (context, state) => const ConfirmationPage(),
+      ),
+      GoRoute(
+        path: promoCodes,
+        builder: (context, state) => const PromoCodesPage(),
       ),
       GoRoute(
         path: '/hotel/:id',

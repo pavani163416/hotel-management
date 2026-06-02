@@ -73,27 +73,10 @@ class _OtpPageState extends State<OtpPage> {
     // User must click Verify button manually
   }
 
-  void _autoFillDevCode(String devCode) {
-    if (devCode.length == 6) {
-      for (int i = 0; i < 6; i++) {
-        _controllers[i].text = devCode[i];
-      }
-      setState(() {});
-      _verifyOtp();
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final auth = Provider.of<AuthProvider>(context);
-
-    // Auto-fill development OTP if available
-    if (auth.devOtp != null && _otpCode.isEmpty && !auth.isLoading) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _autoFillDevCode(auth.devOtp!);
-      });
-    }
 
     return Scaffold(
       backgroundColor: Colors.white,

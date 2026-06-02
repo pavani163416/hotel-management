@@ -104,16 +104,29 @@ class PromoProvider extends ChangeNotifier {
         if (seen.contains(c.id)) return false;
         // Only show first-time coupons to first-time users
         if (c.firstTimeOnly && !isFirstTimeUser) return false;
+        
+        // Filter out test/dummy coupons so they don't trigger push notifications
+        final codeLower = c.code.toLowerCase();
+        final descLower = c.description?.toLowerCase() ?? '';
+        if (codeLower.contains('test') || codeLower.contains('demo') || codeLower.contains('mock') ||
+            descLower.contains('test') || descLower.contains('demo') || descLower.contains('mock')) {
+          return false;
+        }
+        
         return true;
       }).toList();
 
-      // Fire notification + sound for each new coupon
-      for (final coupon in newCoupons) {
-        seen.add(coupon.id);
-        onNewOffer(coupon);
+      // Only fire ONE notification to avoid spamming the user, even if there are multiple new offers
+      if (newCoupons.isNotEmpty) {
+        // Mark all as seen so we don't notify again
+        for (final coupon in newCoupons) {
+          seen.add(coupon.id);
+        }
+        
+        // Show the most recent one
+        final latestCoupon = newCoupons.first;
+        onNewOffer(latestCoupon);
         triggerNotificationChime();
-        // Small delay between multiple notifications
-        await Future.delayed(const Duration(milliseconds: 400));
       }
 
       // Persist seen IDs

@@ -48,6 +48,9 @@ class _HotelDetailsPageState extends State<HotelDetailsPage> with SingleTickerPr
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _tabController.addListener(() {
+      if (mounted) setState(() {});
+    });
   }
 
   @override
@@ -150,7 +153,10 @@ class _HotelDetailsPageState extends State<HotelDetailsPage> with SingleTickerPr
                   const SizedBox(height: 32),
                   _buildTabBar(hotel),
                   const SizedBox(height: 24),
-                  _buildTabContent(hotel, isWide),
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 300),
+                    child: _buildTabContent(hotel, isWide),
+                  ),
                 ],
               ),
             ),
@@ -424,17 +430,16 @@ class _HotelDetailsPageState extends State<HotelDetailsPage> with SingleTickerPr
   }
 
   Widget _buildTabContent(HotelEntity hotel, bool isWide) {
-    return SizedBox(
-      height: isWide ? 600 : 780,
-      child: TabBarView(
-        controller: _tabController,
-        children: [
-          _buildRoomsTab(context, hotel, isWide),
-          _buildAmenitiesTab(hotel),
-          _buildReviewsTab(hotel),
-        ],
-      ),
-    );
+    switch (_tabController.index) {
+      case 0:
+        return _buildRoomsTab(context, hotel, isWide);
+      case 1:
+        return _buildAmenitiesTab(hotel);
+      case 2:
+        return _buildReviewsTab(hotel);
+      default:
+        return const SizedBox.shrink();
+    }
   }
 
   Widget _buildRoomsTab(BuildContext context, HotelEntity hotel, bool isWide) {
@@ -641,141 +646,138 @@ class _HotelDetailsPageState extends State<HotelDetailsPage> with SingleTickerPr
           )
         else
           // Mobile responsive list
-          Expanded(
-            child: ListView(
-              physics: const BouncingScrollPhysics(),
-              children: roomList.map((row) {
-                Widget badge;
-                if (row.isSoldOut) {
-                  badge = Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                    decoration: BoxDecoration(color: Colors.red.withOpacity(0.1), borderRadius: BorderRadius.circular(6), border: Border.all(color: Colors.red.withOpacity(0.3))),
-                    child: const Text('Sold Out', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.redAccent)),
-                  );
-                } else if (row.availableCount <= 3) {
-                  badge = Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                    decoration: BoxDecoration(color: Colors.orange.withOpacity(0.1), borderRadius: BorderRadius.circular(6), border: Border.all(color: Colors.orange.withOpacity(0.3))),
-                    child: Text('Only ${row.availableCount} left', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.orange)),
-                  );
-                } else {
-                  badge = Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                    decoration: BoxDecoration(color: Colors.green.withOpacity(0.1), borderRadius: BorderRadius.circular(6), border: Border.all(color: Colors.green.withOpacity(0.3))),
-                    child: Text('${row.availableCount} available', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.green)),
-                  );
-                }
-
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 16),
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: row.isSoldOut
-                        ? (isDark ? const Color(0xFF1E2A38) : const Color(0xFFF5F5F5))
-                        : (isDark ? const Color(0xFF253040) : Colors.white),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: isDark ? Colors.white10 : AppTheme.mutedColor),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Text(row.room.name,
-                                style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                    color: row.isSoldOut
-                                        ? Theme.of(context).colorScheme.onSurface.withOpacity(0.4)
-                                        : Theme.of(context).colorScheme.onSurface)),
-                          ),
-                          badge,
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Icon(LucideIcons.bedDouble, size: 14, color: Colors.grey[400]),
-                          const SizedBox(width: 4),
-                          Text(row.room.bed.isNotEmpty ? row.room.bed : '1 King Bed',
-                              style: TextStyle(fontSize: 12, color: isDark ? Colors.grey[400] : Colors.grey[600])),
-                          const SizedBox(width: 16),
-                          Icon(LucideIcons.users, size: 14, color: Colors.grey[400]),
-                          const SizedBox(width: 4),
-                          Text('${row.room.capacity} Guests',
-                              style: TextStyle(fontSize: 12, color: isDark ? Colors.grey[400] : Colors.grey[600])),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      Wrap(
-                        spacing: 6,
-                        runSpacing: 6,
-                        children: row.room.features.map((feat) => Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: isDark ? const Color(0xFF19222E) : const Color(0xFFE5E0D8).withOpacity(0.4),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(feat, style: TextStyle(fontSize: 10, color: isDark ? Colors.grey[300] : Colors.grey[700], fontWeight: FontWeight.w500)),
-                        )).toList(),
-                      ),
-                      const SizedBox(height: 16),
-                      const Divider(height: 1),
-                      const SizedBox(height: 12),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('\$${row.price}',
-                                  style: TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold,
-                                      color: row.isSoldOut
-                                          ? Theme.of(context).colorScheme.onSurface.withOpacity(0.35)
-                                          : Theme.of(context).colorScheme.onSurface)),
-                              Text('per night',
-                                  style: TextStyle(fontSize: 11, color: isDark ? Colors.grey[400] : Colors.grey[600])),
-                            ],
-                          ),
-                          row.isSoldOut
-                              ? Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                                  decoration: BoxDecoration(
-                                    color: isDark ? const Color(0xFF2A3545) : const Color(0xFFEEEEEE),
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(color: isDark ? Colors.white10 : Colors.grey.shade300),
-                                  ),
-                                  child: Text('Sold Out',
-                                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey[500])),
-                                )
-                              : ElevatedButton(
-                                  onPressed: () {
-                                    final bp = context.read<BookingProvider>();
-                                    final ap = context.read<AuthProvider>();
-                                    bp.startBooking(hotel, user: ap.user);
-                                    bp.selectRoom(row.room.name, row.price.toDouble());
-                                    context.push('/booking');
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: isDark ? const Color(0xFF19222E) : const Color(0xFFE5E0D8),
-                                    foregroundColor: Theme.of(context).colorScheme.primary,
-                                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                    elevation: 0,
-                                  ),
-                                  child: const Text('Select Room', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                                ),
-                        ],
-                      ),
-                    ],
-                  ),
+          Column(
+            children: roomList.map((row) {
+              Widget badge;
+              if (row.isSoldOut) {
+                badge = Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                  decoration: BoxDecoration(color: Colors.red.withOpacity(0.1), borderRadius: BorderRadius.circular(6), border: Border.all(color: Colors.red.withOpacity(0.3))),
+                  child: const Text('Sold Out', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.redAccent)),
                 );
-              }).toList(),
-            ),
+              } else if (row.availableCount <= 3) {
+                badge = Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                  decoration: BoxDecoration(color: Colors.orange.withOpacity(0.1), borderRadius: BorderRadius.circular(6), border: Border.all(color: Colors.orange.withOpacity(0.3))),
+                  child: Text('Only ${row.availableCount} left', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.orange)),
+                );
+              } else {
+                badge = Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                  decoration: BoxDecoration(color: Colors.green.withOpacity(0.1), borderRadius: BorderRadius.circular(6), border: Border.all(color: Colors.green.withOpacity(0.3))),
+                  child: Text('${row.availableCount} available', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.green)),
+                );
+              }
+
+              return Container(
+                margin: const EdgeInsets.only(bottom: 16),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: row.isSoldOut
+                      ? (isDark ? const Color(0xFF1E2A38) : const Color(0xFFF5F5F5))
+                      : (isDark ? const Color(0xFF253040) : Colors.white),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: isDark ? Colors.white10 : AppTheme.mutedColor),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(row.room.name,
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                  color: row.isSoldOut
+                                      ? Theme.of(context).colorScheme.onSurface.withOpacity(0.4)
+                                      : Theme.of(context).colorScheme.onSurface)),
+                        ),
+                        badge,
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Icon(LucideIcons.bedDouble, size: 14, color: Colors.grey[400]),
+                        const SizedBox(width: 4),
+                        Text(row.room.bed.isNotEmpty ? row.room.bed : '1 King Bed',
+                            style: TextStyle(fontSize: 12, color: isDark ? Colors.grey[400] : Colors.grey[600])),
+                        const SizedBox(width: 16),
+                        Icon(LucideIcons.users, size: 14, color: Colors.grey[400]),
+                        const SizedBox(width: 4),
+                        Text('${row.room.capacity} Guests',
+                            style: TextStyle(fontSize: 12, color: isDark ? Colors.grey[400] : Colors.grey[600])),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: row.room.features.map((feat) => Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: isDark ? const Color(0xFF19222E) : const Color(0xFFE5E0D8).withOpacity(0.4),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(feat, style: TextStyle(fontSize: 10, color: isDark ? Colors.grey[300] : Colors.grey[700], fontWeight: FontWeight.w500)),
+                      )).toList(),
+                    ),
+                    const SizedBox(height: 16),
+                    const Divider(height: 1),
+                    const SizedBox(height: 12),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('\$${row.price}',
+                                style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                    color: row.isSoldOut
+                                        ? Theme.of(context).colorScheme.onSurface.withOpacity(0.35)
+                                        : Theme.of(context).colorScheme.onSurface)),
+                            Text('per night',
+                                style: TextStyle(fontSize: 11, color: isDark ? Colors.grey[400] : Colors.grey[600])),
+                          ],
+                        ),
+                        row.isSoldOut
+                            ? Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                                decoration: BoxDecoration(
+                                  color: isDark ? const Color(0xFF2A3545) : const Color(0xFFEEEEEE),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: isDark ? Colors.white10 : Colors.grey.shade300),
+                                ),
+                                child: Text('Sold Out',
+                                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey[500])),
+                              )
+                            : ElevatedButton(
+                                onPressed: () {
+                                  final bp = context.read<BookingProvider>();
+                                  final ap = context.read<AuthProvider>();
+                                  bp.startBooking(hotel, user: ap.user);
+                                  bp.selectRoom(row.room.name, row.price.toDouble());
+                                  context.push('/booking');
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: isDark ? const Color(0xFF19222E) : const Color(0xFFE5E0D8),
+                                  foregroundColor: Theme.of(context).colorScheme.primary,
+                                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                  elevation: 0,
+                                ),
+                                child: const Text('Select Room', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                              ),
+                      ],
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
           ),
       ],
     );

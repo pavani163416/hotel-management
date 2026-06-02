@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:intl/intl.dart';
+import 'package:gal/gal.dart';
 import 'package:printing/printing.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../theme/app_theme.dart';
@@ -79,7 +81,7 @@ class _ReceiptPreviewDialogState extends State<ReceiptPreviewDialog> {
   final GlobalKey _boundaryKey = GlobalKey();
   bool _isCapturing = false;
 
-  Future<void> _shareReceiptAsPng() async {
+  Future<void> _shareReceiptAsPng({bool share = false}) async {
     try {
       setState(() => _isCapturing = true);
       // Give a tiny delay for state and layout synchronization
@@ -102,10 +104,24 @@ class _ReceiptPreviewDialogState extends State<ReceiptPreviewDialog> {
           ? widget.data.bookingId.substring(widget.data.bookingId.length - 5).toUpperCase()
           : widget.data.bookingId.toUpperCase();
 
-      await Printing.sharePdf(
-        bytes: pngBytes,
-        filename: 'LuxeStay_Receipt_LS-$ref.png',
-      );
+      if (share || kIsWeb) {
+        await Printing.sharePdf(
+          bytes: pngBytes,
+          filename: 'LuxeStay_Receipt_LS-$ref.png',
+        );
+      } else {
+        await Gal.putImageBytes(pngBytes, name: 'LuxeStay_Receipt_LS-$ref');
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Receipt downloaded to your gallery!'),
+              backgroundColor: Colors.green,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      }
     } catch (e) {
       debugPrint('Error generating PNG receipt: $e');
       if (mounted) {
@@ -466,6 +482,7 @@ class _ReceiptPreviewDialogState extends State<ReceiptPreviewDialog> {
               child: Row(
                 children: [
                   Expanded(
+                    flex: 1,
                     child: OutlinedButton(
                       onPressed: () => Navigator.pop(context),
                       style: OutlinedButton.styleFrom(
@@ -478,34 +495,57 @@ class _ReceiptPreviewDialogState extends State<ReceiptPreviewDialog> {
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           color: isDark ? Colors.white : const Color(0xFF454F5E),
+                          fontSize: 12,
                         ),
                       ),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Flexible(
+                  const SizedBox(width: 8),
+                  Expanded(
+                    flex: 1,
+                    child: OutlinedButton.icon(
+                      onPressed: _isCapturing ? null : () => _shareReceiptAsPng(share: true),
+                      icon: const Icon(LucideIcons.share2, size: 14),
+                      label: Text(
+                        'Share',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? Colors.white : const Color(0xFF454F5E),
+                          fontSize: 12,
+                        ),
+                        maxLines: 1,
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+                        side: BorderSide(color: Colors.grey[300]!),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    flex: 1,
                     child: ElevatedButton.icon(
-                      onPressed: _isCapturing ? null : _shareReceiptAsPng,
+                      onPressed: _isCapturing ? null : () => _shareReceiptAsPng(share: false),
                       icon: _isCapturing
                           ? const SizedBox(
-                              width: 16,
-                              height: 16,
+                              width: 14,
+                              height: 14,
                               child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)),
                             )
-                          : const Icon(LucideIcons.share2, size: 18),
-                      label: Text(
-                        _isCapturing ? 'Sharing...' : 'Share Receipt',
+                          : const Icon(LucideIcons.download, size: 14),
+                      label: const Text(
+                        'Save',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontWeight: FontWeight.bold),
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
                       ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF454F5E),
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         elevation: 0,
-                        textStyle: const TextStyle(fontSize: 14),
                       ),
                     ),
                   ),

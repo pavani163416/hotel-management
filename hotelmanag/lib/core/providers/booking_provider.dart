@@ -1,9 +1,13 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../features/booking/domain/repositories/booking_repository.dart';
 import '../widgets/notification_popup.dart';
 import '../../features/booking/domain/entities/booking_entity.dart';
 import '../../shared/domain/entities/hotel_entity.dart';
 import '../../features/auth/domain/entities/user_entity.dart';
+import 'promo_provider.dart';
+import '../services/push_notifications.dart';
 
 class BookingProvider extends ChangeNotifier {
   final BookingRepository _bookingRepository;
@@ -33,12 +37,9 @@ class BookingProvider extends ChangeNotifier {
   // Promo Code State
   String? _appliedPromoCode;
   double _discountAmount = 0.0;
-
-  final Map<String, double> _validPromos = {
-    'LUXE10': 0.10,
-    'WELCOME15': 0.15,
-    'VIP20': 0.20,
-  };
+  String? _promoDescription;
+  String _promoType = 'percentage';
+  double _promoValue = 0.0;
 
   BookingProvider(this._bookingRepository);
 
@@ -58,6 +59,7 @@ class BookingProvider extends ChangeNotifier {
   List<Map<String, String>> get children => _children;
   String? get appliedPromoCode => _appliedPromoCode;
   double get discountAmount => _discountAmount;
+  String? get promoDescription => _promoDescription;
 
   int get nights => _checkOut.difference(_checkIn).inDays;
   double get subtotal => (_selectedRoomPrice > 0 ? _selectedRoomPrice : (_currentHotel?.pricePerNight ?? 0)) * nights;
@@ -87,24 +89,40 @@ class BookingProvider extends ChangeNotifier {
   void selectRoom(String type, double price) {
     _selectedRoomType = type;
     _selectedRoomPrice = price;
-    // Reapply promo code if active
-    if (_appliedPromoCode != null) {
-      _discountAmount = subtotal * _validPromos[_appliedPromoCode]!;
-    }
+    _recalculateDiscount();
     notifyListeners();
   }
 
-  bool applyPromoCode(String code) {
+  void _recalculateDiscount() {
+    if (_appliedPromoCode != null) {
+      if (_promoType == 'percentage') {
+        _discountAmount = subtotal * (_promoValue / 100);
+      } else {
+        _discountAmount = _promoValue;
+      }
+    } else {
+      _discountAmount = 0.0;
+    }
+  }
+
+  bool applyPromoCode(String code, List<CouponEntity> availableCoupons) {
     final normalizedCode = code.toUpperCase().trim();
-    if (_validPromos.containsKey(normalizedCode)) {
-      final firstTimeOnly = const {'WELCOME15', 'LUXE10'};
-      if (firstTimeOnly.contains(normalizedCode) && _bookings.isNotEmpty) {
+    final coupon = availableCoupons.cast<CouponEntity?>().firstWhere(
+      (c) => c!.code.toUpperCase() == normalizedCode,
+      orElse: () => null,
+    );
+    
+    if (coupon != null) {
+      if (coupon.firstTimeOnly && _bookings.isNotEmpty) {
         _error = '$normalizedCode is for first-time guests only.';
         notifyListeners();
         return false;
       }
       _appliedPromoCode = normalizedCode;
-      _discountAmount = subtotal * _validPromos[normalizedCode]!;
+      _promoDescription = coupon.description;
+      _promoType = coupon.type;
+      _promoValue = coupon.value;
+      _recalculateDiscount();
       _error = null;
       notifyListeners();
       return true;
@@ -116,6 +134,9 @@ class BookingProvider extends ChangeNotifier {
 
   void removePromoCode() {
     _appliedPromoCode = null;
+    _promoDescription = null;
+    _promoType = 'percentage';
+    _promoValue = 0.0;
     _discountAmount = 0.0;
     notifyListeners();
   }
@@ -127,10 +148,7 @@ class BookingProvider extends ChangeNotifier {
     } else {
       _checkOut = checkOut;
     }
-    // Recalculate discount if promo applied
-    if (_appliedPromoCode != null) {
-      _discountAmount = subtotal * _validPromos[_appliedPromoCode]!;
-    }
+    _recalculateDiscount();
     notifyListeners();
   }
 
@@ -240,10 +258,50 @@ class BookingProvider extends ChangeNotifier {
         _isLoading = false;
         notifyListeners();
       },
-      (bookings) {
+      (bookings) async {
+        final prefs = await SharedPreferences.getInstance();
+        final storedStatuses = prefs.getString('booking_statuses') ?? '{}';
+        final Map<String, dynamic> persistedOld = json.decode(storedStatuses);
+        
+        final oldStatuses = {for (var b in _bookings) b.id: b.status.toLowerCase()};
         _bookings = List<BookingEntity>.from(bookings);
         _error = null;
         _isLoading = false;
+        
+        final newStatusesToSave = <String, String>{};
+
+        for (var newB in _bookings) {
+           final newStatus = newB.status.toLowerCase();
+           newStatusesToSave[newB.id] = newStatus;
+           
+           final oldStatusMemory = oldStatuses[newB.id];
+           final oldStatusDisk = persistedOld[newB.id]?.toString().toLowerCase();
+           
+           // Check if we have a known old state (either from disk or memory)
+           // and it has changed to a NEW state.
+           final oldStatus = oldStatusMemory ?? oldStatusDisk;
+           
+           if (oldStatus != null && oldStatus != newStatus) {
+              String title = 'Booking Update';
+              String body = 'Your booking at ${newB.hotelName} is now ${newB.status}.';
+              
+              if (newStatus == 'confirmed' || newStatus == 'checkedin') {
+                 title = 'Booking Accepted';
+              } else if (newStatus == 'cancelled' || newStatus == 'rejected') {
+                 title = 'Booking Cancelled/Rejected';
+              }
+              
+              showNotificationPopup(
+                title: title,
+                subtitle: body,
+                icon: Icons.info_outline,
+                iconColor: Colors.blueAccent,
+              );
+              PushNotificationService.showLocalNotification(title: title, body: body);
+           }
+        }
+        
+        await prefs.setString('booking_statuses', json.encode(newStatusesToSave));
         notifyListeners();
       },
     );

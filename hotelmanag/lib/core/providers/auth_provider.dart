@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_auth_platform_interface/firebase_auth_platform_interface.dart';
@@ -18,7 +19,6 @@ class AuthProvider extends ChangeNotifier {
   bool _isLoading = false;
   String? _error;
   String? _unverifiedEmail;
-  String? _devOtp;
 
   AuthProvider(this._authRepository);
 
@@ -26,14 +26,12 @@ class AuthProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
   String? get unverifiedEmail => _unverifiedEmail;
-  String? get devOtp => _devOtp;
   bool get isAuthenticated => _user != null;
 
   Future<void> login(String email, String password) async {
     _isLoading = true;
     _error = null;
     _unverifiedEmail = null;
-    _devOtp = null;
     notifyListeners();
 
     final result = await _authRepository.login(email, password);
@@ -43,7 +41,6 @@ class AuthProvider extends ChangeNotifier {
         if (failure is UnverifiedEmailFailure) {
           _unverifiedEmail = email;
           _error = failure.message;
-          _devOtp = failure.otp;
         } else if (failure.message.toLowerCase().contains('not verified') || 
                    failure.message.toLowerCase().contains('verify')) {
           _unverifiedEmail = email;
@@ -69,7 +66,6 @@ class AuthProvider extends ChangeNotifier {
     _isLoading = true;
     _error = null;
     _unverifiedEmail = null;
-    _devOtp = null;
     notifyListeners();
 
     final result = await _authRepository.register(name, email, password, phone);
@@ -84,7 +80,6 @@ class AuthProvider extends ChangeNotifier {
         final (user, token, otp) = data;
         if (token.isEmpty) {
           _unverifiedEmail = email;
-          _devOtp = otp;
         } else {
           _user = user;
           await _saveAuthData(user, token);
@@ -113,7 +108,6 @@ class AuthProvider extends ChangeNotifier {
         final (user, token) = data;
         _user = user;
         _unverifiedEmail = null;
-        _devOtp = null;
         await _saveAuthData(user, token);
         _isLoading = false;
         notifyListeners();
@@ -125,7 +119,6 @@ class AuthProvider extends ChangeNotifier {
   Future<bool> resendOtp(String email) async {
     _isLoading = true;
     _error = null;
-    _devOtp = null;
     notifyListeners();
 
     final result = await _authRepository.resendOtp(email);
@@ -138,7 +131,6 @@ class AuthProvider extends ChangeNotifier {
         return false;
       },
       (otp) {
-        _devOtp = otp;
         _isLoading = false;
         notifyListeners();
         return true;
@@ -147,20 +139,19 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<bool> tryAutoLogin() async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString(AppConstants.tokenKey);
+    const storage = FlutterSecureStorage();
+    final token = await storage.read(key: AppConstants.tokenKey);
     
     if (token == null || token.isEmpty) return false;
 
     // Load cached user data if it exists for instant startup
-    final userDataString = prefs.getString('user_data');
+    final userDataString = await storage.read(key: 'user_data');
     if (userDataString != null && userDataString.isNotEmpty) {
       try {
         final userData = jsonDecode(userDataString) as Map<String, dynamic>;
         _user = UserModel.fromJson(userData);
         notifyListeners();
       } catch (e) {
-        debugPrint('Error parsing cached user: $e');
       }
     }
 
@@ -180,8 +171,8 @@ class AuthProvider extends ChangeNotifier {
                               errorMsg.contains('expired');
         
         if (isAuthFailure) {
-          await prefs.remove(AppConstants.tokenKey);
-          await prefs.remove('user_data');
+          await storage.delete(key: AppConstants.tokenKey);
+          await storage.delete(key: 'user_data');
           _user = null;
           _isLoading = false;
           notifyListeners();
@@ -214,21 +205,20 @@ class AuthProvider extends ChangeNotifier {
   }
 
   void logout() async {
+    const storage = FlutterSecureStorage();
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(AppConstants.tokenKey);
+    await storage.delete(key: AppConstants.tokenKey);
     await prefs.remove('user_favorites'); // Clear favorites on logout
-    await prefs.remove('user_data'); // Clear cached user details
+    await storage.delete(key: 'user_data'); // Clear cached user details
     await _googleSignIn.signOut(); // Also sign out from Google
     _user = null;
     notifyListeners();
   }
 
   Future<bool> signInWithGoogle() async {
-    print('DEBUG: Google Sign-In button pressed. Initializing flow...');
     try {
       final GoogleSignIn googleSignIn = _googleSignIn;
 
-      print('DEBUG: Requesting Google Sign-In Dialog...');
       // IMPORTANT: Call signIn() immediately without any preceding awaits or notifyListeners
       // to prevent the browser from blocking the popup.
       final GoogleSignInAccount? account = await googleSignIn.signIn();
@@ -239,33 +229,26 @@ class AuthProvider extends ChangeNotifier {
       notifyListeners();
 
       if (account == null) {
-        print('DEBUG: User cancelled the account selection dialog.');
         _isLoading = false;
         notifyListeners();
         return false;
       }
 
-      print('DEBUG: Google Account Selected: ${account.email}');
       final GoogleSignInAuthentication auth = await account.authentication;
       final String? idToken = auth.idToken ?? auth.accessToken;
 
-      print('DEBUG: idToken obtained: ${auth.idToken != null ? "YES" : "NO"}');
-      print('DEBUG: accessToken obtained: ${auth.accessToken != null ? "YES" : "NO"}');
 
       if (idToken == null) {
-        print('DEBUG: ERROR - Both idToken and accessToken are NULL!');
         _error = 'Google sign-in failed: could not obtain authentication token.';
         _isLoading = false;
         notifyListeners();
         return false;
       }
 
-      print('DEBUG: Sending selected token to LuxeStay backend API...');
       final result = await _authRepository.signInWithGoogle(idToken);
 
       return result.fold(
         (failure) {
-          print('DEBUG: Backend Auth Failed! Error: ${failure.message}');
           _error = failure.message;
           _isLoading = false;
           notifyListeners();
@@ -273,7 +256,6 @@ class AuthProvider extends ChangeNotifier {
         },
         (data) async {
           final (user, token) = data;
-          print('DEBUG: Backend Auth SUCCESS! User: ${user.name}, Email: ${user.email}');
           _user = user;
           await _saveAuthData(user, token);
           _isLoading = false;
@@ -282,7 +264,6 @@ class AuthProvider extends ChangeNotifier {
         },
       );
     } catch (e) {
-      print('DEBUG: Caught Exception during Google Sign-In flow: ${e.toString()}');
       _error = 'Google sign-in error: ${e.toString()}';
       _isLoading = false;
       notifyListeners();
@@ -399,9 +380,10 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> _saveAuthData(UserEntity user, String? token) async {
+    const storage = FlutterSecureStorage();
     final prefs = await SharedPreferences.getInstance();
     if (token != null) {
-      await prefs.setString(AppConstants.tokenKey, token);
+      await storage.write(key: AppConstants.tokenKey, value: token);
     }
 
     // Set onboarding complete as user is logged in
@@ -431,9 +413,8 @@ class AuthProvider extends ChangeNotifier {
         }).toList(),
       );
       final userJson = jsonEncode(userModel.toJson());
-      await prefs.setString('user_data', userJson);
+      await storage.write(key: 'user_data', value: userJson);
     } catch (e) {
-      debugPrint('Error caching user data: $e');
     }
   }
 
@@ -596,7 +577,6 @@ class AuthProvider extends ChangeNotifier {
   }) async {
     _isLoading = true;
     _error = null;
-    _devOtp = null;
     notifyListeners();
 
     try {
@@ -611,9 +591,6 @@ class AuthProvider extends ChangeNotifier {
         (otp) {
           _isLoading = false;
           if (otp != null) {
-            if (otp != 'success') {
-              _devOtp = otp;
-            }
             notifyListeners();
             onCodeSent(phoneNumber);
           } else {

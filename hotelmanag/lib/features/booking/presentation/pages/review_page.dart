@@ -7,6 +7,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/main_layout.dart';
 import '../../../../core/widgets/stepper_widget.dart';
 import '../../../../core/providers/booking_provider.dart';
+import '../../../../core/providers/promo_provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
 class ReviewPage extends StatefulWidget {
@@ -25,6 +26,14 @@ class _ReviewPageState extends State<ReviewPage> {
     _promoController.addListener(() {
       if (mounted) setState(() {});
     });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final bookingProvider = context.read<BookingProvider>();
+      final isFirstTime = bookingProvider.bookings.isEmpty;
+      context.read<PromoProvider>().fetchCoupons(
+        isFirstTimeUser: isFirstTime,
+        onNewOffer: (coupon) {},
+      );
+    });
   }
 
   @override
@@ -33,10 +42,10 @@ class _ReviewPageState extends State<ReviewPage> {
     super.dispose();
   }
 
-  void _applyPromo(BookingProvider provider) {
+  void _applyPromo(BookingProvider provider, PromoProvider promoProvider) {
     if (_promoController.text.isEmpty) return;
     
-    bool success = provider.applyPromoCode(_promoController.text);
+    bool success = provider.applyPromoCode(_promoController.text, promoProvider.validCoupons);
     if (success) {
       _promoController.clear();
       // Success message is now shown in UI
@@ -53,6 +62,7 @@ class _ReviewPageState extends State<ReviewPage> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<BookingProvider>();
+    final promoProvider = context.watch<PromoProvider>();
     final hotel = provider.currentHotel;
 
     if (hotel == null) {
@@ -99,7 +109,7 @@ class _ReviewPageState extends State<ReviewPage> {
                       if (isWide)
                         Expanded(
                           flex: 2,
-                          child: _buildPriceSummary(context, provider),
+                          child: _buildPriceSummary(context, provider, promoProvider),
                         ),
                     ],
                   );
@@ -112,7 +122,7 @@ class _ReviewPageState extends State<ReviewPage> {
                   if (constraints.maxWidth <= 800) {
                     return Padding(
                       padding: const EdgeInsets.only(top: 32),
-                      child: _buildPriceSummary(context, provider),
+                      child: _buildPriceSummary(context, provider, promoProvider),
                     );
                   }
                   return const SizedBox.shrink();
@@ -237,7 +247,7 @@ class _ReviewPageState extends State<ReviewPage> {
     );
   }
 
-  Widget _buildPriceSummary(BuildContext context, BookingProvider provider) {
+  Widget _buildPriceSummary(BuildContext context, BookingProvider provider, PromoProvider promoProvider) {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -268,38 +278,93 @@ class _ReviewPageState extends State<ReviewPage> {
             ],
           ),
           const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: Container(
-                  height: 48,
-                  child: TextField(
-                    controller: _promoController,
-                    decoration: InputDecoration(
-                      hintText: 'Enter code...',
-                      hintStyle: TextStyle(color: Colors.grey[300], fontSize: 13),
-                      filled: true,
-                      fillColor: Colors.white,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppTheme.mutedColor)),
-                      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppTheme.primaryColor)),
+          const SizedBox(height: 12),
+          InkWell(
+            onTap: () async {
+              final selectedCode = await context.push<String>('/promo-codes');
+              if (selectedCode != null && selectedCode.isNotEmpty) {
+                _promoController.text = selectedCode;
+                _applyPromo(provider, promoProvider);
+              }
+            },
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              height: 54,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              decoration: BoxDecoration(
+                color: provider.appliedPromoCode != null 
+                    ? const Color(0xFFF0FDF4) // Light mint green
+                    : Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: provider.appliedPromoCode != null 
+                      ? const Color(0xFF4ADE80) // Mint green border
+                      : Colors.grey[300]!,
+                  width: 1,
+                ),
+                boxShadow: [
+                  if (provider.appliedPromoCode == null)
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.02),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: provider.appliedPromoCode != null 
+                          ? const Color(0xFF4ADE80).withOpacity(0.15)
+                          : Colors.grey[100],
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      LucideIcons.tag, 
+                      size: 16, 
+                      color: provider.appliedPromoCode != null ? const Color(0xFF16A34A) : Colors.black87,
                     ),
                   ),
-                ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          provider.appliedPromoCode != null 
+                              ? provider.appliedPromoCode! 
+                              : 'Add Promo Code',
+                          style: TextStyle(
+                            color: provider.appliedPromoCode != null ? const Color(0xFF16A34A) : Colors.black87,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                        ),
+                        if (provider.appliedPromoCode == null)
+                          Text(
+                            'Save on your booking',
+                            style: TextStyle(
+                              color: Colors.grey[500],
+                              fontSize: 10,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  Text(
+                    provider.appliedPromoCode != null ? 'Applied' : 'Apply',
+                    style: TextStyle(
+                      color: provider.appliedPromoCode != null ? const Color(0xFF16A34A) : AppTheme.primaryColor, // Matching app theme
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 8),
-              ElevatedButton(
-                onPressed: () => _applyPromo(provider),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF4A5568),
-                  foregroundColor: Colors.white,
-                  minimumSize: const Size(80, 48),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  elevation: 0,
-                ),
-                child: const Text('Apply'),
-              ),
-            ],
+            ),
           ),
           
           if (provider.appliedPromoCode != null)
@@ -309,24 +374,25 @@ class _ReviewPageState extends State<ReviewPage> {
                 children: [
                   const Icon(Icons.check, size: 14, color: Color(0xFF38A169)),
                   const SizedBox(width: 8),
-                  Text(
-                    '${provider.appliedPromoCode} applied — ${_getPromoDesc(provider.appliedPromoCode!)}!',
-                    style: const TextStyle(color: Color(0xFF38A169), fontSize: 11, fontWeight: FontWeight.w500),
+                  Expanded(
+                    child: Text(
+                      '${provider.appliedPromoCode} applied — ${provider.promoDescription ?? 'discount applied'}!',
+                      style: const TextStyle(color: Color(0xFF38A169), fontSize: 11, fontWeight: FontWeight.w500),
+                    ),
+                  ),
+                  InkWell(
+                    onTap: () {
+                      provider.removePromoCode();
+                      _promoController.clear();
+                    },
+                    child: const Padding(
+                      padding: EdgeInsets.all(4.0),
+                      child: Icon(LucideIcons.x, size: 16, color: Colors.grey),
+                    ),
                   ),
                 ],
               ),
             ),
-            
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            children: [
-              _buildPromoChip('LUXE10', provider),
-              _buildPromoChip('WELCOME15', provider),
-              _buildPromoChip('VIP20', provider),
-              const Padding(padding: EdgeInsets.symmetric(vertical: 4), child: Text('— click to apply', style: TextStyle(fontSize: 10, color: Colors.grey))),
-            ],
-          ),
           
           const SizedBox(height: 24),
           const Divider(color: AppTheme.mutedColor),
@@ -364,13 +430,6 @@ class _ReviewPageState extends State<ReviewPage> {
         ],
       ),
     );
-  }
-
-  String _getPromoDesc(String code) {
-    if (code == 'LUXE10') return '10% special discount';
-    if (code == 'WELCOME15') return '15% welcome discount';
-    if (code == 'VIP20') return '20% VIP discount';
-    return 'discount applied';
   }
 
   Widget _buildPriceRow(String label, String value, {bool isDiscount = false}) {

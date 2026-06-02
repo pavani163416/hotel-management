@@ -92,8 +92,6 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       throw Exception(response.data['message'] ?? 'Invalid response from server');
     }
 
-    // DEBUG: See what the server sent
-    print('LOGIN DATA: $data');
 
     return AuthResponse(
       user: UserModel.fromJson(data),

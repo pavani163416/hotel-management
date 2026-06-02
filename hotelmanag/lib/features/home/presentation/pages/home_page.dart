@@ -8,6 +8,7 @@ import '../../../../core/widgets/main_layout.dart';
 import '../../../../core/widgets/notification_modal.dart';
 import '../../../../core/providers/notification_provider.dart';
 import '../../../../core/providers/booking_provider.dart';
+import '../../../../core/providers/promo_provider.dart';
 import '../../../../core/providers/favorites_provider.dart';
 import '../../../../core/providers/hotel_provider.dart';
 import '../../../../core/providers/auth_provider.dart';
@@ -35,7 +36,25 @@ class _HomePageState extends State<HomePage> {
     super.initState();
     Future.microtask(() {
       context.read<HotelProvider>().fetchHotels();
-      context.read<BookingProvider>().fetchMyBookings();
+      final bookingProvider = context.read<BookingProvider>();
+      bookingProvider.fetchMyBookings().then((_) {
+        // Fetch coupons after bookings so we know if they are a first-time user
+        if (mounted) {
+          final isFirstTime = bookingProvider.bookings.isEmpty;
+          context.read<PromoProvider>().fetchCoupons(
+            isFirstTimeUser: isFirstTime,
+            onNewOffer: (coupon) {
+              if (mounted) {
+                context.read<NotificationProvider>().addNotification(
+                  'New Offer: ${coupon.code}',
+                  subtitle: coupon.description ?? 'Tap to view new offers!',
+                  type: 'Offer',
+                );
+              }
+            },
+          );
+        }
+      });
     });
   }
 

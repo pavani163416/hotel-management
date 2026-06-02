@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../utils/audio_helper.dart';
+import '../utils/audio_helper.dart';
 import '../widgets/notification_popup.dart';
 import '../../features/booking/domain/entities/booking_entity.dart';
+import '../services/push_notifications.dart';
 
 class NotificationItem {
   final String id;
@@ -105,6 +107,9 @@ class NotificationProvider extends ChangeNotifier {
               ? Colors.redAccent
               : Colors.green,
     );
+
+    // Also trigger system notification (vibration/sound) so it displays in notification tray
+    PushNotificationService.showLocalNotification(title: title, body: subtitle);
 
     // Sound is played inside showNotificationPopup via the overlay
     notifyListeners();

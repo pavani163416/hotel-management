@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import '../constants/app_constants.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class ApiService {
   final Dio _dio;
@@ -16,24 +17,16 @@ class ApiService {
     _dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
-          final prefs = await SharedPreferences.getInstance();
-          final token = prefs.getString(AppConstants.tokenKey);
+          final storage = const FlutterSecureStorage();
+          final token = await storage.read(key: AppConstants.tokenKey);
 
           if (token != null && token.isNotEmpty) {
             options.headers['Authorization'] = 'Bearer $token';
           }
 
-          debugPrint('API REQUEST[${options.method}] => ${options.baseUrl}${options.path}');
           return handler.next(options);
         },
-        onResponse: (response, handler) {
-          debugPrint('API RESPONSE[${response.statusCode}] => PATH: ${response.requestOptions.path}');
-          return handler.next(response);
-        },
         onError: (DioException e, handler) {
-          debugPrint('API ERROR[${e.response?.statusCode ?? e.type}] => PATH: ${e.requestOptions.path}');
-          debugPrint('ERROR MESSAGE: ${e.response?.data ?? e.message}');
-
           // Convert network/timeout errors into a friendlier DioException
           if (e.type == DioExceptionType.connectionError ||
               e.type == DioExceptionType.connectionTimeout ||

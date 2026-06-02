@@ -366,7 +366,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       ),
                     ),
                     Positioned(
-                      top: 16,
+                      bottom: 16,
                       right: 16,
                       child: Container(
                         padding: const EdgeInsets.all(8),

@@ -191,7 +191,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                     ),
                     child: auth.isLoading
-                        ? const CircularProgressIndicator(color: Colors.white)
+                        ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
                         : const Text('Continue', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                   ),
                 );

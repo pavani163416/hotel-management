@@ -60,6 +60,7 @@ class PushNotificationService {
       description: 'This channel is used for important notifications.', // description
       importance: Importance.high,
       playSound: true,
+      enableVibration: true,
     );
 
     await _localNotificationsPlugin
@@ -132,6 +133,27 @@ class PushNotificationService {
     }
   }
 
+  static Future<void> showLocalNotification({required String title, required String body}) async {
+    const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
+      'high_importance_channel',
+      'High Importance Notifications',
+      channelDescription: 'This channel is used for important notifications.',
+      importance: Importance.high,
+      priority: Priority.high,
+      icon: '@mipmap/ic_launcher',
+      playSound: true,
+      enableVibration: true,
+      sound: RawResourceAndroidNotificationSound('notification'),
+    );
+    
+    await _localNotificationsPlugin.show(
+      id: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+      title: title,
+      body: body,
+      notificationDetails: const NotificationDetails(android: androidDetails),
+    );
+  }
+
   // Ensure background/terminated notifications also play sound and show popup for offers
   @pragma('vm:entry-point')
   static Future<void> handleBackgroundMessage(RemoteMessage message) async {
@@ -146,6 +168,7 @@ class PushNotificationService {
         description: 'This channel is used for important notifications.',
         importance: Importance.high,
         playSound: true,
+        enableVibration: true,
       ));
       // Play sound
       try {
