@@ -36,7 +36,9 @@ function isTrustedVercelDomain(origin) {
       "hotel-mgnt",
       "luxestay-frontend",
       "luxestay-admin",
-      "hotel-management-admin-eta"
+      "hotel-management-admin-eta",
+      "hotel-management-frontend",
+      "hotel-management"
     ];
     return hostname.endsWith(".vercel.app") && allowedSubstrings.some(sub => hostname.includes(sub));
   } catch {
