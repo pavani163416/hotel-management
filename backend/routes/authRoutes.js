@@ -369,6 +369,18 @@ router.post("/register", authLimiter, validateRegisterPayload, async (req, res, 
         message: "Password must contain at least one capital letter.",
       });
     }
+    if (!/[0-9]/.test(password)) {
+      return res.status(400).json({
+        success: false,
+        message: "Password must contain at least one number.",
+      });
+    }
+    if (!/[^A-Za-z0-9]/.test(password)) {
+      return res.status(400).json({
+        success: false,
+        message: "Password must contain at least one special character.",
+      });
+    }
 
     const normalEmail = email.toLowerCase().trim();
 
@@ -551,6 +563,12 @@ router.post("/reset-password", authLimiter, validateResetPasswordPayload, async 
     }
     if (!/[A-Z]/.test(password)) {
       return res.status(400).json({ success: false, message: "Password must contain at least one capital letter." });
+    }
+    if (!/[0-9]/.test(password)) {
+      return res.status(400).json({ success: false, message: "Password must contain at least one number." });
+    }
+    if (!/[^A-Za-z0-9]/.test(password)) {
+      return res.status(400).json({ success: false, message: "Password must contain at least one special character." });
     }
 
     const hashedToken = crypto.createHash("sha256").update(token).digest("hex");

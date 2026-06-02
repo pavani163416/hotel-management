@@ -148,7 +148,7 @@ function AuthModalInner({ isOpen, onClose, defaultMode, mode, setMode, loading, 
             <PasswordInput value={password} onChange={e => setPassword((e.target as HTMLInputElement).value)}
               className="w-full px-4 py-2 border border-border rounded-lg outline-none focus:border-accent"
               placeholder="Min. 8 characters" autoComplete="new-password" />
-            <div className="text-xs space-y-1.5 mt-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 text-xs gap-y-1.5 gap-x-2 mt-2">
               <div className={`flex items-center gap-1.5 ${password.length >= 8 ? "text-green-600 font-medium" : "text-muted-foreground"}`}>
                 <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${password.length >= 8 ? 'border-green-600 bg-green-600' : 'border-muted-foreground'}`}>
                   {password.length >= 8 && <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
@@ -159,7 +159,19 @@ function AuthModalInner({ isOpen, onClose, defaultMode, mode, setMode, loading, 
                 <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${/[A-Z]/.test(password) ? 'border-green-600 bg-green-600' : 'border-muted-foreground'}`}>
                   {/[A-Z]/.test(password) && <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
                 </div>
-                At least 1 capital letter
+                1 capital letter
+              </div>
+              <div className={`flex items-center gap-1.5 ${/[0-9]/.test(password) ? "text-green-600 font-medium" : "text-muted-foreground"}`}>
+                <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${/[0-9]/.test(password) ? 'border-green-600 bg-green-600' : 'border-muted-foreground'}`}>
+                  {/[0-9]/.test(password) && <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
+                </div>
+                1 number
+              </div>
+              <div className={`flex items-center gap-1.5 ${/[^A-Za-z0-9]/.test(password) ? "text-green-600 font-medium" : "text-muted-foreground"}`}>
+                <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${/[^A-Za-z0-9]/.test(password) ? 'border-green-600 bg-green-600' : 'border-muted-foreground'}`}>
+                  {/[^A-Za-z0-9]/.test(password) && <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
+                </div>
+                1 special character
               </div>
             </div>
           </div>
@@ -170,10 +182,10 @@ function AuthModalInner({ isOpen, onClose, defaultMode, mode, setMode, loading, 
                 <select 
                   value={countryCode} 
                   onChange={e => setCountryCode(e.target.value)}
-                  className="w-[110px] px-2 py-2 border border-border rounded-lg outline-none focus:border-accent bg-background text-sm"
+                  className="w-[75px] px-1 py-2 border border-border rounded-lg outline-none focus:border-accent bg-background text-sm"
                 >
                   {COUNTRY_CODES.map(c => (
-                    <option key={c.code} value={c.code}>{c.name} {c.code}</option>
+                    <option key={c.code} value={c.code}>{c.code}</option>
                   ))}
                 </select>
                 <input type="tel" value={phone} onChange={e => setPhone(e.target.value.replace(/\D/g, ""))}
@@ -208,10 +220,10 @@ function AuthModalInner({ isOpen, onClose, defaultMode, mode, setMode, loading, 
               <select 
                 value={countryCode} 
                 onChange={e => setCountryCode(e.target.value)}
-                className="w-[120px] px-2 py-2 border border-border rounded-lg outline-none focus:border-accent bg-background text-sm"
+                className="w-[75px] px-1 py-2 border border-border rounded-lg outline-none focus:border-accent bg-background text-sm"
               >
                 {COUNTRY_CODES.map(c => (
-                  <option key={c.code} value={c.code}>{c.name} {c.code}</option>
+                  <option key={c.code} value={c.code}>{c.code}</option>
                 ))}
               </select>
               <input type="tel" value={phone} onChange={e => setPhone(e.target.value.replace(/\D/g, ""))}
@@ -390,6 +402,8 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
     if (!name || !email || !password || !phone) { setError("Please fill all required fields."); return; }
     if (password.length < 8) { setError("Password must be at least 8 characters."); return; }
     if (!/[A-Z]/.test(password)) { setError("Password must contain at least one capital letter."); return; }
+    if (!/[0-9]/.test(password)) { setError("Password must contain at least one number."); return; }
+    if (!/[^A-Za-z0-9]/.test(password)) { setError("Password must contain at least one special character."); return; }
     setError(""); setLoading(true);
     try {
       const fullPhone = `${countryCode}${phone.trim()}`;
