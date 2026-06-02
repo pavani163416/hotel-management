@@ -76,9 +76,9 @@ const csrfProtection = (req, res, next) => {
   const origin  = req.headers["origin"];
   const referer = req.headers["referer"];
 
-  // Derive origin from Referer if Origin is absent
+  // Derive origin from Referer if Origin is absent or string "null"/"undefined"
   let effectiveOrigin = origin;
-  if (!effectiveOrigin && referer) {
+  if ((!effectiveOrigin || effectiveOrigin === "null" || effectiveOrigin === "undefined") && referer) {
     try {
       const url = new URL(referer);
       effectiveOrigin = url.origin;
@@ -87,11 +87,14 @@ const csrfProtection = (req, res, next) => {
     }
   }
 
+  // Debug logging for CSRF troubleshooting
+  console.log(`[CSRF CHECK] Path: ${req.path}, Method: ${req.method}, Origin Header: ${origin}, Referer Header: ${referer}, Effective Origin: ${effectiveOrigin}`);
+
   // No origin at all — allow server-to-server / Postman / curl in non-prod.
   // In production or if cookies/credentials are present, require an origin for mutating requests.
   const isProd = process.env.NODE_ENV === "production";
   const hasCookies = req.headers.cookie || (req.cookies && Object.keys(req.cookies).length > 0);
-  if (!effectiveOrigin) {
+  if (!effectiveOrigin || effectiveOrigin === "null" || effectiveOrigin === "undefined") {
     if (!isProd && !hasCookies) return next();
     return res.status(403).json({
       success: false,
@@ -100,6 +103,7 @@ const csrfProtection = (req, res, next) => {
   }
 
   if (!isOriginTrusted(effectiveOrigin)) {
+    console.warn(`[CSRF REJECTED] Origin ${effectiveOrigin} is not trusted.`);
     return res.status(403).json({
       success: false,
       message: "Forbidden: cross-origin request rejected.",
