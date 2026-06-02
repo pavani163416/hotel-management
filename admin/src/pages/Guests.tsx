@@ -140,10 +140,24 @@ export default function Guests() {
   const [registerOpen, setRegisterOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<Guest | null>(null);
   const [submitted, setSubmitted] = useState(false);
+  const [registerSaving, setRegisterSaving] = useState(false);
+  const [registerError, setRegisterError] = useState("");
   const [page, setPage] = useState(1);
   const PER_PAGE = 8;
 
-  const [form, setForm] = useState({ name: "", email: "", phone: "", city: "", preferredHotel: "The Grand Luxe", status: "Active" as Guest["status"] });
+  // Load real hotels for dropdown
+  const [hotelOptions, setHotelOptions] = useState<string[]>([]);
+  useEffect(() => {
+    fetch(`${API}/hotels`)
+      .then(r => r.json())
+      .then(d => {
+        const names = (d?.data || []).map((h: any) => h.name);
+        setHotelOptions(names);
+      })
+      .catch(() => {});
+  }, []);
+
+  const [form, setForm] = useState({ name: "", email: "", phone: "", city: "", preferredHotel: "", status: "Active" as Guest["status"] });
 
   const filtered = guests.filter((g) => {
     const matchSearch = !search || g.name.toLowerCase().includes(search.toLowerCase()) || g.email.toLowerCase().includes(search.toLowerCase());
@@ -156,8 +170,9 @@ export default function Guests() {
 
   const openRegister = () => {
     setEditTarget(null);
-    setForm({ name: "", email: "", phone: "", city: "", preferredHotel: "The Grand Luxe", status: "Active" });
+    setForm({ name: "", email: "", phone: "", city: "", preferredHotel: hotelOptions[0] || "", status: "Active" });
     setSubmitted(false);
+    setRegisterError("");
     setRegisterOpen(true);
   };
 
@@ -187,16 +202,41 @@ export default function Guests() {
     setEditTarget(g);
     setForm({ name: g.name, email: g.email, phone: g.phone, city: g.city, preferredHotel: g.preferredHotel, status: g.status });
     setSubmitted(false);
+    setRegisterError("");
     setDetailGuest(null);
     setRegisterOpen(true);
   };
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    // For now just close — guest registration via admin is informational only.
-    // Real guests are created when they book via the frontend.
-    setSubmitted(true);
-    setTimeout(() => { setRegisterOpen(false); setSubmitted(false); }, 1000);
+    setRegisterSaving(true);
+    setRegisterError("");
+    try {
+      const token = localStorage.getItem("luxe_admin_token");
+      const headers = { "Content-Type": "application/json", Authorization: `Bearer ${token}` };
+      const res = await fetch(`${API}/guests`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          name:  form.name,
+          email: form.email.toLowerCase().trim(),
+          phone: form.phone,
+          city:  form.city,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setRegisterError(data?.message || "Failed to register guest");
+        setRegisterSaving(false);
+        return;
+      }
+      setSubmitted(true);
+      fetchGuests();
+      setTimeout(() => { setRegisterOpen(false); setSubmitted(false); }, 1200);
+    } catch (err: any) {
+      setRegisterError(err.message || "Network error");
+    }
+    setRegisterSaving(false);
   };
 
   const handleExport = () => {
@@ -555,7 +595,10 @@ export default function Guests() {
                 <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">Preferred Hotel</label>
                 <select value={form.preferredHotel} onChange={(e) => setForm({ ...form, preferredHotel: e.target.value })}
                   className="w-full px-3 py-2.5 border border-border rounded-lg text-sm outline-none focus:border-primary">
-                  <option>The Grand Luxe</option><option>Bon Vivant</option><option>Spa & Pools</option>
+                  {hotelOptions.length > 0
+                    ? hotelOptions.map(h => <option key={h} value={h}>{h}</option>)
+                    : <option value="">Loading hotels...</option>
+                  }
                 </select>
               </div>
               <div>
@@ -566,14 +609,21 @@ export default function Guests() {
                 </select>
               </div>
             </div>
+            {registerError && (
+              <div className="text-xs text-danger bg-danger-light border border-danger/20 rounded-lg px-3 py-2">
+                {registerError}
+              </div>
+            )}
             <div className="flex gap-3 pt-2">
-              <button type="button" onClick={() => setRegisterOpen(false)}
-                className="flex-1 py-2.5 border border-border rounded-lg text-sm font-medium text-text-secondary hover:bg-surface-3 transition-colors">
+              <button type="button" onClick={() => setRegisterOpen(false)}     className="flex-1 py-2.5 border border-border rounded-lg text-sm font-medium text-text-secondary hover:bg-surface-3 transition-colors">
                 Cancel
               </button>
-              <button type="submit"
-                className="flex-1 py-2.5 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-primary-dark transition-colors">
-                {editTarget ? "Update Guest" : "Register Guest"}
+              <button type="submit" disabled={registerSaving}
+                className="flex-1 py-2.5 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-primary-dark transition-colors disabled:opacity-60 flex items-center justify-center gap-2">
+                {registerSaving
+                  ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />{editTarget ? "Updating..." : "Registering..."}</>
+                  : editTarget ? "Update Guest" : "Register Guest"
+                }
               </button>
             </div>
           </form>

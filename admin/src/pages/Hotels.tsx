@@ -286,10 +286,11 @@ export default function Hotels() {
 
       setSubmitted(true);
       setSaving(false);
+      reloadHotels();
       setTimeout(() => {
         if (editTarget) { setAddOpen(false); setSubmitted(false); }
         // For new hotels, keep modal open to show credentials
-      }, editTarget ? 1200 : 0);
+      }, editTarget ? 800 : 0);
     } catch (err: any) {
       setSaveError("Cannot reach server. Check backend is running.");
       setSaving(false);
@@ -337,7 +338,7 @@ export default function Hotels() {
         />
 
         <div className="flex gap-1 border-b border-border mb-6">
-          {(["Hotels", "Maintenance"] as const).map(t => (
+          {(["Hotels"] as const).map(t => (
             <button key={t} onClick={() => setActiveTab(t)}
               className={`px-4 py-2 text-sm font-semibold transition-colors border-b-2 ${
                 activeTab === t ? "border-primary text-primary" : "border-transparent text-muted hover:text-text-primary"
@@ -347,9 +348,7 @@ export default function Hotels() {
           ))}
         </div>
 
-        {activeTab === "Maintenance" ? (
-          <MaintenanceTab />
-        ) : (
+        {activeTab !== "Hotels" ? null : (
           <>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <StatsCard title="Total Managed" value={hotels.length} change="+2 New" trend="up"

@@ -386,11 +386,6 @@ export default function Rooms() {
                     <td className="px-5 py-3.5 text-xs text-text-secondary">{r.features.join(", ")}</td>
                     <td className="px-5 py-3.5">
                       <div className="flex flex-wrap items-center gap-2">
-                        <button onClick={() => updateHotelRoomAvailability(r.id, r.available > 0 ? 0 : 1)}
-                          className="text-xs font-semibold text-primary px-2 py-1 rounded-full border border-primary/20 hover:bg-primary/10 transition-colors"
-                          title={r.available > 0 ? "Mark this room as currently not available" : "Restore room availability"}>
-                          {r.available > 0 ? "Mark Not Available" : "Restore Availability"}
-                        </button>
                         <button onClick={() => openEdit(r)}
                           className="text-muted hover:text-primary transition-colors p-1 rounded hover:bg-primary-light" title="Edit">
                           <Edit2 className="w-4 h-4" />

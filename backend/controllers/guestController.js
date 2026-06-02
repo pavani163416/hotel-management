@@ -3,6 +3,28 @@ import Booking from "../models/Booking.js";
 import AdditionalGuest from "../models/AdditionalGuest.js";
 
 // ─────────────────────────────────────────────────────────
+// POST /api/guests  — admin creates a guest directly
+// ─────────────────────────────────────────────────────────
+export const createGuest = async (req, res, next) => {
+  try {
+    const { name, email, phone, city } = req.body;
+    if (!name || !email) {
+      return res.status(400).json({ success: false, message: "Name and email are required" });
+    }
+    const normalizedEmail = email.toLowerCase().trim();
+    // Upsert — if guest already exists return existing record
+    const existing = await Guest.findOne({ email: normalizedEmail });
+    if (existing) {
+      return res.status(200).json({ success: true, message: "Guest already exists", data: existing });
+    }
+    const guest = await Guest.create({ name, email: normalizedEmail, phone: phone || "", city: city || "" });
+    res.status(201).json({ success: true, message: "Guest registered successfully", data: guest });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ─────────────────────────────────────────────────────────
 // GET /api/guests
 // ─────────────────────────────────────────────────────────
 export const getAllGuests = async (req, res, next) => {

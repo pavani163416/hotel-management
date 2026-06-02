@@ -275,15 +275,17 @@ export const updateHotel = async (req, res, next) => {
       { new: true, runValidators: true }
     );
     if (!hotel) return res.status(404).json({ success: false, message: "Hotel not found" });
-    // Keep controller snapshot in sync
-    await syncSnapshot(hotel, {
+
+    // Respond immediately — sync and cache invalidation are non-blocking background tasks
+    res.status(200).json({ success: true, message: "Hotel updated", data: hotel });
+
+    syncSnapshot(hotel, {
       country:    req.body.country || "",
       totalRooms: req.body.totalRooms || hotel.rooms?.length || 0,
       status:     hotel.isActive ? "Active" : "Inactive",
-    });
-    await invalidateHotelCache();
+    }).catch(() => {});
+    invalidateHotelCache().catch(() => {});
     broadcastHotels();
-    res.status(200).json({ success: true, message: "Hotel updated", data: hotel });
   } catch (error) {
     next(error);
   }
