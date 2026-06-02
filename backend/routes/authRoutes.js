@@ -284,6 +284,11 @@ const normalizePhoneNumber = (phone) => {
     throw new Error("Phone number must be a valid E.164 number starting with + and contain 8 to 15 digits.");
   }
 
+  // Restrict allowed country codes to only India (+91) to prevent international toll fraud
+  if (!normalized.startsWith("+91")) {
+    throw new Error("Only Indian phone numbers (+91) are allowed.");
+  }
+
   // Reject premium-rate phone numbers
   const premiumRatePatterns = [
     /^\+449[0-8]/, // UK premium rate
@@ -802,7 +807,7 @@ router.post("/login", loginLimiter, validateLoginPayload, async (req, res, next)
   } catch (err) { next(err); }
 });
 
-router.post("/phone/send", authLimiter, async (req, res, next) => {
+router.post("/phone/send", otpRateLimiter, async (req, res, next) => {
   try {
     const phone = req.body.phone?.trim();
     if (!phone) {
@@ -827,12 +832,18 @@ router.post("/phone/send", authLimiter, async (req, res, next) => {
     }
   } catch (err) {
     logger.error(err.message, "Phone OTP send failed");
-    const status = err.message?.includes("country code") ? 400 : 500;
+    // Return 400 Bad Request for validation/formatting errors
+    const isValidationError = err.message?.includes("required") || 
+                              err.message?.includes("format") || 
+                              err.message?.includes("digits") || 
+                              err.message?.includes("allowed") || 
+                              err.message?.includes("Premium");
+    const status = isValidationError ? 400 : 500;
     return res.status(status).json({ success: false, message: err.message || "Unable to send OTP." });
   }
 });
 
-router.post("/phone/verify", authLimiter, async (req, res, next) => {
+router.post("/phone/verify", otpRateLimiter, async (req, res, next) => {
   try {
     const phone = req.body.phone?.trim();
     const code = req.body.code?.trim();
@@ -914,7 +925,13 @@ router.post("/phone/verify", authLimiter, async (req, res, next) => {
     });
   } catch (err) {
     logger.error(err.message, "Phone OTP verify failed");
-    return res.status(500).json({ success: false, message: err.message || "Unable to verify OTP." });
+    const isValidationError = err.message?.includes("required") || 
+                              err.message?.includes("format") || 
+                              err.message?.includes("digits") || 
+                              err.message?.includes("allowed") || 
+                              err.message?.includes("Premium");
+    const status = isValidationError ? 400 : 500;
+    return res.status(status).json({ success: false, message: err.message || "Unable to verify OTP." });
   }
 });
 
