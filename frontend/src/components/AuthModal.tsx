@@ -175,30 +175,28 @@ function AuthModalInner({ isOpen, onClose, defaultMode, mode, setMode, loading, 
               </div>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2 col-span-2 sm:col-span-1">
-              <label className="block text-sm font-medium">Phone <span className="text-destructive">*</span></label>
-              <div className="flex gap-2">
-                <select 
-                  value={countryCode} 
-                  onChange={e => setCountryCode(e.target.value)}
-                  className="w-[75px] px-1 py-2 border border-border rounded-lg outline-none focus:border-accent bg-background text-sm"
-                >
-                  {COUNTRY_CODES.map(c => (
-                    <option key={c.code} value={c.code}>{c.code}</option>
-                  ))}
-                </select>
-                <input type="tel" value={phone} onChange={e => setPhone(e.target.value.replace(/\D/g, ""))}
-                  className="flex-1 w-full px-4 py-2 border border-border rounded-lg outline-none focus:border-accent"
-                  placeholder="555 000 0000" autoComplete="tel" />
-              </div>
+          <div className="space-y-2">
+            <label className="block text-sm font-medium">Phone <span className="text-destructive">*</span></label>
+            <div className="flex gap-2">
+              <select 
+                value={countryCode} 
+                onChange={e => setCountryCode(e.target.value)}
+                className="w-[75px] px-1 py-2 border border-border rounded-lg outline-none focus:border-accent bg-background text-sm"
+              >
+                {COUNTRY_CODES.map(c => (
+                  <option key={c.code} value={c.code}>{c.code}</option>
+                ))}
+              </select>
+              <input type="tel" value={phone} onChange={e => setPhone(e.target.value.replace(/\D/g, ""))}
+                className="flex-1 w-full px-4 py-2 border border-border rounded-lg outline-none focus:border-accent"
+                placeholder="555 000 0000" autoComplete="tel" />
             </div>
-            <div className="space-y-2">
-              <label className="block text-sm font-medium">City</label>
-              <input type="text" value={city} onChange={e => setCity(e.target.value)}
-                className="w-full px-4 py-2 border border-border rounded-lg outline-none focus:border-accent"
-                placeholder="New York" autoComplete="address-level2" />
-            </div>
+          </div>
+          <div className="space-y-2">
+            <label className="block text-sm font-medium">City</label>
+            <input type="text" value={city} onChange={e => setCity(e.target.value)}
+              className="w-full px-4 py-2 border border-border rounded-lg outline-none focus:border-accent"
+              placeholder="New York" autoComplete="address-level2" />
           </div>
           {error && <p className="text-destructive text-sm font-medium">{error}</p>}
           <button type="submit" disabled={loading}
