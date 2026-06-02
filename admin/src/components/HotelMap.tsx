@@ -12,11 +12,22 @@ const goldIcon = L.divIcon({
   popupAnchor: [0, -28],
 });
 
+const isValidCoords = (coords: any): coords is [number, number] => {
+  return (
+    Array.isArray(coords) &&
+    coords.length === 2 &&
+    typeof coords[0] === "number" &&
+    !isNaN(coords[0]) &&
+    typeof coords[1] === "number" &&
+    !isNaN(coords[1]) &&
+    (coords[0] !== 0 || coords[1] !== 0)
+  );
+};
+
 const FitBounds = ({ hotels }: { hotels: Hotel[] }) => {
   const map = useMap();
   useEffect(() => {
-    // Filter out hotels with invalid or default [0, 0] coordinates
-    const validHotels = hotels.filter((h) => h.coords && (h.coords[0] !== 0 || h.coords[1] !== 0));
+    const validHotels = hotels.filter((h) => isValidCoords(h.coords));
     if (!validHotels.length) return;
     const bounds = L.latLngBounds(validHotels.map((h) => h.coords as [number, number]));
     map.fitBounds(bounds, { padding: [30, 30], maxZoom: 6 });
@@ -31,7 +42,7 @@ interface Props {
 }
 
 const HotelMap = ({ hotels, height = "100%", className }: Props) => {
-  const validHotels = hotels.filter((h) => h.coords && (h.coords[0] !== 0 || h.coords[1] !== 0));
+  const validHotels = hotels.filter((h) => isValidCoords(h.coords));
 
   return (
     <div className={className} style={{ height, width: "100%" }}>
