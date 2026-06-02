@@ -28,12 +28,28 @@ const TRUSTED_ORIGINS = [
   ...RAW_ORIGINS,
 ];
 
+function isTrustedVercelDomain(origin) {
+  if (!origin) return false;
+  try {
+    const hostname = new URL(origin).hostname;
+    const allowedSubstrings = [
+      "hotel-mgnt",
+      "luxestay-frontend",
+      "luxestay-admin",
+      "hotel-management-admin-eta"
+    ];
+    return hostname.endsWith(".vercel.app") && allowedSubstrings.some(sub => hostname.includes(sub));
+  } catch {
+    return false;
+  }
+}
+
 function isOriginTrusted(origin) {
   if (!origin) return false;
   // Exact match
   if (TRUSTED_ORIGINS.includes(origin)) return true;
-  // Any Vercel preview deployment
-  if (origin.endsWith(".vercel.app")) return true;
+  // Trusted Vercel preview deployment
+  if (isTrustedVercelDomain(origin)) return true;
   // Local development
   if (
     origin.startsWith("http://localhost:") ||

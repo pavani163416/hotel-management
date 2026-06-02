@@ -164,6 +164,22 @@ const allowedOrigins = [
   ...rawOrigins,
 ];
 
+const isTrustedVercelDomain = (origin) => {
+  if (!origin) return false;
+  try {
+    const hostname = new URL(origin).hostname;
+    const allowedSubstrings = [
+      "hotel-mgnt",
+      "luxestay-frontend",
+      "luxestay-admin",
+      "hotel-management-admin-eta"
+    ];
+    return hostname.endsWith(".vercel.app") && allowedSubstrings.some(sub => hostname.includes(sub));
+  } catch {
+    return false;
+  }
+};
+
 const corsOptions = {
   origin: function (origin, callback) {
     if (origin === "null" || origin === "undefined") return callback(null, false);
@@ -172,8 +188,8 @@ const corsOptions = {
     if (allowedOrigins.includes(origin)) return callback(null, true);
     // Allow any localhost port for development (e.g., Flutter Web)
     if (origin.startsWith("http://localhost:") || origin.startsWith("http://127.0.0.1:")) return callback(null, true);
-    // Allow any vercel.app subdomain for preview deployments
-    if (origin.endsWith(".vercel.app")) return callback(null, true);
+    // Allow only trusted vercel.app domains and project preview subdomains
+    if (isTrustedVercelDomain(origin)) return callback(null, true);
     callback(null, false);
   },
   methods:        ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
@@ -186,7 +202,7 @@ const socketCorsOrigin = (origin, callback) => {
   if (!origin) return callback(null, true);
   if (allowedOrigins.includes(origin)) return callback(null, true);
   if (origin.startsWith("http://localhost:") || origin.startsWith("http://127.0.0.1:")) return callback(null, true);
-  if (origin.endsWith(".vercel.app")) return callback(null, true);
+  if (isTrustedVercelDomain(origin)) return callback(null, true);
   callback(null, false);
 };
 
