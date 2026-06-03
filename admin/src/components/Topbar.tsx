@@ -436,12 +436,6 @@ export default function Topbar({ searchPlaceholder }: Props) {
               </div>
               {[
                 { label: "Profile",   path: admin?.role === "Manager" ? "/m/profile" : "/profile" },
-                { label: "Hotels",    path: "/hotels" },
-                { label: "Rooms",     path: "/rooms" },
-                { label: "Revenue",   path: "/revenue" },
-                { label: "Analytics", path: "/analytics" },
-                { label: "Insights",  path: "/insights" },
-                { label: "Settings",  path: "/settings" },
               ].map((item) => (
                 <button key={item.label}
                   onClick={() => { setShowSettings(false); navigate(item.path); }}
