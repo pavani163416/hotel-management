@@ -405,7 +405,7 @@ export const createBooking = async (req, res, next) => {
       if (resolvedHotelId) {
         const connectAdminDB = (await import("../config/adminDb.js")).default;
         const HotelSnapshotModel = (await import("../models/admin/HotelSnapshot.js")).default;
-        const adminConn = connectAdminDB();
+        const adminConn = await connectAdminDB();
         const HotelSnapshot = HotelSnapshotModel(adminConn);
         await HotelSnapshot.findOneAndUpdate(
           { hotelId: resolvedHotelId },
@@ -744,7 +744,7 @@ export const cancelBooking = async (req, res, next) => {
       if (booking.hotelStringId) {
         const connectAdminDB = (await import("../config/adminDb.js")).default;
         const HotelSnapshotModel = (await import("../models/admin/HotelSnapshot.js")).default;
-        const adminConn = connectAdminDB();
+        const adminConn = await connectAdminDB();
         const HotelSnapshot = HotelSnapshotModel(adminConn);
         await HotelSnapshot.findOneAndUpdate(
           { hotelId: booking.hotelStringId },

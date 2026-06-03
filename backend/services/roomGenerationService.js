@@ -85,6 +85,23 @@ export async function syncRoomsForHotel(hotel) {
 
   const keys = typeof inventory.keys === "function" ? Array.from(inventory.keys()) : Object.keys(inventory);
 
+  // ── Step 1: Clean up rooms of room types that have been removed from the inventory ──
+  const allExistingRooms = await Room.find({ hotelId: hotel._id, isActive: true });
+  const inventoryKeys = new Set(keys.map(k => k.toLowerCase()));
+  const obsoleteRoomTypeIds = [...new Set(allExistingRooms.map(r => r.roomTypeId).filter(Boolean))].filter(id => !inventoryKeys.has(id));
+
+  for (const obsoleteId of obsoleteRoomTypeIds) {
+    const roomsToClean = allExistingRooms.filter(r => r.roomTypeId === obsoleteId);
+    for (const room of roomsToClean) {
+      const isUsed = await isRoomUsed(room._id);
+      if (!isUsed) {
+        await Room.findByIdAndDelete(room._id);
+      } else {
+        throw new Error(`Cannot delete room type "${obsoleteId}" as some rooms of this type are currently occupied, reserved, or booked.`);
+      }
+    }
+  }
+
   for (const key of keys) {
     const invItem = typeof inventory.get === "function" ? inventory.get(key) : inventory[key];
     if (!invItem) continue;

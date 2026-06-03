@@ -216,6 +216,34 @@ export default function Hotels() {
     }
   };
 
+  const handleAddRoomType = () => {
+    const name = window.prompt("Enter new room type name (e.g. Family, Ocean View):");
+    if (!name) return;
+    const key = name.trim().toLowerCase();
+    if (!key) return;
+    if (form.roomInventory[key]) {
+      alert("This room type already exists.");
+      return;
+    }
+    setForm({
+      ...form,
+      roomInventory: {
+        ...form.roomInventory,
+        [key]: { total: 0, price: 0 }
+      }
+    });
+  };
+
+  const handleRemoveRoomType = (rtCode: string) => {
+    if (!confirm(`Are you sure you want to remove the room type "${rtCode}"?`)) return;
+    const updated = { ...form.roomInventory };
+    delete updated[rtCode];
+    setForm({
+      ...form,
+      roomInventory: updated
+    });
+  };
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (saving) return;
@@ -657,8 +685,10 @@ export default function Hotels() {
               <p className="text-xs font-semibold text-muted uppercase tracking-wider">Room Inventory & Pricing</p>
               <div className="space-y-3">
                 {Object.keys(form.roomInventory || {}).map((rtCode) => (
-                  <div key={rtCode} className="grid grid-cols-3 gap-3 items-center">
-                    <span className="text-xs font-semibold text-text-primary capitalize">{rtCode} Rooms</span>
+                  <div key={rtCode} className="grid grid-cols-[1fr_1fr_1fr_auto] gap-3 items-end">
+                    <div className="pb-2">
+                      <span className="text-xs font-semibold text-text-primary capitalize">{rtCode} Rooms</span>
+                    </div>
                     <div>
                       <label className="block text-[10px] text-muted uppercase tracking-wider mb-1">Total Rooms</label>
                       <input
@@ -697,9 +727,24 @@ export default function Hotels() {
                         className="w-full px-3 py-1.5 border border-border rounded-lg text-xs outline-none focus:border-primary"
                       />
                     </div>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveRoomType(rtCode)}
+                      className="p-2 text-muted hover:text-danger hover:bg-danger/10 rounded-lg transition-colors mb-0.5"
+                      title="Remove Room Type"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
                 ))}
               </div>
+              <button
+                type="button"
+                onClick={handleAddRoomType}
+                className="mt-3 flex items-center gap-1.5 text-xs font-semibold px-3 py-2 border border-dashed border-border rounded-lg hover:border-primary hover:text-primary transition-colors w-full justify-center"
+              >
+                <Plus className="w-3.5 h-3.5" /> Add Room Type
+              </button>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>

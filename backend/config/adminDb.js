@@ -11,8 +11,8 @@ dns.setServers(["8.8.8.8", "8.8.4.4", "1.1.1.1"]);
 
 let adminConn = null;
 
-const MAX_RETRIES = 5;
-const RETRY_DELAY = 5000;
+const MAX_RETRIES = 2;
+const RETRY_DELAY = 1000;
 
 export const connectAdminDB = async (attempt = 1) => {
   if (adminConn) return adminConn;

@@ -55,6 +55,10 @@ const Payment = () => {
   const validate = () => {
     if (!billingRep)    return "Please select the primary guest for billing.";
     if (!govtId.trim()) return "Government ID number is required for check-in verification.";
+    if (idType === "aadhaar") {
+      const cleanId = govtId.replace(/\s/g, "");
+      if (!/^\d{12}$/.test(cleanId)) return "Aadhaar Card number must be exactly 12 digits";
+    }
     if (method === "card") {
       if (!/^\d{12,19}$/.test(card.number.replace(/\s/g, ""))) return "Invalid card number";
       if (!card.name.trim()) return "Cardholder name required";
