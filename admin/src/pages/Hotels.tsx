@@ -45,7 +45,12 @@ export default function Hotels() {
     name: "", subtitle: "", location: "", country: "",
     pricePerNight: "500", status: "Active" as Hotel["status"],
     amenities: ["Free WiFi", "Restaurant", "Concierge"] as string[],
-    floors: "1", roomsPerFloor: "10",
+    roomInventory: {
+      standard: { total: 20, price: 5000 },
+      deluxe: { total: 10, price: 8000 },
+      suite: { total: 5, price: 12000 },
+      penthouse: { total: 2, price: 20000 },
+    } as Record<string, { total: number; price: number }>,
   });
 
   const toggleAmenity = (a: string) => {
@@ -67,7 +72,16 @@ export default function Hotels() {
 
   const openAdd = () => {
     setEditTarget(null);
-    setForm({ name: "", subtitle: "", location: "", country: "", pricePerNight: "500", status: "Active", amenities: ["Free WiFi", "Restaurant", "Concierge"], floors: "1", roomsPerFloor: "10" });
+    setForm({
+      name: "", subtitle: "", location: "", country: "", pricePerNight: "500", status: "Active",
+      amenities: ["Free WiFi", "Restaurant", "Concierge"],
+      roomInventory: {
+        standard: { total: 20, price: 5000 },
+        deluxe: { total: 10, price: 8000 },
+        suite: { total: 5, price: 12000 },
+        penthouse: { total: 2, price: 20000 },
+      }
+    });
     setUploadedImage("");
     setUploadedImage2("");
     setUploadedImage3("");
@@ -78,7 +92,16 @@ export default function Hotels() {
 
   const openEdit = (h: Hotel) => {
     setEditTarget(h);
-    setForm({ name: h.name, subtitle: h.subtitle, location: h.location, country: h.country, pricePerNight: "500", status: h.status, amenities: h.amenities?.length ? h.amenities : ["Free WiFi", "Restaurant", "Concierge"], floors: String(h.floors || 1), roomsPerFloor: String((h as any).roomsPerFloor || 10) });
+    setForm({
+      name: h.name, subtitle: h.subtitle, location: h.location, country: h.country, pricePerNight: "500", status: h.status,
+      amenities: h.amenities?.length ? h.amenities : ["Free WiFi", "Restaurant", "Concierge"],
+      roomInventory: (h as any).roomInventory || {
+        standard: { total: 20, price: 5000 },
+        deluxe: { total: 10, price: 8000 },
+        suite: { total: 5, price: 12000 },
+        penthouse: { total: 2, price: 20000 },
+      }
+    });
     setUploadedImage(h.img || "");
     setUploadedImage2("");
     setUploadedImage3("");
@@ -206,6 +229,8 @@ export default function Hotels() {
     if (uploadedImage2) gallery.push(uploadedImage2);
     if (uploadedImage3) gallery.push(uploadedImage3);
 
+    const totalRooms = Object.values(form.roomInventory || {}).reduce((s, x) => s + (Number(x.total) || 0), 0);
+
     // For PATCH (edit), don't send rooms/reviews — they're managed separately and would overwrite existing data
     const basePayload = {
       hotelId,
@@ -223,9 +248,8 @@ export default function Hotels() {
       amenities:     form.amenities,
       isActive:      form.status === "Active",
       country:       form.country.toUpperCase(),
-      totalRooms:    Number(form.floors) * Number(form.roomsPerFloor),
-      floors:        Number(form.floors),
-      roomsPerFloor: Number(form.roomsPerFloor),
+      roomInventory: form.roomInventory,
+      totalRooms,
     };
 
     // Only include rooms/reviews when creating a new hotel
@@ -625,24 +649,62 @@ export default function Hotels() {
                   className="w-full px-3 py-2.5 border border-border rounded-lg text-sm outline-none focus:border-primary" />
               </div>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div>
-                <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">Floors *</label>
-                <input required type="number" min="1" value={form.floors} onChange={(e) => setForm({ ...form, floors: e.target.value })} placeholder="10"
-                  className="w-full px-3 py-2.5 border border-border rounded-lg text-sm outline-none focus:border-primary" />
+            <div className="border border-border rounded-xl p-4 space-y-3">
+              <p className="text-xs font-semibold text-muted uppercase tracking-wider">Room Inventory & Pricing</p>
+              <div className="space-y-3">
+                {Object.keys(form.roomInventory || {}).map((rtCode) => (
+                  <div key={rtCode} className="grid grid-cols-3 gap-3 items-center">
+                    <span className="text-xs font-semibold text-text-primary capitalize">{rtCode} Rooms</span>
+                    <div>
+                      <label className="block text-[10px] text-muted uppercase tracking-wider mb-1">Total Rooms</label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={form.roomInventory[rtCode]?.total ?? 0}
+                        onChange={(e) => {
+                          const val = Number(e.target.value) || 0;
+                          setForm({
+                            ...form,
+                            roomInventory: {
+                              ...form.roomInventory,
+                              [rtCode]: { ...form.roomInventory[rtCode], total: val }
+                            }
+                          });
+                        }}
+                        className="w-full px-3 py-1.5 border border-border rounded-lg text-xs outline-none focus:border-primary"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] text-muted uppercase tracking-wider mb-1">Price Per Room ($)</label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={form.roomInventory[rtCode]?.price ?? 0}
+                        onChange={(e) => {
+                          const val = Number(e.target.value) || 0;
+                          setForm({
+                            ...form,
+                            roomInventory: {
+                              ...form.roomInventory,
+                              [rtCode]: { ...form.roomInventory[rtCode], price: val }
+                            }
+                          });
+                        }}
+                        className="w-full px-3 py-1.5 border border-border rounded-lg text-xs outline-none focus:border-primary"
+                      />
+                    </div>
+                  </div>
+                ))}
               </div>
-              <div>
-                <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">Rooms/Floor *</label>
-                <input required type="number" min="1" value={form.roomsPerFloor} onChange={(e) => setForm({ ...form, roomsPerFloor: e.target.value })} placeholder="10"
-                  className="w-full px-3 py-2.5 border border-border rounded-lg text-sm outline-none focus:border-primary" />
-              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">Total Rooms</label>
-                <input disabled type="number" value={Number(form.floors || 0) * Number(form.roomsPerFloor || 0)}
+                <input disabled type="number" value={Object.values(form.roomInventory || {}).reduce((s, x) => s + (Number(x.total) || 0), 0)}
                   className="w-full px-3 py-2.5 border border-border rounded-lg text-sm bg-surface-2 outline-none text-muted cursor-not-allowed" />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">Price/Night ($) *</label>
+                <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">Base Price/Night ($) *</label>
                 <input required type="number" min="1" value={form.pricePerNight} onChange={(e) => setForm({ ...form, pricePerNight: e.target.value })} placeholder="500"
                   className="w-full px-3 py-2.5 border border-border rounded-lg text-sm outline-none focus:border-primary" />
               </div>

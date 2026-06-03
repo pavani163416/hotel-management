@@ -112,3 +112,40 @@ export const otpRateLimiter = rateLimit({
     message: "Too many OTP requests. Please try again in 5 minutes.",
   },
 });
+
+// ── Phase 9: Specific limiters ──
+export const authRateLimiter = rateLimit({
+  windowMs: 60 * 1000,               // 1 minute
+  max:      5,                       // 5 requests per minute
+  store: isRedisReady() ? createRateLimitStore(60 * 1000) : undefined,
+  standardHeaders: true,
+  legacyHeaders:   false,
+  message: {
+    success: false,
+    message: "Too many authentication requests. Please try again in a minute.",
+  },
+});
+
+export const adminRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,          // 15 minutes
+  max:      50,                      // 50 requests per 15 minutes
+  store: isRedisReady() ? createRateLimitStore(15 * 60 * 1000) : undefined,
+  standardHeaders: true,
+  legacyHeaders:   false,
+  message: {
+    success: false,
+    message: "Too many admin requests. Please try again in 15 minutes.",
+  },
+});
+
+export const publicRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,          // 15 minutes
+  max:      100,                     // 100 requests per 15 minutes
+  store: isRedisReady() ? createRateLimitStore(15 * 60 * 1000) : undefined,
+  standardHeaders: true,
+  legacyHeaders:   false,
+  message: {
+    success: false,
+    message: "Too many requests. Please try again in 15 minutes.",
+  },
+});

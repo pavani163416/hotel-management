@@ -139,6 +139,12 @@ const createHotel = z.object({
     available:   z.number().int().nonnegative().optional(),
     features:    z.array(z.string().max(100)).max(50).optional(),
   })).optional(),
+  roomInventory: z.record(
+    z.object({
+      total: z.number().int().nonnegative(),
+      price: z.number().nonnegative(),
+    })
+  ).optional(),
   reviews:       z.array(z.object({
     author:  z.string().max(200).trim(),
     rating:  z.number().min(1).max(5),
@@ -167,6 +173,12 @@ const updateHotel = z.object({
   type:          z.enum(["Hotel", "Resort", "Villa", "Suite"]).optional(),
   coords:        z.array(z.number()).length(2).optional(),
   amenities:     z.array(z.string().max(100)).max(50).optional(),
+  roomInventory: z.record(
+    z.object({
+      total: z.number().int().nonnegative(),
+      price: z.number().nonnegative(),
+    })
+  ).optional(),
   floors:        positiveInt.optional(),
   roomsPerFloor: positiveInt.optional(),
   totalRooms:    positiveInt.optional(),

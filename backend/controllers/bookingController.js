@@ -401,6 +401,20 @@ export const createBooking = async (req, res, next) => {
     // ── Commit everything ──────────────────────────────
     await session.commitTransaction();
 
+    // Write audit log
+    AuditLog.create({
+      action: "BOOKING_CREATED",
+      userId: guest.email || "anonymous",
+      role: req.user?.role || "customer",
+      ip: req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || req.socket.remoteAddress || "127.0.0.1",
+      details: {
+        bookingId: booking._id,
+        hotelName: booking.hotelName,
+        roomType: booking.roomType,
+        totalAmount: booking.totalAmount,
+      }
+    }).catch(() => {});
+
     // ── Update HotelSnapshot atomically (outside transaction) ──
     try {
       const resolvedHotelId = actualHotel ? actualHotel.hotelId : (room.hotelStringId || null);
@@ -728,6 +742,18 @@ export const cancelBooking = async (req, res, next) => {
     booking.cancelledAt = new Date();
     booking.cancellationReason = req.body.reason || "Cancelled by guest";
     await booking.save();
+
+    // Write audit log
+    AuditLog.create({
+      action: "BOOKING_CANCELLED",
+      userId: booking.guestSnapshot?.email || "unknown",
+      role: currentUser?.role || "customer",
+      ip: req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || req.socket.remoteAddress || "127.0.0.1",
+      details: {
+        bookingId: booking._id,
+        reason: booking.cancellationReason,
+      }
+    }).catch(() => {});
 
     // ── Update HotelSnapshot atomically (outside transaction) ──
     try {

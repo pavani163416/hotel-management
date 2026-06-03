@@ -17,10 +17,26 @@ const getHotelSnapshot = async () => {
   return _HotelSnapshot;
 };
 
+const getInventoryTotal = (roomInventory) => {
+  if (!roomInventory) return 0;
+  let total = 0;
+  if (typeof roomInventory.values === "function") {
+    for (const val of roomInventory.values()) {
+      total += Number(val?.total) || 0;
+    }
+  } else {
+    for (const key of Object.keys(roomInventory)) {
+      total += Number(roomInventory[key]?.total) || 0;
+    }
+  }
+  return total;
+};
+
 // Sync hotel to controller DB snapshot (best-effort, never throws)
 const syncSnapshot = async (hotel, extra = {}) => {
   try {
     const HotelSnapshot = await getHotelSnapshot();
+    const totalRooms = extra.totalRooms ?? getInventoryTotal(hotel.roomInventory) || hotel.rooms?.length || 0;
     await HotelSnapshot.findOneAndUpdate(
       { hotelId: hotel.hotelId },
       {
@@ -29,7 +45,7 @@ const syncSnapshot = async (hotel, extra = {}) => {
         location:       hotel.location,
         city:           hotel.city,
         country:        extra.country || hotel.city?.toUpperCase() || "",
-        totalRooms:     extra.totalRooms ?? hotel.rooms?.length ?? 0,
+        totalRooms,
         activeBookings: extra.activeBookings ?? 0,
         ytdRevenue:     extra.ytdRevenue ?? 0,
         status:         hotel.isActive === false ? "Inactive" : (extra.status || "Active"),
@@ -269,18 +285,42 @@ export const updateHotel = async (req, res, next) => {
     if (req.body.pricePerNight != null) req.body.pricePerNight = Number(req.body.pricePerNight);
     if (req.body.totalRooms != null) req.body.totalRooms = Number(req.body.totalRooms);
 
-    const hotel = await Hotel.findOneAndUpdate(
-      { hotelId: req.params.id },
-      req.body,
-      { new: true, runValidators: true }
-    );
+    const hotel = await Hotel.findOne({ hotelId: req.params.id });
     if (!hotel) return res.status(404).json({ success: false, message: "Hotel not found" });
+
+    // Enforce Phase 5: Prevent inventory reduction below active bookings
+    if (req.body.roomInventory) {
+      const keys = Object.keys(req.body.roomInventory);
+      for (const key of keys) {
+        const newTotal = Number(req.body.roomInventory[key]?.total) || 0;
+        const activeBookingsCount = await Booking.countDocuments({
+          $or: [
+            { hotelId: hotel._id },
+            { hotelStringId: hotel.hotelId }
+          ],
+          roomType: key,
+          status: { $in: ["Confirmed", "CheckedIn", "Pending"] },
+          checkOut: { $gt: new Date() }
+        });
+
+        if (newTotal < activeBookingsCount) {
+          return res.status(400).json({
+            success: false,
+            message: "Inventory cannot be lower than active bookings"
+          });
+        }
+      }
+    }
+
+    // Update the fields on the found hotel document
+    Object.assign(hotel, req.body);
+    await hotel.save();
 
     // Respond immediately — sync and cache invalidation are non-blocking background tasks
     res.status(200).json({ success: true, message: "Hotel updated", data: hotel });
 
     syncSnapshot(hotel, {
-      country:    req.body.country || "",
+      country:    req.body.country || hotel.city?.toUpperCase() || "",
       totalRooms: req.body.totalRooms || hotel.rooms?.length || 0,
       status:     hotel.isActive ? "Active" : "Inactive",
     }).catch(() => {});

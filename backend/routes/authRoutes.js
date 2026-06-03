@@ -1661,6 +1661,10 @@ router.post("/refresh-token", async (req, res, next) => {
 router.post("/logout", async (req, res, next) => {
   try {
     const token = req.cookies?.refreshToken || req.body?.refreshToken;
+    let userId = "anonymous";
+    let userEmail = "anonymous";
+    let userRole = "customer";
+
     if (token) {
       // Invalidate in Redis
       await cacheDel(`refresh_token:${token}`);
@@ -1668,8 +1672,11 @@ router.post("/logout", async (req, res, next) => {
       // Verify and remove from user set (best-effort)
       try {
         const payload = jwt.verify(token, getSecret());
-        userId = payload.id;
-        if (userId) {
+        userId = payload.id || "anonymous";
+        userEmail = payload.email || "anonymous";
+        userRole = payload.role || "customer";
+
+        if (userId !== "anonymous") {
           if (isRedisReady()) {
             const client = getRedisClient();
             if (client) {
@@ -1698,6 +1705,11 @@ router.post("/logout", async (req, res, next) => {
             await client.set(`blacklist:${decoded.jti}`, "true", "EX", exp);
           }
         }
+        if (decoded) {
+          userId = decoded.id || userId;
+          userEmail = decoded.email || userEmail;
+          userRole = decoded.role || userRole;
+        }
       } catch (e) { }
     }
 
@@ -1707,6 +1719,15 @@ router.post("/logout", async (req, res, next) => {
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict"
     });
+
+    // Write audit log
+    AuditLog.create({
+      action: "LOGOUT",
+      userId: userId,
+      role: userRole,
+      ip: req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || req.socket.remoteAddress || "127.0.0.1",
+      details: { email: userEmail }
+    }).catch(() => {});
 
     return res.status(200).json({ success: true, message: "Logged out successfully." });
   } catch (err) { next(err); }

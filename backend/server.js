@@ -33,11 +33,12 @@ import uploadRoutes     from "./routes/uploadRoutes.js";
 import authRoutes       from "./routes/authRoutes.js";
 import promoRoutes      from "./routes/promoRoutes.js";
 import assistanceRoutes from "./routes/assistanceRoutes.js";
+import roomTypeRoutes from "./routes/roomTypeRoutes.js";
 import maintenanceRoutes from "./routes/maintenanceRoutes.js";
 import publicSupportRoutes from "./routes/publicSupportRoutes.js";
 import errorHandler     from "./middleware/errorHandler.js";
 import csrfProtection  from "./middleware/csrfProtection.js";
-import { apiLimiter, bookingLimiter, promoLimiter } from "./middleware/rateLimiter.js";
+import { apiLimiter, bookingLimiter, promoLimiter, authRateLimiter, adminRateLimiter, publicRateLimiter } from "./middleware/rateLimiter.js";
 import { roomNames, setNotificationIo } from "./utils/notificationService.js";
 import logger           from "./utils/logger.js";
 import swaggerUi        from "swagger-ui-express";
@@ -47,7 +48,7 @@ import { initCleanupJobs } from "./cron/cleanupJobs.js";
 // ── Validate required env vars on startup ─────────────────
 // ADMIN_EMAIL and ADMIN_PASSWORD are now stored in the controller DB.
 // Only MONGO_URI and JWT_SECRET are strictly required at startup.
-const REQUIRED_ENV = ["MONGO_URI", "JWT_SECRET"];
+const REQUIRED_ENV = ["MONGO_URI", "JWT_SECRET", "RAZORPAY_KEY_ID", "RAZORPAY_KEY_SECRET", "CLIENT_URL"];
 const missing = REQUIRED_ENV.filter((k) => !process.env[k]);
 if (missing.length) {
   logger.error(`Missing required environment variables: ${missing.join(", ")}`);
@@ -424,7 +425,22 @@ app.use((req, res, next) => {
 app.use(morgan(isProd ? "combined" : "dev", { stream: logger.stream }));
 
 // ── Rate limiting ─────────────────────────────────────────
-app.use("/api", apiLimiter);
+app.use("/api/auth", authRateLimiter);
+app.use("/api/admin", adminRateLimiter);
+app.use("/api/manager", adminRateLimiter);
+app.use("/api/controller", adminRateLimiter);
+
+app.use("/api", (req, res, next) => {
+  if (
+    req.path.startsWith("/auth") ||
+    req.path.startsWith("/admin") ||
+    req.path.startsWith("/manager") ||
+    req.path.startsWith("/controller")
+  ) {
+    return next();
+  }
+  publicRateLimiter(req, res, next);
+});
 // bookingLimiter is applied per-route in bookingRoutes.js (POST only)
 
 // ── Health check ──────────────────────────────────────────
@@ -479,6 +495,7 @@ app.use("/api/upload",        uploadRoutes);
 app.use("/api/auth",          authRoutes);
 app.use("/api/promo",         promoLimiter, promoRoutes);
 app.use("/api/assistance",    assistanceRoutes);
+app.use("/api/room-types",    roomTypeRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/maintenance",   maintenanceRoutes);
 app.use("/api",               publicSupportRoutes);

@@ -1,40 +1,52 @@
 import mongoose from "mongoose";
 
-const auditLogSchema = new mongoose.Schema({
-  event: {
-    type: String,
-    required: true,
-    enum: [
-      "LoginFailed",
-      "LoginSuccess",
-      "LogoutAllDevices",
-      "TokenRevoked",
-      "IPAnomaly",
-      "DeviceAnomaly",
-      "UnauthorizedAccess",
-      "AdminAction",
-    ],
+const auditLogSchema = new mongoose.Schema(
+  {
+    userId: {
+      type: String,
+      required: true,
+      index: true,
+    },
+    role: {
+      type: String,
+      required: true,
+      index: true,
+    },
+    action: {
+      type: String,
+      required: true,
+      index: true,
+    },
+    ip: {
+      type: String,
+      default: "unknown",
+    },
+    details: {
+      type: mongoose.Schema.Types.Mixed,
+      default: {},
+    },
   },
-  userId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
-  },
-  userEmail: String,
-  role: String,
-  ipAddress: String,
-  previousIp: String,
-  deviceFingerprint: String,
-  previousDevice: String,
-  location: String,
-  description: String,
-  metadata: {
-    type: mongoose.Schema.Types.Mixed,
-  },
-  severity: {
-    type: String,
-    enum: ["Low", "Medium", "High", "Critical"],
-    default: "Low",
-  },
-}, { timestamps: true });
+  {
+    timestamps: true,
+    strict: false,
+  }
+);
 
-export default mongoose.models.AuditLog || mongoose.model("AuditLog", auditLogSchema);
+auditLogSchema.pre("validate", function(next) {
+  if (!this.action) {
+    this.action = this.get("event") || this.get("action") || "UNKNOWN";
+  }
+  if (!this.userId) {
+    this.userId = this.get("userEmail") || "anonymous";
+  }
+  if (!this.role) {
+    this.role = "ANONYMOUS";
+  }
+  if (!this.ip) {
+    this.ip = this.get("ipAddress") || "unknown";
+  }
+  next();
+});
+
+const AuditLog = mongoose.model("AuditLog", auditLogSchema);
+export default AuditLog;

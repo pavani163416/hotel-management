@@ -216,6 +216,11 @@ bookingSchema.virtual("bookingRef").get(function () {
 // ── Indexes ──────────────────────────────────────────────
 bookingSchema.index({ guest: 1, status: 1 });
 bookingSchema.index({ room: 1, checkIn: 1, checkOut: 1 });
+bookingSchema.index({ roomType: 1 });
+bookingSchema.index({ checkIn: 1 });
+bookingSchema.index({ checkOut: 1 });
+bookingSchema.index({ status: 1 });
+bookingSchema.index({ hotelId: 1 });
 bookingSchema.index({ createdAt: -1 });
 bookingSchema.index({ hotelName: 1 });
 bookingSchema.index({ status: 1, createdAt: -1 });
