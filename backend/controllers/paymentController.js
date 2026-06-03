@@ -4,6 +4,9 @@ import Payment from "../models/Payment.js";
 import Booking from "../models/Booking.js";
 import AuditLog from "../models/AuditLog.js";
 import logger from "../utils/logger.js";
+import { sendNotification } from "../utils/notificationService.js";
+import { sendBookingConfirmation } from "../utils/emailService.js";
+import { logAudit } from "../utils/auditLogger.js";
 
 // Initialize Razorpay client
 const razorpay = new Razorpay({
@@ -156,46 +159,15 @@ export const verifyPayment = async (req, res, next) => {
       }
     }
 
-    // 2. Idempotency Protection: check if payment is already processed successfully
+    // Verify payment record exists in the database
     const payment = await Payment.findOne({ razorpayOrderId: razorpay_order_id });
     if (!payment) {
       return res.status(404).json({ success: false, message: "Payment record not found." });
     }
 
-    if (payment.status === "SUCCESS") {
-      // Already verified via webhook or previous callback
-      return res.status(200).json({ success: true, message: "Payment verified successfully (already processed)." });
-    }
-
-    // Check if the payment ID is unique
-    const duplicatePayment = await Payment.findOne({ razorpayPaymentId: razorpay_payment_id });
-    if (duplicatePayment) {
-      return res.status(409).json({ success: false, message: "Payment ID has already been verified." });
-    }
-
-    // Update payment record to SUCCESS
-    payment.status = "SUCCESS";
-    payment.razorpayPaymentId = razorpay_payment_id;
-    await payment.save();
-
-    // 3. Update Booking payment status
-    await Booking.findByIdAndUpdate(payment.bookingId, {
-      paymentStatus: "PAID",
-      status: "Confirmed",
-    });
-
-    // Write audit log
-    AuditLog.create({
-      event: "PaymentVerified",
-      userId: req.user?.id,
-      userEmail: req.user?.email,
-      role: req.user?.role,
-      description: `Razorpay payment ${razorpay_payment_id} verified successfully for order ${razorpay_order_id}`,
-    }).catch(() => {});
-
     return res.status(200).json({
       success: true,
-      message: "Payment verified and booking confirmed successfully.",
+      message: "Payment signature verified successfully. Awaiting authoritative webhook reconciliation.",
     });
   } catch (error) {
     next(error);
@@ -236,84 +208,277 @@ export const getPaymentStatus = async (req, res, next) => {
  */
 export const processWebhook = async (req, res, next) => {
   try {
-    const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET || "dummy_webhook_secret";
-    const signature = req.headers["x-razorpay-signature"];
-
-    if (!signature) {
-      return res.status(400).json({ success: false, message: "Missing webhook signature header." });
+    const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
+    if (!webhookSecret) {
+      logger.error("RAZORPAY_WEBHOOK_SECRET is not configured on this server.");
+      return res.status(500).json({ success: false, message: "Webhook secret not configured." });
     }
 
-    // Validate Webhook Signature
+    const signature = req.headers["x-razorpay-signature"];
+    if (!signature) {
+      logger.warn("Webhook attempt rejected: Missing x-razorpay-signature header.");
+      return res.status(401).json({ success: false, message: "Unauthorized: Missing signature." });
+    }
+
+    // Verify signature using raw body (req.rawBody)
+    if (!req.rawBody) {
+      logger.warn("Webhook attempt rejected: raw request body is not available.");
+      return res.status(400).json({ success: false, message: "Raw body is missing." });
+    }
+
     const shasum = crypto.createHmac("sha256", webhookSecret);
-    shasum.update(JSON.stringify(req.body));
+    shasum.update(req.rawBody);
     const digest = shasum.digest("hex");
 
     if (digest !== signature) {
-      logger.warn("Invalid webhook signature", { receivedSignature: signature });
-      return res.status(400).json({ success: false, message: "Invalid webhook signature." });
+      logger.warn("Webhook signature verification failed.", { receivedSignature: signature, generatedDigest: digest });
+      return res.status(401).json({ success: false, message: "Unauthorized: Signature mismatch." });
     }
 
-    const event = req.body.event;
-    const payload = req.body.payload;
+    const eventObj = req.body;
+    const eventId = eventObj.id;
+    const eventType = eventObj.event;
 
-    logger.info("Razorpay webhook received", { event });
+    if (!eventId || !eventType) {
+      return res.status(400).json({ success: false, message: "Invalid payload: missing event ID or type." });
+    }
 
-    if (event === "order.paid" || event === "payment.captured") {
-      const paymentEntity = payload.payment.entity;
-      const orderId = paymentEntity.order_id;
-      const paymentId = paymentEntity.id;
+    // supported events
+    const supportedEvents = [
+      "payment.authorized",
+      "payment.captured",
+      "payment.failed",
+      "refund.created",
+      "refund.processed",
+      "order.paid"
+    ];
 
-      const payment = await Payment.findOne({ razorpayOrderId: orderId });
-      if (payment) {
-        if (payment.status !== "SUCCESS") {
-          payment.status = "SUCCESS";
-          payment.razorpayPaymentId = paymentId;
-          await payment.save();
+    if (!supportedEvents.includes(eventType)) {
+      logger.info(`Ignored unsupported webhook event: ${eventType}`);
+      return res.status(200).json({ success: true, message: `Event ${eventType} ignored safely.` });
+    }
 
-          await Booking.findByIdAndUpdate(payment.bookingId, {
-            paymentStatus: "PAID",
-            status: "Confirmed",
+    // Idempotency Protection: write event to WebhookEvent
+    const WebhookEvent = (await import("../models/WebhookEvent.js")).default;
+    try {
+      await WebhookEvent.create({ eventId, eventType, processedAt: new Date() });
+    } catch (dbErr) {
+      if (dbErr.code === 11000) {
+        logger.info(`Duplicate webhook event received and skipped: ${eventId}`);
+        return res.status(200).json({ success: true, message: "Event already processed (duplicate ignored)." });
+      }
+      throw dbErr;
+    }
+
+    const payload = eventObj.payload;
+    const io = req.app.get("io");
+
+    // Process event
+    if (eventType === "payment.captured" || eventType === "order.paid") {
+      const paymentEntity = payload?.payment?.entity;
+      const razorpayPaymentId = paymentEntity?.id;
+      const razorpayOrderId = paymentEntity?.order_id || payload?.order?.entity?.id;
+
+      const payment = await Payment.findOne({
+        $or: [
+          { razorpayPaymentId },
+          { razorpayOrderId }
+        ]
+      });
+
+      if (!payment) {
+        logger.warn(`Payment record not found for webhook capture/order.paid`, { razorpayOrderId, razorpayPaymentId });
+        await WebhookEvent.deleteOne({ eventId });
+        return res.status(404).json({ success: false, message: "Payment record not found." });
+      }
+
+      if (payment.status !== "SUCCESS") {
+        payment.status = "SUCCESS";
+        payment.razorpayPaymentId = razorpayPaymentId || payment.razorpayPaymentId;
+        payment.capturedAt = new Date();
+        payment.webhookVerified = true;
+        await payment.save();
+
+        const booking = await Booking.findById(payment.bookingId);
+        if (booking) {
+          booking.paymentStatus = "PAID";
+          booking.status = "Confirmed";
+          await booking.save();
+
+          // Write Audit Log
+          await logAudit({
+            req,
+            userId: payment.userId,
+            role: "customer",
+            action: "PAYMENT_CAPTURED",
+            details: {
+              bookingId: booking._id,
+              paymentId: payment._id,
+              event: eventType,
+              timestamp: new Date(),
+            }
           });
 
-          logger.info("Payment marked SUCCESS via Webhook", { orderId, paymentId });
+          // Send confirmation notifications
+          sendNotification({
+            userId: booking.guestSnapshot?.email || payment.userId,
+            role: "customer",
+            message: "Booking confirmed successfully.",
+            type: "booking"
+          }).catch(() => {});
+
+          sendNotification({
+            hotelId: booking.hotelStringId || booking.hotelId?.toString() || null,
+            role: "manager",
+            message: `Booking confirmed successfully: ${booking.bookingRef}`,
+            type: "booking"
+          }).catch(() => {});
+
+          // Emit Socket events
+          if (io) {
+            io.emit("booking_update", { _id: booking._id, status: "Confirmed", roomId: booking.room });
+            io.emit("payment_update", { _id: payment._id, status: "SUCCESS" });
+          }
+
+          // Send confirmation email
+          sendBookingConfirmation({
+            to:          booking.guestSnapshot?.email,
+            guestName:   booking.guestSnapshot?.name,
+            hotelName:   booking.hotelName || "Unknown Hotel",
+            bookingRef:  booking.bookingRef,
+            checkIn:     booking.checkIn,
+            checkOut:    booking.checkOut,
+            nights:      booking.nights,
+            roomType:    booking.roomType,
+            totalAmount: booking.totalAmount,
+          }).catch((err) => logger.warn("Failed to send webhook confirmation email", { error: err.message }));
         }
       }
-    } else if (event === "payment.failed") {
-      const paymentEntity = payload.payment.entity;
-      const orderId = paymentEntity.order_id;
-      const errorDescription = paymentEntity.error_description || "Payment failed at gateway";
+    } else if (eventType === "payment.failed") {
+      const paymentEntity = payload?.payment?.entity;
+      const razorpayPaymentId = paymentEntity?.id;
+      const razorpayOrderId = paymentEntity?.order_id;
+      const errorDescription = paymentEntity?.error_description || "Payment failed at gateway";
 
-      const payment = await Payment.findOne({ razorpayOrderId: orderId });
-      if (payment && payment.status === "PENDING") {
+      const payment = await Payment.findOne({
+        $or: [
+          { razorpayPaymentId },
+          { razorpayOrderId }
+        ]
+      });
+
+      if (!payment) {
+        logger.warn(`Payment record not found for webhook failure`, { razorpayOrderId, razorpayPaymentId });
+        await WebhookEvent.deleteOne({ eventId });
+        return res.status(404).json({ success: false, message: "Payment record not found." });
+      }
+
+      if (payment.status !== "FAILED") {
         payment.status = "FAILED";
+        payment.razorpayPaymentId = razorpayPaymentId || payment.razorpayPaymentId;
         payment.failureReason = errorDescription;
         await payment.save();
 
-        await Booking.findByIdAndUpdate(payment.bookingId, {
-          paymentStatus: "FAILED",
-        });
+        const booking = await Booking.findById(payment.bookingId);
+        if (booking) {
+          booking.paymentStatus = "FAILED";
+          booking.status = "PAYMENT_FAILED";
+          await booking.save();
 
-        logger.info("Payment marked FAILED via Webhook", { orderId, reason: errorDescription });
+          // Free up room
+          const { syncRoomLegacyStatus } = await import("../services/roomAllocationService.js");
+          await syncRoomLegacyStatus(booking.room).catch(() => {});
+
+          // Write Audit Log
+          await logAudit({
+            req,
+            userId: payment.userId,
+            role: "customer",
+            action: "PAYMENT_FAILED",
+            details: {
+              bookingId: booking._id,
+              paymentId: payment._id,
+              event: eventType,
+              timestamp: new Date(),
+              reason: errorDescription
+            }
+          });
+
+          // Send notification
+          sendNotification({
+            userId: booking.guestSnapshot?.email || payment.userId,
+            role: "customer",
+            message: "Payment failed. Please try again.",
+            type: "booking"
+          }).catch(() => {});
+
+          if (io) {
+            io.emit("booking_update", { _id: booking._id, status: "PAYMENT_FAILED" });
+            io.emit("payment_update", { _id: payment._id, status: "FAILED" });
+            io.emit("roomStatusUpdate", { roomId: booking.room, hotelStringId: booking.hotelStringId });
+          }
+        }
       }
-    } else if (event === "refund.processed") {
-      const refundEntity = payload.refund.entity;
-      const paymentId = refundEntity.payment_id;
+    } else if (eventType === "refund.created" || eventType === "refund.processed") {
+      const refundEntity = payload?.refund?.entity;
+      const razorpayPaymentId = refundEntity?.payment_id;
+      const refundId = refundEntity?.id;
 
-      const payment = await Payment.findOne({ razorpayPaymentId: paymentId });
-      if (payment) {
+      const payment = await Payment.findOne({ razorpayPaymentId });
+      if (!payment) {
+        logger.warn(`Payment record not found for webhook refund`, { razorpayPaymentId });
+        await WebhookEvent.deleteOne({ eventId });
+        return res.status(404).json({ success: false, message: "Payment record not found." });
+      }
+
+      if (payment.status !== "REFUNDED") {
         payment.status = "REFUNDED";
         await payment.save();
 
-        await Booking.findByIdAndUpdate(payment.bookingId, {
-          paymentStatus: "REFUNDED",
-          status: "Cancelled",
-        });
+        const booking = await Booking.findById(payment.bookingId);
+        if (booking) {
+          booking.paymentStatus = "REFUNDED";
+          booking.status = "Cancelled";
+          await booking.save();
 
-        logger.info("Payment marked REFUNDED via Webhook", { paymentId });
+          // Free up room
+          const { syncRoomLegacyStatus } = await import("../services/roomAllocationService.js");
+          await syncRoomLegacyStatus(booking.room).catch(() => {});
+
+          // Write Audit Log
+          await logAudit({
+            req,
+            userId: payment.userId,
+            role: "customer",
+            action: eventType === "refund.created" ? "REFUND_CREATED" : "REFUND_PROCESSED",
+            details: {
+              bookingId: booking._id,
+              paymentId: payment._id,
+              event: eventType,
+              timestamp: new Date(),
+              refundId
+            }
+          });
+
+          // Send notification
+          sendNotification({
+            userId: booking.guestSnapshot?.email || payment.userId,
+            role: "customer",
+            message: `Refund processed for booking ${booking.bookingRef}.`,
+            type: "booking"
+          }).catch(() => {});
+
+          if (io) {
+            io.emit("booking_update", { _id: booking._id, status: "Cancelled" });
+            io.emit("payment_update", { _id: payment._id, status: "REFUNDED" });
+            io.emit("roomStatusUpdate", { roomId: booking.room, hotelStringId: booking.hotelStringId });
+          }
+        }
       }
+    } else if (eventType === "payment.authorized") {
+      logger.info(`Webhook event payment.authorized received for payment ${payload?.payment?.entity?.id}. Waiting for capture.`);
     }
 
-    // Acknowledge receipt of webhook
     return res.status(200).json({ success: true, message: "Webhook processed." });
   } catch (error) {
     next(error);

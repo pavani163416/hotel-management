@@ -350,7 +350,12 @@ app.use((req, res, next) => {
   if (req.path.startsWith("/api/upload/image")) {
     return next();
   }
-  express.json({ limit: "100kb" })(req, res, next);
+  express.json({
+    limit: "100kb",
+    verify: (req, res, buf) => {
+      req.rawBody = buf;
+    }
+  })(req, res, next);
 });
 
 app.use((req, res, next) => {

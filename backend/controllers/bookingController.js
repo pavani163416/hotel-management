@@ -362,7 +362,7 @@ export const createBooking = async (req, res, next) => {
           hotelStringId: room.hotelStringId || null,
           hotelImage,
           hotelId: actualHotel ? actualHotel._id : (room.hotelId || null),
-          status: "Confirmed",
+          status: (paymentMethod && paymentMethod.toLowerCase() === "cash") ? "Confirmed" : "Pending",
         },
       ],
       { session }
@@ -478,12 +478,21 @@ export const createBooking = async (req, res, next) => {
       message: "New booking received",
       type: "booking",
     }).catch(() => {});
-    sendNotification({
-      userId: guestData.email,
-      role: "customer",
-      message: "Your booking is confirmed",
-      type: "booking",
-    }).catch(() => {});
+    if (booking.status === "Confirmed" || booking.status === "CONFIRMED") {
+      sendNotification({
+        userId: guestData.email,
+        role: "customer",
+        message: "Your booking is confirmed",
+        type: "booking",
+      }).catch(() => {});
+    } else {
+      sendNotification({
+        userId: guestData.email,
+        role: "customer",
+        message: "Your booking is created and awaiting payment confirmation.",
+        type: "booking",
+      }).catch(() => {});
+    }
 
     // Emit Socket.IO event for real-time admin dashboard update
     const io = req.app.get("io");
@@ -494,7 +503,7 @@ export const createBooking = async (req, res, next) => {
         userName: guestData.name,
         amount: totalAmount,
         roomType: room.type,
-        status: "Confirmed",
+        status: booking.status,
         createdAt: new Date().toISOString(),
       });
       io.emit("roomStatusUpdate", {
@@ -502,25 +511,27 @@ export const createBooking = async (req, res, next) => {
         roomNumber: room.roomNumber,
         hotelStringId: room.hotelStringId,
       });
-      io.emit("booking_update", { _id: booking._id, status: "Confirmed", roomId: room._id });
+      io.emit("booking_update", { _id: booking._id, status: booking.status, roomId: room._id });
     }
 
     // Send confirmation email
-    sendBookingConfirmation({
-      to:          guestData.email,
-      guestName:   guestData.name,
-      hotelName:   req.body.hotelName || resolveHotelName(room.roomNumber) || "Unknown Hotel",
-      bookingRef:  `LS-${booking._id.toString().slice(-5).toUpperCase()}`,
-      checkIn,
-      checkOut,
-      nights:      booking.nights,
-      roomType:    room.type,
-      totalAmount,
-    }).then(() => {
-      logger.info(`Booking confirmation email sent`, { to: guestData.email });
-    }).catch((err) => {
-      logger.warn(`Booking confirmation email failed`, { to: guestData.email, error: err.message });
-    });
+    if (booking.status === "Confirmed" || booking.status === "CONFIRMED") {
+      sendBookingConfirmation({
+        to:          guestData.email,
+        guestName:   guestData.name,
+        hotelName:   req.body.hotelName || resolveHotelName(room.roomNumber) || "Unknown Hotel",
+        bookingRef:  `LS-${booking._id.toString().slice(-5).toUpperCase()}`,
+        checkIn,
+        checkOut,
+        nights:      booking.nights,
+        roomType:    room.type,
+        totalAmount,
+      }).then(() => {
+        logger.info(`Booking confirmation email sent`, { to: guestData.email });
+      }).catch((err) => {
+        logger.warn(`Booking confirmation email failed`, { to: guestData.email, error: err.message });
+      });
+    }
   } catch (error) {
     await session.abortTransaction();
     next(error);

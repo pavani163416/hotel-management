@@ -45,6 +45,13 @@ const paymentSchema = new mongoose.Schema(
     failureReason: {
       type: String,
     },
+    capturedAt: {
+      type: Date,
+    },
+    webhookVerified: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,
