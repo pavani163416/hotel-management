@@ -7,6 +7,7 @@ import HotelSnapshotModel from "../models/admin/HotelSnapshot.js";
 import { deleteRoomSnapshotByNumber, syncRoomSnapshot } from "../services/syncService.js";
 import { cacheGet, cacheSet, cacheDel, buildCacheKey, invalidateAllCaches } from "../cache/redisCache.js";
 import { CACHE_TTL } from "../config/constants.js";
+import { generateRoomsForHotel, syncRoomsForHotel } from "../services/roomGenerationService.js";
 
 // Lazy-load HotelSnapshot bound to admin connection
 let _HotelSnapshot = null;
@@ -224,43 +225,14 @@ export const createHotel = async (req, res, next) => {
 
     const hotel = await Hotel.create(req.body);
     
-    // Auto-generate rooms if floors and roomsPerFloor are provided
-    const floors = Math.max(0, Number(req.body.floors) || 0);
-    const roomsPerFloor = Math.max(0, Number(req.body.roomsPerFloor) || 0);
-    
-    if (floors > 0 && roomsPerFloor > 0) {
-      const roomsToCreate = [];
-      for (let f = 1; f <= floors; f++) {
-        for (let r = 1; r <= roomsPerFloor; r++) {
-          const roomNumber = `${f}${r.toString().padStart(2, '0')}`;
-          roomsToCreate.push({
-            hotelId: hotel._id,
-            hotelStringId: hotel.hotelId,
-            roomNumber,
-            type: "Standard",
-            pricePerNight: hotel.pricePerNight || 500,
-            capacity: 2,
-            bedType: "King",
-            status: "Available",
-            floor: f,
-            isActive: true,
-          });
-        }
-      }
-      if (roomsToCreate.length > 0) {
-        try {
-          await Room.insertMany(roomsToCreate, { ordered: false });
-        } catch (roomInsertError) {
-          // If room generation fails, keep the hotel creation successful.
-          console.warn("Hotel created, but room auto-generation failed:", roomInsertError.message);
-        }
-      }
-    }
+    // Auto-generate room documents from roomInventory
+    await generateRoomsForHotel(hotel);
 
     // Sync to controller DB snapshot so admin panel stats stay in sync
+    const totalRooms = getInventoryTotal(hotel.roomInventory);
     await syncSnapshot(hotel, {
       country:    req.body.country || "",
-      totalRooms: req.body.totalRooms || (floors * roomsPerFloor) || 0,
+      totalRooms: totalRooms || 0,
       status:     hotel.isActive ? "Active" : "Inactive",
     });
     await invalidateHotelCache();
@@ -288,32 +260,16 @@ export const updateHotel = async (req, res, next) => {
     const hotel = await Hotel.findOne({ hotelId: req.params.id });
     if (!hotel) return res.status(404).json({ success: false, message: "Hotel not found" });
 
-    // Enforce Phase 5: Prevent inventory reduction below active bookings
-    if (req.body.roomInventory) {
-      const keys = Object.keys(req.body.roomInventory);
-      for (const key of keys) {
-        const newTotal = Number(req.body.roomInventory[key]?.total) || 0;
-        const activeBookingsCount = await Booking.countDocuments({
-          $or: [
-            { hotelId: hotel._id },
-            { hotelStringId: hotel.hotelId }
-          ],
-          roomType: key,
-          status: { $in: ["Confirmed", "CheckedIn", "Pending"] },
-          checkOut: { $gt: new Date() }
-        });
-
-        if (newTotal < activeBookingsCount) {
-          return res.status(400).json({
-            success: false,
-            message: "Inventory cannot be lower than active bookings"
-          });
-        }
-      }
-    }
-
     // Update the fields on the found hotel document
     Object.assign(hotel, req.body);
+
+    // Sync room documents and validate inventory reduction safety
+    try {
+      await syncRoomsForHotel(hotel);
+    } catch (syncErr) {
+      return res.status(400).json({ success: false, message: syncErr.message });
+    }
+
     await hotel.save();
 
     // Respond immediately — sync and cache invalidation are non-blocking background tasks
@@ -321,7 +277,7 @@ export const updateHotel = async (req, res, next) => {
 
     syncSnapshot(hotel, {
       country:    req.body.country || hotel.city?.toUpperCase() || "",
-      totalRooms: req.body.totalRooms || hotel.rooms?.length || 0,
+      totalRooms: getInventoryTotal(hotel.roomInventory) || hotel.rooms?.length || 0,
       status:     hotel.isActive ? "Active" : "Inactive",
     }).catch(() => {});
     invalidateHotelCache().catch(() => {});

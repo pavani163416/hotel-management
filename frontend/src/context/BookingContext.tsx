@@ -35,6 +35,7 @@ function mapHotel(h: any): Hotel {
     rooms: (h.rooms || []).length > 0
       ? (h.rooms || []).map((r: any) => ({
           id: r.id || r._id || "r1",
+          roomTypeId: r.roomTypeId || "",
           name: r.name || "Standard Room",
           description: r.description || "",
           price: r.price || h.pricePerNight || 500,

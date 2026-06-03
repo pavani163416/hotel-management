@@ -165,12 +165,6 @@ export default function Rooms() {
           <h1 className="text-xl font-bold text-bright">Rooms</h1>
           <p className="text-sm text-dim mt-0.5">{rooms.length} total · {rooms.filter((r) => r.status === "Available").length} available</p>
         </div>
-        <button
-          onClick={() => { setForm({ ...emptyForm }); setError(""); setShowAdd(true); }}
-          className="btn-imperial flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all"
-        >
-          <Plus className="w-4 h-4" /> Add Room
-        </button>
       </div>
 
       {/* Filters */}
@@ -290,7 +284,7 @@ export default function Rooms() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-white/5 bg-white/5">
-                {["Room", "Type", "Price/Night", "Capacity", "Bed", "Status", "Actions"].map((h) => (
+                {["Room", "Type", "Price/Night", "Capacity", "Bed", "Status"].map((h) => (
                   <th key={h} className="text-left text-xs font-semibold text-dim uppercase tracking-wider px-5 py-4 whitespace-nowrap">
                     {h}
                   </th>
@@ -314,22 +308,7 @@ export default function Rooms() {
                       {STATUSES.map((s) => <option key={s}>{s}</option>)}
                     </select>
                   </td>
-                  <td className="px-5 py-4">
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => openEdit(room)}
-                        className="w-8 h-8 grid place-items-center rounded-lg text-dim hover:text-bright hover:bg-white/10 transition-all"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => setDeleteTarget(room)}
-                        className="w-8 h-8 grid place-items-center rounded-lg text-ruby hover:bg-ruby/10 transition-all"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
+                    {/* Actions removed (controlled by inventory) */}
                 </tr>
               ))}
             </tbody>

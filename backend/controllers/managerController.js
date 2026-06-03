@@ -16,6 +16,7 @@ import PriceRequest    from "../models/PriceRequest.js";
 import FunctionHall    from "../models/FunctionHall.js";
 import { sendNotification } from "../utils/notificationService.js";
 import logger from "../utils/logger.js";
+import { logAudit } from "../utils/auditLogger.js";
 import {
   buildOverlapQuery,
   NON_BOOKABLE_STATUSES,
@@ -131,15 +132,13 @@ export const managerLogin = async (req, res, next) => {
       await bcrypt.compare(password, DUMMY_HASH);
       return res.status(401).json({ success:false, message:"Invalid credentials." });
     }
-    const valid = manager.password.startsWith("$2")
-      ? await bcrypt.compare(password, manager.password)
-      : manager.password === password;
+    // All passwords must be bcrypt hashed — no plaintext fallback
+    if (!manager.password.startsWith("$2")) {
+      return res.status(401).json({ success:false, message:"Invalid credentials." });
+    }
+    const valid = await bcrypt.compare(password, manager.password);
     if (!valid) return res.status(401).json({ success:false, message:"Invalid credentials." });
 
-    // Auto-upgrade plaintext password to bcrypt on successful login
-    if (!manager.password.startsWith("$2")) {
-      manager.password = await bcrypt.hash(password, 12);
-    }
     manager.lastLogin = new Date();
     await manager.save();
     logger.info("Manager login successful", { email: manager.email, hotelId: manager.assignedHotelId });
@@ -148,9 +147,75 @@ export const managerLogin = async (req, res, next) => {
       assignedHotelId: manager.assignedHotelId || null,
       assignedHotelName: manager.assignedHotelName || null,
       hotelObjectId: manager.hotelObjectId ? String(manager.hotelObjectId) : null,
+      mustChangePassword: manager.mustChangePassword === true,
     };
     const token = jwt.sign(payload, getSecret(), { expiresIn: JWT_EXPIRES });
-    res.status(200).json({ success:true, message:"Login successful", data:{ ...payload, token } });
+    res.status(200).json({
+      success: true,
+      message: manager.mustChangePassword ? "Password change required" : "Login successful",
+      data: { ...payload, token },
+    });
+  } catch (err) { next(err); }
+};
+
+// ── PUT /api/manager/change-password ───────────────────
+export const changeManagerPassword = async (req, res, next) => {
+  try {
+    const { oldPassword, newPassword } = req.body;
+
+    if (!oldPassword || !newPassword) {
+      return res.status(400).json({ success: false, message: "Old password and new password are required." });
+    }
+    if (newPassword.length < 8) {
+      return res.status(400).json({ success: false, message: "New password must be at least 8 characters long." });
+    }
+    if (newPassword.length > 72 || oldPassword.length > 72) {
+      return res.status(400).json({ success: false, message: "Password must be at most 72 characters long." });
+    }
+    if (!/[A-Z]/.test(newPassword)) {
+      return res.status(400).json({ success: false, message: "New password must contain at least one uppercase letter." });
+    }
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(newPassword)) {
+      return res.status(400).json({ success: false, message: "New password must contain at least one special character." });
+    }
+
+    const manager = await Manager.findById(req.manager.id);
+    if (!manager) return res.status(404).json({ success: false, message: "Manager account not found." });
+
+    const valid = await bcrypt.compare(oldPassword, manager.password);
+    if (!valid) {
+      return res.status(400).json({ success: false, message: "Current password is incorrect." });
+    }
+
+    manager.password = await bcrypt.hash(newPassword, 12);
+    manager.mustChangePassword = false;
+    await manager.save();
+
+    await logAudit({
+      req,
+      userId: manager.email,
+      role: "Manager",
+      action: "MANAGER_PASSWORD_CHANGED",
+      details: { managerId: manager._id, email: manager.email },
+    });
+
+    logger.info("Manager password changed successfully", { managerId: manager._id, email: manager.email });
+
+    // Issue a fresh token with mustChangePassword: false
+    const payload = {
+      id: manager._id, name: manager.name, email: manager.email, role: manager.role,
+      assignedHotelId: manager.assignedHotelId || null,
+      assignedHotelName: manager.assignedHotelName || null,
+      hotelObjectId: manager.hotelObjectId ? String(manager.hotelObjectId) : null,
+      mustChangePassword: false,
+    };
+    const token = jwt.sign(payload, getSecret(), { expiresIn: JWT_EXPIRES });
+
+    res.status(200).json({
+      success: true,
+      message: "Password changed successfully.",
+      data: { ...payload, token },
+    });
   } catch (err) { next(err); }
 };
 

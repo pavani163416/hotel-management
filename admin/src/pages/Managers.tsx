@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import PasswordInput from "@/components/PasswordInput";
-import { Search, Plus, Edit2, Trash2, X, Loader2, UserCheck, UserX, Building2, Bell, Send } from "lucide-react";
+import { Search, Plus, Edit2, Trash2, X, Loader2, UserCheck, UserX, Building2, Bell, Send, RotateCcw, Copy, ShieldAlert, CheckCircle2 } from "lucide-react";
 import AdminLayout from "@/components/AdminLayout";
 import Topbar from "@/components/Topbar";
 import PageHeader from "@/components/PageHeader";
@@ -59,6 +59,15 @@ export default function Managers() {
   const [alertPriority, setAlertPriority] = useState<"high" | "medium">("medium");
   const [alertSending, setAlertSending]   = useState(false);
   const [alertFeedback, setAlertFeedback] = useState<{ type: "ok" | "err"; text: string } | null>(null);
+
+  // ── Temp password reveal (single-use modal) ───────────
+  const [tempPassword, setTempPassword] = useState<string | null>(null);
+  const [tempPasswordCopied, setTempPasswordCopied] = useState(false);
+
+  // ── Reset password state ──────────────────────────────
+  const [resetTarget, setResetTarget] = useState<Manager | null>(null);
+  const [resetting, setResetting] = useState(false);
+  const [resetError, setResetError] = useState("");
 
   // Fetch managers
   const fetchManagers = async () => {
@@ -143,19 +152,29 @@ export default function Managers() {
         : `${API}/admin/managers`;
       const method = editTarget ? "PUT" : "POST";
 
+      // For POST (create), only send name/email/hotelId/isActive — password is auto-generated
+      const body = editTarget
+        ? form
+        : { name: form.name, email: form.email, hotelId: form.hotelId, hotelName: form.hotelName, isActive: form.isActive };
+
       const res = await fetch(url, {
         method,
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(form),
+        body: JSON.stringify(body),
       });
 
       const data = await res.json();
 
       if (data.success) {
         setSuccess(editTarget ? "Manager updated successfully" : "Manager created successfully");
+        // If a temporary password was returned, show the single-use reveal modal
+        if (data.temporaryPassword) {
+          setTempPassword(data.temporaryPassword);
+          setTempPasswordCopied(false);
+        }
         setTimeout(() => {
           setAddOpen(false);
           fetchManagers();
@@ -192,6 +211,41 @@ export default function Managers() {
       setError(e.message || "An error occurred");
     } finally {
       setSaving(false);
+    }
+  };
+
+  // Reset manager password (generates a new temporary password)
+  const handleReset = async () => {
+    if (!resetTarget) return;
+    setResetting(true);
+    setResetError("");
+
+    try {
+      const res = await fetch(`${API}/admin/managers/${resetTarget._id}/reset-password`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+
+      if (data.success && data.temporaryPassword) {
+        setResetTarget(null);
+        setTempPassword(data.temporaryPassword);
+        setTempPasswordCopied(false);
+      } else {
+        setResetError(data.message || "Failed to reset password");
+      }
+    } catch (e: any) {
+      setResetError(e.message || "An error occurred");
+    } finally {
+      setResetting(false);
+    }
+  };
+
+  // Copy temp password to clipboard
+  const handleCopyTempPassword = () => {
+    if (tempPassword) {
+      navigator.clipboard.writeText(tempPassword);
+      setTempPasswordCopied(true);
     }
   };
 
@@ -371,7 +425,9 @@ export default function Managers() {
                         <span className="text-gray-200 font-medium">{manager.name}</span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-gray-300">{manager.email}</td>
+                    <td className="px-6 py-4 text-gray-300">
+                      <div>{manager.email}</div>
+                    </td>
                     <td className="px-6 py-4">
                       {manager.hotelName ? (
                         <div className="flex items-center gap-2 text-gray-300">
@@ -407,6 +463,13 @@ export default function Managers() {
                           title="Send Alert"
                         >
                           <Bell className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => { setResetTarget(manager); setResetError(""); }}
+                          className="p-2 hover:bg-slate-700 rounded-lg transition-colors text-gray-400 hover:text-blue-400"
+                          title="Reset Password"
+                        >
+                          <RotateCcw className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => openEdit(manager)}
@@ -480,15 +543,23 @@ export default function Managers() {
 
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-1">
-              Password {editTarget ? "(leave blank to keep current)" : "*"}
+              Password {editTarget ? "(leave blank to keep current)" : ""}
             </label>
-            <PasswordInput
-              required={!editTarget}
-              value={form.password}
-              onChange={(e) => setForm({ ...form, password: (e.target as HTMLInputElement).value })}
-              className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-gray-200 focus:outline-none focus:border-amber-500"
-              placeholder={editTarget ? "••••••••" : "Enter password"}
-            />
+            {editTarget ? (
+              <PasswordInput
+                value={form.password}
+                onChange={(e) => setForm({ ...form, password: (e.target as HTMLInputElement).value })}
+                className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-gray-200 focus:outline-none focus:border-amber-500"
+                placeholder="••••••••"
+              />
+            ) : (
+              <div className="flex items-center gap-2 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                <ShieldAlert className="w-4 h-4 text-blue-400 shrink-0" />
+                <p className="text-sm text-blue-300">
+                  A secure temporary password will be <strong>auto-generated</strong> and shown to you once after creation. The manager must change it on first login.
+                </p>
+              </div>
+            )}
           </div>
 
           <div>
@@ -591,6 +662,91 @@ export default function Managers() {
               Delete Manager
             </button>
           </div>
+        </div>
+      </Modal>
+
+      {/* Reset Password Confirmation Modal */}
+      <Modal
+        isOpen={!!resetTarget}
+        onClose={() => setResetTarget(null)}
+        title="Reset Manager Password"
+      >
+        <div className="space-y-4">
+          <div className="flex items-start gap-3 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+            <ShieldAlert className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+            <p className="text-sm text-amber-200">
+              This will generate a new secure temporary password for{" "}
+              <span className="font-semibold text-white">{resetTarget?.name}</span>.
+              The manager will be required to change it on next login. You will see the new password <strong>only once</strong>.
+            </p>
+          </div>
+
+          {resetError && (
+            <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm">
+              {resetError}
+            </div>
+          )}
+
+          <div className="flex justify-end gap-3">
+            <button
+              onClick={() => setResetTarget(null)}
+              className="px-4 py-2 text-gray-400 hover:text-gray-200 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleReset}
+              disabled={resetting}
+              className="flex items-center gap-2 px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-600/50 text-white rounded-lg font-medium transition-colors"
+            >
+              {resetting ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />}
+              Reset Password
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Single-use Temporary Password Modal */}
+      <Modal
+        isOpen={!!tempPassword}
+        onClose={() => { setTempPassword(null); setTempPasswordCopied(false); }}
+        title="Temporary Password — Copy Now"
+      >
+        <div className="space-y-4">
+          <div className="flex items-start gap-3 p-4 rounded-lg bg-red-500/10 border border-red-500/20">
+            <ShieldAlert className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+            <div className="text-sm text-red-200 space-y-1">
+              <p className="font-semibold">This password is shown only once and cannot be retrieved again.</p>
+              <p className="text-red-300/80">Copy it and securely share it with the manager. They must change it on first login.</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <code className="flex-1 px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-amber-400 font-mono text-lg tracking-widest select-all text-center">
+              {tempPassword}
+            </code>
+            <button
+              onClick={handleCopyTempPassword}
+              className={`p-3 rounded-lg border transition-all ${
+                tempPasswordCopied
+                  ? "border-green-500/40 bg-green-500/10 text-green-400"
+                  : "border-slate-600 bg-slate-800 text-gray-400 hover:text-amber-400 hover:border-amber-500/40"
+              }`}
+              title="Copy to clipboard"
+            >
+              {tempPasswordCopied ? <CheckCircle2 className="w-5 h-5" /> : <Copy className="w-5 h-5" />}
+            </button>
+          </div>
+          {tempPasswordCopied && (
+            <p className="text-green-400 text-sm text-center">✓ Copied to clipboard</p>
+          )}
+
+          <button
+            onClick={() => { setTempPassword(null); setTempPasswordCopied(false); }}
+            className="w-full py-2.5 bg-slate-700 hover:bg-slate-600 text-gray-200 rounded-lg font-medium transition-colors text-sm"
+          >
+            I have copied the password — Close
+          </button>
         </div>
       </Modal>
 

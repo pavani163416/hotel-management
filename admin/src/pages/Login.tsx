@@ -50,7 +50,12 @@ export default function Login() {
           },
           d.token
         );
-        navigate("/m/dashboard");
+        // If manager must change password, redirect to change-password page first
+        if (d.mustChangePassword) {
+          navigate("/m/change-password");
+        } else {
+          navigate("/m/dashboard");
+        }
         return;
       }
 

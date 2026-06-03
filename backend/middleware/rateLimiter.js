@@ -46,7 +46,7 @@ export const apiLimiter = rateLimit({
 // ── Auth limiter — login endpoints ────────────────────────
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,          // 15 minutes
-  max:      15,                      // maximum 15 attempts
+  max:      100,                     // maximum 100 attempts
   store: isRedisReady() ? createRateLimitStore(15 * 60 * 1000) : undefined,
   standardHeaders: true,
   legacyHeaders:   false,
@@ -60,7 +60,7 @@ export const authLimiter = rateLimit({
 // ── Booking limiter ───────────────────────────────────────
 export const bookingLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,          // 1 hour
-  max:      isProd ? 10 : 999999,
+  max:      isProd ? 100 : 999999,
   store: isRedisReady() ? createRateLimitStore(60 * 60 * 1000) : undefined,
   standardHeaders: true,
   legacyHeaders:   false,
@@ -76,7 +76,7 @@ export const bookingLimiter = rateLimit({
 // so this needs a higher ceiling than the general apiLimiter.
 export const promoLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,          // 15 minutes
-  max:      isProd ? 200 : 999999,
+  max:      isProd ? 1000 : 999999,
   store: isRedisReady() ? createRateLimitStore(15 * 60 * 1000) : undefined,
   standardHeaders: true,
   legacyHeaders:   false,
@@ -90,7 +90,7 @@ export const promoLimiter = rateLimit({
 // ── Strict Login specific limiter ────────────────────────
 export const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,          // 15 minutes
-  max:      5,                       // 5 attempts per 15 minutes
+  max:      100,                     // 100 attempts per 15 minutes
   store: isRedisReady() ? createRateLimitStore(15 * 60 * 1000) : undefined,
   standardHeaders: true,
   legacyHeaders:   false,
@@ -103,7 +103,7 @@ export const loginLimiter = rateLimit({
 // ── Strict OTP specific limiter ──────────────────────────
 export const otpRateLimiter = rateLimit({
   windowMs: 5 * 60 * 1000,           // 5 minutes
-  max:      5,                       // 5 attempts per 5 minutes
+  max:      100,                     // 100 attempts per 5 minutes
   store: isRedisReady() ? createRateLimitStore(5 * 60 * 1000) : undefined,
   standardHeaders: true,
   legacyHeaders:   false,
@@ -116,7 +116,7 @@ export const otpRateLimiter = rateLimit({
 // ── Phase 9: Specific limiters ──
 export const authRateLimiter = rateLimit({
   windowMs: 60 * 1000,               // 1 minute
-  max:      5,                       // 5 requests per minute
+  max:      100,                     // 100 requests per minute
   store: isRedisReady() ? createRateLimitStore(60 * 1000) : undefined,
   standardHeaders: true,
   legacyHeaders:   false,
@@ -128,7 +128,7 @@ export const authRateLimiter = rateLimit({
 
 export const adminRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,          // 15 minutes
-  max:      50,                      // 50 requests per 15 minutes
+  max:      5000,                    // 5000 requests per 15 minutes
   store: isRedisReady() ? createRateLimitStore(15 * 60 * 1000) : undefined,
   standardHeaders: true,
   legacyHeaders:   false,
@@ -140,7 +140,7 @@ export const adminRateLimiter = rateLimit({
 
 export const publicRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,          // 15 minutes
-  max:      100,                     // 100 requests per 15 minutes
+  max:      10000,                   // 10000 requests per 15 minutes
   store: isRedisReady() ? createRateLimitStore(15 * 60 * 1000) : undefined,
   standardHeaders: true,
   legacyHeaders:   false,

@@ -55,6 +55,20 @@ export const verifyManagerToken = (req, res, next) => {
     }
 
     req.manager = decoded;
+
+    // ── Enforce first-login password change ───────────────
+    // Allow only the change-password endpoint until password is updated
+    if (decoded.mustChangePassword === true) {
+      const isChangePasswordRoute = req.path === "/change-password";
+      if (!isChangePasswordRoute) {
+        return res.status(403).json({
+          success: false,
+          message: "Password change required. Please change your temporary password before accessing the dashboard.",
+          code: "PASSWORD_CHANGE_REQUIRED",
+        });
+      }
+    }
+
     next();
   } catch (error) {
     next(error);

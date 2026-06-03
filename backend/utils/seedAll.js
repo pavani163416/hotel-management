@@ -16,6 +16,8 @@ import Room     from "../models/Room.js";
 import Guest    from "../models/Guest.js";
 import Booking  from "../models/Booking.js";
 import Visitor  from "../models/Visitor.js";
+import RoomType from "../models/RoomType.js";
+import { generateRoomsForHotel } from "../services/roomGenerationService.js";
 
 // ── Images ────────────────────────────────────────────────
 const img = {
@@ -36,128 +38,109 @@ const hotelsData = [
     location: "8th Arrondissement, Paris", city: "Paris",
     description: "A timeless masterpiece of French art de vivre, offering panoramic views of the city's most iconic landmarks.",
     image: img.h1, gallery: [img.h1, img.h2, img.h3],
-    rating: 4.9, reviewCount: 852, pricePerNight: 480, originalPrice: 600, discountPct: 20, isDeal: true,
+    reviewCount: 0, pricePerNight: 480, originalPrice: 600, discountPct: 20, isDeal: true,
     type: "Hotel", coords: [48.8738, 2.295],
     amenities: ["Free WiFi", "Spa", "Pool", "Restaurant", "Concierge", "Airport Shuttle"],
     rooms: [
-      { id: "r1", name: "Deluxe King Room",    description: "35 sqm city view",       price: 480,  capacity: 2, bed: "1 King Bed",        available: 4, features: ["WiFi","Breakfast","AC"] },
-      { id: "r2", name: "Executive Suite",     description: "55 sqm panoramic suite", price: 780,  capacity: 3, bed: "1 King Bed + Sofa", available: 2, features: ["WiFi","Breakfast","Mini Bar"] },
-      { id: "r3", name: "Panoramic Penthouse", description: "120 sqm penthouse",      price: 1450, capacity: 4, bed: "2 King Beds",       available: 1, features: ["Butler","Private Spa"] },
+      { id: "r1", roomTypeId: "deluxe", name: "Deluxe King Room",    description: "35 sqm city view",       price: 480,  capacity: 2, bed: "1 King Bed",        available: 4, features: ["WiFi","Breakfast","AC"] },
+      { id: "r2", roomTypeId: "suite", name: "Executive Suite",     description: "55 sqm panoramic suite", price: 780,  capacity: 3, bed: "1 King Bed + Sofa", available: 2, features: ["WiFi","Breakfast","Mini Bar"] },
+      { id: "r3", roomTypeId: "penthouse", name: "Panoramic Penthouse", description: "120 sqm penthouse",      price: 1450, capacity: 4, bed: "2 King Beds",       available: 1, features: ["Butler","Private Spa"] },
     ],
     roomInventory: {
-      r1: { total: 4, price: 480 },
-      r2: { total: 2, price: 780 },
-      r3: { total: 1, price: 1450 }
+      deluxe: { total: 4, price: 480 },
+      suite: { total: 2, price: 780 },
+      penthouse: { total: 1, price: 1450 }
     },
-    reviews: [
-      { author: "Sophie L.",   rating: 5, comment: "Absolutely stunning. The views are unmatched.", date: "2 weeks ago" },
-      { author: "Marc D.",     rating: 5, comment: "Perfect service, perfect location.",             date: "1 month ago" },
-    ],
+    reviews: [],
   },
   {
     hotelId: "h2", name: "The Azure Skyline",
     location: "Downtown, Tokyo", city: "Tokyo",
     description: "Floor-to-ceiling windows reveal a breathtaking city panorama in the heart of Tokyo.",
     image: img.h2, gallery: [img.h2, img.h5, img.h1],
-    rating: 4.8, reviewCount: 612, pricePerNight: 620,
+    reviewCount: 0, pricePerNight: 620,
     type: "Hotel", coords: [35.6895, 139.6917],
     amenities: ["Free WiFi", "Gym", "Restaurant", "Bar", "Business Center"],
     rooms: [
-      { id: "r1", name: "Skyline Room",   description: "City view room",  price: 620, capacity: 2, bed: "1 Queen Bed", available: 6, features: ["WiFi","AC","Mini Bar"] },
-      { id: "r2", name: "Premium Suite",  description: "Corner suite",    price: 980, capacity: 3, bed: "1 King Bed",  available: 3, features: ["WiFi","Breakfast"] },
+      { id: "r1", roomTypeId: "standard", name: "Skyline Room",   description: "City view room",  price: 620, capacity: 2, bed: "1 Queen Bed", available: 6, features: ["WiFi","AC","Mini Bar"] },
+      { id: "r2", roomTypeId: "suite", name: "Premium Suite",  description: "Corner suite",    price: 980, capacity: 3, bed: "1 King Bed",  available: 3, features: ["WiFi","Breakfast"] },
     ],
     roomInventory: {
-      r1: { total: 6, price: 620 },
-      r2: { total: 3, price: 980 }
+      standard: { total: 6, price: 620 },
+      suite: { total: 3, price: 980 }
     },
-    reviews: [
-      { author: "Kenji M.",  rating: 5, comment: "View is unmatched. Tokyo at night is magical.", date: "3 days ago" },
-      { author: "Yuki T.",   rating: 4, comment: "Great location, excellent breakfast.",           date: "2 weeks ago" },
-    ],
+    reviews: [],
   },
   {
     hotelId: "h3", name: "Coral Bay Resort",
     location: "North Male Atoll, Maldives", city: "Maldives",
     description: "An overwater paradise where turquoise lagoons meet sunset skies.",
     image: img.h3, gallery: [img.h3, img.h6, img.h1],
-    rating: 4.9, reviewCount: 1029, pricePerNight: 1850, originalPrice: 2200, discountPct: 16, isDeal: true,
+    reviewCount: 0, pricePerNight: 1850, originalPrice: 2200, discountPct: 16, isDeal: true,
     type: "Resort", coords: [4.1755, 73.5093],
     amenities: ["Infinity Pool", "Spa & Wellness", "Beach Access", "Free WiFi", "Restaurant", "Water Sports"],
     rooms: [
-      { id: "r1", name: "Beach Villa",         description: "Private beachfront villa",  price: 1850, capacity: 2, bed: "1 King Bed", available: 5, features: ["Plunge Pool","Butler"] },
-      { id: "r2", name: "Overwater Bungalow",  description: "Glass-floor bungalow",      price: 2400, capacity: 2, bed: "1 King Bed", available: 2, features: ["Glass Floor","Butler"] },
+      { id: "r1", roomTypeId: "villa", name: "Beach Villa",         description: "Private beachfront villa",  price: 1850, capacity: 2, bed: "1 King Bed", available: 5, features: ["Plunge Pool","Butler"] },
+      { id: "r2", roomTypeId: "villa", name: "Overwater Bungalow",  description: "Glass-floor bungalow",      price: 2400, capacity: 2, bed: "1 King Bed", available: 2, features: ["Glass Floor","Butler"] },
     ],
     roomInventory: {
-      r1: { total: 5, price: 1850 },
-      r2: { total: 2, price: 2400 }
+      villa: { total: 7, price: 1850 }
     },
-    reviews: [
-      { author: "Anna R.",   rating: 5, comment: "Heaven on earth. We will be back!", date: "1 week ago" },
-      { author: "James K.",  rating: 5, comment: "The overwater bungalow is a dream.", date: "3 weeks ago" },
-    ],
+    reviews: [],
   },
   {
     hotelId: "h4", name: "Alpine Peak Lodge",
     location: "Zermatt, Switzerland", city: "Zermatt",
     description: "Nestled at the foot of the Matterhorn, a world-class alpine retreat.",
     image: img.h4, gallery: [img.h4, img.h2, img.h1],
-    rating: 4.7, reviewCount: 428, pricePerNight: 540, originalPrice: 680, discountPct: 21, isDeal: true,
+    reviewCount: 0, pricePerNight: 540, originalPrice: 680, discountPct: 21, isDeal: true,
     type: "Villa", coords: [46.0207, 7.7491],
     amenities: ["Ski-in/Ski-out", "Spa", "Free WiFi", "Restaurant", "Fireplace Lounge"],
     rooms: [
-      { id: "r1", name: "Alpine Room",   description: "Cozy mountain view room", price: 540, capacity: 2, bed: "1 Queen Bed", available: 8, features: ["WiFi","Fireplace"] },
-      { id: "r2", name: "Chalet Suite",  description: "Two-floor suite",         price: 920, capacity: 4, bed: "2 King Beds", available: 1, features: ["Balcony","Sauna"] },
+      { id: "r1", roomTypeId: "standard", name: "Alpine Room",   description: "Cozy mountain view room", price: 540, capacity: 2, bed: "1 Queen Bed", available: 8, features: ["WiFi","Fireplace"] },
+      { id: "r2", roomTypeId: "suite", name: "Chalet Suite",  description: "Two-floor suite",         price: 920, capacity: 4, bed: "2 King Beds", available: 1, features: ["Balcony","Sauna"] },
     ],
     roomInventory: {
-      r1: { total: 8, price: 540 },
-      r2: { total: 1, price: 920 }
+      standard: { total: 8, price: 540 },
+      suite: { total: 1, price: 920 }
     },
-    reviews: [
-      { author: "Lukas B.",  rating: 5, comment: "Magical. The Matterhorn view is breathtaking.", date: "2 weeks ago" },
-      { author: "Heidi S.",  rating: 4, comment: "Perfect ski lodge experience.",                  date: "1 month ago" },
-    ],
+    reviews: [],
   },
   {
     hotelId: "h5", name: "The Grand Metropolitan",
     location: "Manhattan, New York", city: "New York",
     description: "An iconic Midtown landmark where Art Deco heritage meets modern luxury hospitality.",
     image: img.h5, gallery: [img.h5, img.h2, img.h1],
-    rating: 4.6, reviewCount: 1842, pricePerNight: 420,
+    reviewCount: 0, pricePerNight: 420,
     type: "Hotel", coords: [40.7549, -73.984],
     amenities: ["Free WiFi", "Gym", "Restaurant", "Bar", "Concierge", "Pet Friendly"],
     rooms: [
-      { id: "r1", name: "Classic King",          description: "Elegant skyline view room",  price: 420, capacity: 2, bed: "1 King Bed",     available: 12, features: ["WiFi","AC","Smart TV"] },
-      { id: "r2", name: "Metropolitan Suite",    description: "Spacious city view suite",   price: 720, capacity: 3, bed: "1 King + Sofa",  available: 4,  features: ["WiFi","Lounge Access"] },
+      { id: "r1", roomTypeId: "standard", name: "Classic King",          description: "Elegant skyline view room",  price: 420, capacity: 2, bed: "1 King Bed",     available: 12, features: ["WiFi","AC","Smart TV"] },
+      { id: "r2", roomTypeId: "suite", name: "Metropolitan Suite",    description: "Spacious city view suite",   price: 720, capacity: 3, bed: "1 King + Sofa",  available: 4,  features: ["WiFi","Lounge Access"] },
     ],
     roomInventory: {
-      r1: { total: 12, price: 420 },
-      r2: { total: 4, price: 720 }
+      standard: { total: 12, price: 420 },
+      suite: { total: 4, price: 720 }
     },
-    reviews: [
-      { author: "Jessica W.", rating: 4, comment: "Great location, steps from everything.", date: "5 days ago" },
-      { author: "Robert M.",  rating: 5, comment: "The Art Deco lobby is stunning.",         date: "2 weeks ago" },
-    ],
+    reviews: [],
   },
   {
     hotelId: "h6", name: "Santorini Cliff Suites",
     location: "Oia, Santorini", city: "Santorini",
     description: "Whitewashed cave suites perched dramatically over the caldera with iconic sunset views.",
     image: img.h6, gallery: [img.h6, img.h3, img.h1],
-    rating: 4.9, reviewCount: 967, pricePerNight: 890, originalPrice: 1100, discountPct: 19, isDeal: true,
+    reviewCount: 0, pricePerNight: 890, originalPrice: 1100, discountPct: 19, isDeal: true,
     type: "Suite", coords: [36.4618, 25.3753],
     amenities: ["Infinity Pool", "Spa", "Free WiFi", "Restaurant", "Sunset Terrace"],
     rooms: [
-      { id: "r1", name: "Caldera View Suite", description: "Cave suite with hot tub",          price: 890,  capacity: 2, bed: "1 King Bed", available: 3, features: ["Hot Tub","Caldera View"] },
-      { id: "r2", name: "Honeymoon Villa",    description: "Private villa with infinity pool", price: 1650, capacity: 2, bed: "1 King Bed", available: 1, features: ["Infinity Pool","Butler"] },
+      { id: "r1", roomTypeId: "suite", name: "Caldera View Suite", description: "Cave suite with hot tub",          price: 890,  capacity: 2, bed: "1 King Bed", available: 3, features: ["Hot Tub","Caldera View"] },
+      { id: "r2", roomTypeId: "villa", name: "Honeymoon Villa",    description: "Private villa with infinity pool", price: 1650, capacity: 2, bed: "1 King Bed", available: 1, features: ["Infinity Pool","Butler"] },
     ],
     roomInventory: {
-      r1: { total: 3, price: 890 },
-      r2: { total: 1, price: 1650 }
+      suite: { total: 3, price: 890 },
+      villa: { total: 1, price: 1650 }
     },
-    reviews: [
-      { author: "Emma & David", rating: 5, comment: "Most romantic stay of our lives.",    date: "1 month ago" },
-      { author: "Nikos P.",     rating: 5, comment: "The sunset from the terrace is epic.", date: "3 weeks ago" },
-    ],
+    reviews: [],
   },
 ];
 
@@ -222,101 +205,52 @@ const adminUsersData = [
   { name: "David Chen",     email: "staff@luxestay.com",   password: "staff123",    role: "Staff" },
 ];
 
+
 // ════════════════════════════════════════════════════════
-// SEED RUNNER
+// SEED RUNNER — Seeds structural data only (Hotels, Rooms, RoomTypes)
+// NEVER seeds fake transactional data (guests, bookings, visitors, payments)
 // ════════════════════════════════════════════════════════
 const seed = async () => {
   await connectDB();
-  console.log("\n🌱  LuxeStay Master Seed — seeding all collections\n");
+  console.log("\n🌱  LuxeStay Seed — structural data only\n");
 
-  // ── Clear all ──────────────────────────────────────────
+  // ── Clear structural collections only ─────────────────
   await Promise.all([
     Hotel.deleteMany({}),
     Room.deleteMany({}),
-    Guest.deleteMany({}),
-    Booking.deleteMany({}),
-    Visitor.deleteMany({}),
+    RoomType.deleteMany({}),
   ]);
-  console.log("🗑️  Cleared all collections\n");
+  console.log("🗑️  Cleared hotels, rooms, roomTypes\n");
 
-  // ── 1. Hotels ──────────────────────────────────────────
+  // ── Seed RoomTypes ─────────────────────────────────────
+  const roomTypesData = [
+    { code: "standard",  name: "Standard",  active: true },
+    { code: "deluxe",    name: "Deluxe",    active: true },
+    { code: "suite",     name: "Suite",     active: true },
+    { code: "penthouse", name: "Penthouse", active: true },
+    { code: "villa",     name: "Villa",     active: true },
+  ];
+  const seededRoomTypes = await RoomType.insertMany(roomTypesData);
+  console.log(`✅  RoomTypes  → ${seededRoomTypes.length} seeded`);
+
+  // ── Seed Hotels ────────────────────────────────────────
   const hotels = await Hotel.insertMany(hotelsData);
   console.log(`✅  Hotels     → ${hotels.length} seeded`);
   hotels.forEach(h => console.log(`    ${h.hotelId.padEnd(4)} ${h.name} (${h.city})`));
 
-  // ── 2. Rooms ───────────────────────────────────────────
-  const roomsDataWithIds = roomsData.map((room) => {
-    const [hStrId, rTypeId] = room.roomNumber.split("_");
-    const hotel = hotels.find(h => h.hotelId === hStrId);
-    return {
-      ...room,
-      hotelStringId: hStrId,
-      roomTypeId: rTypeId,
-      hotelId: hotel ? hotel._id : null,
-    };
-  });
-  const rooms = await Room.insertMany(roomsDataWithIds);
-  console.log(`\n✅  Rooms      → ${rooms.length} seeded`);
-  rooms.forEach(r => console.log(`    ${r.roomNumber.padEnd(8)} ${r.type.padEnd(12)} $${r.pricePerNight}/night`));
-
-  // ── 3. Guests ──────────────────────────────────────────
-  const guests = await Guest.insertMany(guestsData);
-  console.log(`\n✅  Guests     → ${guests.length} seeded`);
-  guests.forEach(g => console.log(`    ${g.name.padEnd(20)} ${g.email}`));
-
-  // ── 4. Bookings (2 per guest using real room IDs) ──────
-  const bookingsToInsert = [];
-  const roomList = rooms.slice(0, 6); // use first 6 rooms
-
-  for (let i = 0; i < guests.length; i++) {
-    const guest = guests[i];
-    const room  = roomList[i % roomList.length];
-    const checkIn  = new Date(2025, 9 + (i % 3), 1 + i);
-    const checkOut = new Date(checkIn); checkOut.setDate(checkIn.getDate() + 3);
-    const nights = 3;
-    const subtotal = room.pricePerNight * nights;
-    const taxes    = Math.round(subtotal * 0.08);
-    const total    = subtotal + taxes;
-
-    bookingsToInsert.push({
-      room:          room._id,
-      guest:         guest._id,
-      guestSnapshot: { id: guest._id.toString(), name: guest.name, email: guest.email, phone: guest.phone },
-      roomType:      room.roomTypeId || "r1",
-      checkIn, checkOut, nights,
-      pricePerNight: room.pricePerNight,
-      subtotal, taxes, discount: 0,
-      totalAmount: total,
-      paymentMethod: ["card","upi","netbanking"][i % 3],
-      status: i % 4 === 2 ? "Cancelled" : "Confirmed",
-      specialRequests: i % 2 === 0 ? "Late check-in please" : "",
-    });
+  // ── Generate Rooms from Inventory ──────────────────────
+  for (const hotel of hotels) {
+    await generateRoomsForHotel(hotel);
   }
+  const rooms = await Room.find({});
+  console.log(`\n✅  Rooms      → ${rooms.length} generated from inventory`);
+  rooms.slice(0, 10).forEach(r => console.log(`    ${r.roomNumber.padEnd(8)} ${r.type.padEnd(12)} $${r.pricePerNight}/night`));
+  if (rooms.length > 10) console.log(`    ... and ${rooms.length - 10} more rooms`);
 
-  const bookings = await Booking.insertMany(bookingsToInsert);
-  console.log(`\n✅  Bookings   → ${bookings.length} seeded`);
-
-  // Link bookings back to guests
-  for (let i = 0; i < guests.length; i++) {
-    await Guest.findByIdAndUpdate(guests[i]._id, { $push: { bookings: bookings[i]._id } });
-  }
-  console.log("    Linked bookings → guests ✓");
-
-  // ── 5. Visitors ────────────────────────────────────────
-  const visitors = await Visitor.insertMany(visitorsData);
-  console.log(`\n✅  Visitors   → ${visitors.length} seeded`);
-
-  // ── Summary ────────────────────────────────────────────
   console.log("\n" + "─".repeat(50));
-  console.log("📊  luxestay database summary:");
-  console.log(`    hotels      → ${hotels.length}`);
-  console.log(`    rooms       → ${rooms.length}`);
-  console.log(`    guests      → ${guests.length}`);
-  console.log(`    bookings    → ${bookings.length}`);
-  console.log(`    visitors    → ${visitors.length}`);
-  console.log("─".repeat(50));
-  console.log("\n✅  luxestay database seeded!");
-  console.log("💡  Run: node utils/seedController.js  to seed the controller database\n");
+  console.log("✅  Structural seed complete.");
+  console.log("📝  Guests, bookings, and payments will be created by real users.");
+  console.log("─".repeat(50) + "\n");
 
   await mongoose.connection.close();
   process.exit(0);
@@ -327,3 +261,4 @@ seed().catch((err) => {
   console.error(err.stack);
   process.exit(1);
 });
+

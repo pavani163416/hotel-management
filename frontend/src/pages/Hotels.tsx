@@ -222,7 +222,9 @@ const TopDeals = ({ deals, onView }: { deals: any[]; onView: (id: string) => voi
             <div className="p-4">
               <div className="flex items-start justify-between gap-2 mb-1">
                 <h3 className="font-semibold text-primary text-sm truncate">{h.name}</h3>
-                <span className="text-xs font-semibold text-primary flex items-center gap-0.5 shrink-0"><Star className="w-3 h-3 fill-accent text-accent" />{h.rating}</span>
+                {typeof h.rating === "number" && h.rating > 0 && (
+                  <span className="text-xs font-semibold text-primary flex items-center gap-0.5 shrink-0"><Star className="w-3 h-3 fill-accent text-accent" />{h.rating}</span>
+                )}
               </div>
               <p className="text-xs text-muted-foreground truncate mb-3">{h.location}</p>
               <div className="flex items-end justify-between">
@@ -254,7 +256,7 @@ const HotelListCard = ({ hotel: h, onView }: { hotel: any; onView: () => void })
           <div className="flex items-start justify-between gap-3">
             <h3 className="font-display text-lg font-bold text-primary">{h.name}</h3>
             <div className="flex items-center gap-1 text-sm font-semibold whitespace-nowrap">
-              {typeof h.rating === "number" ? (
+              {typeof h.rating === "number" && h.rating > 0 ? (
                 <>
                   <Star className="w-4 h-4 fill-accent text-accent" /> {h.rating}
                   <span className="text-muted-foreground font-normal">({h.reviewCount})</span>
@@ -289,9 +291,11 @@ const HotelGridCard = ({ hotel: h, onView }: { hotel: any; onView: () => void })
     <div className="relative aspect-[4/3] overflow-hidden">
       <img src={h.image} alt={h.name} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-base duration-500" />
       {h.isDeal && <span className="absolute top-3 left-3 bg-accent text-accent-foreground text-[10px] uppercase tracking-wider font-bold px-2.5 py-1 rounded">Top Deal</span>}
-      <div className="absolute top-3 right-3 bg-background/95 backdrop-blur px-2.5 py-1 rounded-md text-xs font-semibold flex items-center gap-1">
-        <Star className="w-3 h-3 fill-accent text-accent" /> {h.rating}
-      </div>
+      {typeof h.rating === "number" && h.rating > 0 && (
+        <div className="absolute top-3 right-3 bg-background/95 backdrop-blur px-2.5 py-1 rounded-md text-xs font-semibold flex items-center gap-1">
+          <Star className="w-3 h-3 fill-accent text-accent" /> {h.rating}
+        </div>
+      )}
     </div>
     <div className="p-5">
       <h3 className="font-display text-lg font-bold text-primary truncate">{h.name}</h3>

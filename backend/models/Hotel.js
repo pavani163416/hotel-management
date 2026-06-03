@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 
 const roomSchema = new mongoose.Schema({
   id:          { type: String, required: true },   // "r1", "r2"
+  roomTypeId:  { type: String },                   // "standard", "deluxe", "suite", etc.
   name:        { type: String, required: true },
   description: { type: String },
   price:       { type: Number, required: true },

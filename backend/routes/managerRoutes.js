@@ -288,6 +288,7 @@
 import express from "express";
 import {
   managerLogin,
+  changeManagerPassword,
   getManagerDashboard,
   getManagerStats,
   getManagerRooms,
@@ -334,6 +335,11 @@ const router = express.Router();
 
 // ── Public ────────────────────────────────────────────────
 router.post("/login", authLimiter, validateLoginPayload, managerLogin);
+
+// ── Authenticated (must-change-password allowed) ───────
+// This route uses verifyManagerToken only so managers whose
+// mustChangePassword=true can still reach it to update password.
+router.put("/change-password", verifyManagerToken, changeManagerPassword);
 
 // ── Protected middleware chain ────────────────────────────
 const protect = [verifyManagerToken, scopeToHotel];

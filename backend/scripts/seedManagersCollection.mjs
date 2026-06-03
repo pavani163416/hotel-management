@@ -2,6 +2,9 @@
  * seedManagersCollection.mjs
  * Seeds the `managers` collection (used by manager login).
  * Run: node backend/scripts/seedManagersCollection.mjs
+ *
+ * SECURITY: Passwords are bcrypt-hashed. No plaintext passwords stored.
+ * mustChangePassword is set to true for all seeded managers.
  */
 
 import { config } from "dotenv";
@@ -14,6 +17,7 @@ dns.setDefaultResultOrder("ipv4first");
 dns.setServers(["8.8.8.8", "8.8.4.4", "1.1.1.1"]);
 
 import mongoose from "mongoose";
+import bcrypt from "bcryptjs";
 
 // ── Manager Schema (mirrors models/Manager.js) ────────────
 const managerSchema = new mongoose.Schema(
@@ -21,6 +25,7 @@ const managerSchema = new mongoose.Schema(
     name:              { type: String, required: true, trim: true },
     email:             { type: String, required: true, unique: true, lowercase: true, trim: true },
     password:          { type: String, required: true },
+    mustChangePassword: { type: Boolean, default: true },
     role:              { type: String, default: "Manager" },
     isActive:          { type: Boolean, default: true },
     lastLogin:         { type: Date },
@@ -40,14 +45,16 @@ const hotelSchema = new mongoose.Schema(
 const Hotel = mongoose.model("Hotel", hotelSchema);
 
 // ── Manager data ──────────────────────────────────────────
+// NOTE: Plain passwords are listed only here to be hashed at seed time.
+// They are NEVER stored in the database. Managers must change on first login.
 const MANAGERS = [
-  { name: "Jean-Pierre Moreau",  email: "lumiere.manager@luxestay.com",    password: "Manager@Lumiere2024",    assignedHotelId: "h1", assignedHotelName: "Hôtel de Lumière" },
-  { name: "Yuki Tanaka",         email: "azureskyline.manager@luxestay.com", password: "Manager@AzureSky2024", assignedHotelId: "h2", assignedHotelName: "The Azure Skyline" },
-  { name: "Sarah Adler",         email: "coralbay.manager@luxestay.com",   password: "Manager@CoralBay2024",   assignedHotelId: "h3", assignedHotelName: "Coral Bay Resort" },
-  { name: "Lukas Bauer",         email: "alpinepeak.manager@luxestay.com", password: "Manager@AlpinePeak2024", assignedHotelId: "h4", assignedHotelName: "Alpine Peak Lodge" },
-  { name: "Jessica Hartwell",    email: "grandmetro.manager@luxestay.com", password: "Manager@GrandMetro2024", assignedHotelId: "h5", assignedHotelName: "The Grand Metropolitan" },
-  { name: "Elena Papadopoulos",  email: "santorini.manager@luxestay.com",  password: "Manager@Santorini2024",  assignedHotelId: "h6", assignedHotelName: "Santorini Cliff Suites" },
-  { name: "Ravi Shankar",        email: "swagruha.manager@luxestay.com",   password: "Manager@Swagruha2024",   assignedHotelId: "h7", assignedHotelName: "Swagruha Hotel" },
+  { name: "Jean-Pierre Moreau",  email: "lumiere.manager@luxestay.com",    plainPassword: "Manager@Lumiere2024",    assignedHotelId: "h1", assignedHotelName: "Hôtel de Lumière" },
+  { name: "Yuki Tanaka",         email: "azureskyline.manager@luxestay.com", plainPassword: "Manager@AzureSky2024", assignedHotelId: "h2", assignedHotelName: "The Azure Skyline" },
+  { name: "Sarah Adler",         email: "coralbay.manager@luxestay.com",   plainPassword: "Manager@CoralBay2024",   assignedHotelId: "h3", assignedHotelName: "Coral Bay Resort" },
+  { name: "Lukas Bauer",         email: "alpinepeak.manager@luxestay.com", plainPassword: "Manager@AlpinePeak2024", assignedHotelId: "h4", assignedHotelName: "Alpine Peak Lodge" },
+  { name: "Jessica Hartwell",    email: "grandmetro.manager@luxestay.com", plainPassword: "Manager@GrandMetro2024", assignedHotelId: "h5", assignedHotelName: "The Grand Metropolitan" },
+  { name: "Elena Papadopoulos",  email: "santorini.manager@luxestay.com",  plainPassword: "Manager@Santorini2024",  assignedHotelId: "h6", assignedHotelName: "Santorini Cliff Suites" },
+  { name: "Ravi Shankar",        email: "swagruha.manager@luxestay.com",   plainPassword: "Manager@Swagruha2024",   assignedHotelId: "h7", assignedHotelName: "Swagruha Hotel" },
 ];
 
 const seed = async () => {
@@ -64,6 +71,7 @@ const seed = async () => {
 
   for (const mgr of MANAGERS) {
     const hotelObjectId = hotelMap[mgr.assignedHotelId] || null;
+    const hashedPassword = await bcrypt.hash(mgr.plainPassword, 12);
 
     const existing = await Manager.findOne({ email: mgr.email });
 
@@ -76,33 +84,37 @@ const seed = async () => {
           assignedHotelName: mgr.assignedHotelName,
           hotelObjectId,
           isActive:          true,
+          // Only update password hash to force re-login on seed refresh
+          password:          hashedPassword,
+          mustChangePassword: true,
         }
       );
-      console.log(`  ↻  Updated : ${mgr.email.padEnd(28)} → ${mgr.assignedHotelName}`);
+      console.log(`  ↻  Updated : ${mgr.email.padEnd(40)} → ${mgr.assignedHotelName}`);
       updated++;
     } else {
       await Manager.create({
         name:              mgr.name,
         email:             mgr.email,
-        password:          mgr.password,   // plain — login handles both plain & bcrypt
+        password:          hashedPassword,
+        mustChangePassword: true,
         role:              "Manager",
         assignedHotelId:   mgr.assignedHotelId,
         assignedHotelName: mgr.assignedHotelName,
         hotelObjectId,
         isActive:          true,
       });
-      console.log(`  ✅  Created : ${mgr.email.padEnd(28)} → ${mgr.assignedHotelName}`);
+      console.log(`  ✅  Created : ${mgr.email.padEnd(40)} → ${mgr.assignedHotelName}`);
       created++;
     }
   }
 
   console.log(`\n📊  Summary: ${created} created, ${updated} updated`);
-  console.log("\n🔑  Login Credentials (all managers):");
+  console.log("\n🔑  First-Login Credentials (temporary — must change on first login):");
   console.log("─".repeat(65));
   MANAGERS.forEach((m) => {
     console.log(`  Hotel  : ${m.assignedHotelName}`);
     console.log(`  Email  : ${m.email}`);
-    console.log(`  Pass   : ${m.password}`);
+    console.log(`  Temp   : ${m.plainPassword}  ⚠ Change required on first login`);
     console.log();
   });
   console.log("─".repeat(65));

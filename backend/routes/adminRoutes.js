@@ -276,6 +276,8 @@ import CancellationRefund from "../models/CancellationRefund.js";
 import Coupon             from "../models/Coupon.js";
 import { sendNotification } from "../utils/notificationService.js";
 import logger from "../utils/logger.js";
+import crypto from "crypto";
+import { logAudit } from "../utils/auditLogger.js";
 
 const router = express.Router();
 
@@ -407,6 +409,32 @@ router.patch("/users/:id", protect, requireObjectId(), async (req, res, next) =>
 });
 
 // ── Manager management ────────────────────────────────────
+function generateTemporaryPassword() {
+  const lowercase = "abcdefghijklmnopqrstuvwxyz";
+  const uppercase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const numbers = "0123456789";
+  const symbols = "!@#$%^&*";
+  
+  const passArr = [
+    lowercase[crypto.randomInt(lowercase.length)],
+    uppercase[crypto.randomInt(uppercase.length)],
+    numbers[crypto.randomInt(numbers.length)],
+    symbols[crypto.randomInt(symbols.length)],
+  ];
+  
+  const allChars = lowercase + uppercase + numbers + symbols;
+  for (let i = 0; i < 8; i++) {
+    passArr.push(allChars[crypto.randomInt(allChars.length)]);
+  }
+  
+  for (let i = passArr.length - 1; i > 0; i--) {
+    const j = crypto.randomInt(i + 1);
+    [passArr[i], passArr[j]] = [passArr[j], passArr[i]];
+  }
+  
+  return passArr.join("");
+}
+
 router.get("/managers", protect, async (req, res, next) => {
   try {
     const managers = await Manager.find({})
@@ -432,23 +460,10 @@ router.get("/managers", protect, async (req, res, next) => {
 
 router.post("/managers", protect, async (req, res, next) => {
   try {
-    const { name, email, password, hotelId, hotelName, isActive } = req.body;
+    const { name, email, hotelId, hotelName, isActive } = req.body;
 
-    if (!name || !email || !password) {
-      return res.status(400).json({ success: false, message: "Name, email, and password are required." });
-    }
-
-    if (password.length < 8) {
-      return res.status(400).json({ success: false, message: "Password must be at least 8 characters long." });
-    }
-    if (password.length > 72) {
-      return res.status(400).json({ success: false, message: "Password must be at most 72 characters long." });
-    }
-    if (!/[A-Z]/.test(password)) {
-      return res.status(400).json({ success: false, message: "Password must contain at least one uppercase letter." });
-    }
-    if (!/[!@#$%^&*(),.?\":{}|<>]/.test(password)) {
-      return res.status(400).json({ success: false, message: "Password must contain at least one special character." });
+    if (!name || !email) {
+      return res.status(400).json({ success: false, message: "Name and email are required." });
     }
 
     // ── Hotel referential integrity validation ──
@@ -469,12 +484,14 @@ router.post("/managers", protect, async (req, res, next) => {
       return res.status(404).json({ success: false, message: `Hotel with hotelId '${hotelId}' does not exist.` });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 12);
+    const tempPassword = generateTemporaryPassword();
+    const hashedPassword = await bcrypt.hash(tempPassword, 12);
 
     const manager = await Manager.create({
       name,
       email:             email.toLowerCase(),
       password:          hashedPassword,
+      mustChangePassword: true,
       role:              "Manager",
       assignedHotelId:   hotel.hotelId,
       assignedHotelName: hotel.name,
@@ -490,11 +507,23 @@ router.post("/managers", protect, async (req, res, next) => {
       type:    "manager",
     }).catch(() => {});
 
+    await logAudit({
+      req,
+      userId: req.user?.email || "admin",
+      role: req.user?.role || "Admin",
+      action: "MANAGER_CREATED",
+      details: { managerId: manager._id, email: manager.email, hotelId: hotel.hotelId }
+    });
+
     logger.info("Manager created", { managerId: manager._id, email: manager.email, hotelId: hotel.hotelId });
 
     res.status(201).json({
       success: true,
+      manager: {
+        email: manager.email,
+      },
       data: { ...manager.toJSON(), password: undefined, hotelName: hotel.name },
+      temporaryPassword: tempPassword,
     });
   } catch (e) { next(e); }
 });
@@ -552,6 +581,15 @@ router.put("/managers/:id", protect, requireObjectId(), async (req, res, next) =
         return res.status(400).json({ success: false, message: "Password must contain at least one special character." });
       }
       manager.password = await bcrypt.hash(password, 12);
+      manager.mustChangePassword = true;
+
+      await logAudit({
+        req,
+        userId: req.user?.email || "admin",
+        role: req.user?.role || "Admin",
+        action: "PASSWORD_CHANGED",
+        details: { managerId: manager._id, email: manager.email }
+      });
     }
     if (isActive !== undefined) manager.isActive = isActive;
 
@@ -574,6 +612,32 @@ router.put("/managers/:id", protect, requireObjectId(), async (req, res, next) =
 
     await manager.save();
     res.json({ success: true, data: { ...manager.toJSON(), password: undefined } });
+  } catch (e) { next(e); }
+});
+
+router.post("/managers/:id/reset-password", protect, requireObjectId(), async (req, res, next) => {
+  try {
+    const manager = await Manager.findById(req.params.id);
+    if (!manager) return res.status(404).json({ success: false, message: "Manager not found." });
+
+    const tempPassword = generateTemporaryPassword();
+    manager.password = await bcrypt.hash(tempPassword, 12);
+    manager.mustChangePassword = true;
+    await manager.save();
+
+    await logAudit({
+      req,
+      userId: req.user?.email || "admin",
+      role: req.user?.role || "Admin",
+      action: "PASSWORD_RESET",
+      details: { managerId: manager._id, email: manager.email }
+    });
+
+    res.json({
+      success: true,
+      message: "Password reset successfully.",
+      temporaryPassword: tempPassword
+    });
   } catch (e) { next(e); }
 });
 

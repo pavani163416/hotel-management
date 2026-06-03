@@ -71,7 +71,7 @@ const HotelDetails = () => {
       try {
         const params = new URLSearchParams({
           hotelStringId: hotel.id,
-          roomTypeId: r.id,
+          roomTypeId: r.roomTypeId || r.id,
           checkIn: search.checkIn,
           checkOut: search.checkOut,
         });
