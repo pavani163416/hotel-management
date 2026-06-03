@@ -209,17 +209,13 @@ const HotelDetails = () => {
                     <div className="p-4">Room Type</div><div className="p-4">Key Features</div><div className="p-4 text-right">Daily Price</div><div className="p-4">Action</div>
                   </div>
                   {hotel.rooms.map((r) => {
-                    // Determine sold-out state: either backend says 0 available,
-                    // or the live date-based count came back as 0
-                    const isSoldOut = r.available === 0 || availCount[r.id] === 0;
-                    // Rooms left: prefer live date-based count, fall back to backend field
                     const roomsLeft: number | null =
                       availCount[r.id] != null
                         ? (availCount[r.id] as number)
-                        : r.available > 0
+                        : r.available >= 0
                         ? r.available
                         : null;
-                    const isLow = !isSoldOut && roomsLeft != null && roomsLeft <= 3;
+                    const isSoldOut = roomsLeft === 0;
 
                     return (
                     <div key={r.id} className={`grid md:grid-cols-[2fr_2fr_1fr_auto] gap-4 p-5 border-t border-border first:border-t-0 items-center ${isSoldOut ? "opacity-70" : ""}`}>
@@ -236,9 +232,13 @@ const HotelDetails = () => {
                               ? "Sold out for selected dates"
                               : "Currently unavailable"}
                           </p>
-                        ) : isLow ? (
+                        ) : roomsLeft === 1 ? (
                           <p className="text-xs font-semibold text-amber-600 mt-1.5">
-                            Only {roomsLeft} room{roomsLeft !== 1 ? "s" : ""} left
+                            Only 1 Room Left
+                          </p>
+                        ) : roomsLeft != null && roomsLeft > 1 ? (
+                          <p className="text-xs font-semibold text-emerald-600 mt-1.5">
+                            {roomsLeft} Rooms Available
                           </p>
                         ) : null}
                       </div>

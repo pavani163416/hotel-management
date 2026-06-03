@@ -37,6 +37,13 @@ const hotelSchema = new mongoose.Schema(
     coords:        { type: [Number], default: [0, 0] },
     amenities:     [String],
     rooms:         [roomSchema],
+    roomInventory: {
+      type: Map,
+      of: new mongoose.Schema({
+        total: { type: Number, required: true, min: 0 },
+        price: { type: Number, required: true, min: 0 }
+      }, { _id: false })
+    },
     reviews:       [reviewSchema],
     floors:        { type: Number, default: 1 },
     roomsPerFloor: { type: Number, default: 10 },

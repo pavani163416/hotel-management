@@ -162,6 +162,32 @@ export const createBooking = async (req, res, next) => {
       actualHotel = await Hotel.findOne({ name: req.body.hotelName, isActive: true }).session(session);
     }
 
+    // ── 1. Calculate dynamic capacity based on roomInventory ──
+    if (actualHotel && actualHotel.roomInventory && targetRoomType) {
+      const inv = actualHotel.roomInventory[targetRoomType] || actualHotel.roomInventory.get?.(targetRoomType);
+      if (inv && typeof inv.total === "number") {
+        const capacity = inv.total;
+        
+        // Count active overlapping bookings
+        const activeBookingsCount = await Booking.countDocuments({
+          hotelId: actualHotel._id,
+          roomType: targetRoomType,
+          status: { $in: ["Confirmed", "CheckedIn", "Pending"] },
+          checkIn: { $lt: new Date(checkOut) },
+          checkOut: { $gt: new Date(checkIn) }
+        }).session(session);
+
+        if (activeBookingsCount >= capacity) {
+          await session.abortTransaction();
+          return res.status(409).json({
+            success: false,
+            message: "No rooms available",
+            code: "NO_ROOMS_AVAILABLE"
+          });
+        }
+      }
+    }
+
     // ── 1. Auto-assign available physical room (date-based inventory) ──
     logger.debug(`Booking lookup: roomId="${roomId}", roomNumber="${roomNumber}", roomTypeId="${roomTypeId}", price=${pricePerNight}`);
 
@@ -348,6 +374,7 @@ export const createBooking = async (req, res, next) => {
           paymentMethod: paymentMethod || "card",
           specialRequests: specialRequests ? String(specialRequests).replace(/</g, "&lt;").replace(/>/g, "&gt;") : "",
           hotelName: req.body.hotelName || resolveHotelName(room.roomNumber) || "",
+          roomType: targetRoomType,
           hotelStringId: room.hotelStringId || null,
           hotelImage,
           hotelId: actualHotel ? actualHotel._id : (room.hotelId || null),

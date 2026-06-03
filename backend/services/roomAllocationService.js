@@ -163,6 +163,44 @@ export async function countAvailableRooms({
   checkIn,
   checkOut,
 }) {
+  try {
+    const Hotel = (await import("../models/Hotel.js")).default;
+    const hotel = await Hotel.findOne({
+      $or: [
+        ...(hotelObjectId ? [{ _id: hotelObjectId }] : []),
+        ...(hotelStringId ? [{ hotelId: hotelStringId }] : []),
+      ].filter(Boolean)
+    }).lean();
+
+    let totalCapacity = 0;
+    let useInventory = false;
+
+    if (hotel && hotel.roomInventory && roomTypeId) {
+      const inv = hotel.roomInventory[roomTypeId] || hotel.roomInventory.get?.(roomTypeId);
+      if (inv && typeof inv.total === "number") {
+        totalCapacity = inv.total;
+        useInventory = true;
+      }
+    }
+
+    if (useInventory) {
+      const activeBookingsCount = await Booking.countDocuments({
+        $or: [
+          ...(hotelObjectId ? [{ hotelId: hotelObjectId }] : []),
+          ...(hotelStringId ? [{ hotelStringId: hotelStringId }] : []),
+        ].filter(Boolean),
+        roomType: roomTypeId,
+        status: { $in: ["Confirmed", "CheckedIn", "Pending"] },
+        checkIn: { $lt: new Date(checkOut) },
+        checkOut: { $gt: new Date(checkIn) }
+      });
+      const available = Math.max(0, totalCapacity - activeBookingsCount);
+      return { available, total: totalCapacity };
+    }
+  } catch (err) {
+    /* fallback to old logic if query fails */
+  }
+
   const filter = buildRoomCandidateFilter({
     hotelStringId,
     hotelObjectId,

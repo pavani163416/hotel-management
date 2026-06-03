@@ -44,6 +44,11 @@ const hotelsData = [
       { id: "r2", name: "Executive Suite",     description: "55 sqm panoramic suite", price: 780,  capacity: 3, bed: "1 King Bed + Sofa", available: 2, features: ["WiFi","Breakfast","Mini Bar"] },
       { id: "r3", name: "Panoramic Penthouse", description: "120 sqm penthouse",      price: 1450, capacity: 4, bed: "2 King Beds",       available: 1, features: ["Butler","Private Spa"] },
     ],
+    roomInventory: {
+      r1: { total: 4, price: 480 },
+      r2: { total: 2, price: 780 },
+      r3: { total: 1, price: 1450 }
+    },
     reviews: [
       { author: "Sophie L.",   rating: 5, comment: "Absolutely stunning. The views are unmatched.", date: "2 weeks ago" },
       { author: "Marc D.",     rating: 5, comment: "Perfect service, perfect location.",             date: "1 month ago" },
@@ -61,6 +66,10 @@ const hotelsData = [
       { id: "r1", name: "Skyline Room",   description: "City view room",  price: 620, capacity: 2, bed: "1 Queen Bed", available: 6, features: ["WiFi","AC","Mini Bar"] },
       { id: "r2", name: "Premium Suite",  description: "Corner suite",    price: 980, capacity: 3, bed: "1 King Bed",  available: 3, features: ["WiFi","Breakfast"] },
     ],
+    roomInventory: {
+      r1: { total: 6, price: 620 },
+      r2: { total: 3, price: 980 }
+    },
     reviews: [
       { author: "Kenji M.",  rating: 5, comment: "View is unmatched. Tokyo at night is magical.", date: "3 days ago" },
       { author: "Yuki T.",   rating: 4, comment: "Great location, excellent breakfast.",           date: "2 weeks ago" },
@@ -78,6 +87,10 @@ const hotelsData = [
       { id: "r1", name: "Beach Villa",         description: "Private beachfront villa",  price: 1850, capacity: 2, bed: "1 King Bed", available: 5, features: ["Plunge Pool","Butler"] },
       { id: "r2", name: "Overwater Bungalow",  description: "Glass-floor bungalow",      price: 2400, capacity: 2, bed: "1 King Bed", available: 2, features: ["Glass Floor","Butler"] },
     ],
+    roomInventory: {
+      r1: { total: 5, price: 1850 },
+      r2: { total: 2, price: 2400 }
+    },
     reviews: [
       { author: "Anna R.",   rating: 5, comment: "Heaven on earth. We will be back!", date: "1 week ago" },
       { author: "James K.",  rating: 5, comment: "The overwater bungalow is a dream.", date: "3 weeks ago" },
@@ -95,6 +108,10 @@ const hotelsData = [
       { id: "r1", name: "Alpine Room",   description: "Cozy mountain view room", price: 540, capacity: 2, bed: "1 Queen Bed", available: 8, features: ["WiFi","Fireplace"] },
       { id: "r2", name: "Chalet Suite",  description: "Two-floor suite",         price: 920, capacity: 4, bed: "2 King Beds", available: 1, features: ["Balcony","Sauna"] },
     ],
+    roomInventory: {
+      r1: { total: 8, price: 540 },
+      r2: { total: 1, price: 920 }
+    },
     reviews: [
       { author: "Lukas B.",  rating: 5, comment: "Magical. The Matterhorn view is breathtaking.", date: "2 weeks ago" },
       { author: "Heidi S.",  rating: 4, comment: "Perfect ski lodge experience.",                  date: "1 month ago" },
@@ -112,6 +129,10 @@ const hotelsData = [
       { id: "r1", name: "Classic King",          description: "Elegant skyline view room",  price: 420, capacity: 2, bed: "1 King Bed",     available: 12, features: ["WiFi","AC","Smart TV"] },
       { id: "r2", name: "Metropolitan Suite",    description: "Spacious city view suite",   price: 720, capacity: 3, bed: "1 King + Sofa",  available: 4,  features: ["WiFi","Lounge Access"] },
     ],
+    roomInventory: {
+      r1: { total: 12, price: 420 },
+      r2: { total: 4, price: 720 }
+    },
     reviews: [
       { author: "Jessica W.", rating: 4, comment: "Great location, steps from everything.", date: "5 days ago" },
       { author: "Robert M.",  rating: 5, comment: "The Art Deco lobby is stunning.",         date: "2 weeks ago" },
@@ -129,6 +150,10 @@ const hotelsData = [
       { id: "r1", name: "Caldera View Suite", description: "Cave suite with hot tub",          price: 890,  capacity: 2, bed: "1 King Bed", available: 3, features: ["Hot Tub","Caldera View"] },
       { id: "r2", name: "Honeymoon Villa",    description: "Private villa with infinity pool", price: 1650, capacity: 2, bed: "1 King Bed", available: 1, features: ["Infinity Pool","Butler"] },
     ],
+    roomInventory: {
+      r1: { total: 3, price: 890 },
+      r2: { total: 1, price: 1650 }
+    },
     reviews: [
       { author: "Emma & David", rating: 5, comment: "Most romantic stay of our lives.",    date: "1 month ago" },
       { author: "Nikos P.",     rating: 5, comment: "The sunset from the terrace is epic.", date: "3 weeks ago" },
@@ -256,7 +281,8 @@ const seed = async () => {
     bookingsToInsert.push({
       room:          room._id,
       guest:         guest._id,
-      guestSnapshot: { name: guest.name, email: guest.email, phone: guest.phone },
+      guestSnapshot: { id: guest._id.toString(), name: guest.name, email: guest.email, phone: guest.phone },
+      roomType:      room.roomTypeId || "r1",
       checkIn, checkOut, nights,
       pricePerNight: room.pricePerNight,
       subtotal, taxes, discount: 0,
