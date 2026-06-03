@@ -195,11 +195,11 @@ class AuthProvider extends ChangeNotifier {
     );
   }
 
-  // Native Google Sign-In helper. Using the Web Client ID matching google-services.json.
+  // Native Google Sign-In helper. Using the Web Client ID matching the backend.
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     scopes: ['email', 'profile', 'openid'],
-    clientId: kIsWeb ? '239513848879-7n631mq8o0due6v807tk58gbli9907mc.apps.googleusercontent.com' : null,
-    serverClientId: kIsWeb ? null : '239513848879-7n631mq8o0due6v807tk58gbli9907mc.apps.googleusercontent.com',
+    clientId: kIsWeb ? '70312411330-8givsb0ktr8f09u8ullo157vkppkoqqv.apps.googleusercontent.com' : null,
+    serverClientId: kIsWeb ? null : '70312411330-8givsb0ktr8f09u8ullo157vkppkoqqv.apps.googleusercontent.com',
   );
 
   void logout() async {
@@ -215,34 +215,45 @@ class AuthProvider extends ChangeNotifier {
 
   Future<bool> signInWithGoogle() async {
     try {
+      debugPrint('[GoogleSignIn] Starting Google Sign-In flow...');
       _isLoading = true;
       notifyListeners();
 
       // Sign out from any current session to force account picker
+      debugPrint('[GoogleSignIn] Force signing out of previous session...');
       await _googleSignIn.signOut().catchError((_) {});
 
+      debugPrint('[GoogleSignIn] Triggering account chooser picker...');
       final GoogleSignInAccount? account = await _googleSignIn.signIn();
+      debugPrint('[GoogleSignIn] Account picker returned: ${account?.email ?? "null"}');
 
       if (account == null) {
+        debugPrint('[GoogleSignIn] User canceled account selection.');
         _isLoading = false;
         notifyListeners();
         return false;
       }
 
+      debugPrint('[GoogleSignIn] Retrieving authentication credentials...');
       final GoogleSignInAuthentication auth = await account.authentication;
       final String? idToken = auth.idToken ?? auth.accessToken;
+      debugPrint('[GoogleSignIn] Token retrieved: ${idToken != null ? "YES (length ${idToken.length})" : "NO"}');
 
       if (idToken == null || idToken.isEmpty) {
+        debugPrint('[GoogleSignIn] Error: Token is null or empty!');
         _error = 'Google sign-in failed: no token received.';
         _isLoading = false;
         notifyListeners();
         return false;
       }
 
+      debugPrint('[GoogleSignIn] Sending token to backend for verification...');
       final res = await _authRepository.signInWithGoogle(idToken);
+      debugPrint('[GoogleSignIn] Backend response received.');
 
       return res.fold(
         (failure) {
+          debugPrint('[GoogleSignIn] Backend verification failed: ${failure.message}');
           _error = failure.message;
           _isLoading = false;
           notifyListeners();
@@ -250,6 +261,7 @@ class AuthProvider extends ChangeNotifier {
         },
         (data) async {
           final (user, token) = data;
+          debugPrint('[GoogleSignIn] Backend verification succeeded! Logged in as: ${user.email}');
           _user = user;
           await _saveAuthData(user, token);
           _isLoading = false;
@@ -257,7 +269,9 @@ class AuthProvider extends ChangeNotifier {
           return true;
         },
       );
-    } catch (e) {
+    } catch (e, stack) {
+      debugPrint('[GoogleSignIn] Exception caught: $e');
+      debugPrint('[GoogleSignIn] Stacktrace: $stack');
       _error = 'Google sign-in error: ${e.toString()}';
       _isLoading = false;
       notifyListeners();
