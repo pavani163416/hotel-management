@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_auth_platform_interface/firebase_auth_platform_interface.dart';
 import 'dart:convert';
@@ -195,12 +195,12 @@ class AuthProvider extends ChangeNotifier {
     );
   }
 
-  // Web-based OAuth flow — uses the same Web Client ID as the website.
-  // This bypasses Android SHA-1 fingerprint restrictions completely.
-  static const _googleWebClientId =
-      '70312411330-8givsb0ktr8f09u8ullo157vkppkoqqv.apps.googleusercontent.com';
-  static const _googleCallbackUrl =
-      'https://hotel-management-production-2225.up.railway.app/api/auth/google/callback';
+  // Native Google Sign-In helper. Using the Web Client ID of the hotel-mgmt project
+  // which works seamlessly with the Android Client ID using the correct SHA-1.
+  final GoogleSignIn _googleSignIn = GoogleSignIn(
+    scopes: ['email', 'profile', 'openid'],
+    serverClientId: '70312411330-8givsb0ktr8f09u8ullo157vkppkoqqv.apps.googleusercontent.com',
+  );
 
   void logout() async {
     const storage = FlutterSecureStorage();
@@ -208,6 +208,7 @@ class AuthProvider extends ChangeNotifier {
     await storage.delete(key: AppConstants.tokenKey);
     await prefs.remove('user_favorites');
     await storage.delete(key: 'user_data');
+    await _googleSignIn.signOut();
     _user = null;
     notifyListeners();
   }
@@ -217,35 +218,22 @@ class AuthProvider extends ChangeNotifier {
       _isLoading = true;
       notifyListeners();
 
-      // Build the Google OAuth URL
-      final authUrl = Uri.https('accounts.google.com', '/o/oauth2/v2/auth', {
-        'client_id': _googleWebClientId,
-        'redirect_uri': _googleCallbackUrl,
-        'response_type': 'code',
-        'scope': 'openid email profile',
-        'access_type': 'offline',
-        'prompt': 'select_account',
-      });
+      // Sign out from any current session to force account picker
+      await _googleSignIn.signOut().catchError((_) {});
 
-      // Open the browser; wait for luxestay:// deep-link redirect
-      final result = await FlutterWebAuth2.authenticate(
-        url: authUrl.toString(),
-        callbackUrlScheme: 'luxestay',
-      );
+      final GoogleSignInAccount? account = await _googleSignIn.signIn();
 
-      final uri = Uri.parse(result);
-      final error = uri.queryParameters['error'];
-      final idToken = uri.queryParameters['idToken'];
-
-      if (error != null) {
-        _error = 'Google sign-in cancelled or failed: $error';
+      if (account == null) {
         _isLoading = false;
         notifyListeners();
         return false;
       }
 
+      final GoogleSignInAuthentication auth = await account.authentication;
+      final String? idToken = auth.idToken;
+
       if (idToken == null || idToken.isEmpty) {
-        _error = 'Google sign-in failed: no token received.';
+        _error = 'Google sign-in failed: no ID Token received.';
         _isLoading = false;
         notifyListeners();
         return false;
