@@ -5,7 +5,7 @@ class AppConstants {
 
   // ── Production backend (Railway) ──────────────────────────
   static const String _productionApiUrl =
-      'https://luxestay-backend-production.up.railway.app/api/';
+      'https://hotel-management-production-2225.up.railway.app/api/';
 
   // ── Local dev fallback (only used in debug builds on web/emulator) ──
   static const String _localApiUrl = 'http://localhost:5001/api/';
@@ -26,8 +26,8 @@ class AppConstants {
       return 'http://localhost:5001/api/';
     }
 
-    // Physical Android device uses the host machine's LAN IP
-    return 'http://192.168.1.60:5001/api/';
+    // Physical Android/iOS device uses production for seamless testing without firewall issues
+    return _productionApiUrl;
   }
   
   // Storage Keys

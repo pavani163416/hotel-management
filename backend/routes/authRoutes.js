@@ -939,6 +939,8 @@ router.post("/google", async (req, res, next) => {
           "70312411330-mogk7t1e5rs7d3voc2p711e0l6a3221g.apps.googleusercontent.com", // New Android client
           "239513848879-3d319eb0dp07rltmkhelp6qtqp4rhhpq.apps.googleusercontent.com", // Production signed Android
           "239513848879-9f7e5ju597pgbl7p4isddckui4misecp.apps.googleusercontent.com", // Debug Android
+          "239513848879-7n631mq8o0due6v807tk58gbli9907mc.apps.googleusercontent.com", // Original Web Client (serverClientId)
+          "239513848879-b1inguas60lk6gi7lhmhoh3fo319k225.apps.googleusercontent.com", // Original Release APK Client
         ],
       });
       const payload = ticket.getPayload();
