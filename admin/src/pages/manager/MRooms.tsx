@@ -33,6 +33,26 @@ const emptyForm = {
 
 export default function Rooms() {
   const [rooms, setRooms]         = useState<Room[]>([]);
+  const [roomTypes, setRoomTypes] = useState<string[]>([]);
+
+  useEffect(() => {
+    fetch(`${API}/room-types`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (d?.data?.length) {
+          const codes = d.data
+            .filter((rt: any) => rt.active)
+            .map((rt: any) => {
+              const code = rt.code || "";
+              return code.charAt(0).toUpperCase() + code.slice(1);
+            });
+          if (codes.length) setRoomTypes(codes);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const activeRoomTypes = roomTypes.length ? roomTypes : ["Standard", "Deluxe", "Suite", "Penthouse", "Villa"];
   const [loading, setLoading]     = useState(true);
   const [view, setView]           = useState<"grid" | "list">("grid");
   const [search, setSearch]       = useState("");
@@ -178,7 +198,7 @@ export default function Rooms() {
           className="glass-select rounded-xl px-4 py-2 text-sm outline-none"
         >
           <option value="All">All Types</option>
-          {ROOM_TYPES.map((t) => <option key={t}>{t}</option>)}
+          {activeRoomTypes.map((t) => <option key={t}>{t}</option>)}
         </select>
         <div className="flex items-center border border-white/10 rounded-xl overflow-hidden bg-white/5">
           <button
@@ -344,7 +364,7 @@ export default function Rooms() {
                 <label className="block text-[10px] font-bold text-dim uppercase tracking-wider mb-1.5">Type *</label>
                 <select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}
                   className="w-full glass-select rounded-xl px-4 py-2.5 text-sm outline-none">
-                  {ROOM_TYPES.map((t) => <option key={t}>{t}</option>)}
+                  {activeRoomTypes.map((t) => <option key={t}>{t}</option>)}
                 </select>
               </div>
               <div>

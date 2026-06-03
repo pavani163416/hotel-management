@@ -168,6 +168,9 @@ export const createBooking = async (req, res, next) => {
       if (inv && typeof inv.total === "number") {
         const capacity = inv.total;
         
+        // Write lock the hotel document to force serial execution of bookings for this hotel
+        await Hotel.updateOne({ _id: actualHotel._id }, { $set: { updatedAt: new Date() } }).session(session);
+
         // Count active overlapping bookings
         const activeBookingsCount = await Booking.countDocuments({
           hotelId: actualHotel._id,

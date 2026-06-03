@@ -39,6 +39,26 @@ type FormState = {
 
 export default function Rooms() {
   const [hotels, setHotels] = useState<HotelOption[]>([]);
+  const [roomTypes, setRoomTypes] = useState<string[]>([]);
+
+  useEffect(() => {
+    fetch(`${API}/room-types`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (d?.data?.length) {
+          const codes = d.data
+            .filter((rt: any) => rt.active)
+            .map((rt: any) => {
+              const code = rt.code || "";
+              return code.charAt(0).toUpperCase() + code.slice(1);
+            });
+          if (codes.length) setRoomTypes(codes);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const activeRoomTypes = roomTypes.length ? roomTypes : ["Standard", "Deluxe", "Suite", "Penthouse", "Villa"];
   const [selectedHotelId, setSelectedHotelId] = useState<string>("");
   const [rooms, setRooms] = useState<EmbeddedRoom[]>([]);
   const [loading, setLoading] = useState(false);
@@ -435,7 +455,7 @@ export default function Rooms() {
                 <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">Room Type *</label>
                 <select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value as FormState["type"] })}
                   className="w-full px-3 py-2.5 border border-border rounded-lg text-sm outline-none focus:border-primary">
-                  {["Standard", "Deluxe", "Suite", "Penthouse", "Villa"].map((t) => <option key={t}>{t}</option>)}
+                  {activeRoomTypes.map((t) => <option key={t}>{t}</option>)}
                 </select>
               </div>
               <div>
