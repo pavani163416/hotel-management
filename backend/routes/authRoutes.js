@@ -936,6 +936,7 @@ router.post("/google", async (req, res, next) => {
         audience: [
           process.env.GOOGLE_CLIENT_ID,
           "70312411330-8givsb0ktr8f09u8ullo157vkppkoqqv.apps.googleusercontent.com", // Web client (website + mobile web flow)
+          "70312411330-mogk7t1e5rs7d3voc2p711e0l6a3221g.apps.googleusercontent.com", // New Android client
           "239513848879-3d319eb0dp07rltmkhelp6qtqp4rhhpq.apps.googleusercontent.com", // Production signed Android
           "239513848879-9f7e5ju597pgbl7p4isddckui4misecp.apps.googleusercontent.com", // Debug Android
         ],
