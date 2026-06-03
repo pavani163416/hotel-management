@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
 import type { Hotel, Room } from "@/data/hotels";
-import { API } from "../services/api";
+import api, { API } from "../services/api";
 import socket from "@/services/socket";
 
 const HOTEL_CACHE_KEY = "luxe_hotels_cache";
@@ -331,23 +331,22 @@ export const BookingProvider = ({ children }: { children: ReactNode }) => {
     hotelId: string,
     review: { author: string; rating: number; comment: string }
   ) => {
-    const response = await fetch(`${API}/hotels/${hotelId}/reviews`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(review),
-    });
+    try {
+      const response = await api.post(`/hotels/${hotelId}/reviews`, review);
+      const json = response.data;
+      if (!json.success) {
+        throw new Error(json.message || "Failed to submit review.");
+      }
 
-    const json = await response.json();
-    if (!response.ok || !json.success) {
-      throw new Error(json.message || "Failed to submit review.");
+      const updatedHotel = mapHotel(json.data);
+      setHotels((prev) => {
+        const next = prev.map((h) => (h.id === updatedHotel.id ? updatedHotel : h));
+        localStorage.setItem(HOTEL_CACHE_KEY, JSON.stringify(next));
+        return next;
+      });
+    } catch (err: any) {
+      throw new Error(err.message || "Failed to submit review.");
     }
-
-    const updatedHotel = mapHotel(json.data);
-    setHotels((prev) => {
-      const next = prev.map((h) => (h.id === updatedHotel.id ? updatedHotel : h));
-      localStorage.setItem(HOTEL_CACHE_KEY, JSON.stringify(next));
-      return next;
-    });
   };
 
   return (

@@ -124,6 +124,7 @@ import("./models/Hotel.js").then(async ({ default: Hotel }) => {
             $set: {
               hotelStringId: hotel.hotelId,
               hotelId:       hotel._id,
+              roomTypeId:    embRoom.id,
             },
           },
           { upsert: true, new: true }

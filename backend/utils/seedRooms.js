@@ -58,7 +58,39 @@ const seed = async () => {
   await Room.deleteMany({});
   console.log("🗑️  Cleared existing rooms");
 
-  const inserted = await Room.insertMany(sampleRooms);
+  const Hotel = (await import("../models/Hotel.js")).default;
+  const hotels = await Hotel.find({}).lean();
+  const prefixToHotelId = {
+    hdl: "h1",
+    tas: "h2",
+    cbr: "h3",
+    apl: "h4",
+    tgm: "h5",
+    scs: "h6",
+    hh:  "h7",
+    nh:  "h7"
+  };
+  const suffixToRoomTypeId = {
+    101: "r1",
+    102: "r2",
+    103: "r3"
+  };
+  const sampleRoomsWithIds = sampleRooms.map((room) => {
+    const parts = room.roomNumber.split("-");
+    const prefix = parts[0];
+    const suffix = parts[1];
+    const hStrId = prefixToHotelId[prefix] || "h1";
+    const rTypeId = suffixToRoomTypeId[suffix] || "r1";
+    const hotel = hotels.find(h => h.hotelId === hStrId);
+    return {
+      ...room,
+      hotelStringId: hStrId,
+      roomTypeId: rTypeId,
+      hotelId: hotel ? hotel._id : null,
+    };
+  });
+
+  const inserted = await Room.insertMany(sampleRoomsWithIds);
   console.log(`🌱  Seeded ${inserted.length} rooms successfully`);
 
   // Show the mapping for reference

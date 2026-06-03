@@ -366,6 +366,7 @@ export const addRoomToHotel = async (req, res, next) => {
             isActive:      true,
             hotelStringId: req.params.id,
             hotelId:       hotel._id,
+            roomTypeId:    roomId,
           },
         },
         { upsert: true, new: true, setDefaultsOnInsert: true }

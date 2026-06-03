@@ -92,7 +92,10 @@ const Navbar = () => {
     // If user DID sign in, the useEffect above handles the redirect
   };
 
-  const handleLogout = () => { setUser(null); };
+  const handleLogout = () => {
+    setUser(null);
+    navigate("/");
+  };
 
   const handleRequestAssistance = async (data: { message: string; roomNo: string; floorNo: string }) => {
     if (!user) return;
@@ -125,16 +128,12 @@ const Navbar = () => {
       parts.push(data.message);
       const fullMessage = parts.join(" | ");
 
-      const res = await fetch(`${API}/assistance`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          hotelId: hotelId || "",
-          userId: user.email,
-          message: fullMessage,
-        }),
+      const res = await api.post("/assistance", {
+        hotelId: hotelId || "",
+        userId: user.email,
+        message: fullMessage,
       });
-      const json = await res.json();
+      const json = res.data;
       if (!json.success) throw new Error(json.message || "Failed to send request.");
       setRequestSuccess(true);
       toast.success("Assistance request sent to manager!");

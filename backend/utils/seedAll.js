@@ -220,7 +220,17 @@ const seed = async () => {
   hotels.forEach(h => console.log(`    ${h.hotelId.padEnd(4)} ${h.name} (${h.city})`));
 
   // ── 2. Rooms ───────────────────────────────────────────
-  const rooms = await Room.insertMany(roomsData);
+  const roomsDataWithIds = roomsData.map((room) => {
+    const [hStrId, rTypeId] = room.roomNumber.split("_");
+    const hotel = hotels.find(h => h.hotelId === hStrId);
+    return {
+      ...room,
+      hotelStringId: hStrId,
+      roomTypeId: rTypeId,
+      hotelId: hotel ? hotel._id : null,
+    };
+  });
+  const rooms = await Room.insertMany(roomsDataWithIds);
   console.log(`\n✅  Rooms      → ${rooms.length} seeded`);
   rooms.forEach(r => console.log(`    ${r.roomNumber.padEnd(8)} ${r.type.padEnd(12)} $${r.pricePerNight}/night`));
 
