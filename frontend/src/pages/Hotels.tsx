@@ -213,7 +213,7 @@ const TopDeals = ({ deals, onView }: { deals: any[]; onView: (id: string) => voi
       </div>
       <div id="deals-rail" className="flex gap-4 overflow-x-auto scroll-smooth pb-2 -mx-1 px-1 snap-x">
         {deals.map((h) => (
-          <article key={h.id} className="snap-start min-w-[280px] max-w-[280px] bg-background rounded-xl overflow-hidden border border-border hover:shadow-elegant transition-base hover:scale-[1.02] group">
+          <article key={h.id} onClick={() => onView(h.id)} className="snap-start min-w-[280px] max-w-[280px] bg-background rounded-xl overflow-hidden border border-border hover:shadow-elegant transition-base hover:scale-[1.02] group cursor-pointer">
             <div className="relative aspect-[16/10] overflow-hidden">
               <img src={h.image} alt={h.name} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-base duration-500" />
               <span className="absolute top-2 left-2 bg-accent text-accent-foreground text-[10px] uppercase tracking-wider font-bold px-2 py-1 rounded">Top Deal</span>
@@ -233,7 +233,7 @@ const TopDeals = ({ deals, onView }: { deals: any[]; onView: (id: string) => voi
                   <span className="font-display text-lg font-bold text-primary">${h.pricePerNight}</span>
                   <span className="text-[11px] text-muted-foreground">/night</span>
                 </div>
-                <button onClick={() => onView(h.id)} className="text-xs font-semibold bg-accent text-accent-foreground px-3 py-1.5 rounded-md hover:bg-accent/90 transition-base">Book Now</button>
+                <button onClick={(e) => { e.stopPropagation(); onView(h.id); }} className="text-xs font-semibold bg-accent text-accent-foreground px-3 py-1.5 rounded-md hover:bg-accent/90 transition-base">Book Now</button>
               </div>
             </div>
           </article>
@@ -246,7 +246,7 @@ const TopDeals = ({ deals, onView }: { deals: any[]; onView: (id: string) => voi
 const HotelListCard = ({ hotel: h, onView }: { hotel: any; onView: () => void }) => {
   const totalAvail = h.rooms.reduce((s: number, r: any) => s + r.available, 0);
   return (
-    <article className="bg-card rounded-2xl border border-border overflow-hidden hover:shadow-elegant hover:border-brown/40 transition-base group animate-fade-in">
+    <article onClick={onView} className="bg-card rounded-2xl border border-border overflow-hidden hover:shadow-elegant hover:border-brown/40 transition-base group animate-fade-in cursor-pointer">
       <div className="grid md:grid-cols-[260px_1fr_auto]">
         <div className="relative aspect-[4/3] md:aspect-auto md:h-full overflow-hidden">
           <img src={h.image} alt={h.name} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-base duration-500" />
@@ -279,7 +279,7 @@ const HotelListCard = ({ hotel: h, onView }: { hotel: any; onView: () => void })
             <p className="font-display text-2xl font-bold text-primary">${h.pricePerNight}</p>
             <p className="text-xs text-muted-foreground">per night</p>
           </div>
-          <button onClick={onView} className="bg-accent hover:bg-accent/90 text-accent-foreground px-5 py-2.5 rounded-lg font-semibold text-sm transition-base">View Details</button>
+          <button onClick={(e) => { e.stopPropagation(); onView(); }} className="bg-accent hover:bg-accent/90 text-accent-foreground px-5 py-2.5 rounded-lg font-semibold text-sm transition-base">View Details</button>
         </div>
       </div>
     </article>
@@ -287,7 +287,7 @@ const HotelListCard = ({ hotel: h, onView }: { hotel: any; onView: () => void })
 };
 
 const HotelGridCard = ({ hotel: h, onView }: { hotel: any; onView: () => void }) => (
-  <article className="bg-card rounded-2xl border border-border overflow-hidden hover:shadow-elegant hover:border-brown/40 transition-base hover:scale-[1.02] group animate-fade-in">
+  <article onClick={onView} className="bg-card rounded-2xl border border-border overflow-hidden hover:shadow-elegant hover:border-brown/40 transition-base hover:scale-[1.02] group animate-fade-in cursor-pointer">
     <div className="relative aspect-[4/3] overflow-hidden">
       <img src={h.image} alt={h.name} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-base duration-500" />
       {h.isDeal && <span className="absolute top-3 left-3 bg-accent text-accent-foreground text-[10px] uppercase tracking-wider font-bold px-2.5 py-1 rounded">Top Deal</span>}
@@ -308,7 +308,7 @@ const HotelGridCard = ({ hotel: h, onView }: { hotel: any; onView: () => void })
           <p className="text-[11px] text-muted-foreground">From</p>
           <p className="font-display text-xl font-bold text-primary">${h.pricePerNight}<span className="text-xs text-muted-foreground font-normal">/night</span></p>
         </div>
-        <button onClick={onView} className="bg-accent hover:bg-accent/90 text-accent-foreground px-4 py-2 rounded-lg font-semibold text-sm transition-base">View</button>
+        <button onClick={(e) => { e.stopPropagation(); onView(); }} className="bg-accent hover:bg-accent/90 text-accent-foreground px-4 py-2 rounded-lg font-semibold text-sm transition-base">View</button>
       </div>
     </div>
   </article>

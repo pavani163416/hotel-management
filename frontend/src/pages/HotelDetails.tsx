@@ -156,9 +156,9 @@ const HotelDetails = () => {
     <Layout>
       {/* Gallery */}
       <div className="container pt-8">
-        <div className="grid md:grid-cols-3 gap-3 rounded-2xl overflow-hidden">
-          <img src={hotel.gallery[0]} alt={hotel.name} className="md:col-span-2 w-full h-[420px] object-cover" />
-          <div className="grid grid-rows-2 gap-3">
+        <div className="grid md:grid-cols-3 gap-3 rounded-2xl overflow-hidden md:h-[420px]">
+          <img src={hotel.gallery[0]} alt={hotel.name} className="md:col-span-2 w-full h-[250px] md:h-full object-cover" />
+          <div className="grid grid-rows-2 gap-3 h-[250px] md:h-full">
             <img src={hotel.gallery[1]} alt="" className="w-full h-full object-cover" loading="lazy" />
             <img src={hotel.gallery[2]} alt="" className="w-full h-full object-cover" loading="lazy" />
           </div>
@@ -225,20 +225,18 @@ const HotelDetails = () => {
                           <span className="flex items-center gap-1"><BedDouble className="w-3.5 h-3.5" /> {r.bed}</span>
                           <span className="flex items-center gap-1"><Users className="w-3.5 h-3.5" /> {r.capacity}</span>
                         </p>
-                        {/* Availability badge — always shown, not just when dates are set */}
+                        {/* Availability badge */}
                         {isSoldOut ? (
                           <p className="text-xs font-semibold text-destructive mt-1.5">
-                            {search.checkIn && search.checkOut
-                              ? "Sold out for selected dates"
-                              : "Currently unavailable"}
+                            Sold out
                           </p>
                         ) : roomsLeft === 1 ? (
                           <p className="text-xs font-semibold text-amber-600 mt-1.5">
                             Only 1 Room Left
                           </p>
-                        ) : roomsLeft != null && roomsLeft > 1 ? (
-                          <p className="text-xs font-semibold text-emerald-600 mt-1.5">
-                            {roomsLeft} Rooms Available
+                        ) : roomsLeft === 2 ? (
+                          <p className="text-xs font-semibold text-amber-600 mt-1.5">
+                            Only 2 Rooms Left
                           </p>
                         ) : null}
                       </div>
