@@ -24,6 +24,22 @@ const Home = () => {
   const nav = useNavigate();
   const { search, setSearch, hotels } = useBooking();
   const [local, setLocal] = useState(search);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+
+  const query = local.location.trim().toLowerCase();
+  const filteredLocations = useMemo(() => {
+    if (!query) return [];
+    const set = new Set<string>();
+    hotels.forEach((h) => {
+      if (h.city && h.city.toLowerCase().includes(query)) {
+        set.add(h.city);
+      }
+      if (h.location && h.location.toLowerCase().includes(query)) {
+        set.add(h.location);
+      }
+    });
+    return Array.from(set);
+  }, [hotels, query]);
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,11 +92,38 @@ const Home = () => {
                   value={local.location} 
                   onChange={(e) => {
                     setLocal({ ...local, location: e.target.value });
+                    setDropdownOpen(true);
+                  }}
+                  onFocus={() => setDropdownOpen(true)}
+                  onBlur={() => {
+                    setTimeout(() => setDropdownOpen(false), 200);
                   }}
                   placeholder="Where to?" 
                   className="w-full bg-transparent outline-none text-sm font-medium text-primary placeholder:text-muted-foreground" 
                 />
               </Field>
+
+              {dropdownOpen && filteredLocations.length > 0 && (
+                <div className="absolute left-0 right-0 top-full mt-2 bg-popover border border-border rounded-xl shadow-luxe z-50 max-h-60 overflow-y-auto p-1.5 space-y-0.5">
+                  {filteredLocations.map((loc) => (
+                    <button
+                      key={loc}
+                      type="button"
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                      }}
+                      onClick={() => {
+                        setLocal({ ...local, location: loc });
+                        setDropdownOpen(false);
+                      }}
+                      className="w-full text-left px-3.5 py-2.5 rounded-lg hover:bg-accent hover:text-accent-foreground text-sm font-medium text-primary flex items-center gap-2 transition-base"
+                    >
+                      <MapPin className="w-4 h-4 text-muted-foreground shrink-0" />
+                      <span>{loc}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             <Field icon={<Calendar className="w-4 h-4" />} label="Check in">

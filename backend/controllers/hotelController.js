@@ -19,6 +19,10 @@ const getHotelSnapshot = async () => {
   return _HotelSnapshot;
 };
 
+export const invalidateHotelCache = async () => {
+  await invalidateAllCaches();
+};
+
 const getInventoryTotal = (roomInventory) => {
   if (!roomInventory) return 0;
   let total = 0;

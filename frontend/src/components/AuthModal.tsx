@@ -44,7 +44,7 @@ type AuthModalProps = {
   defaultMode?: "signin" | "signup";
 };
 
-function AuthModalInner({ isOpen, onClose, defaultMode, mode, setMode, loading, setLoading, error, setError, email, setEmail, password, setPassword, name, setName, phone, setPhone, countryCode, setCountryCode, city, setCity, otpSent, setOtpSent, verificationCode, setVerificationCode, otpMessage, setOtpMessage, resendCooldown, setResendCooldown, showContactAdmin, setShowContactAdmin, resetForm, handleOpenChange, handleSignIn, handleSignUp, finishAuth, handleSendPhoneOTP, handleVerifyPhoneOTP, handleVerifyEmailOTP, handleResendEmailOTP, renderAuthOptions }: any) {
+function AuthModalInner({ isOpen, onClose, defaultMode, mode, setMode, loading, setLoading, error, setError, email, setEmail, password, setPassword, name, setName, phone, setPhone, countryCode, setCountryCode, city, setCity, otpSent, setOtpSent, verificationCode, setVerificationCode, otpMessage, setOtpMessage, resendCooldown, setResendCooldown, showContactAdmin, setShowContactAdmin, resetForm, handleOpenChange, handleSignIn, handleSignUp, finishAuth, handleSendPhoneOTP, handleVerifyPhoneOTP, handleVerifyEmailOTP, handleResendEmailOTP, renderAuthOptions, handleForgotPassword }: any) {
   // We extract the Google Login hook into a child component wrapped in GoogleOAuthProvider
   const login = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
@@ -99,7 +99,7 @@ function AuthModalInner({ isOpen, onClose, defaultMode, mode, setMode, loading, 
     <DialogContent className="sm:max-w-[425px]" aria-describedby={undefined}>
       <DialogHeader>
         <DialogTitle className="font-display text-2xl font-bold">
-          {mode === "signin" ? "Welcome Back" : mode === "phone" ? "Continue with Phone" : mode === "verify_email_otp" ? "Verify Your Email" : "Create an Account"}
+          {mode === "signin" ? "Welcome Back" : mode === "phone" ? "Continue with Phone" : mode === "verify_email_otp" ? "Verify Your Email" : mode === "forgot_password" ? "Reset Password" : "Create an Account"}
         </DialogTitle>
       </DialogHeader>
 
@@ -116,6 +116,10 @@ function AuthModalInner({ isOpen, onClose, defaultMode, mode, setMode, loading, 
             <PasswordInput value={password} onChange={e => setPassword((e.target as HTMLInputElement).value)}
               className="w-full px-4 py-2 border border-border rounded-lg outline-none focus:ring-2 focus:ring-primary focus:border-primary"
               placeholder="••••••••" autoComplete="current-password" />
+            <div className="flex justify-end">
+              <button type="button" onClick={() => { setMode("forgot_password"); setError(""); setOtpMessage(""); setOtpSent(false); }}
+                className="text-xs text-primary hover:underline font-semibold">Forgot Password?</button>
+            </div>
           </div>
           {error && <p className="text-destructive text-sm font-medium">{error}</p>}
           <button type="submit" disabled={loading}
@@ -250,7 +254,7 @@ function AuthModalInner({ isOpen, onClose, defaultMode, mode, setMode, loading, 
               className="text-primary hover:underline font-semibold">Sign In</button>
           </p>
         </div>
-      ) : (
+      ) : mode === "verify_email_otp" ? (
         <form onSubmit={handleVerifyEmailOTP} className="space-y-4 mt-4">
           <div className="space-y-2">
             <label className="block text-sm font-medium text-center">Verification Code</label>
@@ -300,6 +304,31 @@ function AuthModalInner({ isOpen, onClose, defaultMode, mode, setMode, loading, 
             </button>
           </div>
         </form>
+      ) : (
+        <form onSubmit={handleForgotPassword} className="space-y-4 mt-4">
+          <div className="space-y-2">
+            <label className="block text-sm font-medium">Email Address</label>
+            <input type="email" value={email} onChange={e => setEmail(e.target.value)}
+              className="w-full px-4 py-2 border border-border rounded-lg outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+              placeholder="name@example.com" autoComplete="email" required />
+          </div>
+          {otpMessage && (
+            <p className="text-sm text-green-600 bg-green-50 p-3 rounded-lg text-center leading-relaxed">
+              {otpMessage}
+            </p>
+          )}
+          {error && <p className="text-destructive text-sm font-medium">{error}</p>}
+          {!otpSent && (
+            <button type="submit" disabled={loading}
+              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-3 rounded-xl font-semibold flex items-center justify-center transition-base mt-2">
+              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Send Reset Link"}
+            </button>
+          )}
+          <div className="text-center text-sm text-muted-foreground mt-4">
+            <button type="button" onClick={() => { setMode("signin"); resetForm(); }}
+              className="text-primary hover:underline font-semibold font-display">Back to Sign In</button>
+          </div>
+        </form>
       )}
       <div className="mt-4 pt-4 border-t border-border flex justify-center">
         <button 
@@ -317,7 +346,7 @@ function AuthModalInner({ isOpen, onClose, defaultMode, mode, setMode, loading, 
 
 export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModalProps) {
   const { setUser } = useBooking();
-  const [mode, setMode]         = useState<"signin" | "signup" | "phone" | "verify_email_otp">(defaultMode);
+  const [mode, setMode]         = useState<"signin" | "signup" | "phone" | "verify_email_otp" | "forgot_password">(defaultMode);
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState("");
   const [email, setEmail]       = useState("");
@@ -498,6 +527,25 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
     }
   };
 
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) {
+      setError("Please enter your email address.");
+      return;
+    }
+    setError("");
+    setLoading(true);
+    try {
+      const res: any = await api.post("/auth/forgot-password", { email: email.trim().toLowerCase() });
+      setOtpMessage(res.data?.message || "A password reset link has been sent to your email.");
+      setOtpSent(true);
+    } catch (err: any) {
+      setError(err.response?.data?.message || err.message || "Failed to send reset email.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleResendEmailOTP = async () => {
     setError(""); setLoading(true);
     try {
@@ -528,6 +576,7 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
           handleOpenChange={handleOpenChange} handleSignIn={handleSignIn} handleSignUp={handleSignUp}
           finishAuth={finishAuth} handleSendPhoneOTP={handleSendPhoneOTP} handleVerifyPhoneOTP={handleVerifyPhoneOTP}
           handleVerifyEmailOTP={handleVerifyEmailOTP} handleResendEmailOTP={handleResendEmailOTP}
+          handleForgotPassword={handleForgotPassword}
         />
       </GoogleOAuthProvider>
       <ContactAdminModal 
