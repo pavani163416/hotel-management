@@ -195,12 +195,11 @@ class AuthProvider extends ChangeNotifier {
     );
   }
 
-  // Native Google Sign-In helper. Using the Web Client ID of the hotel-mgmt project.
-  // We use clientId on Web and serverClientId on mobile.
+  // Native Google Sign-In helper. Using the Web Client ID matching google-services.json.
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     scopes: ['email', 'profile', 'openid'],
-    clientId: kIsWeb ? '70312411330-8givsb0ktr8f09u8ullo157vkppkoqqv.apps.googleusercontent.com' : null,
-    serverClientId: kIsWeb ? null : '70312411330-8givsb0ktr8f09u8ullo157vkppkoqqv.apps.googleusercontent.com',
+    clientId: kIsWeb ? '239513848879-7n631mq8o0due6v807tk58gbli9907mc.apps.googleusercontent.com' : null,
+    serverClientId: kIsWeb ? null : '239513848879-7n631mq8o0due6v807tk58gbli9907mc.apps.googleusercontent.com',
   );
 
   void logout() async {
