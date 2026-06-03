@@ -98,25 +98,25 @@ export default function Rooms() {
       .catch(() => {});
   }, []);
 
-  // ── Fetch rooms from Hotel's embedded array whenever hotel changes ──
+  // ── Fetch rooms from standalone Room collection whenever hotel changes ──
   const fetchHotelRooms = (hotelId: string) => {
     if (!hotelId) return;
     setLoading(true);
-    fetch(`${API}/hotels/${hotelId}`)
+    fetch(`${API}/rooms?hotelStringId=${hotelId}`)
       .then((r) => r.json())
       .then((d) => {
-        const raw: any[] = d?.data?.rooms || [];
+        const raw: any[] = d?.data || [];
         setRooms(raw.map((r) => ({
-          id:          r.id || r._id,
-          name:        r.name || "Room",
+          id:          r.roomNumber,
+          name:        r.roomNumber,
           description: r.description || "",
-          price:       r.price || 0,
+          price:       r.pricePerNight || 0,
           capacity:    r.capacity || 2,
-          bed:         r.bed || "1 King Bed",
-          available:   r.available ?? 1,
-          features:    r.features || [],
+          bed:         r.bedType === "King" ? "1 King Bed" : r.bedType === "Queen" ? "1 Queen Bed" : r.bedType === "Twin" ? "2 Twin Beds" : r.bedType || "1 King Bed",
+          available:   r.status === "Available" ? 1 : 0,
+          features:    r.amenities && r.amenities.length > 0 ? r.amenities : [r.type],
           floor:       r.floor ?? 1,
-          status:      (r.available ?? 1) === 0 ? "Maintenance" : "Available",
+          status:      r.status,
         })));
       })
       .catch(() => setRooms([]))
