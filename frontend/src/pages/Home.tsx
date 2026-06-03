@@ -24,40 +24,6 @@ const Home = () => {
   const nav = useNavigate();
   const { search, setSearch, hotels } = useBooking();
   const [local, setLocal] = useState(search);
-  const [showDropdown, setShowDropdown] = useState(false);
-
-  const dynamicDestinations = useMemo(() => {
-    const map = new Map();
-    // Add predefined top destinations first
-    TOP_DESTINATIONS.forEach(d => {
-      map.set(d.city.toLowerCase(), d);
-    });
-
-    // Add unique locations from live hotels
-    hotels.forEach(h => {
-      if (!h.city && !h.location) return;
-      const cityName = h.city || h.location.split(",")[0].trim();
-      const cityKey = cityName.toLowerCase();
-      
-      if (!map.has(cityKey)) {
-        map.set(cityKey, {
-          city: cityName,
-          country: h.location || cityName,
-          code: cityName.substring(0, 3).toUpperCase(),
-          desc: `Premium stays in ${cityName}`
-        });
-      }
-    });
-    
-    return Array.from(map.values());
-  }, [hotels]);
-
-  const filteredDestinations = dynamicDestinations.filter(d => 
-    !local.location || 
-    d.city.toLowerCase().includes(local.location.toLowerCase()) || 
-    d.country.toLowerCase().includes(local.location.toLowerCase()) ||
-    d.code.toLowerCase().includes(local.location.toLowerCase())
-  );
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -104,63 +70,17 @@ const Home = () => {
           <form onSubmit={submit}
             className="bg-card rounded-2xl shadow-luxe border border-border p-2 grid grid-cols-1 md:grid-cols-[2fr_1fr_1fr_1fr_auto] gap-1 max-w-5xl mx-auto">
             
-            <div className="relative" onBlur={(e) => {
-              if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-                setShowDropdown(false);
-              }
-            }}>
+            <div className="relative">
               <Field icon={<MapPin className="w-4 h-4" />} label="Location">
                 <input 
                   value={local.location} 
                   onChange={(e) => {
                     setLocal({ ...local, location: e.target.value });
-                    setShowDropdown(true);
                   }}
-                  onFocus={() => setShowDropdown(true)}
                   placeholder="Where to?" 
                   className="w-full bg-transparent outline-none text-sm font-medium text-primary placeholder:text-muted-foreground" 
                 />
               </Field>
-
-              {showDropdown && (
-                <div className="absolute top-[110%] left-0 w-full sm:w-[380px] bg-background border border-border rounded-xl shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
-                  <div className="bg-secondary/80 px-4 py-2 border-b border-border text-xs font-bold text-primary uppercase tracking-wider">
-                    Top Destinations
-                  </div>
-                  <div className="max-h-[320px] overflow-y-auto">
-                    {filteredDestinations.length > 0 ? (
-                      filteredDestinations.map(d => (
-                        <button
-                          key={d.code}
-                          type="button"
-                          onClick={() => {
-                            setLocal({ ...local, location: d.city });
-                            setShowDropdown(false);
-                          }}
-                          className="w-full text-left px-4 py-3 flex items-start gap-4 hover:bg-secondary/60 transition-colors border-b border-border/40 last:border-0"
-                        >
-                          <MapPin className="w-5 h-5 text-muted-foreground shrink-0 mt-0.5" />
-                          <div className="flex-1 min-w-0">
-                            <div className="flex justify-between items-baseline gap-2">
-                              <p className="font-semibold text-primary text-base truncate">
-                                {d.city} <span className="font-normal text-muted-foreground">({d.code})</span>
-                              </p>
-                              <span className="text-xs text-muted-foreground whitespace-nowrap">
-                                {d.country}
-                              </span>
-                            </div>
-                            <p className="text-xs text-muted-foreground truncate">{d.desc}</p>
-                          </div>
-                        </button>
-                      ))
-                    ) : (
-                      <div className="px-4 py-8 text-center text-sm text-muted-foreground">
-                        No locations found matching "{local.location}"
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
             </div>
 
             <Field icon={<Calendar className="w-4 h-4" />} label="Check in">

@@ -21,9 +21,13 @@ export default function Hotels() {
 
   // Pre-fill search from URL query param (e.g. from Topbar)
   const [searchParams] = useSearchParams();
+  const lastQParam = useRef<string | null>(null);
   useEffect(() => {
-    const q = searchParams.get("q");
-    if (q) setSearch(q);
+    const q = searchParams.get("q") || "";
+    if (q !== lastQParam.current) {
+      lastQParam.current = q;
+      setSearch(q);
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
   const [addOpen, setAddOpen] = useState(false);

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Search, Download, Plus, MoreVertical,
@@ -65,20 +65,29 @@ export default function Bookings() {
 
   // Read hotel filter and search term from URL query params (e.g. ?hotel=HotelName&q=term)
   const [searchParams] = useSearchParams();
+  const lastHotelParam = useRef<string | null>(null);
+  const lastQParam = useRef<string | null>(null);
+
   useEffect(() => {
     const hotelParam = searchParams.get("hotel");
-    if (hotelParam) {
-      setPropertyFilter(hotelParam);
-    } else {
-      setPropertyFilter("All Properties");
+    if (hotelParam !== lastHotelParam.current) {
+      lastHotelParam.current = hotelParam;
+      if (hotelParam) {
+        setPropertyFilter(hotelParam);
+      } else {
+        setPropertyFilter("All Properties");
+      }
     }
     const qParam = searchParams.get("q");
-    if (qParam) {
-      setSearch(qParam);
-    } else {
-      setSearch("");
+    if (qParam !== lastQParam.current) {
+      lastQParam.current = qParam;
+      if (qParam) {
+        setSearch(qParam);
+      } else {
+        setSearch("");
+      }
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
   // Simple cancel confirmation state (no reason required for admin)
@@ -94,7 +103,7 @@ export default function Bookings() {
       const r: any = await apiGetBookingById(b.id);
       // API returns { success, data: booking } — unwrap one level
       setDetailFull(r?.data?.data || null);
-    } catch {}
+    } catch { }
   };
 
   // New booking form
@@ -107,14 +116,34 @@ export default function Bookings() {
   const [nbAmount, setNbAmount] = useState("");
 
   const filtered = bookings.filter((b) => {
-    const name = b.guestSnapshot.name.toLowerCase();
-    const email = b.guestSnapshot.email.toLowerCase();
-    const q = search.toLowerCase();
-    const matchSearch = !q || name.includes(q) || email.includes(q) || b.id.toLowerCase().includes(q);
+    if (!b) return false;
+
+    const name = String(b.guestSnapshot?.name || "").toLowerCase();
+    const email = String(b.guestSnapshot?.email || "").toLowerCase();
+    const roomType = String(b.room?.type || "").toLowerCase();
+    const roomNumber = String(b.room?.roomNumber || "").toLowerCase();
+    const property = String(b.property || "").toLowerCase();
+    const govtId = String(b.guestSnapshot?.id || "").toLowerCase();
+    const bookingId = String(b.id || "").toLowerCase();
+
+    const q = search.trim().toLowerCase();
+
+    const matchSearch = !q ||
+      name.includes(q) ||
+      email.includes(q) ||
+      bookingId.includes(q) ||
+      roomType.includes(q) ||
+      roomNumber.includes(q) ||
+      property.includes(q) ||
+      govtId.includes(q);
+
     const matchStatus = statusFilter === "All Statuses" || b.status === statusFilter;
-    const matchProperty = propertyFilter === "All Properties" || b.property.trim().toLowerCase() === propertyFilter.trim().toLowerCase();
+    const matchProperty = propertyFilter === "All Properties" || 
+      String(b.property || "").trim().toLowerCase() === propertyFilter.trim().toLowerCase();
+
     return matchSearch && matchStatus && matchProperty;
   });
+
 
   const paginated = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
   const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));

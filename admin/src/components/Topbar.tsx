@@ -37,12 +37,43 @@ export default function Topbar({ searchPlaceholder }: Props) {
   const navigate = useNavigate();
   const location = useLocation();
   const [search, setSearch]                   = useState("");
+  const [showSearchDropdown, setShowSearchDropdown] = useState(false);
   const [showNotifs, setShowNotifs]           = useState(false);
   const [showSettings, setShowSettings]       = useState(false);
   const [showHotelSwitcher, setShowHotelSwitcher] = useState(false);
   const [toast, setToast]                     = useState<NewBookingAlert | null>(null);
-  const [notificationToast, setNotificationToast] = useState<NotificationItem | null>(null);
+  const [notificationToast, setNotificationToast] = useState<NewBookingAlert | null>(null); // fixed type to match context or notifications
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const searchRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown on click outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setShowSearchDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const PAGES = [
+    { name: "Dashboard", route: "/dashboard", managerRoute: "/m/dashboard" },
+    { name: "Hotels", route: "/hotels", managerRoute: "/hotels" },
+    { name: "Rooms", route: "/rooms", managerRoute: "/rooms" },
+    { name: "Hotel Map", route: "/hotel-map", managerRoute: "/hotel-map" },
+    { name: "Bookings", route: "/bookings", managerRoute: "/m/bookings" },
+    { name: "Payments", route: "/payments", managerRoute: "/payments" },
+    { name: "Guests", route: "/guests", managerRoute: "/guests" },
+    { name: "Revenue", route: "/revenue", managerRoute: "/revenue" },
+    { name: "Analytics", route: "/analytics", managerRoute: "/analytics" },
+    { name: "Insights", route: "/insights", managerRoute: "/insights" },
+    { name: "Managers", route: "/managers", managerRoute: "/managers" }
+  ];
+
+  const filteredPages = PAGES.filter(p =>
+    p.name.toLowerCase().includes(search.trim().toLowerCase())
+  );
 
   const notificationScope = admin?.role === "Manager"
     ? { role: "manager", hotelId: admin.assignedHotelId || admin.hotelId }
@@ -66,14 +97,14 @@ export default function Topbar({ searchPlaceholder }: Props) {
     setTimeout(() => setToast(null), 5000);
   }, [pushLiveAlert]);
 
-  const handleNotification = useCallback((data: NotificationItem) => {
+  const handleNotification = useCallback((data: any) => {
     setNotifications((prev) => [data, ...prev.filter((n) => n._id !== data._id)].slice(0, 50));
     setNotificationToast(data);
     setTimeout(() => setNotificationToast(null), 4500);
   }, []);
 
   useSocket<NewBookingAlert>("newBooking", handleNewBooking);
-  useSocket<NotificationItem>("notification", handleNotification);
+  useSocket<any>("notification", handleNotification);
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;
   const liveCount      = liveAlerts.length;
@@ -92,21 +123,13 @@ export default function Topbar({ searchPlaceholder }: Props) {
 
   const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && search.trim()) {
-      const q = search.trim();
-      // Navigate to the relevant page based on context
-      const path = location.pathname;
-      if (path.startsWith("/rooms")) {
-        navigate(`/rooms?q=${encodeURIComponent(q)}`);
-      } else if (path.startsWith("/guests")) {
-        navigate(`/guests?q=${encodeURIComponent(q)}`);
-      } else if (path.startsWith("/hotels")) {
-        navigate(`/hotels?q=${encodeURIComponent(q)}`);
-      } else if (path.startsWith("/m/")) {
-        navigate(`/m/bookings?q=${encodeURIComponent(q)}`);
-      } else {
-        navigate(`/bookings?q=${encodeURIComponent(q)}`);
+      if (filteredPages.length > 0) {
+        const targetPage = filteredPages[0];
+        const actualRoute = admin?.role === "Manager" ? targetPage.managerRoute : targetPage.route;
+        navigate(actualRoute);
+        setSearch("");
+        setShowSearchDropdown(false);
       }
-      setSearch("");
     }
   };
 
@@ -138,22 +161,60 @@ export default function Topbar({ searchPlaceholder }: Props) {
       }}
     >
       {/* Search */}
-      <div className="flex items-center gap-2 rounded-xl px-3 py-2 w-72"
-        style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
-        <Search className="w-3.5 h-3.5 text-dim shrink-0" />
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          onKeyDown={handleSearch}
-          placeholder={searchPlaceholder || "Search bookings, guests, hotels..."}
-          className="bg-transparent text-sm outline-none text-bright placeholder:text-dim w-full"
-        />
-        {search && (
-          <button onClick={() => setSearch("")} className="text-dim transition-colors"
-            onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = "#f0f4ff"}
-            onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = "#64748b"}>
-            <X className="w-3.5 h-3.5" />
-          </button>
+      <div ref={searchRef} className="relative">
+        <div className="flex items-center gap-2 rounded-xl px-3 py-2 w-72"
+          style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
+          <Search className="w-3.5 h-3.5 text-dim shrink-0" />
+          <input
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setShowSearchDropdown(true);
+            }}
+            onKeyDown={handleSearch}
+            onFocus={() => setShowSearchDropdown(true)}
+            placeholder={searchPlaceholder || "Search bookings, guests, hotels..."}
+            className="bg-transparent text-sm outline-none text-bright placeholder:text-dim w-full"
+          />
+          {search && (
+            <button onClick={() => { setSearch(""); setShowSearchDropdown(false); }} className="text-dim transition-colors"
+              onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = "#f0f4ff"}
+              onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = "#64748b"}>
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+
+        {/* Search Dropdown */}
+        {showSearchDropdown && search.trim() && (
+          <div
+            className="absolute left-0 top-11 w-72 z-50 overflow-hidden"
+            style={{ ...dropdownStyle, maxHeight: "250px", overflowY: "auto" }}
+          >
+            {filteredPages.length === 0 ? (
+              <p className="text-xs text-dim text-center py-3">No matching pages found</p>
+            ) : (
+              filteredPages.map((page, index) => {
+                const actualRoute = admin?.role === "Manager" ? page.managerRoute : page.route;
+                return (
+                  <button
+                    key={page.name}
+                    onClick={() => {
+                      navigate(actualRoute);
+                      setSearch("");
+                      setShowSearchDropdown(false);
+                    }}
+                    className="w-full text-left px-4 py-2.5 text-sm text-soft flex items-center justify-between transition-colors"
+                    style={{ borderBottom: index < filteredPages.length - 1 ? "1px solid rgba(255,255,255,0.05)" : "none" }}
+                    {...dropdownItemHover}
+                  >
+                    <span className="font-medium text-bright">{page.name}</span>
+                    <span className="text-[10px] text-dim">{actualRoute}</span>
+                  </button>
+                );
+              })
+            )}
+          </div>
         )}
       </div>
 

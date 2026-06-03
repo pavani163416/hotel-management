@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Search, Plus, Edit2, Trash2, X, Download, ChevronDown, Loader2 } from "lucide-react";
 import { BedDouble, CheckCircle, Wrench, DollarSign, Building2 } from "lucide-react";
@@ -65,13 +65,19 @@ export default function Rooms() {
 
   const [searchParams] = useSearchParams();
   const [search, setSearch] = useState("");
+  const lastQParam = useRef<string | null>(null);
+
   useEffect(() => {
     const qParam = searchParams.get("q");
-    if (qParam) {
-      setSearch(qParam);
-    } else {
-      setSearch("");
+    if (qParam !== lastQParam.current) {
+      lastQParam.current = qParam;
+      if (qParam) {
+        setSearch(qParam);
+      } else {
+        setSearch("");
+      }
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
   const [statusFilter, setStatusFilter] = useState("All");

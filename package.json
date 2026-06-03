@@ -5,17 +5,25 @@
   "type": "module",
   "workspaces": [
     "admin",
-    "frontend"
+    "frontend",
+    "backend"
   ],
   "scripts": {
     "build:admin": "npm --prefix admin run build",
     "build:frontend": "npm --prefix frontend run build",
-    "build": "npm run build:admin"
+    "build": "npm run build:admin",
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "dev:admin": "npm --prefix admin run dev",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\" \"npm run dev:admin\""
   },
   "dependencies": {
     "connect-redis": "^9.0.0",
     "express-session": "^1.19.0",
     "google-auth-library": "^10.6.2",
     "redis": "^5.12.1"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
   }
 }

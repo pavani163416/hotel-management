@@ -124,13 +124,19 @@ export default function Guests() {
       });
   const [searchParams] = useSearchParams();
   const [search, setSearch] = useState("");
+  const lastQParam = useRef<string | null>(null);
+
   useEffect(() => {
     const qParam = searchParams.get("q");
-    if (qParam) {
-      setSearch(qParam);
-    } else {
-      setSearch("");
+    if (qParam !== lastQParam.current) {
+      lastQParam.current = qParam;
+      if (qParam) {
+        setSearch(qParam);
+      } else {
+        setSearch("");
+      }
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
   const [tierFilter, setTierFilter] = useState("All Preferences");
