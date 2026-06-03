@@ -205,8 +205,9 @@ const createPriceRequest = z.object({
 
 // ── Review Schema ─────────────────────────────────────────────────────────────
 const addReview = z.object({
+  author:  z.string().min(1, "Author name is required").max(100).trim(),
   rating:  z.number().int().min(1).max(5),
-  comment: z.string().min(5).max(1000).trim().optional(),
+  comment: z.string().min(5, "Comment must be at least 5 characters").max(1000).trim(),
 }).strict();
 
 // ── Manager Login Schema (same as user login but exported separately) ─────────

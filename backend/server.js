@@ -133,6 +133,13 @@ import("./models/Hotel.js").then(async ({ default: Hotel }) => {
       }
     }
     if (synced) logger.info(`Startup sync: ensured ${synced} hotel room(s) in standalone collection`);
+    try {
+      const { invalidateAllCaches } = await import("./cache/redisCache.js");
+      await invalidateAllCaches();
+      logger.info("Startup cache invalidation: successfully cleared all Redis caches");
+    } catch (cacheErr) {
+      logger.warn("Startup cache invalidation failed (non-blocking)", { error: cacheErr.message });
+    }
   } catch (err) {
     logger.warn("Startup room sync failed (non-blocking)", { error: err.message });
   }
