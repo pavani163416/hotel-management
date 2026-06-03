@@ -65,7 +65,13 @@ const Payment = () => {
       if (!/^\d{2}\/\d{2}$/.test(card.expiry)) return "Expiry must be MM/YY";
       if (!/^\d{3,4}$/.test(card.cvv)) return "Invalid CVV";
     }
-    if (method === "upi" && !/^[\w.-]+@[\w]+$/.test(upi)) return "Invalid UPI ID";
+    if (method === "upi") {
+      const cleanUpi = upi.trim();
+      if (!cleanUpi) return "UPI ID is required";
+      if (!/^[\w.\-_]{2,256}@[a-zA-Z0-9.\-_]{2,64}$/.test(cleanUpi)) {
+        return "Invalid UPI ID format. Example: name@bank";
+      }
+    }
     if (method === "netbanking" && !bank) return "Please select a bank";
     return "";
   };
@@ -121,13 +127,13 @@ const Payment = () => {
         });
         mongoBookingId = response.data._id;
       } catch (bookingErr: any) {
-        const msg = bookingErr?.message || "";
+        const msg = bookingErr.response?.data?.message || bookingErr?.message || "";
         if (msg.toLowerCase().includes("room") || msg.toLowerCase().includes("unavailable") || msg.toLowerCase().includes("booked")) {
           setError(msg || "This room is no longer available. Please select a different room.");
           setProcessing(false);
           return;
         }
-        setError("Unable to create booking reservation. Please try again.");
+        setError(msg || "Unable to create booking reservation. Please try again.");
         setProcessing(false);
         return;
       }
