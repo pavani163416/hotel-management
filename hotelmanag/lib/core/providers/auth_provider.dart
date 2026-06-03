@@ -195,11 +195,12 @@ class AuthProvider extends ChangeNotifier {
     );
   }
 
-  // Native Google Sign-In helper. Using the Web Client ID of the hotel-mgmt project
-  // which works seamlessly with the Android Client ID using the correct SHA-1.
+  // Native Google Sign-In helper. Using the Web Client ID of the hotel-mgmt project.
+  // We use clientId on Web and serverClientId on mobile.
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     scopes: ['email', 'profile', 'openid'],
-    serverClientId: '70312411330-8givsb0ktr8f09u8ullo157vkppkoqqv.apps.googleusercontent.com',
+    clientId: kIsWeb ? '70312411330-8givsb0ktr8f09u8ullo157vkppkoqqv.apps.googleusercontent.com' : null,
+    serverClientId: kIsWeb ? null : '70312411330-8givsb0ktr8f09u8ullo157vkppkoqqv.apps.googleusercontent.com',
   );
 
   void logout() async {
@@ -230,10 +231,10 @@ class AuthProvider extends ChangeNotifier {
       }
 
       final GoogleSignInAuthentication auth = await account.authentication;
-      final String? idToken = auth.idToken;
+      final String? idToken = auth.idToken ?? auth.accessToken;
 
       if (idToken == null || idToken.isEmpty) {
-        _error = 'Google sign-in failed: no ID Token received.';
+        _error = 'Google sign-in failed: no token received.';
         _isLoading = false;
         notifyListeners();
         return false;
