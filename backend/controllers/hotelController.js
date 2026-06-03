@@ -36,7 +36,7 @@ const getInventoryTotal = (roomInventory) => {
 const syncSnapshot = async (hotel, extra = {}) => {
   try {
     const HotelSnapshot = await getHotelSnapshot();
-    const totalRooms = extra.totalRooms ?? getInventoryTotal(hotel.roomInventory) || hotel.rooms?.length || 0;
+    const totalRooms = extra.totalRooms ?? (getInventoryTotal(hotel.roomInventory) || hotel.rooms?.length || 0);
     await HotelSnapshot.findOneAndUpdate(
       { hotelId: hotel.hotelId },
       {
