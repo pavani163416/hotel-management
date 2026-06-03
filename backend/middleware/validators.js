@@ -64,10 +64,10 @@ export const validateBooking = [
     .trim()
     .notEmpty()
     .withMessage("Govt ID is required")
-    .isLength({ min: 12, max: 12 })
-    .withMessage("Aadhar number must be exactly 12 digits")
-    .isNumeric()
-    .withMessage("Aadhar number must contain only numbers"),
+    .isLength({ min: 5, max: 20 })
+    .withMessage("Govt ID must be between 5 and 20 characters")
+    .matches(/^[a-zA-Z0-9\s-]+$/)
+    .withMessage("Govt ID can only contain letters, numbers, spaces, and hyphens"),
 
   body("guest.email")
     .optional({ checkFalsy: true })
@@ -88,10 +88,10 @@ export const validateBooking = [
   body("additionalAdults.*.id")
     .optional()
     .trim()
-    .isLength({ min: 12, max: 12 })
-    .withMessage("Aadhar number for additional adults must be exactly 12 digits")
-    .isNumeric()
-    .withMessage("Aadhar number for additional adults must contain only numbers"),
+    .isLength({ min: 5, max: 20 })
+    .withMessage("Govt ID for additional adults must be between 5 and 20 characters")
+    .matches(/^[a-zA-Z0-9\s-]+$/)
+    .withMessage("Govt ID for additional adults can only contain letters, numbers, spaces, and hyphens"),
 
   body("additionalChildren")
     .optional()
@@ -101,10 +101,10 @@ export const validateBooking = [
   body("additionalChildren.*.id")
     .optional()
     .trim()
-    .isLength({ min: 12, max: 12 })
-    .withMessage("Aadhar number for additional children must be exactly 12 digits")
-    .isNumeric()
-    .withMessage("Aadhar number for additional children must contain only numbers"),
+    .isLength({ min: 5, max: 20 })
+    .withMessage("Govt ID for additional children must be between 5 and 20 characters")
+    .matches(/^[a-zA-Z0-9\s-]+$/)
+    .withMessage("Govt ID for additional children can only contain letters, numbers, spaces, and hyphens"),
 
   body("checkIn")
     .isISO8601()

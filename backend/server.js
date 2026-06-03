@@ -4,6 +4,8 @@ import cors             from "cors";
 import helmet           from "helmet";
 import morgan           from "morgan";
 import mongoSanitize    from "express-mongo-sanitize";
+import xss              from "xss-clean";
+import hpp              from "hpp";
 import cookieParser     from "cookie-parser";
 import { createServer } from "http";
 import { Server as SocketIOServer } from "socket.io";
@@ -367,6 +369,14 @@ app.use((req, res, next) => {
 
 // ── NoSQL injection sanitization ─────────────────────────
 app.use(mongoSanitize());
+
+// ── XSS Protection ─────────────────────────────────────────
+// Sanitize user input coming from POST body, GET queries, and URL params
+app.use(xss());
+
+// ── HTTP Parameter Pollution Protection ────────────────────
+// Prevents duplicate query string parameters which could cause unexpected behaviors
+app.use(hpp());
 
 // ── GLB-006: Prototype Pollution Protection ───────────────
 // Strip __proto__, constructor, and prototype keys recursively to prevent prototype pollution.

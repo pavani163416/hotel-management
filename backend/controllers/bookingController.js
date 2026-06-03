@@ -295,26 +295,7 @@ export const createBooking = async (req, res, next) => {
       normalizedPhone = `+1 (000) 000-0000`;
     }
 
-    // ── Check if this guest already has an overlapping booking ──
-    if (actualEmail) {
-      const existingGuest = await Guest.findOne({ email: actualEmail }).session(session);
-      if (existingGuest) {
-        const guestOverlappingBooking = await Booking.findOne({
-          guest: existingGuest._id,
-          status: { $in: ["Confirmed", "CheckedIn"] },
-          checkIn:  { $lt: new Date(checkOut) },
-          checkOut: { $gt: new Date(checkIn) },
-        }).session(session);
-
-        if (guestOverlappingBooking) {
-          await session.abortTransaction();
-          return res.status(409).json({
-            success: false,
-            message: `You have already booked a room for these dates!`,
-          });
-        }
-      }
-    }
+    // Removed guest overlapping booking check so a user can book multiple rooms
 
     if (NON_BOOKABLE_STATUSES.includes(room.status)) {
       await session.abortTransaction();

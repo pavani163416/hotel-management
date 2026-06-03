@@ -211,7 +211,10 @@ import {
 } from "../middleware/authValidator.js";
 
 import { OAuth2Client } from "google-auth-library";
-const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+const googleClient = new OAuth2Client(
+  process.env.GOOGLE_CLIENT_ID,
+  process.env.GOOGLE_CLIENT_SECRET
+);
 
 const router = express.Router();
 
@@ -462,17 +465,11 @@ router.post("/register", authLimiter, validateRegisterPayload, async (req, res, 
     await cacheSet(`otp_${normalEmail}`, otp, 300);
     await cacheSet(`cooldown_${normalEmail}`, "true", 60);
 
-    // DEVELOPMENT AID: Log the OTP so you can see it in the terminal
-    console.log(`\n=========================================`);
-    console.log(`🔑 DEV: Verification Code for ${normalEmail}: ${otp}`);
-    console.log(`=========================================\n`);
-
     logger.info("Customer registered (unverified)", { email: normalEmail });
 
     return res.status(201).json({
       success: true,
       message: "Registration started. A 6-digit verification code has been sent to your email.",
-      otp: otp,
       data: {
         email: normalEmail,
         isVerified: false,
@@ -655,11 +652,6 @@ router.post("/login", loginLimiter, validateLoginPayload, async (req, res, next)
         activeOtp = await cacheGet(`otp_${normalEmail}`);
       }
 
-      // DEVELOPMENT AID: Log the OTP so you can see it in the terminal
-      console.log(`\n=========================================`);
-      console.log(`🔑 DEV: Verification Code for ${normalEmail}: ${activeOtp}`);
-      console.log(`=========================================\n`);
-
       return res.status(403).json({
         success: false,
         requiresVerification: true,
@@ -806,10 +798,9 @@ router.post("/phone/send", otpRateLimiter, async (req, res, next) => {
     } catch (twilioErr) {
       logger.warn(`Twilio SMS fail: ${twilioErr.message}`);
 
-      // We surface the real Twilio error to the frontend so you can see exactly why it fails!
       return res.status(400).json({
         success: false,
-        message: `Twilio Error: ${twilioErr.message}`
+        message: `Failed to send SMS OTP. Error: ${twilioErr.message}`
       });
     }
   } catch (err) {
@@ -944,6 +935,7 @@ router.post("/google", async (req, res, next) => {
         idToken,
         audience: [
           process.env.GOOGLE_CLIENT_ID,
+          "70312411330-8givsb0ktr8f09u8ullo157vkppkoqqv.apps.googleusercontent.com", // Web client (website + mobile web flow)
           "239513848879-3d319eb0dp07rltmkhelp6qtqp4rhhpq.apps.googleusercontent.com", // Production signed Android
           "239513848879-9f7e5ju597pgbl7p4isddckui4misecp.apps.googleusercontent.com", // Debug Android
         ],
@@ -1004,6 +996,31 @@ router.post("/google", async (req, res, next) => {
   } catch (err) {
     logger.error(err, "Google Auth Error");
     res.status(401).json({ success: false, message: `Invalid Google Token: ${err.message}`, debug: err.stack, tokenReceived: req.body.idToken ? req.body.idToken.substring(0, 15) + '...' : 'none' });
+  }
+});
+
+// ── GET /api/auth/google/callback (OAuth Web Flow) ─────────
+router.get("/google/callback", async (req, res, next) => {
+  try {
+    const { code, error } = req.query;
+    if (error) {
+      return res.redirect(`luxestay://oauth2redirect?error=${encodeURIComponent(error)}`);
+    }
+    if (!code) {
+      return res.redirect(`luxestay://oauth2redirect?error=no_code`);
+    }
+
+    // Exchange authorization code for tokens
+    const { tokens } = await googleClient.getToken({
+      code,
+      redirect_uri: process.env.GOOGLE_CALLBACK_URL || "https://luxestay-backend-production.up.railway.app/api/auth/google/callback",
+    });
+
+    // Redirect back to the mobile app with the idToken
+    res.redirect(`luxestay://oauth2redirect?idToken=${tokens.id_token}`);
+  } catch (err) {
+    logger.error(err, "Google OAuth Callback Error");
+    res.redirect(`luxestay://oauth2redirect?error=${encodeURIComponent(err.message)}`);
   }
 });
 
