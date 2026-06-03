@@ -660,7 +660,7 @@ export default function Hotels() {
                       <input
                         type="number"
                         min="0"
-                        value={form.roomInventory[rtCode]?.total ?? 0}
+                        value={form.roomInventory[rtCode]?.total || ""}
                         onChange={(e) => {
                           const val = Number(e.target.value) || 0;
                           setForm({
@@ -679,7 +679,7 @@ export default function Hotels() {
                       <input
                         type="number"
                         min="0"
-                        value={form.roomInventory[rtCode]?.price ?? 0}
+                        value={form.roomInventory[rtCode]?.price || ""}
                         onChange={(e) => {
                           const val = Number(e.target.value) || 0;
                           setForm({
