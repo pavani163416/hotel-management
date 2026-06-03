@@ -16,7 +16,7 @@
  * User panel connects once, backend pushes whenever hotels change
  */
 import express from "express";
-import Hotel from "../models/Hotel.js";
+import { getEnrichedHotelsData } from "../services/hotelService.js";
 
 const router = express.Router();
 
@@ -27,7 +27,7 @@ const clients = new Set();
 export const broadcastHotels = async () => {
   if (clients.size === 0) return;
   try {
-    const hotels = await Hotel.find({ isActive: true }).sort({ pricePerNight: 1 });
+    const hotels = await getEnrichedHotelsData();
     const data = JSON.stringify({ type: "hotels_updated", data: hotels });
     clients.forEach((res) => {
       try { res.write(`data: ${data}\n\n`); } catch { clients.delete(res); }
@@ -43,8 +43,8 @@ router.get("/hotels", (req, res) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.flushHeaders();
 
-  // Send current hotels immediately on connect
-  Hotel.find({ isActive: true }).sort({ pricePerNight: 1 }).then((hotels) => {
+  // Send current hotels enriched immediately on connect
+  getEnrichedHotelsData().then((hotels) => {
     res.write(`data: ${JSON.stringify({ type: "hotels_updated", data: hotels })}\n\n`);
   }).catch(() => {});
 

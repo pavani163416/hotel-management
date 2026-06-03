@@ -68,14 +68,11 @@ export const cacheDel = async (key) => {
     if (!client) return;
 
     if (key.includes("*")) {
-      let cursor = 0;
-      do {
-        const [nextCursor, keys] = await client.scan(cursor, { MATCH: key, COUNT: 100 });
+      for await (const keys of client.scanIterator({ MATCH: key, COUNT: 100 })) {
         if (keys.length) {
-          await client.unlink(...keys);
+          await client.unlink(keys);
         }
-        cursor = Number(nextCursor);
-      } while (cursor !== 0);
+      }
     } else {
       await client.del(key);
     }

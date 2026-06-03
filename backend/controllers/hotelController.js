@@ -8,6 +8,7 @@ import { deleteRoomSnapshotByNumber, syncRoomSnapshot } from "../services/syncSe
 import { cacheGet, cacheSet, cacheDel, buildCacheKey, invalidateAllCaches } from "../cache/redisCache.js";
 import { CACHE_TTL } from "../config/constants.js";
 import { generateRoomsForHotel, syncRoomsForHotel } from "../services/roomGenerationService.js";
+import { getDynamicRoomsForHotel, getEnrichedHotelsData } from "../services/hotelService.js";
 
 // Lazy-load HotelSnapshot bound to admin connection
 let _HotelSnapshot = null;
@@ -58,92 +59,17 @@ const syncSnapshot = async (hotel, extra = {}) => {
   } catch { /* never block main flow */ }
 };
 
-const invalidateHotelCache = async () => {
-  await invalidateAllCaches();
-};
-
 // GET /api/hotels
 export const getHotels = async (req, res, next) => {
   try {
-    const cacheKey = buildCacheKey("hotels", req.query.city || "all", req.query.minPrice || "", req.query.maxPrice || "");
+    const { city, minPrice, maxPrice } = req.query;
+    const cacheKey = buildCacheKey("hotels", city || "all", minPrice || "", maxPrice || "");
     const cached = await cacheGet(cacheKey);
     if (cached) {
       return res.status(200).json({ success: true, count: cached.length, data: cached, cached: true });
     }
 
-    const { city, minPrice, maxPrice } = req.query;
-    const filter = { isActive: true };
-    if (city) filter.city = new RegExp(city, "i");
-    if (minPrice || maxPrice) {
-      filter.pricePerNight = {};
-      if (minPrice) filter.pricePerNight.$gte = Number(minPrice);
-      if (maxPrice) filter.pricePerNight.$lte = Number(maxPrice);
-    }
-    const hotels = await Hotel.find(filter);
-    const hotelIds = hotels.map((hotel) => hotel.hotelId).filter(Boolean);
-    let statsByHotel = {};
-
-    if (hotelIds.length > 0) {
-      const now = new Date();
-      const currentYear = now.getFullYear();
-      const activeStatuses = ["Confirmed", "CheckedIn", "Pending"];
-      const revenueStatuses = ["Confirmed", "Completed", "CheckedIn", "CheckedOut"];
-
-      const hotelStats = await Booking.aggregate([
-        {
-          $match: {
-            hotelStringId: { $in: hotelIds },
-            $or: [
-              { status: { $in: activeStatuses }, checkOut: { $gt: now } },
-              { status: { $in: revenueStatuses }, createdAt: { $gte: new Date(`${currentYear}-01-01T00:00:00.000Z`) } },
-            ],
-          },
-        },
-        {
-          $group: {
-            _id: "$hotelStringId",
-            activeBookings: {
-              $sum: {
-                $cond: [
-                  { $and: [
-                    { $in: ["$status", activeStatuses] },
-                    { $gt: ["$checkOut", now] },
-                  ] },
-                  1,
-                  0,
-                ],
-              },
-            },
-            ytdRevenue: {
-              $sum: {
-                $cond: [
-                  { $and: [
-                    { $in: ["$status", revenueStatuses] },
-                    { $gte: ["$createdAt", new Date(`${currentYear}-01-01T00:00:00.000Z`) ] },
-                  ] },
-                  "$totalAmount",
-                  0,
-                ],
-              },
-            },
-          },
-        },
-      ]);
-
-      statsByHotel = hotelStats.reduce((acc, stat) => {
-        acc[stat._id] = {
-          activeBookings: stat.activeBookings || 0,
-          ytdRevenue: stat.ytdRevenue || 0,
-        };
-        return acc;
-      }, {});
-    }
-
-    const enrichedHotels = hotels.map((hotel) => ({
-      ...hotel.toObject(),
-      activeBookings: statsByHotel[hotel.hotelId]?.activeBookings ?? 0,
-      ytdRevenue: statsByHotel[hotel.hotelId]?.ytdRevenue ?? 0,
-    })).sort((a, b) => b.ytdRevenue - a.ytdRevenue || b.activeBookings - a.activeBookings);
+    const enrichedHotels = await getEnrichedHotelsData(city, minPrice, maxPrice);
 
     await cacheSet(cacheKey, enrichedHotels, CACHE_TTL.HOTEL_STATS);
     res.status(200).json({ success: true, count: enrichedHotels.length, data: enrichedHotels });
@@ -164,8 +90,14 @@ export const getHotelById = async (req, res, next) => {
     const hotel = await Hotel.findOne({ hotelId: req.params.id, isActive: true });
     if (!hotel) return res.status(404).json({ success: false, message: "Hotel not found" });
 
-    await cacheSet(cacheKey, hotel.toObject(), CACHE_TTL.HOTEL_STATS);
-    res.status(200).json({ success: true, data: hotel });
+    const roomsArray = await getDynamicRoomsForHotel(hotel.hotelId);
+    const enrichedHotel = {
+      ...hotel.toObject(),
+      rooms: roomsArray,
+    };
+
+    await cacheSet(cacheKey, enrichedHotel, CACHE_TTL.HOTEL_STATS);
+    res.status(200).json({ success: true, data: enrichedHotel });
   } catch (error) {
     next(error);
   }

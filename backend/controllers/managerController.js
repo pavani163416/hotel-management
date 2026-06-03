@@ -274,7 +274,7 @@ export const getManagerRooms = async (req, res, next) => {
 export const createManagerRoom = async (req, res, next) => {
   try {
     const hotelId = req.scopedHotelId, hotelName = req.scopedHotelName;
-    let { roomNumber, roomType, pricePerNight, capacity, description, amenities } = req.body;
+    let { roomNumber, roomType, type, pricePerNight, capacity, bedType, floor, status, description, amenities } = req.body;
     // Validate required fields
     if (!roomNumber) return res.status(400).json({ success: false, message: "roomNumber is required" });
     // Length constraints
@@ -297,16 +297,54 @@ export const createManagerRoom = async (req, res, next) => {
     if (existingRoom) {
       return res.status(409).json({ success: false, message: "Room number already exists for this hotel" });
     }
-    // Whitelist allowed fields
-    const allowed = { roomNumber, roomType, pricePerNight, capacity, description, amenities };
+
+    const actualType = type || roomType || "Standard";
+    const actualBedType = bedType || "King";
+    const actualFloor = Number(floor) || 1;
+    const actualStatus = status || "Available";
+
     const room = await Room.create({
-      ...allowed,
+      roomNumber,
+      type: actualType,
+      pricePerNight: Number(pricePerNight) || 0,
+      capacity: Number(capacity) || 2,
+      bedType: actualBedType,
+      floor: actualFloor,
+      status: actualStatus,
+      description,
+      amenities,
       hotelStringId: hotelId,
       hotelId: req.scopedHotelObjectId || null,
+      roomTypeId: actualType.toLowerCase(),
     });
+
     if (hotelId) {
-      Hotel.findOneAndUpdate({ hotelId }, { $push: { rooms: { id: roomNumber, name: roomType || "Room", price: pricePerNight, capacity: capacity || 2, bed: "King", available: 1, features: amenities || [] } } }, { new: true }).catch(() => {});
+      await Hotel.findOneAndUpdate(
+        { hotelId },
+        {
+          $push: {
+            rooms: {
+              id: roomNumber,
+              roomTypeId: actualType.toLowerCase(),
+              name: `${actualType} Room`,
+              price: Number(pricePerNight) || 0,
+              capacity: Number(capacity) || 2,
+              bed: actualBedType === "King" ? "1 King Bed" : actualBedType === "Queen" ? "1 Queen Bed" : actualBedType === "Twin" ? "2 Twin Beds" : actualBedType || "1 King Bed",
+              available: actualStatus === "Available" ? 1 : 0,
+              features: amenities || [],
+              floor: actualFloor,
+            }
+          }
+        },
+        { new: true }
+      ).catch(() => {});
     }
+
+    const { invalidateHotelCache } = await import("./hotelController.js");
+    await invalidateHotelCache().catch(() => {});
+    const { broadcastHotels } = await import("../routes/sseRoutes.js");
+    broadcastHotels();
+
     const io = req.app.get("io");
     if (io) io.emit("roomCreated", { roomId: room._id, roomNumber, hotelId, hotelName });
     res.status(201).json({ success: true, message: "Room created", data: room });

@@ -304,7 +304,10 @@ export default function Rooms() {
                 className="flex items-center gap-2 text-sm font-medium text-text-secondary border border-border rounded-lg px-4 py-2 hover:bg-surface-3 transition-colors">
                 <Download className="w-4 h-4" /> Export
               </button>
-
+              <button onClick={openAdd}
+                className="flex items-center gap-2 text-sm font-semibold text-white bg-primary hover:bg-primary-dark rounded-lg px-4 py-2 transition-colors">
+                <Plus className="w-4 h-4" /> Add Room
+              </button>
             </>
           }
         />
@@ -367,7 +370,7 @@ export default function Rooms() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-border">
-                  {["#", "Name", "Floor", "Price/Night", "Capacity", "Bed", "Available", "Features"].map((h) => (
+                  {["#", "Name", "Floor", "Price/Night", "Capacity", "Bed", "Available", "Features", "Actions"].map((h) => (
                     <th key={h} className="text-left text-xs font-semibold text-muted uppercase tracking-wider px-5 py-3">{h}</th>
                   ))}
                 </tr>
@@ -401,7 +404,16 @@ export default function Rooms() {
                       <StatusBadge status={r.status} />
                     </td>
                     <td className="px-5 py-3.5 text-xs text-text-secondary">{r.features.join(", ")}</td>
-                    {/* Actions removed (controlled by inventory) */}
+                    <td className="px-5 py-3.5">
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => openEdit(r)} className="p-1 hover:text-primary transition-colors" title="Edit Room">
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button onClick={() => handleDelete(r.id)} className="p-1 hover:text-danger transition-colors" title="Delete Room">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>

@@ -6,7 +6,7 @@ import {
 import ManagerLayout from "@/components/ManagerLayout";
 import StatusBadge from "@/components/StatusBadge";
 import Modal from "@/components/Modal";
-import { getManagerRooms, createManagerRoom, updateManagerRoom, deleteManagerRoom } from "@/services/api";
+import { getManagerRooms, createManagerRoom, updateManagerRoom, deleteManagerRoom, API } from "@/services/api";
 import { useSocket } from "@/hooks/useSocket";
 
 type Room = {
@@ -165,6 +165,12 @@ export default function Rooms() {
           <h1 className="text-xl font-bold text-bright">Rooms</h1>
           <p className="text-sm text-dim mt-0.5">{rooms.length} total · {rooms.filter((r) => r.status === "Available").length} available</p>
         </div>
+        <button
+          onClick={() => { setShowAdd(true); setEditRoom(null); setForm({ ...emptyForm }); setError(""); }}
+          className="flex items-center gap-2 text-xs font-bold text-dark bg-gold hover:bg-gold-dark px-4 py-2.5 rounded-xl transition-all shadow-lg shadow-gold/20"
+        >
+          <Plus className="w-4 h-4" /> Add Room
+        </button>
       </div>
 
       {/* Filters */}
@@ -284,7 +290,7 @@ export default function Rooms() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-white/5 bg-white/5">
-                {["Room", "Type", "Price/Night", "Capacity", "Bed", "Status"].map((h) => (
+                {["Room", "Type", "Price/Night", "Capacity", "Bed", "Status", "Actions"].map((h) => (
                   <th key={h} className="text-left text-xs font-semibold text-dim uppercase tracking-wider px-5 py-4 whitespace-nowrap">
                     {h}
                   </th>
@@ -308,7 +314,16 @@ export default function Rooms() {
                       {STATUSES.map((s) => <option key={s}>{s}</option>)}
                     </select>
                   </td>
-                    {/* Actions removed (controlled by inventory) */}
+                  <td className="px-5 py-4">
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => openEdit(room)} className="p-1 text-dim hover:text-bright transition-colors" title="Edit Room">
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </button>
+                      <button onClick={() => setDeleteTarget(room)} className="p-1 text-ruby/70 hover:text-ruby transition-colors" title="Delete Room">
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </td>
                 </tr>
               ))}
             </tbody>
