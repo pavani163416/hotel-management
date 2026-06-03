@@ -48,7 +48,7 @@ import { initCleanupJobs } from "./cron/cleanupJobs.js";
 // ── Validate required env vars on startup ─────────────────
 // ADMIN_EMAIL and ADMIN_PASSWORD are now stored in the controller DB.
 // Only MONGO_URI and JWT_SECRET are strictly required at startup.
-const REQUIRED_ENV = ["MONGO_URI", "JWT_SECRET", "RAZORPAY_KEY_ID", "RAZORPAY_KEY_SECRET", "CLIENT_URL"];
+const REQUIRED_ENV = ["MONGO_URI", "JWT_SECRET"];
 const missing = REQUIRED_ENV.filter((k) => !process.env[k]);
 if (missing.length) {
   logger.error(`Missing required environment variables: ${missing.join(", ")}`);
