@@ -31,6 +31,8 @@ export default function Hotels() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
   const [addOpen, setAddOpen] = useState(false);
+  const [addRoomTypeOpen, setAddRoomTypeOpen] = useState(false);
+  const [newRoomTypeName, setNewRoomTypeName] = useState("");
   const [editTarget, setEditTarget] = useState<Hotel | null>(null);
   const [actionTarget, setActionTarget] = useState<Hotel | null>(null);
   const [submitted, setSubmitted] = useState(false);
@@ -217,10 +219,15 @@ export default function Hotels() {
   };
 
   const handleAddRoomType = () => {
-    const name = window.prompt("Enter new room type name (e.g. Family, Ocean View):");
-    if (!name) return;
-    const key = name.trim().toLowerCase();
-    if (!key) return;
+    setAddRoomTypeOpen(true);
+  };
+
+  const confirmAddRoomType = () => {
+    const key = newRoomTypeName.trim().toLowerCase();
+    if (!key) {
+      alert("Please enter a valid room type name.");
+      return;
+    }
     if (form.roomInventory[key]) {
       alert("This room type already exists.");
       return;
@@ -232,6 +239,8 @@ export default function Hotels() {
         [key]: { total: 0, price: 0 }
       }
     });
+    setAddRoomTypeOpen(false);
+    setNewRoomTypeName("");
   };
 
   const handleRemoveRoomType = (rtCode: string) => {
@@ -848,6 +857,39 @@ export default function Hotels() {
             </button>
           </div>
         )}
+      </Modal>
+
+      {/* Add Room Type Modal */}
+      <Modal isOpen={addRoomTypeOpen} onClose={() => { setAddRoomTypeOpen(false); setNewRoomTypeName(""); }} title="Add New Room Type">
+        <div className="space-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-2">Room Type Name</label>
+            <input
+              type="text"
+              value={newRoomTypeName}
+              onChange={(e) => setNewRoomTypeName(e.target.value)}
+              placeholder="e.g. Family Room, Ocean View"
+              className="w-full px-3 py-2.5 border border-border rounded-lg text-sm bg-transparent outline-none focus:border-primary text-text-primary"
+              autoFocus
+            />
+          </div>
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={() => { setAddRoomTypeOpen(false); setNewRoomTypeName(""); }}
+              className="flex-1 py-2.5 border border-border rounded-lg text-sm font-medium text-text-secondary hover:bg-surface-3 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={confirmAddRoomType}
+              className="flex-1 py-2.5 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-primary-dark transition-colors"
+            >
+              Add Room Type
+            </button>
+          </div>
+        </div>
       </Modal>
     </AdminLayout>
   );

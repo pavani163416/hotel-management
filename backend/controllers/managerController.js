@@ -66,7 +66,7 @@ const getSecret = () => {
   if (!s) throw new Error("Server misconfiguration: JWT_SECRET missing");
   return s;
 };
-const JWT_EXPIRES = "8h";
+const JWT_EXPIRES = process.env.JWT_EXPIRES || "8h";
 
 const HOTEL_PREFIXES = { h1:"hdl", h2:"tas", h3:"cbr", h4:"apl", h5:"tgm", h6:"scs", h7:"swg" };
 

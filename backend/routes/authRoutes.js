@@ -226,7 +226,7 @@ const getSecret = () => {
   if (!s) throw new Error("JWT_SECRET missing");
   return s;
 };
-const JWT_EXPIRES = "7d";
+const JWT_EXPIRES = process.env.JWT_EXPIRES || "7d";
 
 const twilioAuthHeaders = () => {
   const sid = process.env.TWILIO_ACCOUNT_SID;

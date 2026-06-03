@@ -16,6 +16,7 @@ import Payment from "./pages/Payment";
 import Confirmation from "./pages/Confirmation";
 import History from "./pages/History";
 import Profile from "./pages/Profile";
+import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -53,6 +54,7 @@ const App = () => (
             {/* ── These handle their own inline auth UI ─ */}
             <Route path="/history" element={<History />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
 
             <Route path="*" element={<NotFound />} />
           </Routes>

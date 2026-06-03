@@ -10,7 +10,7 @@ import Visitor  from "../models/Visitor.js";
 import logger   from "../utils/logger.js";
 import connectAdminDB from "../config/adminDb.js";
 
-const JWT_EXPIRES = "8h";
+const JWT_EXPIRES = process.env.JWT_EXPIRES || "8h";
 
 const getSecret = () => {
   const s = process.env.JWT_SECRET;
