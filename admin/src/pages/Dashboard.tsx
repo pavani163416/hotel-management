@@ -13,14 +13,19 @@ import StatusBadge from "@/components/StatusBadge";
 import Modal from "@/components/Modal";
 import { useBookings } from "@/context/BookingsContext";
 import { useHotels } from "@/context/HotelsContext";
+import { useAdmin } from "@/context/AdminContext";
 import { getStats, getAdminPriceRequests, createBooking } from "@/services/api";
 
 const PIE_COLORS = ["#6366f1", "#a8977a", "#10b981", "#f59e0b", "#e11d48", "#0ea5e9"];
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const { t } = useAdmin();
   const { bookings, refetch, loading } = useBookings();
   const { hotels } = useHotels();
+
+  const showQuickStats = localStorage.getItem("luxe_pref_show_quick_stats") !== "false";
+  const showRevenueGraphs = localStorage.getItem("luxe_pref_show_revenue_graphs") !== "false";
   const [stats, setStats] = useState<any>(null);
   const [priceRequests, setPriceRequests] = useState<any[]>([]);
   const [showNewBooking, setShowNewBooking] = useState(false);
@@ -166,108 +171,112 @@ export default function Dashboard() {
       <div className="p-6">
         <PageHeader
           title="Global Operations"
-          subtitle={`Real-time performance across ${stats?.totalHotels ?? hotels.length} luxury properties`}
+          subtitle={`${t("Real-time performance across")} ${stats?.totalHotels ?? hotels.length} ${t("luxury properties")}`}
           actions={
             <>
               <button onClick={handleExport}
                 className="flex items-center gap-2 text-sm font-medium text-text-secondary border border-border rounded-lg px-4 py-2 hover:bg-surface-3 transition-colors">
-                <Download className="w-4 h-4" /> Export Report
+                <Download className="w-4 h-4" /> {t("Export Report")}
               </button>
               <button onClick={() => setShowNewBooking(true)}
                 className="flex items-center gap-2 text-sm font-semibold bg-primary text-white rounded-lg px-4 py-2 hover:bg-primary-dark transition-colors">
-                <Plus className="w-4 h-4" /> New Booking
+                <Plus className="w-4 h-4" /> {t("New Booking")}
               </button>
             </>
           }
         />
 
         {/* Stats — all clickable */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <div className="cursor-pointer hover:scale-[1.02] transition-transform" onClick={() => navigate("/hotels")}>
-            <StatsCard title="Total Hotels" value={hotels.length > 0 ? hotels.length : "—"} change={hotels.length > 0 ? `${hotels.length} properties` : "Loading..."} trend="up"
-              icon={<Hotel className="w-5 h-5 text-primary" />} iconBg="bg-primary-light" />
+        {showQuickStats && (
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div className="cursor-pointer hover:scale-[1.02] transition-transform" onClick={() => navigate("/hotels")}>
+              <StatsCard title={t("Total Hotels")} value={hotels.length > 0 ? hotels.length : "—"} change={hotels.length > 0 ? `${hotels.length} ${t("properties")}` : t("Loading...")} trend="up"
+                icon={<Hotel className="w-5 h-5 text-primary" />} iconBg="bg-primary-light" />
+            </div>
+            <div className="cursor-pointer hover:scale-[1.02] transition-transform" onClick={() => navigate("/bookings")}>
+              <StatsCard title={t("Total Bookings")} value={loading ? "—" : bookings.length.toLocaleString()} change={loading ? t("Loading...") : `${bookings.filter(b => b.status === "Confirmed").length} ${t("confirmed")}`} trend="up"
+                icon={<CalendarCheck className="w-5 h-5 text-warning" />} iconBg="bg-warning-light" />
+            </div>
+            <div className="cursor-pointer hover:scale-[1.02] transition-transform" onClick={() => navigate("/revenue")}>
+              <StatsCard title={t("Total Revenue")}
+                value={loading ? "—" : `$${((bookings.reduce((s, b) => s + b.totalAmount, 0)) / 1000).toFixed(1)}k`}
+                change={loading ? t("Loading...") : `${bookings.length} ${t("bookings")}`} trend="up"
+                icon={<DollarSign className="w-5 h-5 text-success" />} iconBg="bg-success-light" />
+            </div>
+            <div className="cursor-pointer hover:scale-[1.02] transition-transform" onClick={() => navigate("/guests")}>
+              <StatsCard title={t("Total Guests")} value={loading ? "—" : (stats?.totalGuests ?? bookings.length).toLocaleString()} change={loading ? t("Loading...") : t("Registered guests")} trend="neutral"
+                icon={<Users className="w-5 h-5 text-text-secondary" />} iconBg="bg-surface-3" />
+            </div>
           </div>
-          <div className="cursor-pointer hover:scale-[1.02] transition-transform" onClick={() => navigate("/bookings")}>
-            <StatsCard title="Total Bookings" value={loading ? "—" : bookings.length.toLocaleString()} change={loading ? "Loading..." : `${bookings.filter(b => b.status === "Confirmed").length} confirmed`} trend="up"
-              icon={<CalendarCheck className="w-5 h-5 text-warning" />} iconBg="bg-warning-light" />
-          </div>
-          <div className="cursor-pointer hover:scale-[1.02] transition-transform" onClick={() => navigate("/revenue")}>
-            <StatsCard title="Total Revenue"
-              value={loading ? "—" : `$${((bookings.reduce((s, b) => s + b.totalAmount, 0)) / 1000).toFixed(1)}k`}
-              change={loading ? "Loading..." : `${bookings.length} bookings`} trend="up"
-              icon={<DollarSign className="w-5 h-5 text-success" />} iconBg="bg-success-light" />
-          </div>
-          <div className="cursor-pointer hover:scale-[1.02] transition-transform" onClick={() => navigate("/guests")}>
-            <StatsCard title="Total Guests" value={loading ? "—" : (stats?.totalGuests ?? bookings.length).toLocaleString()} change={loading ? "Loading..." : "Registered guests"} trend="neutral"
-              icon={<Users className="w-5 h-5 text-text-secondary" />} iconBg="bg-surface-3" />
-          </div>
-        </div>
+        )}
 
         {/* Charts */}
-        <div className="grid lg:grid-cols-[1fr_320px] gap-4 mb-6">
-          <div className="bg-white rounded-xl border border-border p-5 shadow-card">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-text-primary">Revenue Analytics</h3>
-              <select className="text-xs border border-border rounded-lg px-2 py-1 outline-none text-muted">
-                <option>Last 6 Months</option><option>Last 12 Months</option>
-              </select>
+        {showRevenueGraphs && (
+          <div className="grid lg:grid-cols-[1fr_320px] gap-4 mb-6">
+            <div className="bg-white rounded-xl border border-border p-5 shadow-card">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-text-primary">{t("Revenue Analytics")}</h3>
+                <select className="text-xs border border-border rounded-lg px-2 py-1 outline-none text-muted">
+                  <option>{t("Last 6 Months")}</option><option>{t("Last 12 Months")}</option>
+                </select>
+              </div>
+              {revenueData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={200}>
+                <AreaChart data={revenueData}>
+                  <defs>
+                    <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#6366f1" stopOpacity={0.15} />
+                      <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f3f9" />
+                  <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false}
+                    tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
+                  <Tooltip formatter={(v: any) => [`$${(v / 1000).toFixed(0)}k`, t("Revenue")]}
+                    contentStyle={{ borderRadius: 8, border: "1px solid #e5e7f0", fontSize: 12 }} />
+                  <Area type="monotone" dataKey="revenue" stroke="#6366f1" strokeWidth={2}
+                    fill="url(#revGrad)" dot={{ fill: "#6366f1", r: 3 }} />
+                </AreaChart>
+              </ResponsiveContainer>
+              ) : (
+                <div className="h-[200px] flex items-center justify-center text-muted text-sm">{t("No booking data yet")}</div>
+              )}
             </div>
-            {revenueData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={200}>
-              <AreaChart data={revenueData}>
-                <defs>
-                  <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.15} />
-                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f3f9" />
-                <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false}
-                  tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
-                <Tooltip formatter={(v: any) => [`$${(v / 1000).toFixed(0)}k`, "Revenue"]}
-                  contentStyle={{ borderRadius: 8, border: "1px solid #e5e7f0", fontSize: 12 }} />
-                <Area type="monotone" dataKey="revenue" stroke="#6366f1" strokeWidth={2}
-                  fill="url(#revGrad)" dot={{ fill: "#6366f1", r: 3 }} />
-              </AreaChart>
-            </ResponsiveContainer>
-            ) : (
-              <div className="h-[200px] flex items-center justify-center text-muted text-sm">No booking data yet</div>
-            )}
-          </div>
 
-          <div className="bg-white rounded-xl border border-border p-5 shadow-card">
-            <h3 className="font-semibold text-text-primary mb-4">Booking Share</h3>
-            {bookingShare.length > 0 ? (
-              <>
-                <ResponsiveContainer width="100%" height={160}>
-                  <PieChart>
-                    <Pie data={bookingShare} cx="50%" cy="50%" innerRadius={50} outerRadius={70} dataKey="value" strokeWidth={0}>
-                      {bookingShare.map((entry, i) => <Cell key={i} fill={entry.color} />)}
-                    </Pie>
-                  </PieChart>
-                </ResponsiveContainer>
-                <div className="space-y-1.5 w-full mt-2">
-                  {bookingShare.map((item) => (
-                    <div key={item.name} className="flex items-center justify-between text-xs">
-                      <div className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: item.color }} />
-                        <span className="text-muted truncate max-w-[140px]">{item.name}</span>
+            <div className="bg-white rounded-xl border border-border p-5 shadow-card">
+              <h3 className="font-semibold text-text-primary mb-4">{t("Booking Share")}</h3>
+              {bookingShare.length > 0 ? (
+                <>
+                  <ResponsiveContainer width="100%" height={160}>
+                    <PieChart>
+                      <Pie data={bookingShare} cx="50%" cy="50%" innerRadius={50} outerRadius={70} dataKey="value" strokeWidth={0}>
+                        {bookingShare.map((entry, i) => <Cell key={i} fill={entry.color} />)}
+                      </Pie>
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div className="space-y-1.5 w-full mt-2">
+                    {bookingShare.map((item) => (
+                      <div key={item.name} className="flex items-center justify-between text-xs">
+                        <div className="flex items-center gap-2">
+                          <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: item.color }} />
+                          <span className="text-muted truncate max-w-[140px]">{item.name}</span>
+                        </div>
+                        <span className="font-semibold text-text-primary">{item.value}%</span>
                       </div>
-                      <span className="font-semibold text-text-primary">{item.value}%</span>
-                    </div>
-                  ))}
-                </div>
-              </>
-            ) : (
-              <div className="h-[200px] flex items-center justify-center text-muted text-sm">No bookings yet</div>
-            )}
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <div className="h-[200px] flex items-center justify-center text-muted text-sm">{t("No bookings yet")}</div>
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Top Hotels */}
         <div className="bg-white rounded-xl border border-border p-5 shadow-card mb-6">
-          <h3 className="font-semibold text-text-primary mb-4">Top Performing Hotels by Revenue</h3>
+          <h3 className="font-semibold text-text-primary mb-4">{t("Top Performing Hotels by Revenue")}</h3>
           {topHotels.length > 0 ? (
             <div className="grid md:grid-cols-2 gap-x-8 gap-y-4">
               {topHotels.map((h) => (
@@ -283,24 +292,24 @@ export default function Dashboard() {
               ))}
             </div>
           ) : (
-            <p className="text-sm text-muted text-center py-4">No revenue data yet</p>
+            <p className="text-sm text-muted text-center py-4">{t("No revenue data yet")}</p>
           )}
         </div>
 
         {/* Recent Bookings */}
         <div className="bg-white rounded-xl border border-border shadow-card">
           <div className="flex items-center justify-between px-5 py-4 border-b border-border">
-            <h3 className="font-semibold text-text-primary">Global Recent Bookings</h3>
+            <h3 className="font-semibold text-text-primary">{t("Global Recent Bookings")}</h3>
             <button onClick={() => navigate("/bookings")}
               className="text-xs text-primary font-semibold hover:underline">
-              View All
+              {t("View All")}
             </button>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-border">
-                  {["Guest", "Property", "Room Type", "Amount", "Status", "Action"].map((h) => (
+                  {[t("Guest"), t("Property"), t("Room Type"), t("Amount"), t("Status"), t("Action")].map((h) => (
                     <th key={h} className="text-left text-xs font-semibold text-muted uppercase tracking-wider px-5 py-3">{h}</th>
                   ))}
                 </tr>
@@ -339,17 +348,17 @@ export default function Dashboard() {
         {/* Recent Price Requests */}
         <div className="bg-white rounded-xl border border-border shadow-card mt-6">
           <div className="flex items-center justify-between px-5 py-4 border-b border-border">
-            <h3 className="font-semibold text-text-primary">Global Recent Price Requests</h3>
+            <h3 className="font-semibold text-text-primary">{t("Global Recent Price Requests")}</h3>
             <button onClick={() => navigate("/price-requests")}
               className="text-xs text-primary font-semibold hover:underline">
-              View All
+              {t("View All")}
             </button>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-border">
-                  {["Room", "Hotel", "Requested By", "Current", "Requested", "Status"].map((h) => (
+                  {[t("Room"), t("Hotel"), t("Requested By"), t("Current"), t("Requested"), t("Status")].map((h) => (
                     <th key={h} className="text-left text-xs font-semibold text-muted uppercase tracking-wider px-5 py-3">{h}</th>
                   ))}
                 </tr>
@@ -377,7 +386,7 @@ export default function Dashboard() {
                 )) : (
                   <tr>
                     <td colSpan={6} className="px-5 py-6 text-center text-muted text-sm">
-                      No pending price requests.
+                      {t("No pending price requests.")}
                     </td>
                   </tr>
                 )}
@@ -388,38 +397,38 @@ export default function Dashboard() {
       </div>
 
       {/* ── New Booking Modal ── */}
-      <Modal isOpen={showNewBooking} onClose={() => { setShowNewBooking(false); setNbSubmitted(false); }} title="New Booking">
+      <Modal isOpen={showNewBooking} onClose={() => { setShowNewBooking(false); setNbSubmitted(false); }} title={t("New Booking")}>
         {nbSubmitted ? (
           <div className="flex flex-col items-center py-8 gap-3">
             <div className="w-14 h-14 bg-success-light rounded-full grid place-items-center">
               <span className="text-success text-3xl">✓</span>
             </div>
-            <p className="font-semibold text-text-primary text-lg">Booking Created!</p>
-            <p className="text-sm text-muted">Redirecting to bookings page...</p>
+            <p className="font-semibold text-text-primary text-lg">{t("Booking Created!")}</p>
+            <p className="text-sm text-muted">{t("Redirecting to bookings page...")}</p>
           </div>
         ) : (
           <form onSubmit={handleNewBookingSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div className="col-span-2">
-                <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">Guest Name *</label>
+                <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">{t("Guest Name *")}</label>
                 <input required value={nbGuest} onChange={(e) => setNbGuest(e.target.value)}
                   placeholder="Full name" minLength={2}
                   className="w-full border border-border rounded-lg px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10" />
               </div>
               <div className="col-span-2">
-                <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">Email *</label>
+                <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">{t("Email *")}</label>
                 <input required type="email" value={nbEmail} onChange={(e) => setNbEmail(e.target.value)}
                   placeholder="guest@email.com"
                   className="w-full border border-border rounded-lg px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10" />
               </div>
               <div className="col-span-2">
-                <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">Aadhaar Number * <span className="text-muted normal-case font-normal">(12 digits)</span></label>
+                <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">{t("Aadhaar Number *")} <span className="text-muted normal-case font-normal">(12 digits)</span></label>
                 <input required value={nbAadhaar} onChange={(e) => setNbAadhaar(e.target.value.replace(/\D/g, "").slice(0, 12))}
                   placeholder="12-digit Aadhaar" pattern="[0-9]{12}" maxLength={12}
                   className="w-full border border-border rounded-lg px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10" />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">Property *</label>
+                <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">{t("Property *")}</label>
                 <select required value={nbProperty} onChange={(e) => setNbProperty(e.target.value)}
                   className="w-full border border-border rounded-lg px-3 py-2.5 text-sm outline-none focus:border-primary">
                   {hotels.length > 0
@@ -429,7 +438,7 @@ export default function Dashboard() {
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">Room Type *</label>
+                <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">{t("Room Type *")}</label>
                 <select value={nbRoom} onChange={(e) => setNbRoom(e.target.value)}
                   className="w-full border border-border rounded-lg px-3 py-2.5 text-sm outline-none focus:border-primary">
                   <option>Deluxe</option>
@@ -440,23 +449,23 @@ export default function Dashboard() {
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">Check-in *</label>
+                <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">{t("Check-in *")}</label>
                 <input required type="date" value={nbCheckIn} onChange={(e) => setNbCheckIn(e.target.value)}
                   className="w-full border border-border rounded-lg px-3 py-2.5 text-sm outline-none focus:border-primary" />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">Check-out *</label>
+                <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">{t("Check-out *")}</label>
                 <input required type="date" value={nbCheckOut} onChange={(e) => setNbCheckOut(e.target.value)}
                   className="w-full border border-border rounded-lg px-3 py-2.5 text-sm outline-none focus:border-primary" />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">Price / Night ($) *</label>
+                <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">{t("Price / Night ($) *")}</label>
                 <input required type="number" min="1" value={nbPricePerNight} onChange={(e) => setNbPricePerNight(e.target.value)}
                   placeholder="e.g. 200"
                   className="w-full border border-border rounded-lg px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10" />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">Total Amount ($) *</label>
+                <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">{t("Total Amount ($) *")}</label>
                 <input required type="number" min="0" value={nbAmount} onChange={(e) => setNbAmount(e.target.value)}
                   placeholder="e.g. 1200"
                   className="w-full border border-border rounded-lg px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10" />
@@ -469,7 +478,7 @@ export default function Dashboard() {
             )}
             <button type="submit" disabled={nbSaving}
               className="w-full bg-primary text-white py-3 rounded-xl font-semibold text-sm hover:bg-primary-dark transition-colors disabled:opacity-60 disabled:cursor-not-allowed">
-              {nbSaving ? "Creating Booking..." : "Create Booking"}
+              {nbSaving ? t("Creating Booking...") : t("Create Booking")}
             </button>
           </form>
         )}

@@ -31,7 +31,7 @@ function timeAgo(iso: string) {
 }
 
 export default function Topbar({ searchPlaceholder }: Props) {
-  const { admin, logout } = useAdmin();
+  const { admin, logout, theme, t } = useAdmin();
   const { liveAlerts, pushLiveAlert, clearLiveAlerts } = useBookings();
   const { hotels } = useHotels();
   const navigate = useNavigate();
@@ -92,6 +92,8 @@ export default function Topbar({ searchPlaceholder }: Props) {
   }, [admin?.email]);
 
   const handleNewBooking = useCallback((data: NewBookingAlert) => {
+    const showLive = localStorage.getItem("luxe_pref_show_live_notifications") !== "false";
+    if (!showLive) return;
     pushLiveAlert(data);
     setToast(data);
     setTimeout(() => setToast(null), 5000);
@@ -99,8 +101,11 @@ export default function Topbar({ searchPlaceholder }: Props) {
 
   const handleNotification = useCallback((data: any) => {
     setNotifications((prev) => [data, ...prev.filter((n) => n._id !== data._id)].slice(0, 50));
-    setNotificationToast(data);
-    setTimeout(() => setNotificationToast(null), 4500);
+    const showLive = localStorage.getItem("luxe_pref_show_live_notifications") !== "false";
+    if (showLive) {
+      setNotificationToast(data);
+      setTimeout(() => setNotificationToast(null), 4500);
+    }
   }, []);
 
   useSocket<NewBookingAlert>("newBooking", handleNewBooking);
@@ -135,18 +140,18 @@ export default function Topbar({ searchPlaceholder }: Props) {
 
   // Shared dropdown style
   const dropdownStyle: React.CSSProperties = {
-    background: "#112240",
-    border: "1px solid rgba(255,255,255,0.1)",
-    boxShadow: "0 24px 80px rgba(0,0,0,0.6)",
+    background: theme === "light" ? "#ffffff" : "#112240",
+    border: theme === "light" ? "1px solid #cbd5e1" : "1px solid rgba(255,255,255,0.1)",
+    boxShadow: theme === "light" ? "0 24px 80px rgba(0,0,0,0.08)" : "0 24px 80px rgba(0,0,0,0.6)",
     borderRadius: "16px",
   };
 
   const dropdownHeaderStyle: React.CSSProperties = {
-    borderBottom: "1px solid rgba(255,255,255,0.07)",
+    borderBottom: theme === "light" ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.07)",
   };
 
   const dropdownItemHover = {
-    onMouseEnter: (e: React.MouseEvent) => (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.04)",
+    onMouseEnter: (e: React.MouseEvent) => (e.currentTarget as HTMLElement).style.background = theme === "light" ? "rgba(0,0,0,0.04)" : "rgba(255,255,255,0.04)",
     onMouseLeave: (e: React.MouseEvent) => (e.currentTarget as HTMLElement).style.background = "transparent",
   };
 
@@ -154,16 +159,19 @@ export default function Topbar({ searchPlaceholder }: Props) {
     <div
       className="flex items-center justify-between h-14 px-6 sticky top-0 z-20"
       style={{
-        background: "rgba(10,22,40,0.92)",
+        background: theme === "light" ? "rgba(255, 255, 255, 0.92)" : "rgba(10,22,40,0.92)",
         backdropFilter: "blur(20px)",
         WebkitBackdropFilter: "blur(20px)",
-        borderBottom: "1px solid rgba(255,255,255,0.07)",
+        borderBottom: theme === "light" ? "1px solid #cbd5e1" : "1px solid rgba(255,255,255,0.07)",
       }}
     >
       {/* Search */}
       <div ref={searchRef} className="relative">
         <div className="flex items-center gap-2 rounded-xl px-3 py-2 w-72"
-          style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
+          style={{
+            background: theme === "light" ? "rgba(0,0,0,0.03)" : "rgba(255,255,255,0.05)",
+            border: theme === "light" ? "1px solid #cbd5e1" : "1px solid rgba(255,255,255,0.08)"
+          }}>
           <Search className="w-3.5 h-3.5 text-dim shrink-0" />
           <input
             value={search}
@@ -173,8 +181,8 @@ export default function Topbar({ searchPlaceholder }: Props) {
             }}
             onKeyDown={handleSearch}
             onFocus={() => setShowSearchDropdown(true)}
-            placeholder={searchPlaceholder || "Search bookings, guests, hotels..."}
-            className="bg-transparent text-sm outline-none text-bright placeholder:text-dim w-full"
+            placeholder={t(searchPlaceholder || "Search bookings, guests, hotels...")}
+            className={`bg-transparent text-sm outline-none w-full ${theme === "light" ? "text-slate-900 placeholder:text-slate-400" : "text-bright placeholder:text-dim"}`}
           />
           {search && (
             <button onClick={() => { setSearch(""); setShowSearchDropdown(false); }} className="text-dim transition-colors"
@@ -227,21 +235,21 @@ export default function Topbar({ searchPlaceholder }: Props) {
             onClick={() => { setShowHotelSwitcher(!showHotelSwitcher); setShowNotifs(false); setShowSettings(false); }}
             className="flex items-center gap-2 text-xs font-medium px-3 py-1.5 rounded-xl transition-all btn-ghost"
           >
-            <Hotel className="w-3.5 h-3.5" /> Hotel Switcher
+            <Hotel className="w-3.5 h-3.5" /> {t("Hotel Switcher")}
           </button>
           {showHotelSwitcher && (
             <div className="absolute right-0 top-10 w-64 z-50 overflow-hidden scrollbar-thin" style={{ ...dropdownStyle, maxHeight: "min(320px, calc(100vh - 180px))", overflowY: "auto" }}>
               <div className="px-4 py-2.5" style={dropdownHeaderStyle}>
-                <p className="text-xs font-semibold text-dim uppercase tracking-wider">Select a Property</p>
+                <p className="text-xs font-semibold text-dim uppercase tracking-wider">{t("Select a Property")}</p>
               </div>
               <button
                 onClick={() => { setShowHotelSwitcher(false); navigate("/hotels"); }}
                 className="w-full text-left px-4 py-2.5 text-sm text-soft flex items-center gap-2 transition-colors"
-                style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}
+                style={{ borderBottom: theme === "light" ? "1px solid #cbd5e1" : "1px solid rgba(255,255,255,0.06)" }}
                 {...dropdownItemHover}
               >
                 <Hotel className="w-3.5 h-3.5 text-dim shrink-0" />
-                <span className="font-medium text-bright">All Properties</span>
+                <span className="font-medium text-bright">{t("All Properties")}</span>
               </button>
               {hotels.map((h) => (
                 <button
@@ -286,32 +294,32 @@ export default function Topbar({ searchPlaceholder }: Props) {
           {showNotifs && (
             <div className="absolute right-0 top-11 w-80 z-50 overflow-hidden" style={dropdownStyle}>
               <div className="flex items-center justify-between px-4 py-3" style={dropdownHeaderStyle}>
-                <p className="text-sm font-semibold text-bright">Notifications</p>
+                <p className="text-sm font-semibold text-bright">{t("Notifications")}</p>
                 <div className="flex items-center gap-2">
                   {liveCount > 0 && (
                     <span className="text-xs px-2 py-0.5 rounded-full font-semibold animate-pulse"
                       style={{ background: "rgba(16,185,129,0.15)", color: "#10b981", border: "1px solid rgba(16,185,129,0.3)" }}>
-                      {liveCount} live
+                      {liveCount} {t("live")}
                     </span>
                   )}
                   <span className="text-xs px-2 py-0.5 rounded-full font-semibold"
                     style={{ background: "rgba(192,57,43,0.15)", color: "#c0392b", border: "1px solid rgba(192,57,43,0.3)" }}>
-                    {unreadCount} unread
+                    {unreadCount} {t("unread")}
                   </span>
                 </div>
               </div>
 
               {/* Live alerts */}
               {liveAlerts.length > 0 && (
-                <div style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+                <div style={{ borderBottom: theme === "light" ? "1px solid #cbd5e1" : "1px solid rgba(255,255,255,0.07)" }}>
                   <div className="flex items-center justify-between px-4 py-2"
                     style={{ background: "rgba(16,185,129,0.08)" }}>
-                    <p className="text-[10px] font-semibold text-emerald uppercase tracking-wider">⚡ Live Bookings</p>
+                    <p className="text-[10px] font-semibold text-emerald uppercase tracking-wider">⚡ {t("Live Bookings")}</p>
                     <button onClick={clearLiveAlerts}
                       className="text-[10px] text-dim transition-colors"
                       onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = "#e11d48"}
                       onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = "#64748b"}>
-                      Clear
+                      {t("Clear")}
                     </button>
                   </div>
                   {liveAlerts.slice(0, 3).map((a, i) => (
@@ -327,7 +335,7 @@ export default function Topbar({ searchPlaceholder }: Props) {
                         <div>
                           <p className="text-xs font-semibold text-bright">{a.userName}</p>
                           <p className="text-xs text-dim">{a.hotelName} · ${a.amount.toLocaleString()}</p>
-                          <span className="text-[10px] font-semibold text-emerald">New Booking ✓</span>
+                          <span className="text-[10px] font-semibold text-emerald">{t("New Booking ✓")}</span>
                         </div>
                       </div>
                     </button>
@@ -337,11 +345,11 @@ export default function Topbar({ searchPlaceholder }: Props) {
 
               <div className="max-h-64 overflow-y-auto scrollbar-thin">
                 {notifications.length === 0 ? (
-                  <p className="text-sm text-dim text-center py-6">No notifications</p>
+                  <p className="text-sm text-dim text-center py-6">{t("No notifications")}</p>
                 ) : notifications.map((n) => (
                   <button key={n._id} onClick={() => openNotification(n)}
                     className="w-full text-left px-4 py-3 transition-colors"
-                    style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}
+                    style={{ borderBottom: theme === "light" ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.05)" }}
                     {...dropdownItemHover}>
                     <div className="flex items-start gap-3">
                       <div className="w-7 h-7 rounded-full grid place-items-center shrink-0 mt-0.5"
@@ -359,10 +367,10 @@ export default function Topbar({ searchPlaceholder }: Props) {
               </div>
               <button onClick={() => { setShowNotifs(false); navigate("/notifications"); }}
                 className="w-full py-2.5 text-xs font-semibold text-gold transition-colors"
-                style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}
-                onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.04)"}
+                style={{ borderTop: theme === "light" ? "1px solid #cbd5e1" : "1px solid rgba(255,255,255,0.07)" }}
+                onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = theme === "light" ? "rgba(0,0,0,0.04)" : "rgba(255,255,255,0.04)"}
                 onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = "transparent"}>
-                View All Notifications →
+                {t("View All Notifications →")}
               </button>
             </div>
           )}
@@ -398,19 +406,23 @@ export default function Topbar({ searchPlaceholder }: Props) {
             </div>
             <button onClick={() => { setToast(null); navigate("/bookings"); }}
               className="w-full py-2 text-xs font-semibold text-gold transition-colors"
-              style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}
-              onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.04)"}
+              style={{ borderTop: theme === "light" ? "1px solid #cbd5e1" : "1px solid rgba(255,255,255,0.07)" }}
+              onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = theme === "light" ? "rgba(0,0,0,0.04)" : "rgba(255,255,255,0.04)"}
               onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = "transparent"}>
-              View Booking →
+              {t("View Booking →")}
             </button>
           </div>
         )}
 
         {notificationToast && (
           <div className="fixed bottom-6 right-6 z-[101] w-80 rounded-2xl overflow-hidden animate-slide-up"
-            style={{ background: "#112240", border: "1px solid rgba(212,168,67,0.35)", boxShadow: "0 24px 80px rgba(0,0,0,0.6)" }}>
+            style={{
+              background: theme === "light" ? "#ffffff" : "#112240",
+              border: theme === "light" ? "1px solid #cbd5e1" : "1px solid rgba(212,168,67,0.35)",
+              boxShadow: theme === "light" ? "0 24px 80px rgba(0,0,0,0.08)" : "0 24px 80px rgba(0,0,0,0.6)"
+            }}>
             <div className="px-4 py-3">
-              <p className="text-xs font-semibold text-gold uppercase tracking-wider">Notification</p>
+              <p className="text-xs font-semibold text-gold uppercase tracking-wider">{t("Notification")}</p>
               <p className="text-sm font-semibold text-bright mt-1">{notificationToast.message}</p>
             </div>
           </div>
@@ -422,8 +434,14 @@ export default function Topbar({ searchPlaceholder }: Props) {
             onClick={() => { setShowSettings(!showSettings); setShowNotifs(false); setShowHotelSwitcher(false); }}
             className="w-9 h-9 grid place-items-center rounded-xl transition-all"
             style={{ color: "#94a3b8" }}
-            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.07)"; (e.currentTarget as HTMLElement).style.color = "#f0f4ff"; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; (e.currentTarget as HTMLElement).style.color = "#94a3b8"; }}
+            onMouseEnter={e => {
+              (e.currentTarget as HTMLElement).style.background = theme === "light" ? "rgba(0,0,0,0.04)" : "rgba(255,255,255,0.07)";
+              (e.currentTarget as HTMLElement).style.color = theme === "light" ? "#0f172a" : "#f0f4ff";
+            }}
+            onMouseLeave={e => {
+              (e.currentTarget as HTMLElement).style.background = "transparent";
+              (e.currentTarget as HTMLElement).style.color = "#94a3b8";
+            }}
           >
             <UserCircle className="w-5 h-5" />
           </button>
@@ -436,18 +454,19 @@ export default function Topbar({ searchPlaceholder }: Props) {
               </div>
               {[
                 { label: "Profile",   path: admin?.role === "Manager" ? "/m/profile" : "/profile" },
+                { label: "Settings",  path: "/settings" },
               ].map((item) => (
                 <button key={item.label}
                   onClick={() => { setShowSettings(false); navigate(item.path); }}
                   className="w-full text-left px-4 py-2.5 text-sm text-soft transition-colors"
-                  style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.04)"; (e.currentTarget as HTMLElement).style.color = "#f0f4ff"; }}
+                  style={{ borderBottom: theme === "light" ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.04)" }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = theme === "light" ? "rgba(0,0,0,0.04)" : "rgba(255,255,255,0.04)"; (e.currentTarget as HTMLElement).style.color = theme === "light" ? "#0f172a" : "#f0f4ff"; }}
                   onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; (e.currentTarget as HTMLElement).style.color = "#94a3b8"; }}
                 >
-                  {item.label}
+                  {t(item.label)}
                 </button>
               ))}
-              <div style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}>
+              <div style={{ borderTop: theme === "light" ? "1px solid #cbd5e1" : "1px solid rgba(255,255,255,0.07)" }}>
                 <button
                   onClick={() => { setShowSettings(false); logout(); navigate("/login"); }}
                   className="w-full text-left px-4 py-2.5 text-sm transition-colors"
@@ -455,7 +474,7 @@ export default function Topbar({ searchPlaceholder }: Props) {
                   onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "rgba(225,29,72,0.08)"}
                   onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = "transparent"}
                 >
-                  Sign Out
+                  {t("Sign Out")}
                 </button>
               </div>
             </div>

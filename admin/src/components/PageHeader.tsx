@@ -1,3 +1,5 @@
+import { useAdmin } from "@/context/AdminContext";
+
 interface Props {
   title: string;
   subtitle?: string;
@@ -5,11 +7,12 @@ interface Props {
 }
 
 export default function PageHeader({ title, subtitle, actions }: Props) {
+  const { t } = useAdmin();
   return (
     <div className="flex items-start justify-between mb-6">
       <div>
-        <h1 className="text-2xl font-bold text-bright">{title}</h1>
-        {subtitle && <p className="text-sm text-dim mt-1">{subtitle}</p>}
+        <h1 className="text-2xl font-bold text-bright">{t(title)}</h1>
+        {subtitle && <p className="text-sm text-dim mt-1">{t(subtitle)}</p>}
       </div>
       {actions && <div className="flex items-center gap-3">{actions}</div>}
     </div>

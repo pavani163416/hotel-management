@@ -1,5 +1,6 @@
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import socket from "@/services/socket";
+import { translations } from "@/services/translations";
 
 export type Admin = {
   name: string;
@@ -20,6 +21,11 @@ type AdminCtx = {
   isAuthenticated: boolean;
   isManager: boolean;
   setHotel: (hotelId: string, hotelName: string) => void;
+  theme: "light" | "dark";
+  setTheme: (theme: "light" | "dark") => void;
+  language: "en" | "fr" | "de" | "es";
+  setLanguage: (lang: "en" | "fr" | "de" | "es") => void;
+  t: (text: string) => string;
 };
 
 const Ctx = createContext<AdminCtx | null>(null);
@@ -67,6 +73,36 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
   const [admin, setAdmin] = useState<Admin | null>(stored.admin);
   const [token, setToken] = useState<string | null>(stored.token);
 
+  const [theme, setThemeState] = useState<"light" | "dark">(() => {
+    return (localStorage.getItem("luxe_admin_theme") as "light" | "dark") || "dark";
+  });
+
+  const [language, setLanguageState] = useState<"en" | "fr" | "de" | "es">(() => {
+    return (localStorage.getItem("luxe_admin_lang") as "en" | "fr" | "de" | "es") || "en";
+  });
+
+  const setTheme = (t: "light" | "dark") => {
+    setThemeState(t);
+    localStorage.setItem("luxe_admin_theme", t);
+  };
+
+  const setLanguage = (lang: "en" | "fr" | "de" | "es") => {
+    setLanguageState(lang);
+    localStorage.setItem("luxe_admin_lang", lang);
+  };
+
+  const t = (text: string): string => {
+    if (language === "en") return text;
+    const langDict = translations[language];
+    return langDict?.[text] || text;
+  };
+
+  useEffect(() => {
+    const body = document.body;
+    body.classList.remove("light", "dark");
+    body.classList.add(theme);
+  }, [theme]);
+
   const login = (a: Admin, t: string) => {
     setAdmin(a); setToken(t);
     localStorage.setItem("luxe_admin", JSON.stringify(a));
@@ -92,7 +128,7 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
   const isManager = admin?.role === "Manager";
 
   return (
-    <Ctx.Provider value={{ admin, token, login, logout, isAuthenticated: !!token, isManager, setHotel }}>
+    <Ctx.Provider value={{ admin, token, login, logout, isAuthenticated: !!token, isManager, setHotel, theme, setTheme, language, setLanguage, t }}>
       {children}
     </Ctx.Provider>
   );

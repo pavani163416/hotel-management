@@ -7,10 +7,19 @@
 
   body {
     font-family: 'Inter', system-ui, sans-serif;
-    background: #0a1628;
-    color: #f0f4ff;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    transition: background-color 0.2s, color 0.2s;
+  }
+
+  body.dark {
+    background: #0a1628;
+    color: #f0f4ff;
+  }
+
+  body.light {
+    background: #f1f5f9;
+    color: #0f172a;
   }
 
   ::selection {
@@ -168,86 +177,153 @@
   }
 
   /* ══════════════════════════════════════════════════════
-     ADMIN PANEL — DARK GLASS OVERRIDES
-     All "bg-white" cards in admin pages become dark glass.
-     This unifies the admin panel with the manager panel theme.
+     ADMIN PANEL — THEME OVERRIDES
+     All "bg-white" cards in admin pages become dark glass in dark theme,
+     and remain clean, elegant white cards in light theme.
   ══════════════════════════════════════════════════════ */
 
   /* Dark card — replaces bg-white in admin pages */
-  .admin-card {
+  body.dark .admin-card {
     background: linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%) !important;
     border: 1px solid rgba(255,255,255,0.08) !important;
     color: #f0f4ff;
   }
+  body.light .admin-card {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    color: #0f172a;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+  }
 
   /* Override bg-white inside admin layout */
-  .admin-layout-content .bg-white {
+  body.dark .admin-layout-content .bg-white {
     background: linear-gradient(135deg, rgba(17,34,64,0.9) 0%, rgba(13,26,48,0.9) 100%) !important;
     border-color: rgba(255,255,255,0.08) !important;
   }
+  body.light .admin-layout-content .bg-white {
+    background: #ffffff !important;
+    border-color: #cbd5e1 !important;
+  }
 
-  /* Override text colors for dark theme */
-  .admin-layout-content .text-text-primary  { color: #f0f4ff !important; }
-  .admin-layout-content .text-text-secondary { color: #94a3b8 !important; }
-  .admin-layout-content .text-muted          { color: #64748b !important; }
+  /* Override text colors */
+  body.dark .admin-layout-content .text-text-primary  { color: #f0f4ff !important; }
+  body.dark .admin-layout-content .text-text-secondary { color: #94a3b8 !important; }
+  body.dark .admin-layout-content .text-muted          { color: #64748b !important; }
+
+  body.light .admin-layout-content .text-text-primary  { color: #0f172a !important; }
+  body.light .admin-layout-content .text-text-secondary { color: #475569 !important; }
+  body.light .admin-layout-content .text-muted          { color: #64748b !important; }
 
   /* Override border colors */
-  .admin-layout-content .border-border {
+  body.dark .admin-layout-content .border-border {
     border-color: rgba(255,255,255,0.08) !important;
+  }
+  body.light .admin-layout-content .border-border {
+    border-color: #cbd5e1 !important;
   }
 
   /* Override surface backgrounds */
-  .admin-layout-content .bg-surface-2 {
+  body.dark .admin-layout-content .bg-surface-2 {
     background: rgba(255,255,255,0.04) !important;
   }
-  .admin-layout-content .bg-surface-3 {
+  body.dark .admin-layout-content .bg-surface-3 {
     background: rgba(255,255,255,0.06) !important;
   }
 
+  body.light .admin-layout-content .bg-surface-2 {
+    background: #f8fafc !important;
+  }
+  body.light .admin-layout-content .bg-surface-3 {
+    background: #e2e8f0 !important;
+  }
+
   /* Override table header */
-  .admin-layout-content thead tr {
+  body.dark .admin-layout-content thead tr {
     background: rgba(255,255,255,0.04) !important;
   }
-  .admin-layout-content thead th {
+  body.dark .admin-layout-content thead th {
     color: #64748b !important;
   }
-  .admin-layout-content tbody tr:hover {
+  body.dark .admin-layout-content tbody tr:hover {
     background: rgba(255,255,255,0.03) !important;
   }
-  .admin-layout-content tbody td {
+  body.dark .admin-layout-content tbody td {
     color: #94a3b8;
   }
 
+  body.light .admin-layout-content thead tr {
+    background: #f1f5f9 !important;
+  }
+  body.light .admin-layout-content thead th {
+    color: #475569 !important;
+  }
+  body.light .admin-layout-content tbody tr:hover {
+    background: #f8fafc !important;
+  }
+  body.light .admin-layout-content tbody td {
+    color: #334155;
+  }
+
   /* Override inputs inside admin */
-  .admin-layout-content input:not([type="checkbox"]):not([type="radio"]),
-  .admin-layout-content select,
-  .admin-layout-content textarea {
+  body.dark .admin-layout-content input:not([type="checkbox"]):not([type="radio"]),
+  body.dark .admin-layout-content select,
+  body.dark .admin-layout-content textarea {
     background: rgba(255,255,255,0.04) !important;
     border-color: rgba(255,255,255,0.1) !important;
     color: #f0f4ff !important;
   }
-  .admin-layout-content input::placeholder,
-  .admin-layout-content textarea::placeholder {
+  body.dark .admin-layout-content input::placeholder,
+  body.dark .admin-layout-content textarea::placeholder {
     color: #64748b !important;
   }
-  .admin-layout-content input:focus,
-  .admin-layout-content select:focus,
-  .admin-layout-content textarea:focus {
+  body.dark .admin-layout-content input:focus,
+  body.dark .admin-layout-content select:focus,
+  body.dark .admin-layout-content textarea:focus {
     border-color: rgba(212,168,67,0.5) !important;
     box-shadow: 0 0 0 3px rgba(212,168,67,0.1) !important;
     outline: none !important;
   }
-  .admin-layout-content select option {
+  body.dark .admin-layout-content select option {
     background: #112240;
     color: #f0f4ff;
   }
 
+  body.light .admin-layout-content input:not([type="checkbox"]):not([type="radio"]),
+  body.light .admin-layout-content select,
+  body.light .admin-layout-content textarea {
+    background: #ffffff !important;
+    border-color: #cbd5e1 !important;
+    color: #0f172a !important;
+  }
+  body.light .admin-layout-content input::placeholder,
+  body.light .admin-layout-content textarea::placeholder {
+    color: #94a3b8 !important;
+  }
+  body.light .admin-layout-content input:focus,
+  body.light .admin-layout-content select:focus,
+  body.light .admin-layout-content textarea:focus {
+    border-color: #d4a843 !important;
+    box-shadow: 0 0 0 3px rgba(212,168,67,0.15) !important;
+    outline: none !important;
+  }
+  body.light .admin-layout-content select option {
+    background: #ffffff;
+    color: #0f172a;
+  }
+
   /* Override button variants in admin */
-  .admin-layout-content .hover\:bg-surface-3:hover {
+  body.dark .admin-layout-content .hover\:bg-surface-3:hover {
     background: rgba(255,255,255,0.07) !important;
   }
-  .admin-layout-content .hover\:bg-surface-2:hover {
+  body.dark .admin-layout-content .hover\:bg-surface-2:hover {
     background: rgba(255,255,255,0.04) !important;
+  }
+
+  body.light .admin-layout-content .hover\:bg-surface-3:hover {
+    background: #e2e8f0 !important;
+  }
+  body.light .admin-layout-content .hover\:bg-surface-2:hover {
+    background: #f8fafc !important;
   }
 
   /* Credential badge */
@@ -269,18 +345,30 @@
   /* ── Scrollbar ──────────────────────────────────────── */
   .scrollbar-thin::-webkit-scrollbar { width: 4px; height: 4px; }
   .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
-  .scrollbar-thin::-webkit-scrollbar-thumb {
+  body.dark .scrollbar-thin::-webkit-scrollbar-thumb {
     background: rgba(255,255,255,0.12);
     border-radius: 2px;
   }
-  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  body.dark .scrollbar-thin::-webkit-scrollbar-thumb:hover {
     background: rgba(255,255,255,0.2);
+  }
+  body.light .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: rgba(0,0,0,0.1);
+    border-radius: 2px;
+  }
+  body.light .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: rgba(0,0,0,0.2);
   }
 
   /* ── Text helpers ───────────────────────────────────── */
-  .text-bright   { color: #f0f4ff; }
-  .text-soft     { color: #94a3b8; }
-  .text-dim      { color: #64748b; }
+  body.dark .text-bright   { color: #f0f4ff; }
+  body.dark .text-soft     { color: #94a3b8; }
+  body.dark .text-dim      { color: #64748b; }
+
+  body.light .text-bright   { color: #0f172a; }
+  body.light .text-soft     { color: #475569; }
+  body.light .text-dim      { color: #64748b; }
+
   .text-gold     { color: #d4a843; }
   .text-imperial { color: #c0392b; }
   .text-emerald  { color: #10b981; }
