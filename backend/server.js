@@ -604,7 +604,13 @@ io.on("connection", (socket) => {
     const reqRole = role?.toLowerCase();
 
     // Strict Role & Ownership Enforcement for Rooms
-    if (userId && (String(u.id).toLowerCase() === String(userId).toLowerCase() || uRole === "admin" || uRole === "super admin" || uRole === "controller")) {
+    if (userId && (
+      String(u.id).toLowerCase() === String(userId).toLowerCase() || 
+      String(u.email || "").toLowerCase() === String(userId).toLowerCase() || 
+      uRole === "admin" || 
+      uRole === "super admin" || 
+      uRole === "controller"
+    )) {
       socket.join(roomNames.user(userId));
     }
     

@@ -18,6 +18,7 @@ import History from "./pages/History";
 import Profile from "./pages/Profile";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
+import Notifications from "./pages/Notifications";
 
 const queryClient = new QueryClient();
 
@@ -49,6 +50,9 @@ const App = () => (
             } />
             <Route path="/confirmation" element={
               <RequireAuth><Confirmation /></RequireAuth>
+            } />
+            <Route path="/notifications" element={
+              <RequireAuth><Notifications /></RequireAuth>
             } />
 
             {/* ── These handle their own inline auth UI ─ */}

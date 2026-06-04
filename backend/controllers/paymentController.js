@@ -255,6 +255,27 @@ export const cancelPayment = async (req, res, next) => {
       booking.cancelledAt = new Date();
       await booking.save();
 
+      // ── EVENT 4 – PAYMENT CANCELLED ──
+      sendNotification({
+        userId: booking.guestSnapshot?.email || payment?.userId || user?.email || null,
+        role: "customer",
+        message: `Your payment for booking ${booking.bookingRef} was cancelled. You may retry payment anytime.`,
+        type: "booking"
+      }).catch(() => {});
+
+      sendNotification({
+        role: "admin",
+        message: `User cancelled payment for booking ${booking.bookingRef}.`,
+        type: "booking"
+      }).catch(() => {});
+
+      sendNotification({
+        hotelId: booking.hotelStringId || booking.hotelId?.toString() || null,
+        role: "manager",
+        message: `Booking ${booking.bookingRef} moved to PAYMENT_CANCELLED.`,
+        type: "booking"
+      }).catch(() => {});
+
       // Release the room
       try {
         const { syncRoomLegacyStatus } = await import("../services/roomAllocationService.js");
@@ -431,18 +452,24 @@ export const processWebhook = async (req, res, next) => {
             }
           });
 
-          // Send confirmation notifications
+          // ── EVENT 2 – PAYMENT SUCCESS ──
           sendNotification({
             userId: booking.guestSnapshot?.email || payment.userId,
             role: "customer",
-            message: "Booking confirmed successfully.",
+            message: "Booking Confirmed",
+            type: "booking"
+          }).catch(() => {});
+
+          sendNotification({
+            role: "admin",
+            message: "New Confirmed Booking",
             type: "booking"
           }).catch(() => {});
 
           sendNotification({
             hotelId: booking.hotelStringId || booking.hotelId?.toString() || null,
             role: "manager",
-            message: `Booking confirmed successfully: ${booking.bookingRef}`,
+            message: "Booking Confirmed",
             type: "booking"
           }).catch(() => {});
 
@@ -516,11 +543,24 @@ export const processWebhook = async (req, res, next) => {
             }
           });
 
-          // Send notification
+          // ── EVENT 3 – PAYMENT FAILED ──
           sendNotification({
             userId: booking.guestSnapshot?.email || payment.userId,
             role: "customer",
-            message: "Payment failed. Please try again.",
+            message: "Payment Failed",
+            type: "booking"
+          }).catch(() => {});
+
+          sendNotification({
+            role: "admin",
+            message: "Payment Failed",
+            type: "booking"
+          }).catch(() => {});
+
+          sendNotification({
+            hotelId: booking.hotelStringId || booking.hotelId?.toString() || null,
+            role: "manager",
+            message: "Payment Failed",
             type: "booking"
           }).catch(() => {});
 

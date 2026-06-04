@@ -477,33 +477,31 @@ export const createBooking = async (req, res, next) => {
     };
     broadcastBookingUpdate(bookingPayload);
 
-    // ── Only notify managers for CONFIRMED bookings (cash/walk-in) ──
-    // For online payment bookings (Pending), manager notifications are deferred
-    // until payment is captured and confirmed via the Razorpay webhook.
-    if (booking.status === "Confirmed" || booking.status === "CONFIRMED") {
-      sendNotification({
-        hotelId: room.hotelStringId || room.hotelId?.toString() || null,
-        role: "manager",
-        message: "New booking received",
-        type: "booking",
-      }).catch(() => {});
-    }
+    // ── EVENT 1 – BOOKING CREATED ──
+    // Notify User
+    sendNotification({
+      userId: guestData.email,
+      role: "customer",
+      message: (booking.status === "Confirmed" || booking.status === "CONFIRMED")
+        ? "Booking Confirmed"
+        : "Your booking is created and awaiting payment confirmation.",
+      type: "booking",
+    }).catch(() => {});
 
-    if (booking.status === "Confirmed" || booking.status === "CONFIRMED") {
-      sendNotification({
-        userId: guestData.email,
-        role: "customer",
-        message: "Your booking is confirmed",
-        type: "booking",
-      }).catch(() => {});
-    } else {
-      sendNotification({
-        userId: guestData.email,
-        role: "customer",
-        message: "Your booking is created and awaiting payment confirmation.",
-        type: "booking",
-      }).catch(() => {});
-    }
+    // Notify Admin
+    sendNotification({
+      role: "admin",
+      message: `New booking created: ${booking.bookingRef}`,
+      type: "booking",
+    }).catch(() => {});
+
+    // Notify Manager
+    sendNotification({
+      hotelId: room.hotelStringId || room.hotelId?.toString() || null,
+      role: "manager",
+      message: `New booking created: ${booking.bookingRef}`,
+      type: "booking",
+    }).catch(() => {});
 
     // Emit Socket.IO event for real-time admin dashboard update
     const io = req.app.get("io");
