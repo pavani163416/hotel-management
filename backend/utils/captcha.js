@@ -90,16 +90,27 @@ export const generateCaptcha = async () => {
  * @returns {Promise<boolean>}
  */
 export const verifyCaptcha = async (captchaId, providedAnswer) => {
-  if (!captchaId || providedAnswer === undefined || providedAnswer === null) return false;
+  // Validate inputs - both must be provided
+  if (!captchaId) {
+    logger.warn("CAPTCHA verification failed: missing captchaId");
+    return false;
+  }
+  if (providedAnswer === undefined || providedAnswer === null || String(providedAnswer).trim() === "") {
+    logger.warn("CAPTCHA verification failed: missing or empty answer", { captchaId });
+    return false;
+  }
 
   let stored = null;
 
   if (isRedisReady()) {
     try {
       stored = await getRedisClient().get(`captcha:${captchaId}`);
-      if (stored !== null) await getRedisClient().del(`captcha:${captchaId}`);
+      // Delete the CAPTCHA immediately after retrieval (one-time use)
+      if (stored !== null) {
+        await getRedisClient().del(`captcha:${captchaId}`);
+      }
     } catch (err) {
-      logger.warn("CAPTCHA Redis get failed, falling back to memory", { error: err.message });
+      logger.warn("CAPTCHA Redis get failed, falling back to memory", { error: err.message, captchaId });
       stored = memGet(captchaId);
       if (stored !== null) memDel(captchaId);
     }
@@ -108,6 +119,24 @@ export const verifyCaptcha = async (captchaId, providedAnswer) => {
     if (stored !== null) memDel(captchaId);
   }
 
-  if (stored === null) return false; // expired or not found
-  return String(stored).trim() === String(providedAnswer).trim();
+  // If CAPTCHA not found (expired or invalid ID)
+  if (stored === null) {
+    logger.warn("CAPTCHA verification failed: not found or expired", { captchaId });
+    return false;
+  }
+
+  // Trim and compare answers
+  const normalizedStored = String(stored).trim().toLowerCase();
+  const normalizedProvided = String(providedAnswer).trim().toLowerCase();
+  
+  const isValid = normalizedStored === normalizedProvided;
+  
+  if (!isValid) {
+    logger.warn("CAPTCHA verification failed: incorrect answer", {
+      captchaId,
+      providedLength: normalizedProvided.length,
+    });
+  }
+  
+  return isValid;
 };

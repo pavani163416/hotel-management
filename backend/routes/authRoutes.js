@@ -403,6 +403,38 @@ router.post("/register", authLimiter, validateRegisterPayload, async (req, res, 
 
     const normalEmail = email.toLowerCase().trim();
 
+    // ── CAPTCHA verification (mandatory for registration) ─────
+    const { captchaId, captchaAnswer } = req.body;
+    
+    // CAPTCHA is now mandatory - must be provided and valid
+    if (!captchaId || !captchaAnswer) {
+      logger.warn("Registration attempt with missing CAPTCHA", {
+        email: normalEmail,
+        ip: req.ip,
+        hasCaptchaId: !!captchaId,
+        hasCaptchaAnswer: !!captchaAnswer,
+      });
+      return res.status(400).json({
+        success: false,
+        message: "Security check is required. Please complete the CAPTCHA challenge.",
+        code: "CAPTCHA_REQUIRED",
+      });
+    }
+    
+    const captchaValid = await verifyCaptcha(captchaId, captchaAnswer);
+    if (!captchaValid) {
+      logger.warn("Registration attempt with invalid CAPTCHA", {
+        email: normalEmail,
+        captchaId,
+        ip: req.ip,
+      });
+      return res.status(400).json({
+        success: false,
+        message: "Incorrect security check answer. Please try again.",
+        code: "CAPTCHA_INVALID",
+      });
+    }
+
     // Check if user account already exists
     let user = await User.findOne({ email: normalEmail });
     if (user) {
@@ -620,6 +652,38 @@ router.post("/login", loginLimiter, validateLoginPayload, async (req, res, next)
     }
 
     const normalEmail = email.toLowerCase().trim();
+
+    // ── CAPTCHA verification (mandatory for login) ─────
+    const { captchaId: loginCaptchaId, captchaAnswer: loginCaptchaAnswer } = req.body;
+    
+    // CAPTCHA is now mandatory - must be provided and valid
+    if (!loginCaptchaId || !loginCaptchaAnswer) {
+      logger.warn("Login attempt with missing CAPTCHA", {
+        email: normalEmail,
+        ip: req.ip,
+        hasCaptchaId: !!loginCaptchaId,
+        hasCaptchaAnswer: !!loginCaptchaAnswer,
+      });
+      return res.status(400).json({
+        success: false,
+        message: "Security check is required. Please complete the CAPTCHA challenge.",
+        code: "CAPTCHA_REQUIRED",
+      });
+    }
+    
+    const loginCaptchaValid = await verifyCaptcha(loginCaptchaId, loginCaptchaAnswer);
+    if (!loginCaptchaValid) {
+      logger.warn("Login attempt with invalid CAPTCHA", {
+        email: normalEmail,
+        captchaId: loginCaptchaId,
+        ip: req.ip,
+      });
+      return res.status(400).json({
+        success: false,
+        message: "Incorrect security check answer. Please try again.",
+        code: "CAPTCHA_INVALID",
+      });
+    }
 
     // Look up user with passwordHash explicitly included
     const user = await User.findOne({ email: normalEmail }).select("+passwordHash");
