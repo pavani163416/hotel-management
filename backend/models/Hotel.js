@@ -13,10 +13,12 @@ const roomSchema = new mongoose.Schema({
 });
 
 const reviewSchema = new mongoose.Schema({
-  author:  { type: String, required: true },
-  rating:  { type: Number, min: 1, max: 5 },
-  comment: { type: String },
-  date:    { type: String },
+  author:    { type: String, required: true },
+  rating:    { type: Number, min: 1, max: 5 },
+  comment:   { type: String },
+  date:      { type: String },
+  userId:    { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+  userEmail: { type: String },
 });
 
 const hotelSchema = new mongoose.Schema(
@@ -25,6 +27,8 @@ const hotelSchema = new mongoose.Schema(
     name:          { type: String, required: true, trim: true },
     location:      { type: String, required: true },
     city:          { type: String, required: true },
+    state:         { type: String, default: "" },
+    country:       { type: String, default: "" },
     description:   { type: String },
     image:         { type: String },
     gallery:       [String],
@@ -58,6 +62,31 @@ const hotelSchema = new mongoose.Schema(
 hotelSchema.index({ city: 1 });
 hotelSchema.index({ pricePerNight: 1 });
 hotelSchema.index({ isActive: 1 });
+hotelSchema.index({ name: 1 });
+hotelSchema.index({ state: 1 });
+hotelSchema.index({ country: 1 });
+
+// Compound text index for search matching all requested text fields
+hotelSchema.index({
+  name: "text",
+  city: "text",
+  state: "text",
+  country: "text",
+  type: "text",
+  description: "text",
+  amenities: "text"
+}, {
+  weights: {
+    name: 10,
+    city: 5,
+    state: 3,
+    country: 2,
+    type: 2,
+    description: 1,
+    amenities: 1
+  },
+  name: "HotelSearchTextIndex"
+});
 
 const Hotel = mongoose.model("Hotel", hotelSchema);
 export default Hotel;

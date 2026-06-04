@@ -4,7 +4,6 @@ import api, { API } from "../services/api";
 import socket from "@/services/socket";
 
 const HOTEL_CACHE_KEY = "luxe_hotels_cache";
-
 function mapHotel(h: any): Hotel {
   const actualReviews = Array.isArray(h.reviews) ? h.reviews : [];
   const actualReviewCount = actualReviews.length;
@@ -13,10 +12,12 @@ function mapHotel(h: any): Hotel {
     : undefined;
 
   return {
-    id: h.hotelId,
-    name: h.name,
-    location: h.location,
-    city: h.city,
+    id: h.hotelId || h.id || "",
+    name: h.name || "",
+    location: h.location || "",
+    city: h.city || "",
+    state: h.state || "",
+    country: h.country || "",
     description: h.description || "",
     image: h.image || "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&q=80",
     gallery: h.gallery?.length ? h.gallery : [h.image || "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&q=80"],

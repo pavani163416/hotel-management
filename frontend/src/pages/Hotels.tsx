@@ -55,9 +55,21 @@ const Hotels = () => {
   const filtered = useMemo(() => {
     let list = hotels.filter((h) => {
       const ratingValue = typeof h.rating === "number" ? h.rating : 0;
-      const loc = h.location || "";
-      const cty = h.city || "";
-      if (search.location && !loc.toLowerCase().includes(search.location.toLowerCase()) && !cty.toLowerCase().includes(search.location.toLowerCase())) return false;
+      if (search.location) {
+        const query = search.location.toLowerCase();
+        const matchesName = h.name?.toLowerCase().includes(query);
+        const matchesLocation = h.location?.toLowerCase().includes(query);
+        const matchesCity = h.city?.toLowerCase().includes(query);
+        const matchesState = h.state?.toLowerCase().includes(query);
+        const matchesCountry = h.country?.toLowerCase().includes(query);
+        const matchesType = h.type?.toLowerCase().includes(query);
+        const matchesDesc = h.description?.toLowerCase().includes(query);
+        const matchesAmenities = h.amenities?.some((a) => a.toLowerCase().includes(query));
+
+        if (!matchesName && !matchesLocation && !matchesCity && !matchesState && !matchesCountry && !matchesType && !matchesDesc && !matchesAmenities) {
+          return false;
+        }
+      }
       if (h.pricePerNight > maxPrice) return false;
       if (ratingValue < minRating) return false;
       if (amenities.length && !amenities.every((a) => h.amenities.includes(a))) return false;

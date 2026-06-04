@@ -18,6 +18,7 @@ import {
   buildOverlapQuery,
   syncRoomLegacyStatus,
   NON_BOOKABLE_STATUSES,
+  ACTIVE_BOOKING_STATUSES,
 } from "../services/roomAllocationService.js";
 import { acquireLock, releaseLock } from "../cache/redisCache.js";
 import { enqueueEmailJob } from "../queues/emailQueue.js";
@@ -176,7 +177,7 @@ export const createBooking = async (req, res, next) => {
         const activeBookingsCount = await Booking.countDocuments({
           hotelId: actualHotel._id,
           roomType: targetRoomType,
-          status: { $in: ["Confirmed", "CheckedIn", "Pending"] },
+          status: { $in: ACTIVE_BOOKING_STATUSES },
           checkIn: { $lt: new Date(checkOut) },
           checkOut: { $gt: new Date(checkIn) }
         }).session(session);

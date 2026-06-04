@@ -20,6 +20,16 @@ import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 import Notifications from "./pages/Notifications";
 
+// ── Footer / Informational pages ─────────────────────────
+import About from "./pages/About";
+import Terms from "./pages/Terms";
+import Privacy from "./pages/Privacy";
+import Careers from "./pages/Careers";
+import Press from "./pages/Press";
+import Help from "./pages/Help";
+import SupportPage from "./pages/SupportPage";
+import Contact from "./pages/Contact";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -34,6 +44,16 @@ const App = () => (
             <Route path="/" element={<Home />} />
             <Route path="/hotels" element={<Hotels />} />
             <Route path="/hotel/:id" element={<HotelDetails />} />
+
+            {/* ── Informational / Footer pages ────── */}
+            <Route path="/about" element={<About />} />
+            <Route path="/terms" element={<Terms />} />
+            <Route path="/privacy" element={<Privacy />} />
+            <Route path="/careers" element={<Careers />} />
+            <Route path="/press" element={<Press />} />
+            <Route path="/help" element={<Help />} />
+            <Route path="/support" element={<SupportPage />} />
+            <Route path="/contact" element={<Contact />} />
 
             {/* ── Protected routes (must be signed in) ─ */}
             <Route path="/booking" element={
@@ -69,3 +89,4 @@ const App = () => (
 );
 
 export default App;
+

@@ -41,12 +41,30 @@ export const validate = (schema, source = "body") => {
 const emailField       = z.string().email("Invalid email address").toLowerCase().trim();
 const passwordField    = z.string().min(8, "Password must be at least 8 characters").max(72, "Password too long");
 const nameField        = z.string().min(2, "Name must be at least 2 characters").max(100).trim();
-const phoneField       = z.string().regex(/^\+?[0-9\s\-().]{7,20}$/, "Invalid phone number").optional();
+const phoneField       = z.string()
+  .trim()
+  .refine((val) => {
+    if (!val) return true;
+    const clean = val.replace(/[\s\-()]/g, "").replace(/^\+/, "");
+    if (!/^\d+$/.test(clean)) return false;
+    if (clean.length < 7 || clean.length > 15) return false;
+    if (clean.length === 10) {
+      return /^[6-9]/.test(clean);
+    }
+    if (clean.startsWith("91")) {
+      const localPart = clean.slice(2);
+      return localPart.length === 10 && /^[6-9]/.test(localPart);
+    }
+    return true;
+  }, {
+    message: "Invalid phone number. Indian numbers must be 10 digits starting with 6-9."
+  })
+  .optional()
+  .or(z.literal(""));
 const mongoIdField     = z.string().regex(/^[a-f\d]{24}$/i, "Invalid ID format");
 const dateField        = z.string().refine((d) => !isNaN(Date.parse(d)), "Invalid date format");
 const positiveInt      = z.number().int().positive();
 const positiveNumber   = z.number().positive();
-
 // ── Auth Schemas ─────────────────────────────────────────────────────────────
 const login = z.object({
   email:    emailField,

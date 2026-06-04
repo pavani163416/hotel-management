@@ -35,7 +35,7 @@ const img = {
 const hotelsData = [
   {
     hotelId: "h1", name: "Hôtel de Lumière",
-    location: "8th Arrondissement, Paris", city: "Paris",
+    location: "8th Arrondissement, Paris", city: "Paris", state: "Île-de-France", country: "France",
     description: "A timeless masterpiece of French art de vivre, offering panoramic views of the city's most iconic landmarks.",
     image: img.h1, gallery: [img.h1, img.h2, img.h3],
     reviewCount: 0, pricePerNight: 480, originalPrice: 600, discountPct: 20, isDeal: true,
@@ -55,7 +55,7 @@ const hotelsData = [
   },
   {
     hotelId: "h2", name: "The Azure Skyline",
-    location: "Downtown, Tokyo", city: "Tokyo",
+    location: "Downtown, Tokyo", city: "Tokyo", state: "Tokyo Prefecture", country: "Japan",
     description: "Floor-to-ceiling windows reveal a breathtaking city panorama in the heart of Tokyo.",
     image: img.h2, gallery: [img.h2, img.h5, img.h1],
     reviewCount: 0, pricePerNight: 620,
@@ -73,7 +73,7 @@ const hotelsData = [
   },
   {
     hotelId: "h3", name: "Coral Bay Resort",
-    location: "North Male Atoll, Maldives", city: "Maldives",
+    location: "North Male Atoll, Maldives", city: "Maldives", state: "Kaafu Atoll", country: "Maldives",
     description: "An overwater paradise where turquoise lagoons meet sunset skies.",
     image: img.h3, gallery: [img.h3, img.h6, img.h1],
     reviewCount: 0, pricePerNight: 1850, originalPrice: 2200, discountPct: 16, isDeal: true,
@@ -90,7 +90,7 @@ const hotelsData = [
   },
   {
     hotelId: "h4", name: "Alpine Peak Lodge",
-    location: "Zermatt, Switzerland", city: "Zermatt",
+    location: "Zermatt, Switzerland", city: "Zermatt", state: "Valais", country: "Switzerland",
     description: "Nestled at the foot of the Matterhorn, a world-class alpine retreat.",
     image: img.h4, gallery: [img.h4, img.h2, img.h1],
     reviewCount: 0, pricePerNight: 540, originalPrice: 680, discountPct: 21, isDeal: true,
@@ -108,7 +108,7 @@ const hotelsData = [
   },
   {
     hotelId: "h5", name: "The Grand Metropolitan",
-    location: "Manhattan, New York", city: "New York",
+    location: "Manhattan, New York", city: "New York", state: "NY", country: "USA",
     description: "An iconic Midtown landmark where Art Deco heritage meets modern luxury hospitality.",
     image: img.h5, gallery: [img.h5, img.h2, img.h1],
     reviewCount: 0, pricePerNight: 420,
@@ -126,7 +126,7 @@ const hotelsData = [
   },
   {
     hotelId: "h6", name: "Santorini Cliff Suites",
-    location: "Oia, Santorini", city: "Santorini",
+    location: "Oia, Santorini", city: "Santorini", state: "Cyclades", country: "Greece",
     description: "Whitewashed cave suites perched dramatically over the caldera with iconic sunset views.",
     image: img.h6, gallery: [img.h6, img.h3, img.h1],
     reviewCount: 0, pricePerNight: 890, originalPrice: 1100, discountPct: 19, isDeal: true,

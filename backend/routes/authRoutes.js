@@ -203,6 +203,7 @@ import { cacheGet, cacheSet, cacheDel } from "../cache/redisCache.js";
 import { getRedisClient, isRedisReady } from "../config/redis.js";
 import { enqueueEmailJob } from "../queues/emailQueue.js";
 import AuditLog from "../models/AuditLog.js";
+import { generateCaptcha, verifyCaptcha } from "../utils/captcha.js";
 import {
   validateLoginPayload,
   validateRegisterPayload,
@@ -352,6 +353,17 @@ export const verifyCustomerToken = (req, res, next) => {
     return res.status(401).json({ success: false, message: msg });
   }
 };
+
+// ── GET /api/auth/captcha ─────────────────────────────────
+// Returns a new math CAPTCHA challenge (captchaId + challenge string).
+router.get("/captcha", async (req, res) => {
+  try {
+    const { captchaId, challenge } = await generateCaptcha();
+    return res.json({ success: true, data: { captchaId, challenge } });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: "Failed to generate CAPTCHA." });
+  }
+});
 
 // ── POST /api/auth/register ───────────────────────────────
 router.post("/register", authLimiter, validateRegisterPayload, async (req, res, next) => {
