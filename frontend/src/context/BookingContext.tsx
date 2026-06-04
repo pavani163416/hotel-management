@@ -347,7 +347,10 @@ export const BookingProvider = ({ children }: { children: ReactNode }) => {
         return next;
       });
     } catch (err: any) {
-      throw new Error(err.message || "Failed to submit review.");
+      // Preserve the error response for status code checking in the UI
+      const error = new Error(err.response?.data?.message || err.message || "Failed to submit review.");
+      (error as any).response = err.response;
+      throw error;
     }
   };
 

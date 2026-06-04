@@ -148,6 +148,13 @@ const HotelDetails = () => {
       setReviewName("");
       setReviewText("");
     } catch (error: any) {
+      // Check if error is 401 (Unauthorized) - show signin modal instead of error
+      const status = error.response?.status;
+      if (status === 401) {
+        setAuthOpen(true);
+        setAuthMode("signin");
+        return;
+      }
       setErr(error.message || "Could not submit review. Please try again.");
     }
   };
