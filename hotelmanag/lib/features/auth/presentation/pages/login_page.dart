@@ -20,6 +20,8 @@ class _LoginPageState extends State<LoginPage> {
   final _passwordController = TextEditingController();
   bool _rememberMe = false;
   bool _obscurePassword = true;
+  bool _isLoggingIn = false;
+  bool _isGoogleLoggingIn = false;
 
   @override
   void dispose() {
@@ -143,10 +145,14 @@ class _LoginPageState extends State<LoginPage> {
                   width: double.infinity,
                   height: 56,
                   child: ElevatedButton(
-                    onPressed: auth.isLoading
+                    onPressed: (_isLoggingIn || _isGoogleLoggingIn)
                         ? () {}
                         : () async {
+                            setState(() => _isLoggingIn = true);
                             await auth.login(_emailController.text, _passwordController.text);
+                            if (mounted) {
+                              setState(() => _isLoggingIn = false);
+                            }
                             if (auth.isAuthenticated) {
                               if (context.mounted) {
                                 context.read<BookingProvider>().fetchMyBookings();
@@ -169,7 +175,7 @@ class _LoginPageState extends State<LoginPage> {
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                     ),
-                    child: auth.isLoading
+                    child: _isLoggingIn
                         ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
                         : const Text('Log In', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                   ),
@@ -194,27 +200,35 @@ class _LoginPageState extends State<LoginPage> {
                   _buildSocialButton(
                     'Continue with Google',
                     LucideIcons.chrome,
-                    isLoading: auth.isLoading,
-                    onTap: () async {
-                      final success = await auth.signInWithGoogle();
-                      if (success && context.mounted) {
-                        context.read<BookingProvider>().fetchMyBookings();
-                        context.go('/');
-                      } else if (auth.error != null && context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text(auth.error!)),
-                        );
-                      }
-                    },
+                    isLoading: _isGoogleLoggingIn,
+                    onTap: (_isLoggingIn || _isGoogleLoggingIn)
+                        ? () {}
+                        : () async {
+                            setState(() => _isGoogleLoggingIn = true);
+                            final success = await auth.signInWithGoogle();
+                            if (mounted) {
+                              setState(() => _isGoogleLoggingIn = false);
+                            }
+                            if (success && context.mounted) {
+                              context.read<BookingProvider>().fetchMyBookings();
+                              context.go('/');
+                            } else if (auth.error != null && context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text(auth.error!)),
+                              );
+                            }
+                          },
                   ),
                   const SizedBox(height: 16),
                   _buildSocialButton(
                     'Continue with Phone Number',
                     LucideIcons.phone,
-                    isLoading: auth.isLoading,
-                    onTap: () {
-                      PhoneAuthBottomSheet.show(context);
-                    },
+                    isLoading: false,
+                    onTap: (_isLoggingIn || _isGoogleLoggingIn)
+                        ? () {}
+                        : () {
+                            PhoneAuthBottomSheet.show(context);
+                          },
                   ),
                 ],
               ),
