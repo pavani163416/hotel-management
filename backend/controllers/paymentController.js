@@ -222,7 +222,7 @@ export const cancelPayment = async (req, res, next) => {
 
     logger.info("Payment cancellation request received", { orderId, bookingId, userId: user?.email });
 
-    // Find the pending payment
+    // ── Step 1: Find and mark the pending Payment record ─────────────────
     let payment = null;
     if (orderId) {
       payment = await Payment.findOne({ razorpayOrderId: orderId, status: "PENDING" });
@@ -231,19 +231,24 @@ export const cancelPayment = async (req, res, next) => {
       payment = await Payment.findOne({ bookingId, status: "PENDING" }).sort({ createdAt: -1 });
     }
 
-    if (!payment) {
-      // No pending payment found — may already be processed or cancelled
-      return res.status(200).json({ success: true, message: "No pending payment found. Nothing to cancel." });
+    if (payment) {
+      payment.status = "CANCELLED";
+      payment.failureReason = "Cancelled by user (modal dismissed)";
+      await payment.save();
     }
 
-    // Mark payment as CANCELLED
-    payment.status = "CANCELLED";
-    payment.failureReason = "Cancelled by user (modal dismissed)";
-    await payment.save();
+    // ── Step 2: Find the Booking — either via Payment.bookingId or direct bookingId ──
+    let targetBookingId = payment?.bookingId?.toString() || bookingId;
+    let booking = null;
+    if (targetBookingId) {
+      try {
+        booking = await Booking.findById(targetBookingId);
+      } catch (_) {
+        // Invalid ObjectId — ignore
+      }
+    }
 
-    // Update booking status to PAYMENT_CANCELLED
-    const booking = await Booking.findById(payment.bookingId);
-    if (booking && booking.status !== "Cancelled" && booking.status !== "Confirmed") {
+    if (booking && booking.status !== "Cancelled" && booking.status !== "Confirmed" && booking.status !== "CONFIRMED") {
       booking.status = "PAYMENT_CANCELLED";
       booking.paymentStatus = "FAILED";
       booking.cancellationReason = "Payment cancelled by user";
@@ -251,8 +256,10 @@ export const cancelPayment = async (req, res, next) => {
       await booking.save();
 
       // Release the room
-      const { syncRoomLegacyStatus } = await import("../services/roomAllocationService.js");
-      await syncRoomLegacyStatus(booking.room).catch(() => {});
+      try {
+        const { syncRoomLegacyStatus } = await import("../services/roomAllocationService.js");
+        await syncRoomLegacyStatus(booking.room).catch(() => {});
+      } catch (_) { /* service may not exist in all envs */ }
 
       // Emit room release update
       const io = req.app.get("io");
@@ -262,10 +269,12 @@ export const cancelPayment = async (req, res, next) => {
       }
 
       logger.info("Payment cancelled and room released", {
-        orderId: payment.razorpayOrderId,
+        orderId: payment?.razorpayOrderId,
         bookingId: booking._id,
         userId: user?.email,
       });
+    } else if (!booking) {
+      logger.warn("cancelPayment: no booking found to cancel", { orderId, bookingId });
     }
 
     return res.status(200).json({ success: true, message: "Payment cancelled. Room is now available." });

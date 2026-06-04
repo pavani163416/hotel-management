@@ -372,7 +372,7 @@ export default function Topbar({ searchPlaceholder }: Props) {
                   </button>
                 ))}
               </div>
-              <button onClick={() => { setShowNotifs(false); navigate("/notifications"); }}
+              <button onClick={() => { setShowNotifs(false); navigate(admin?.role === "Manager" ? "/m/notifications" : "/notifications"); }}
                 className="w-full py-2.5 text-xs font-semibold text-gold transition-colors"
                 style={{ borderTop: theme === "light" ? "1px solid #cbd5e1" : "1px solid rgba(255,255,255,0.07)" }}
                 onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = theme === "light" ? "rgba(0,0,0,0.04)" : "rgba(255,255,255,0.04)"}

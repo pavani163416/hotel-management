@@ -20,6 +20,22 @@ const Hotels = () => {
   const [amenities, setAmenities] = useState<string[]>(searchParams.get("amenities")?.split(",").filter(Boolean) || []);
   const [types, setTypes] = useState<string[]>(searchParams.get("type")?.split(",").filter(Boolean) || []);
   const [sort, setSort] = useState<"price-asc" | "price-desc" | "rating">((searchParams.get("sort") as any) || "rating");
+  const [paymentToast, setPaymentToast] = useState<"cancelled" | "failed" | null>(null);
+
+  // Show toast if redirected back from a cancelled/failed payment
+  useEffect(() => {
+    const status = searchParams.get("payment");
+    if (status === "cancelled" || status === "failed") {
+      setPaymentToast(status);
+      // Strip the query param from the URL without re-render
+      const clean = new URLSearchParams(searchParams);
+      clean.delete("payment");
+      setSearchParams(clean, { replace: true });
+      const t = setTimeout(() => setPaymentToast(null), 6000);
+      return () => clearTimeout(t);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     const t = setTimeout(() => {
@@ -61,6 +77,25 @@ const Hotels = () => {
 
   return (
     <Layout>
+      {/* ── Payment result toast ─────────────────────────── */}
+      {paymentToast && (
+        <div className={`fixed top-4 left-1/2 -translate-x-1/2 z-[200] flex items-center gap-3 px-5 py-3.5 rounded-xl shadow-lg text-sm font-semibold animate-fade-in max-w-md w-full mx-4
+          ${paymentToast === "cancelled"
+            ? "bg-yellow-500/15 border border-yellow-500/40 text-yellow-700 dark:text-yellow-300"
+            : "bg-destructive/15 border border-destructive/40 text-destructive"
+          }`}>
+          <X className="w-4 h-4 shrink-0" />
+          <span>
+            {paymentToast === "cancelled"
+              ? "Payment cancelled. Your booking has been released. Choose a room to try again."
+              : "Payment failed. Your card was declined. Please try a different payment method."}
+          </span>
+          <button onClick={() => setPaymentToast(null)} className="ml-auto opacity-60 hover:opacity-100 transition-opacity">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
       <div className="container py-8">
         <div className="grid lg:grid-cols-[300px_1fr] gap-8">
           {/* SIDEBAR */}

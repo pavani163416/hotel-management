@@ -33,8 +33,8 @@ const Payment = () => {
   const [govtId, setGovtId]         = useState("");
   const [error, setError]           = useState("");
   const [processing, setProcessing] = useState(false);
-  const [paymentCancelled, setPaymentCancelled] = useState(false);
-  const [currentOrderId, setCurrentOrderId]     = useState<string | null>(null);
+  const [paymentFailed, setPaymentFailed]     = useState(false);
+  const [currentOrderId, setCurrentOrderId]   = useState<string | null>(null);
   const [currentBookingId, setCurrentBookingId] = useState<string | null>(null);
 
   // Field-specific validation errors for real-time reporting
@@ -278,16 +278,13 @@ const Payment = () => {
         },
         modal: {
           ondismiss: function () {
-            // User closed the Razorpay modal — cancel the pending payment and release the room
+            // User dismissed Razorpay — cancel the booking, release the room, go to hotels
             setProcessing(false);
-            setPaymentCancelled(true);
-            // Call backend to clean up and release the reserved room
+            // Fire-and-forget: cancel backend booking and release room
             cancelPaymentOrder({ orderId: rzpOrder.orderId, bookingId: mongoBookingId || undefined }).catch(() => {});
+            // Redirect to hotels with a query param so hotels page can show a toast
+            nav("/hotels?payment=cancelled");
           },
-        },
-        notify: {
-          // Handle payment failure event from Razorpay SDK
-          handler: undefined,
         },
       };
 
@@ -296,12 +293,14 @@ const Payment = () => {
       // Handle payment failure event (card declined, bank error, etc.)
       rzp.on("payment.failed", function (_response: any) {
         setProcessing(false);
-        setError("Payment failed. Your card was declined or an error occurred. Please try again.");
+        setPaymentFailed(true);
         // Cancel/release the booking in background
         cancelPaymentOrder({ orderId: rzpOrder.orderId, bookingId: mongoBookingId || undefined }).catch(() => {});
+        // After a short delay navigate to hotels
+        setTimeout(() => nav("/hotels?payment=failed"), 2500);
       });
 
-      // Track current order for retry support
+      // Track current order
       setCurrentOrderId(rzpOrder.orderId);
       setCurrentBookingId(mongoBookingId);
 
@@ -310,14 +309,6 @@ const Payment = () => {
       setError(err.message || "Payment failed. Please try again.");
       setProcessing(false);
     }
-  };
-
-  // Allow retry — reset cancelled state and clear persisted error so user can try paying again
-  const handleRetryPayment = () => {
-    setPaymentCancelled(false);
-    setError("");
-    setCurrentOrderId(null);
-    setCurrentBookingId(null);
   };
 
   return (
@@ -332,25 +323,20 @@ const Payment = () => {
         <div className="grid lg:grid-cols-[1fr_380px] gap-8">
           <form onSubmit={pay} className="space-y-6">
 
-            {/* ── Payment Cancelled Banner ───────────────── */}
-            {paymentCancelled && (
-              <div className="flex flex-col gap-3 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-2xl">
-                <div className="flex items-start gap-3">
-                  <AlertCircle className="w-5 h-5 text-yellow-500 mt-0.5 shrink-0" />
-                  <div>
-                    <p className="font-semibold text-primary text-sm">Payment Cancelled</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      You closed the payment window before completing your transaction. Your booking reservation has been released. You can retry payment or choose a different room.
-                    </p>
+
+            {/* ── Payment Failed Full-Screen Overlay ──────── */}
+            {paymentFailed && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+                <div className="bg-card border border-destructive/30 rounded-2xl p-8 max-w-sm w-full mx-4 text-center space-y-4">
+                  <div className="w-16 h-16 rounded-full bg-destructive/10 grid place-items-center mx-auto">
+                    <AlertCircle className="w-8 h-8 text-destructive" />
                   </div>
+                  <h2 className="font-display text-xl font-bold text-primary">Payment Failed</h2>
+                  <p className="text-sm text-muted-foreground">
+                    Your payment was declined or an error occurred. Your booking has been cancelled and the room is now released.
+                  </p>
+                  <p className="text-xs text-muted-foreground animate-pulse">Redirecting to Hotels…</p>
                 </div>
-                <button
-                  type="button"
-                  onClick={handleRetryPayment}
-                  className="self-start text-xs font-semibold bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:bg-primary/90 transition-base"
-                >
-                  Retry Payment
-                </button>
               </div>
             )}
 
