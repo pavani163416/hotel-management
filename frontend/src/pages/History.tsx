@@ -200,17 +200,25 @@ const History = () => {
     .map(normalise);
 
   const statusClass = (s: string) =>
-    s === "Confirmed"  ? "bg-accent/15 text-accent" :
-    s === "Cancelled"  ? "bg-destructive/15 text-destructive" :
-    s === "CheckedIn"  ? "bg-blue-500/15 text-blue-600" :
-    s === "CheckedOut" ? "bg-green-500/15 text-green-600" :
-    s === "Completed"  ? "bg-green-500/15 text-green-600" :
-    s === "Pending"    ? "bg-yellow-500/15 text-yellow-600" :
+    s === "Confirmed"         ? "bg-accent/15 text-accent" :
+    s === "CONFIRMED"         ? "bg-accent/15 text-accent" :
+    s === "Cancelled"         ? "bg-destructive/15 text-destructive" :
+    s === "PAYMENT_CANCELLED" ? "bg-orange-500/15 text-orange-600" :
+    s === "PENDING_PAYMENT"   ? "bg-yellow-500/15 text-yellow-700" :
+    s === "PAYMENT_FAILED"    ? "bg-destructive/15 text-destructive" :
+    s === "CheckedIn"         ? "bg-blue-500/15 text-blue-600" :
+    s === "CheckedOut"        ? "bg-green-500/15 text-green-600" :
+    s === "Completed"         ? "bg-green-500/15 text-green-600" :
+    s === "Pending"           ? "bg-yellow-500/15 text-yellow-600" :
     "bg-accent/15 text-accent"; // default to Confirmed style
 
   const statusLabel = (s: string) =>
-    s === "CheckedIn"  ? "Checked In" :
-    s === "CheckedOut" ? "Checked Out" :
+    s === "CheckedIn"         ? "Checked In" :
+    s === "CheckedOut"        ? "Checked Out" :
+    s === "PAYMENT_CANCELLED" ? "Payment Cancelled" :
+    s === "PENDING_PAYMENT"   ? "Awaiting Payment" :
+    s === "PAYMENT_FAILED"    ? "Payment Failed" :
+    s === "CONFIRMED"         ? "Confirmed" :
     s || "Confirmed";
 
   return (
@@ -219,11 +227,11 @@ const History = () => {
         <h1 className="font-display text-3xl md:text-4xl font-bold mb-2">Booking History</h1>
         <p className="text-muted-foreground mb-8">Manage your upcoming stays and review past adventures.</p>
 
-        <div className="flex gap-2 mb-6">
-          {(["all", "Confirmed", "Cancelled"] as const).map((f) => (
-            <button key={f} onClick={() => setFilter(f)}
+        <div className="flex flex-wrap gap-2 mb-6">
+          {(["all", "Confirmed", "Cancelled", "PAYMENT_CANCELLED", "Pending"] as const).map((f) => (
+            <button key={f} onClick={() => setFilter(f as any)}
               className={`px-5 py-2 rounded-full text-sm font-semibold transition-base ${filter === f ? "bg-accent text-accent-foreground" : "bg-secondary text-primary hover:bg-secondary/70"}`}>
-              {f === "all" ? "All Bookings" : f}
+              {f === "all" ? "All Bookings" : statusLabel(f)}
             </button>
           ))}
         </div>

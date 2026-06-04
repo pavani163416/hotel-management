@@ -143,7 +143,7 @@ export const getAdminStats = async (req, res, next) => {
     ] = await Promise.all([
       Hotel.countDocuments({ isActive: true }),
       Booking.countDocuments(),
-      Booking.countDocuments({ status: "Confirmed" }),
+      Booking.countDocuments({ status: { $in: ["Confirmed", "CONFIRMED"] }, paymentStatus: "PAID" }),
       Booking.countDocuments({ status: "Cancelled" }),
       Guest.countDocuments(),
       Visitor.countDocuments(),
@@ -152,13 +152,13 @@ export const getAdminStats = async (req, res, next) => {
       Room.countDocuments({ isActive: true, status: "Maintenance" }),
       Room.countDocuments({ isActive: true }),
       Booking.aggregate([
-        { $match: { status: { $in: ["Confirmed", "Completed"] } } },
+        { $match: { paymentStatus: "PAID" } },
         { $group: { _id: null, total: { $sum: "$totalAmount" } } },
       ]),
       Booking.aggregate([
         {
           $match: {
-            status: { $in: ["Confirmed", "Completed"] },
+            paymentStatus: "PAID",
             createdAt: {
               $gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
             },
@@ -205,7 +205,7 @@ export const getAdminAnalytics = async (req, res, next) => {
         Booking.aggregate([
           {
             $match: {
-              status: { $in: ["Confirmed", "Completed"] },
+              paymentStatus: "PAID",
               createdAt: { $gte: sixMonthsAgo },
             },
           },

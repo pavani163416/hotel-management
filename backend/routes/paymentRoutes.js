@@ -2,6 +2,7 @@ import express from "express";
 import {
   createOrder,
   verifyPayment,
+  cancelPayment,
   getPaymentStatus,
   refundPayment,
   getPaymentHistory,
@@ -12,6 +13,7 @@ const router = express.Router();
 
 router.post("/create-order", protect, createOrder);
 router.post("/verify", protect, verifyPayment);
+router.post("/cancel", protect, cancelPayment);
 router.get("/status/:orderId", protect, getPaymentStatus);
 router.get("/history", protect, getPaymentHistory);
 

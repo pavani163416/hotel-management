@@ -206,6 +206,78 @@ export const verifyPayment = async (req, res, next) => {
 };
 
 /**
+ * POST /api/payments/cancel
+ * ── Payment Cancellation (user dismissed Razorpay modal) ──────────────────
+ * Called by frontend when the user closes the Razorpay checkout modal without
+ * completing payment. Marks payment as CANCELLED and releases the room.
+ */
+export const cancelPayment = async (req, res, next) => {
+  try {
+    const { orderId, bookingId } = req.body;
+    const user = req.user;
+
+    if (!orderId && !bookingId) {
+      return res.status(400).json({ success: false, message: "orderId or bookingId is required." });
+    }
+
+    logger.info("Payment cancellation request received", { orderId, bookingId, userId: user?.email });
+
+    // Find the pending payment
+    let payment = null;
+    if (orderId) {
+      payment = await Payment.findOne({ razorpayOrderId: orderId, status: "PENDING" });
+    }
+    if (!payment && bookingId) {
+      payment = await Payment.findOne({ bookingId, status: "PENDING" }).sort({ createdAt: -1 });
+    }
+
+    if (!payment) {
+      // No pending payment found — may already be processed or cancelled
+      return res.status(200).json({ success: true, message: "No pending payment found. Nothing to cancel." });
+    }
+
+    // Mark payment as CANCELLED
+    payment.status = "CANCELLED";
+    payment.failureReason = "Cancelled by user (modal dismissed)";
+    await payment.save();
+
+    // Update booking status to PAYMENT_CANCELLED
+    const booking = await Booking.findById(payment.bookingId);
+    if (booking && booking.status !== "Cancelled" && booking.status !== "Confirmed") {
+      booking.status = "PAYMENT_CANCELLED";
+      booking.paymentStatus = "FAILED";
+      booking.cancellationReason = "Payment cancelled by user";
+      booking.cancelledAt = new Date();
+      await booking.save();
+
+      // Release the room
+      const { syncRoomLegacyStatus } = await import("../services/roomAllocationService.js");
+      await syncRoomLegacyStatus(booking.room).catch(() => {});
+
+      // Emit room release update
+      const io = req.app.get("io");
+      if (io) {
+        io.emit("roomStatusUpdate", { roomId: booking.room, hotelStringId: booking.hotelStringId });
+        io.emit("booking_update", { _id: booking._id, status: "PAYMENT_CANCELLED" });
+      }
+
+      logger.info("Payment cancelled and room released", {
+        orderId: payment.razorpayOrderId,
+        bookingId: booking._id,
+        userId: user?.email,
+      });
+    }
+
+    return res.status(200).json({ success: true, message: "Payment cancelled. Room is now available." });
+  } catch (error) {
+    logger.error("Error during payment cancellation", { error: error.message });
+    next(error);
+  }
+};
+
+
+
+/**
  * GET /api/payments/status/:orderId
  * ── Retrieve payment status ──────────────────────────────
  */

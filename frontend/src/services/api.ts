@@ -228,3 +228,9 @@ export const getPaymentStatus = async (orderId: string) => {
   const { data } = await api.get(`/payments/status/${orderId}`);
   return data;
 };
+
+/** POST /api/payments/cancel — called when user dismisses Razorpay modal */
+export const cancelPaymentOrder = async (payload: { orderId?: string; bookingId?: string }) => {
+  const { data } = await api.post("/payments/cancel", payload);
+  return data;
+};

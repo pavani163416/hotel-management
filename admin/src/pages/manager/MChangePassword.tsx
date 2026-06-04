@@ -75,35 +75,6 @@ export default function MChangePassword() {
     }
   };
 
-  const PasswordField = ({
-    label, value, onChange, show, onToggleShow, placeholder
-  }: {
-    label: string; value: string; onChange: (v: string) => void;
-    show: boolean; onToggleShow: () => void; placeholder: string;
-  }) => (
-    <div>
-      <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5 text-[#94a3b8]">
-        {label}
-      </label>
-      <div className="relative">
-        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
-        <input
-          type={show ? "text" : "password"}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
-          className="w-full bg-white/[0.04] border border-white/10 text-[#f0f4ff] rounded-xl py-3 pl-10 pr-12 text-sm outline-none placeholder-slate-500 focus:border-amber-500/50 focus:ring-2 focus:ring-amber-500/10 transition-all"
-        />
-        <button
-          type="button"
-          onClick={onToggleShow}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors z-10 cursor-pointer flex items-center justify-center"
-        >
-          {show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-        </button>
-      </div>
-    </div>
-  );
 
   return (
     <div
@@ -237,3 +208,34 @@ export default function MChangePassword() {
     </div>
   );
 }
+
+const PasswordField = ({
+  label, value, onChange, show, onToggleShow, placeholder
+}: {
+  label: string; value: string; onChange: (v: string) => void;
+  show: boolean; onToggleShow: () => void; placeholder: string;
+}) => (
+  <div>
+    <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5 text-[#94a3b8]">
+      {label}
+    </label>
+    <div className="relative">
+      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
+      <input
+        type={show ? "text" : "password"}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="w-full bg-white/[0.04] border border-white/10 text-[#f0f4ff] rounded-xl py-3 pl-10 pr-12 text-sm outline-none placeholder-slate-500 focus:border-amber-500/50 focus:ring-2 focus:ring-amber-500/10 transition-all"
+      />
+      <button
+        type="button"
+        onClick={onToggleShow}
+        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors z-10 cursor-pointer flex items-center justify-center"
+      >
+        {show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+      </button>
+    </div>
+  </div>
+);
+

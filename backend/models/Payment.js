@@ -35,7 +35,7 @@ const paymentSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["PENDING", "SUCCESS", "FAILED", "REFUNDED"],
+      enum: ["PENDING", "SUCCESS", "FAILED", "REFUNDED", "CANCELLED"],
       default: "PENDING",
     },
     gateway: {

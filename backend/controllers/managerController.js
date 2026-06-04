@@ -232,7 +232,7 @@ export const getManagerDashboard = async (req, res, next) => {
       Booking.countDocuments(hf),
       Booking.countDocuments({ ...hf, createdAt:{ $gte:today, $lt:tomorrow } }),
       Booking.aggregate([
-        { $match:{ ...hf, status:{ $in:["Confirmed","Completed","CheckedIn","CheckedOut"] } } },
+        { $match:{ ...hf, paymentStatus: "PAID" } },
         { $group:{ _id:null, total:{ $sum:"$totalAmount" } } },
       ]),
       Booking.countDocuments({ ...hf, status:"CheckedIn" }),

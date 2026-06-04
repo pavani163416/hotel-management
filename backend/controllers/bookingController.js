@@ -477,12 +477,18 @@ export const createBooking = async (req, res, next) => {
     };
     broadcastBookingUpdate(bookingPayload);
 
-    sendNotification({
-      hotelId: room.hotelStringId || room.hotelId?.toString() || null,
-      role: "manager",
-      message: "New booking received",
-      type: "booking",
-    }).catch(() => {});
+    // ── Only notify managers for CONFIRMED bookings (cash/walk-in) ──
+    // For online payment bookings (Pending), manager notifications are deferred
+    // until payment is captured and confirmed via the Razorpay webhook.
+    if (booking.status === "Confirmed" || booking.status === "CONFIRMED") {
+      sendNotification({
+        hotelId: room.hotelStringId || room.hotelId?.toString() || null,
+        role: "manager",
+        message: "New booking received",
+        type: "booking",
+      }).catch(() => {});
+    }
+
     if (booking.status === "Confirmed" || booking.status === "CONFIRMED") {
       sendNotification({
         userId: guestData.email,
@@ -502,15 +508,18 @@ export const createBooking = async (req, res, next) => {
     // Emit Socket.IO event for real-time admin dashboard update
     const io = req.app.get("io");
     if (io) {
-      io.emit("newBooking", {
-        bookingId: booking._id,
-        hotelName: bookingPayload.hotelName,
-        userName: guestData.name,
-        amount: totalAmount,
-        roomType: room.type,
-        status: booking.status,
-        createdAt: new Date().toISOString(),
-      });
+      // Only emit newBooking (live alert) for confirmed bookings
+      if (booking.status === "Confirmed" || booking.status === "CONFIRMED") {
+        io.emit("newBooking", {
+          bookingId: booking._id,
+          hotelName: bookingPayload.hotelName,
+          userName: guestData.name,
+          amount: totalAmount,
+          roomType: room.type,
+          status: booking.status,
+          createdAt: new Date().toISOString(),
+        });
+      }
       io.emit("roomStatusUpdate", {
         roomId: room._id,
         roomNumber: room.roomNumber,

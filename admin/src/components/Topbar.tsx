@@ -79,11 +79,18 @@ export default function Topbar({ searchPlaceholder }: Props) {
     ? { role: "manager", hotelId: admin.assignedHotelId || admin.hotelId }
     : { role: "admin" };
 
-  // Register for notifications and fetch once on mount (when admin is available)
-  const notifFetched = useRef(false);
+  // Register for notifications and fetch whenever the logged-in admin identity changes
+  const notifFetched = useRef<string | null>(null);
   useEffect(() => {
-    if (!admin || notifFetched.current) return;
-    notifFetched.current = true;
+    if (!admin) {
+      // Logged out — reset so we re-fetch on next login
+      notifFetched.current = null;
+      setNotifications([]);
+      return;
+    }
+    // Use admin.email as the key; if it changed (re-login as different user) we re-fetch
+    if (notifFetched.current === admin.email) return;
+    notifFetched.current = admin.email;
     socket.emit("registerNotifications", notificationScope);
     getNotifications(notificationScope)
       .then((res: any) => setNotifications(res?.data || []))

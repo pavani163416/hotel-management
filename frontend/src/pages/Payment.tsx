@@ -8,7 +8,7 @@ import Layout from "@/components/Layout";
 import Stepper from "@/components/Stepper";
 import PasswordInput from "@/components/PasswordInput";
 import { useBooking, calcNights, Booking } from "@/context/BookingContext";
-import { createBooking, createPaymentOrder, verifyPaymentSignature } from "@/services/api";
+import { createBooking, createPaymentOrder, verifyPaymentSignature, cancelPaymentOrder } from "@/services/api";
 
 type Method = "card" | "upi" | "netbanking";
 
@@ -33,6 +33,9 @@ const Payment = () => {
   const [govtId, setGovtId]         = useState("");
   const [error, setError]           = useState("");
   const [processing, setProcessing] = useState(false);
+  const [paymentCancelled, setPaymentCancelled] = useState(false);
+  const [currentOrderId, setCurrentOrderId]     = useState<string | null>(null);
+  const [currentBookingId, setCurrentBookingId] = useState<string | null>(null);
 
   // Field-specific validation errors for real-time reporting
   const [govtIdError, setGovtIdError] = useState("");
@@ -275,17 +278,46 @@ const Payment = () => {
         },
         modal: {
           ondismiss: function () {
+            // User closed the Razorpay modal — cancel the pending payment and release the room
             setProcessing(false);
+            setPaymentCancelled(true);
+            // Call backend to clean up and release the reserved room
+            cancelPaymentOrder({ orderId: rzpOrder.orderId, bookingId: mongoBookingId || undefined }).catch(() => {});
           },
+        },
+        notify: {
+          // Handle payment failure event from Razorpay SDK
+          handler: undefined,
         },
       };
 
       const rzp = new (window as any).Razorpay(options);
+
+      // Handle payment failure event (card declined, bank error, etc.)
+      rzp.on("payment.failed", function (_response: any) {
+        setProcessing(false);
+        setError("Payment failed. Your card was declined or an error occurred. Please try again.");
+        // Cancel/release the booking in background
+        cancelPaymentOrder({ orderId: rzpOrder.orderId, bookingId: mongoBookingId || undefined }).catch(() => {});
+      });
+
+      // Track current order for retry support
+      setCurrentOrderId(rzpOrder.orderId);
+      setCurrentBookingId(mongoBookingId);
+
       rzp.open();
     } catch (err: any) {
       setError(err.message || "Payment failed. Please try again.");
       setProcessing(false);
     }
+  };
+
+  // Allow retry — reset cancelled state and clear persisted error so user can try paying again
+  const handleRetryPayment = () => {
+    setPaymentCancelled(false);
+    setError("");
+    setCurrentOrderId(null);
+    setCurrentBookingId(null);
   };
 
   return (
@@ -299,6 +331,28 @@ const Payment = () => {
 
         <div className="grid lg:grid-cols-[1fr_380px] gap-8">
           <form onSubmit={pay} className="space-y-6">
+
+            {/* ── Payment Cancelled Banner ───────────────── */}
+            {paymentCancelled && (
+              <div className="flex flex-col gap-3 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-2xl">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-yellow-500 mt-0.5 shrink-0" />
+                  <div>
+                    <p className="font-semibold text-primary text-sm">Payment Cancelled</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      You closed the payment window before completing your transaction. Your booking reservation has been released. You can retry payment or choose a different room.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleRetryPayment}
+                  className="self-start text-xs font-semibold bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:bg-primary/90 transition-base"
+                >
+                  Retry Payment
+                </button>
+              </div>
+            )}
 
             {/* ── Guest Identity Verification ───────────── */}
             <div className="bg-card border border-border rounded-2xl p-6 space-y-5">
