@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   CreditCard, Smartphone, Building2, Lock,
@@ -33,9 +33,11 @@ const Payment = () => {
   const [govtId, setGovtId]         = useState("");
   const [error, setError]           = useState("");
   const [processing, setProcessing] = useState(false);
-  const [paymentFailed, setPaymentFailed]     = useState(false);
-  const [currentOrderId, setCurrentOrderId]   = useState<string | null>(null);
+  const [paymentFailed, setPaymentFailed]       = useState(false);
+  const [currentOrderId, setCurrentOrderId]     = useState<string | null>(null);
   const [currentBookingId, setCurrentBookingId] = useState<string | null>(null);
+  // Ref to clear the processing safety timeout
+  const processingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Field-specific validation errors for real-time reporting
   const [govtIdError, setGovtIdError] = useState("");
@@ -195,19 +197,29 @@ const Payment = () => {
         return;
       }
 
-      // Load Razorpay SDK Script
-      const isLoaded = await new Promise((resolve) => {
-        const script = document.createElement("script");
-        script.src = "https://checkout.razorpay.com/v1/checkout.js";
-        script.onload = () => resolve(true);
-        script.onerror = () => resolve(false);
-        document.body.appendChild(script);
-      });
+      // ── Load Razorpay SDK Script ────────────────────────────────
+      // Skip injection if already loaded to prevent duplicate script tags
+      if (!(window as any).Razorpay) {
+        const isLoaded = await new Promise((resolve) => {
+          // Check if script tag already exists in DOM
+          const existing = document.querySelector('script[src="https://checkout.razorpay.com/v1/checkout.js"]');
+          if (existing) {
+            // Script tag exists but window.Razorpay might not be ready yet — wait a tick
+            setTimeout(() => resolve(!!(window as any).Razorpay), 500);
+            return;
+          }
+          const script = document.createElement("script");
+          script.src = "https://checkout.razorpay.com/v1/checkout.js";
+          script.onload = () => resolve(true);
+          script.onerror = () => resolve(false);
+          document.body.appendChild(script);
+        });
 
-      if (!isLoaded) {
-        setError("Failed to load payment gateway script. Please check your network connection.");
-        setProcessing(false);
-        return;
+        if (!isLoaded) {
+          setError("Failed to load payment gateway. This may be caused by a browser extension or network issue. Please disable ad-blockers and try again.");
+          setProcessing(false);
+          return;
+        }
       }
 
       // Create Razorpay Order on the backend
@@ -278,6 +290,8 @@ const Payment = () => {
         },
         modal: {
           ondismiss: function () {
+            // Clear the processing safety timeout
+            if (processingTimerRef.current) clearTimeout(processingTimerRef.current);
             // User dismissed Razorpay — cancel the booking, release the room, go to hotels
             setProcessing(false);
             // Fire-and-forget: cancel backend booking and release room
@@ -292,6 +306,7 @@ const Payment = () => {
 
       // Handle payment failure event (card declined, bank error, etc.)
       rzp.on("payment.failed", function (_response: any) {
+        if (processingTimerRef.current) clearTimeout(processingTimerRef.current);
         setProcessing(false);
         setPaymentFailed(true);
         // Cancel/release the booking in background
@@ -303,6 +318,15 @@ const Payment = () => {
       // Track current order
       setCurrentOrderId(rzpOrder.orderId);
       setCurrentBookingId(mongoBookingId);
+
+      // ⚠ Safety timeout: if Razorpay modal hangs (e.g. script blocked by extension/CSP),
+      // auto-reset after 30 seconds so the user isn’t permanently stuck.
+      if (processingTimerRef.current) clearTimeout(processingTimerRef.current);
+      processingTimerRef.current = setTimeout(() => {
+        setProcessing(false);
+        setError("Payment timed out. The checkout window may have been blocked. Please disable ad-blockers or try again.");
+        cancelPaymentOrder({ orderId: rzpOrder.orderId, bookingId: mongoBookingId || undefined }).catch(() => {});
+      }, 30000);
 
       rzp.open();
     } catch (err: any) {
