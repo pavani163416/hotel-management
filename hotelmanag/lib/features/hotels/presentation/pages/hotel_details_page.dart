@@ -539,18 +539,20 @@ class _HotelDetailsPageState extends State<HotelDetailsPage> with SingleTickerPr
                       decoration: BoxDecoration(color: Colors.red.withOpacity(0.1), borderRadius: BorderRadius.circular(6), border: Border.all(color: Colors.red.withOpacity(0.3))),
                       child: const Text('Sold Out', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.redAccent)),
                     );
-                  } else if (row.availableCount <= 3) {
+                  } else if (row.availableCount == 1) {
                     badge = Container(
                       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                       decoration: BoxDecoration(color: Colors.orange.withOpacity(0.1), borderRadius: BorderRadius.circular(6), border: Border.all(color: Colors.orange.withOpacity(0.3))),
-                      child: Text('Only ${row.availableCount} left', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.orange)),
+                      child: const Text('Only 1 Room Left', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.orange)),
                     );
-                  } else {
+                  } else if (row.availableCount == 2) {
                     badge = Container(
                       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                      decoration: BoxDecoration(color: Colors.green.withOpacity(0.1), borderRadius: BorderRadius.circular(6), border: Border.all(color: Colors.green.withOpacity(0.3))),
-                      child: Text('${row.availableCount} available', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.green)),
+                      decoration: BoxDecoration(color: Colors.orange.withOpacity(0.1), borderRadius: BorderRadius.circular(6), border: Border.all(color: Colors.orange.withOpacity(0.3))),
+                      child: const Text('Only 2 Rooms Left', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.orange)),
                     );
+                  } else {
+                    badge = const SizedBox.shrink();
                   }
 
                   return Container(
@@ -655,18 +657,20 @@ class _HotelDetailsPageState extends State<HotelDetailsPage> with SingleTickerPr
                   decoration: BoxDecoration(color: Colors.red.withOpacity(0.1), borderRadius: BorderRadius.circular(6), border: Border.all(color: Colors.red.withOpacity(0.3))),
                   child: const Text('Sold Out', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.redAccent)),
                 );
-              } else if (row.availableCount <= 3) {
+              } else if (row.availableCount == 1) {
                 badge = Container(
                   padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                   decoration: BoxDecoration(color: Colors.orange.withOpacity(0.1), borderRadius: BorderRadius.circular(6), border: Border.all(color: Colors.orange.withOpacity(0.3))),
-                  child: Text('Only ${row.availableCount} left', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.orange)),
+                  child: const Text('Only 1 Room Left', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.orange)),
                 );
-              } else {
+              } else if (row.availableCount == 2) {
                 badge = Container(
                   padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                  decoration: BoxDecoration(color: Colors.green.withOpacity(0.1), borderRadius: BorderRadius.circular(6), border: Border.all(color: Colors.green.withOpacity(0.3))),
-                  child: Text('${row.availableCount} available', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.green)),
+                  decoration: BoxDecoration(color: Colors.orange.withOpacity(0.1), borderRadius: BorderRadius.circular(6), border: Border.all(color: Colors.orange.withOpacity(0.3))),
+                  child: const Text('Only 2 Rooms Left', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.orange)),
                 );
+              } else {
+                badge = const SizedBox.shrink();
               }
 
               return Container(
