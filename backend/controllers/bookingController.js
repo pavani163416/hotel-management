@@ -399,21 +399,25 @@ export const createBooking = async (req, res, next) => {
       }
     }).catch(() => {});
 
-    // ── Update HotelSnapshot atomically (outside transaction) ──
-    try {
-      const resolvedHotelId = actualHotel ? actualHotel.hotelId : (room.hotelStringId || null);
-      if (resolvedHotelId) {
-        const connectAdminDB = (await import("../config/adminDb.js")).default;
-        const HotelSnapshotModel = (await import("../models/admin/HotelSnapshot.js")).default;
-        const adminConn = await connectAdminDB();
-        const HotelSnapshot = HotelSnapshotModel(adminConn);
-        await HotelSnapshot.findOneAndUpdate(
-          { hotelId: resolvedHotelId },
-          { $inc: { activeBookings: 1, ytdRevenue: totalAmount } }
-        ).catch(() => {});
-      }
-    } catch (e) {
-      logger.warn("Failed to atomic inc HotelSnapshot", { error: e.message });
+    // ── Update HotelSnapshot atomically (outside transaction, non-blocking) ──
+    const resolvedHotelId = actualHotel ? actualHotel.hotelId : (room.hotelStringId || null);
+    if (resolvedHotelId) {
+      (async () => {
+        try {
+          const connectAdminDB = (await import("../config/adminDb.js")).default;
+          const HotelSnapshotModel = (await import("../models/admin/HotelSnapshot.js")).default;
+          const adminConn = await connectAdminDB();
+          if (adminConn) {
+            const HotelSnapshot = HotelSnapshotModel(adminConn);
+            await HotelSnapshot.findOneAndUpdate(
+              { hotelId: resolvedHotelId },
+              { $inc: { activeBookings: 1, ytdRevenue: totalAmount } }
+            );
+          }
+        } catch (e) {
+          logger.warn("Failed to atomic inc HotelSnapshot", { error: e.message });
+        }
+      })();
     }
 
     // ── Auto-reset legacy Booked flags for past checkouts (background) ──
@@ -750,20 +754,24 @@ export const cancelBooking = async (req, res, next) => {
       }
     }).catch(() => {});
 
-    // ── Update HotelSnapshot atomically (outside transaction) ──
-    try {
-      if (booking.hotelStringId) {
-        const connectAdminDB = (await import("../config/adminDb.js")).default;
-        const HotelSnapshotModel = (await import("../models/admin/HotelSnapshot.js")).default;
-        const adminConn = await connectAdminDB();
-        const HotelSnapshot = HotelSnapshotModel(adminConn);
-        await HotelSnapshot.findOneAndUpdate(
-          { hotelId: booking.hotelStringId },
-          { $inc: { activeBookings: -1, ytdRevenue: -booking.totalAmount } }
-        ).catch(() => {});
-      }
-    } catch (e) {
-      logger.warn("Failed to atomic dec HotelSnapshot", { error: e.message });
+    // ── Update HotelSnapshot atomically (outside transaction, non-blocking) ──
+    if (booking.hotelStringId) {
+      (async () => {
+        try {
+          const connectAdminDB = (await import("../config/adminDb.js")).default;
+          const HotelSnapshotModel = (await import("../models/admin/HotelSnapshot.js")).default;
+          const adminConn = await connectAdminDB();
+          if (adminConn) {
+            const HotelSnapshot = HotelSnapshotModel(adminConn);
+            await HotelSnapshot.findOneAndUpdate(
+              { hotelId: booking.hotelStringId },
+              { $inc: { activeBookings: -1, ytdRevenue: -booking.totalAmount } }
+            );
+          }
+        } catch (e) {
+          logger.warn("Failed to atomic dec HotelSnapshot", { error: e.message });
+        }
+      })();
     }
 
     await syncRoomLegacyStatus(booking.room);

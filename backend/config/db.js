@@ -4,7 +4,6 @@ import logger   from "../utils/logger.js";
 
 // Force IPv4 — fixes querySrv ECONNREFUSED on Windows/some Linux
 dns.setDefaultResultOrder("ipv4first");
-dns.setServers(["8.8.8.8", "8.8.4.4", "1.1.1.1"]);
 
 const MAX_RETRIES = 5;
 const RETRY_DELAY = 5000; // ms
