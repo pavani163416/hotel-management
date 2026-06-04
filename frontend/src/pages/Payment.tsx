@@ -34,6 +34,46 @@ const Payment = () => {
   const [error, setError]           = useState("");
   const [processing, setProcessing] = useState(false);
 
+  // Field-specific validation errors for real-time reporting
+  const [govtIdError, setGovtIdError] = useState("");
+  const [upiError, setUpiError] = useState("");
+
+  const validateGovtId = (val: string, type: string) => {
+    if (!val.trim()) {
+      return "Government ID number is required for check-in verification.";
+    }
+    if (type === "aadhaar") {
+      const cleanId = val.replace(/\s/g, "");
+      if (!/^\d{12}$/.test(cleanId)) {
+        return "Aadhaar Card number must be exactly 12 digits";
+      }
+    }
+    if (type === "pan") {
+      const cleanId = val.replace(/\s/g, "").toUpperCase();
+      if (!/^[A-Z]{5}\d{4}[A-Z]$/.test(cleanId)) {
+        return "PAN Card must be exactly 10 characters (e.g. ABCDE1234F)";
+      }
+    }
+    if (type === "passport") {
+      const cleanId = val.replace(/\s/g, "").toUpperCase();
+      if (!/^[A-Z0-9]{8}$/.test(cleanId)) {
+        return "Passport must be exactly 8 characters";
+      }
+    }
+    return "";
+  };
+
+  const validateUpi = (val: string) => {
+    const cleanUpi = val.trim();
+    if (!cleanUpi) {
+      return "UPI ID is required";
+    }
+    if (!/^[\w.\-_]{2,256}@[a-zA-Z0-9.\-_]{2,64}$/.test(cleanUpi)) {
+      return "Invalid UPI ID format. Example: name@bank";
+    }
+    return "";
+  };
+
   useEffect(() => {
     if (!selectedHotel || !selectedRoom || !guest) nav("/hotels");
   }, [selectedHotel, selectedRoom, guest, nav]);
@@ -54,24 +94,32 @@ const Payment = () => {
 
   const validate = () => {
     if (!billingRep)    return "Please select the primary guest for billing.";
-    if (!govtId.trim()) return "Government ID number is required for check-in verification.";
-    if (idType === "aadhaar") {
-      const cleanId = govtId.replace(/\s/g, "");
-      if (!/^\d{12}$/.test(cleanId)) return "Aadhaar Card number must be exactly 12 digits";
+    
+    const idErr = validateGovtId(govtId, idType);
+    if (idErr) {
+      setGovtIdError(idErr);
+      return idErr;
+    } else {
+      setGovtIdError("");
     }
+
     if (method === "card") {
       if (!/^\d{12,19}$/.test(card.number.replace(/\s/g, ""))) return "Invalid card number";
       if (!card.name.trim()) return "Cardholder name required";
       if (!/^\d{2}\/\d{2}$/.test(card.expiry)) return "Expiry must be MM/YY";
       if (!/^\d{3,4}$/.test(card.cvv)) return "Invalid CVV";
     }
+
     if (method === "upi") {
-      const cleanUpi = upi.trim();
-      if (!cleanUpi) return "UPI ID is required";
-      if (!/^[\w.\-_]{2,256}@[a-zA-Z0-9.\-_]{2,64}$/.test(cleanUpi)) {
-        return "Invalid UPI ID format. Example: name@bank";
+      const upiErr = validateUpi(upi);
+      if (upiErr) {
+        setUpiError(upiErr);
+        return upiErr;
+      } else {
+        setUpiError("");
       }
     }
+
     if (method === "netbanking" && !bank) return "Please select a bank";
     return "";
   };
@@ -285,20 +333,44 @@ const Payment = () => {
               {billingRep && (
                 <div className="pt-4 border-t border-border space-y-4 animate-in fade-in slide-in-from-top-2">
                   <Field label="ID Type">
-                    <select value={idType} onChange={(e) => setIdType(e.target.value)} className="input">
+                    <select value={idType}
+                      onChange={(e) => {
+                        const newType = e.target.value;
+                        setIdType(newType);
+                        if (govtId) {
+                          setGovtIdError(validateGovtId(govtId, newType));
+                        } else {
+                          setGovtIdError("");
+                        }
+                      }}
+                      className="input">
                       {ID_TYPES.map((t) => (
                         <option key={t.value} value={t.value}>{t.label}</option>
                       ))}
                     </select>
                   </Field>
                   <Field label={(ID_TYPES.find(t => t.value === idType)?.label ?? "ID") + " Number"}>
-                    <input type="text" value={govtId} onChange={(e) => setGovtId(e.target.value)}
+                    <input type="text" value={govtId}
+                      onChange={(e) => {
+                        setGovtId(e.target.value);
+                        setGovtIdError(validateGovtId(e.target.value, idType));
+                      }}
+                      onBlur={(e) => {
+                        setGovtIdError(validateGovtId(e.target.value, idType));
+                      }}
                       placeholder={
                         idType === "aadhaar"  ? "XXXX XXXX XXXX" :
                         idType === "pan"      ? "ABCDE1234F" :
                         idType === "passport" ? "A1234567" : "Enter ID number"
                       }
-                      className="input" autoComplete="off" />
+                      className={`input ${govtIdError ? "border-destructive focus:border-destructive focus:ring-destructive/10" : ""}`}
+                      autoComplete="off" />
+                    {govtIdError && (
+                      <p className="text-xs text-destructive mt-1.5 flex items-center gap-1">
+                        <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                        <span>{govtIdError}</span>
+                      </p>
+                    )}
                   </Field>
                   <p className="text-xs text-muted-foreground flex items-start gap-1.5">
                     <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" />
@@ -336,7 +408,22 @@ const Payment = () => {
               )}
               {method === "upi" && (
                 <Field label="UPI ID">
-                  <input value={upi} onChange={(e) => setUpi(e.target.value)} placeholder="yourname@bank" className="input" />
+                  <input value={upi}
+                    onChange={(e) => {
+                      setUpi(e.target.value);
+                      setUpiError(validateUpi(e.target.value));
+                    }}
+                    onBlur={(e) => {
+                      setUpiError(validateUpi(e.target.value));
+                    }}
+                    placeholder="yourname@bank"
+                    className={`input ${upiError ? "border-destructive focus:border-destructive focus:ring-destructive/10" : ""}`} />
+                  {upiError && (
+                    <p className="text-xs text-destructive mt-1.5 flex items-center gap-1">
+                      <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                      <span>{upiError}</span>
+                    </p>
+                  )}
                 </Field>
               )}
               {method === "netbanking" && (
