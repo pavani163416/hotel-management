@@ -75,19 +75,6 @@ export default function MChangePassword() {
     }
   };
 
-  const inputStyle: React.CSSProperties = {
-    background: "rgba(255,255,255,0.04)",
-    border: "1px solid rgba(255,255,255,0.1)",
-    color: "#f0f4ff",
-    borderRadius: "12px",
-    padding: "11px 14px 11px 40px",
-    paddingRight: "44px",
-    fontSize: "0.875rem",
-    width: "100%",
-    outline: "none",
-    transition: "border-color 0.2s, box-shadow 0.2s",
-  };
-
   const PasswordField = ({
     label, value, onChange, show, onToggleShow, placeholder
   }: {
@@ -95,34 +82,22 @@ export default function MChangePassword() {
     show: boolean; onToggleShow: () => void; placeholder: string;
   }) => (
     <div>
-      <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5"
-        style={{ color: "#94a3b8" }}>
+      <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5 text-[#94a3b8]">
         {label}
       </label>
       <div className="relative">
-        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: "#64748b" }} />
+        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
         <input
           type={show ? "text" : "password"}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
-          style={inputStyle}
-          onFocus={e => {
-            e.currentTarget.style.borderColor = "rgba(212,168,67,0.5)";
-            e.currentTarget.style.boxShadow = "0 0 0 3px rgba(212,168,67,0.1)";
-          }}
-          onBlur={e => {
-            e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)";
-            e.currentTarget.style.boxShadow = "none";
-          }}
+          className="w-full bg-white/[0.04] border border-white/10 text-[#f0f4ff] rounded-xl py-3 pl-10 pr-12 text-sm outline-none placeholder-slate-500 focus:border-amber-500/50 focus:ring-2 focus:ring-amber-500/10 transition-all"
         />
         <button
           type="button"
           onClick={onToggleShow}
-          className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors"
-          style={{ color: "#64748b" }}
-          onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = "#94a3b8"}
-          onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = "#64748b"}
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors z-10 cursor-pointer flex items-center justify-center"
         >
           {show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
         </button>

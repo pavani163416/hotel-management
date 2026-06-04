@@ -153,7 +153,7 @@ export default function MProfile() {
             <div>
               <label className="block text-[10px] font-bold text-dim uppercase tracking-wider mb-1.5">Full Name</label>
               <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-dim" />
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-dim pointer-events-none" />
                 <input
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
@@ -169,7 +169,7 @@ export default function MProfile() {
             <div>
               <label className="block text-[10px] font-bold text-dim uppercase tracking-wider mb-1.5">Email Address</label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-dim" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-dim pointer-events-none" />
                 <input
                   type="email"
                   value={form.email}

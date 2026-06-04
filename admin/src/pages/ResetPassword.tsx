@@ -78,7 +78,7 @@ export default function ResetPassword() {
               <div>
                 <label className="block text-xs font-semibold text-dim uppercase tracking-wider mb-1.5">Email Address</label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-dim" />
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-dim pointer-events-none" />
                   <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
                     placeholder="admin@luxestay.com"
                     className="w-full rounded-xl px-12 py-3 bg-slate-950/70 text-white border border-white/10 outline-none"
@@ -89,7 +89,7 @@ export default function ResetPassword() {
               <div>
                 <label className="block text-xs font-semibold text-dim uppercase tracking-wider mb-1.5">New Password</label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-dim" />
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-dim pointer-events-none" />
                   <PasswordInput value={password} onChange={(e) => setPassword((e.target as HTMLInputElement).value)}
                     placeholder="••••••••"
                     className="w-full rounded-xl px-12 py-3 bg-slate-950/70 text-white border border-white/10 outline-none"

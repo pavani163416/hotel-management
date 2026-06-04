@@ -115,18 +115,6 @@ export default function Login() {
     }
   };
 
-  const inputStyle: React.CSSProperties = {
-    background: "rgba(255,255,255,0.04)",
-    border: "1px solid rgba(255,255,255,0.1)",
-    color: "#f0f4ff",
-    borderRadius: "12px",
-    padding: "11px 14px 11px 40px",
-    fontSize: "0.875rem",
-    width: "100%",
-    outline: "none",
-    transition: "border-color 0.2s, box-shadow 0.2s",
-  };
-
   return (
     <div className="min-h-screen flex items-center justify-center p-4"
       style={{ background: "linear-gradient(135deg, #07101e 0%, #0a1628 50%, #0d1e35 100%)" }}>
@@ -182,11 +170,10 @@ export default function Login() {
                     Email Address
                   </label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-dim" />
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
                     <input type="email" value={resetEmail} onChange={(e) => setResetEmail(e.target.value)}
-                      placeholder="admin@luxestay.com" style={inputStyle}
-                      onFocus={e => { e.currentTarget.style.borderColor = "rgba(212,168,67,0.5)"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(212,168,67,0.1)"; }}
-                      onBlur={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"; e.currentTarget.style.boxShadow = "none"; }}
+                      placeholder="admin@luxestay.com"
+                      className="w-full bg-white/[0.04] border border-white/10 text-[#f0f4ff] rounded-xl py-3 pl-10 pr-4 text-sm outline-none placeholder-slate-500 focus:border-amber-500/50 focus:ring-2 focus:ring-amber-500/10 transition-all"
                     />
                   </div>
                 </div>
@@ -233,15 +220,14 @@ export default function Login() {
               <form onSubmit={handleSubmit} className="space-y-4">
                 {/* Email */}
                 <div>
-                  <label className="block text-xs font-semibold text-dim uppercase tracking-wider mb-1.5">
+                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
                     Email Address
                   </label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-dim" />
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
                     <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
-                      placeholder="admin@luxestay.com" style={inputStyle}
-                      onFocus={e => { e.currentTarget.style.borderColor = "rgba(212,168,67,0.5)"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(212,168,67,0.1)"; }}
-                      onBlur={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"; e.currentTarget.style.boxShadow = "none"; }}
+                      placeholder="admin@luxestay.com"
+                      className="w-full bg-white/[0.04] border border-white/10 text-[#f0f4ff] rounded-xl py-3 pl-10 pr-4 text-sm outline-none placeholder-slate-500 focus:border-amber-500/50 focus:ring-2 focus:ring-amber-500/10 transition-all"
                     />
                   </div>
                 </div>
@@ -249,25 +235,21 @@ export default function Login() {
                 {/* Password */}
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
-                    <label className="text-xs font-semibold text-dim uppercase tracking-wider">Password</label>
+                    <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Password</label>
                     <button type="button" className="text-xs text-gold transition-colors hover:text-yellow-300 cursor-pointer px-2 py-1 rounded hover:bg-white/5"
                       onClick={(e) => { e.preventDefault(); setResetMode(true); setResetEmail(email); setResetMessage(""); setResetError(""); }}>
                       Forgot password?
                     </button>
                   </div>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-dim" />
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
                     <input type={showPw ? "text" : "password"} value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••"
-                      style={{ ...inputStyle, paddingRight: "40px" }}
-                      onFocus={e => { e.currentTarget.style.borderColor = "rgba(212,168,67,0.5)"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(212,168,67,0.1)"; }}
-                      onBlur={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"; e.currentTarget.style.boxShadow = "none"; }}
+                      className="w-full bg-white/[0.04] border border-white/10 text-[#f0f4ff] rounded-xl py-3 pl-10 pr-12 text-sm outline-none placeholder-slate-500 focus:border-amber-500/50 focus:ring-2 focus:ring-amber-500/10 transition-all"
                     />
                     <button type="button" onClick={() => setShowPw(!showPw)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-dim transition-colors"
-                      onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = "#94a3b8"}
-                      onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = "#64748b"}>
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors z-10 cursor-pointer flex items-center justify-center">
                       {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>

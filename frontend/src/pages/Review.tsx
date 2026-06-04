@@ -5,6 +5,7 @@ import Layout from "@/components/Layout";
 import Stepper from "@/components/Stepper";
 import { useBooking, calcNights } from "@/context/BookingContext";
 import { API } from "@/services/api";
+import socket from "@/services/socket";
 
 const Review = () => {
   const nav = useNavigate();
@@ -13,42 +14,67 @@ const Review = () => {
   const [msg, setMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
   const [availableCodes, setAvailableCodes] = useState<string[] | null>(null);
 
+  const nights = (selectedRoom && search?.checkIn && search?.checkOut) ? calcNights(search.checkIn, search.checkOut) : 0;
+  const subtotal = selectedRoom ? selectedRoom.price * nights : 0;
+
   useEffect(() => { if (!selectedHotel || !selectedRoom || !guest) nav("/hotels"); }, [selectedHotel, selectedRoom, guest, nav]);
 
-  // Fetch which promo codes are valid for this user
-  useEffect(() => {
+  // Fetch and validate active coupons from DB
+  const fetchAndValidateCoupons = async () => {
     if (!user?.email) {
       setAvailableCodes([]);
       return;
     }
-    setAvailableCodes(null);
-    // Check each code to see if it's valid for this user
-    Promise.all([
-      fetch(`${API}/promo/validate`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: "LUXE10", subtotal: 0, userEmail: user.email }),
-      }).then(r => r.json()).then(j => j?.valid ? "LUXE10" : null),
-      fetch(`${API}/promo/validate`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: "WELCOME15", subtotal: 0, userEmail: user.email }),
-      }).then(r => r.json()).then(j => j?.valid ? "WELCOME15" : null),
-      fetch(`${API}/promo/validate`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: "VIP20", subtotal: 0, userEmail: user.email }),
-      }).then(r => r.json()).then(j => j?.valid ? "VIP20" : null),
-    ]).then((results) => {
-      const valid = results.filter(Boolean) as string[];
-      setAvailableCodes(valid.length > 0 ? valid : []);
-    }).catch(() => {});
-  }, [user?.email]);
+    try {
+      const res = await fetch(`${API}/admin/coupons-public`);
+      const json = await res.json();
+      if (!json?.success || !Array.isArray(json.data)) {
+        setAvailableCodes([]);
+        return;
+      }
+
+      const dbCoupons = json.data;
+      if (dbCoupons.length === 0) {
+        setAvailableCodes([]);
+        return;
+      }
+
+      const validationPromises = dbCoupons.map(async (coupon: any) => {
+        try {
+          const valRes = await fetch(`${API}/promo/validate`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ code: coupon.code, subtotal, userEmail: user.email }),
+          });
+          const valJson = await valRes.json();
+          return valJson?.valid ? coupon.code : null;
+        } catch {
+          return null;
+        }
+      });
+
+      const validationResults = await Promise.all(validationPromises);
+      const validCodes = validationResults.filter(Boolean) as string[];
+      setAvailableCodes(validCodes);
+    } catch {
+      setAvailableCodes([]);
+    }
+  };
+
+  useEffect(() => {
+    fetchAndValidateCoupons();
+  }, [user?.email, subtotal]);
+
+  // Real-time WebSocket coupon synchronization
+  useEffect(() => {
+    socket.on("coupon_update", fetchAndValidateCoupons);
+    return () => {
+      socket.off("coupon_update", fetchAndValidateCoupons);
+    };
+  }, [user?.email, subtotal]);
 
   if (!selectedHotel || !selectedRoom || !guest) return null;
 
-  const nights = calcNights(search.checkIn, search.checkOut);
-  const subtotal = selectedRoom.price * nights;
   const serviceFee = Math.round(subtotal * 0.05);
   const taxes = Math.round(subtotal * 0.08);
   const discount = promo ? Math.round(subtotal * (promo.pct / 100)) : 0;
@@ -64,7 +90,6 @@ const Review = () => {
         body: JSON.stringify({ code: cleaned, subtotal, userEmail: user?.email || "" }),
       });
       const json = await res.json();
-      // The /promo/validate endpoint returns fields at the top level (not nested under data)
       if (json?.valid) {
         await applyPromo(cleaned);
         setMsg({ type: "ok", text: `${cleaned} applied — ${json.description}!` });

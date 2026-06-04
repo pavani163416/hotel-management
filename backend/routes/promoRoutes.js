@@ -25,13 +25,6 @@ import Coupon  from "../models/Coupon.js";
 
 const router = express.Router();
 
-// Hardcoded fallback codes (used if not found in DB)
-const FALLBACK_CODES = {
-  LUXE10:    { pct: 10, description: "10% off your stay",       firstTimeOnly: true  },
-  WELCOME15: { pct: 15, description: "15% welcome discount",    firstTimeOnly: true  },
-  VIP20:     { pct: 20, description: "20% VIP exclusive offer", firstTimeOnly: false },
-};
-
 router.post("/validate", async (req, res) => {
   const { code, subtotal, userEmail } = req.body;
 
@@ -106,48 +99,11 @@ router.post("/validate", async (req, res) => {
         source:        "db",
       });
     }
-  } catch {
-    // DB error — fall through to hardcoded
+  } catch (err) {
+    // DB error
   }
 
-  // ── 2. Fallback to hardcoded codes ────────────────────
-  const promo = FALLBACK_CODES[key];
-  if (!promo) {
-    return res.status(200).json({ success: true, valid: false, message: "Invalid promo code." });
-  }
-
-  // First-time check for hardcoded codes
-  if (promo.firstTimeOnly && userEmail) {
-    try {
-      const guest = await Guest.findOne({ email: userEmail.toLowerCase().trim() });
-      if (guest) {
-        const bookingCount = await Booking.countDocuments({
-          guest:  guest._id,
-          status: { $in: ["Confirmed", "Completed", "CheckedIn", "CheckedOut"] },
-        });
-        if (bookingCount > 0) {
-          return res.status(200).json({
-            success: true, valid: false,
-            message: `${key} is for first-time guests only. You've already made a booking.`,
-          });
-        }
-      }
-    } catch {}
-  }
-
-  const discountAmount = sub > 0 ? Math.round(sub * (promo.pct / 100)) : 0;
-
-  res.status(200).json({
-    success:        true,
-    valid:          true,
-    code:           key,
-    discountPct:    promo.pct,
-    discountAmount,
-    description:    promo.description,
-    message:        promo.description,
-    firstTimeOnly:  promo.firstTimeOnly,
-    source:         "hardcoded",
-  });
+  return res.status(200).json({ success: true, valid: false, message: "Invalid promo code." });
 });
 
 export default router;

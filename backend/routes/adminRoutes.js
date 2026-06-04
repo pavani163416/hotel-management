@@ -908,6 +908,10 @@ router.post("/coupons", protect, async (req, res, next) => {
     }
     const coupon = await Coupon.create({ ...req.body, createdBy: req.admin?.email || "admin" });
     logger.info("Coupon created", { code: coupon.code });
+    const io = req.app.get("io");
+    if (io) {
+      io.emit("coupon_update", { action: "create", coupon });
+    }
     res.status(201).json({ success: true, data: coupon });
   } catch (e) { next(e); }
 });
@@ -931,6 +935,10 @@ router.put("/coupons/:id", protect, requireObjectId(), async (req, res, next) =>
     }
 
     const coupon = await Coupon.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+    const io = req.app.get("io");
+    if (io) {
+      io.emit("coupon_update", { action: "update", coupon });
+    }
     res.json({ success: true, data: coupon });
   } catch (e) { next(e); }
 });
@@ -940,6 +948,10 @@ router.delete("/coupons/:id", protect, requireObjectId(), async (req, res, next)
     const coupon = await Coupon.findByIdAndDelete(req.params.id);
     if (!coupon) return res.status(404).json({ success: false, message: "Coupon not found." });
     logger.info("Coupon deleted", { code: coupon.code });
+    const io = req.app.get("io");
+    if (io) {
+      io.emit("coupon_update", { action: "delete", id: req.params.id, code: coupon.code });
+    }
     res.json({ success: true, message: "Coupon deleted." });
   } catch (e) { next(e); }
 });

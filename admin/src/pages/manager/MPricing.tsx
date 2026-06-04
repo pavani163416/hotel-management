@@ -414,7 +414,7 @@ export default function Pricing() {
             <div>
               <label style={labelStyle}>New Price ($ / night) *</label>
               <div className="relative">
-                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-dim" />
+                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-dim pointer-events-none" />
                 <input required type="number" min="1" value={newPrice}
                   onChange={(e) => setNewPrice(e.target.value)}
                   placeholder="e.g. 550"
@@ -461,7 +461,7 @@ export default function Pricing() {
           <div>
             <label style={labelStyle}>Requested Price ($) *</label>
             <div className="relative">
-              <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-dim" />
+              <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-dim pointer-events-none" />
               <input required type="number" min="1" value={reqForm.requestedPrice}
                 onChange={(e) => setReqForm({ ...reqForm, requestedPrice: e.target.value })}
                 placeholder="e.g. 550" style={{ ...inputStyle, paddingLeft: "36px" }}
