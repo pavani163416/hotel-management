@@ -48,12 +48,21 @@ import swaggerDocument  from "./swagger.js";
 import { initCleanupJobs } from "./cron/cleanupJobs.js";
 
 // ── Validate required env vars on startup ─────────────────
-// ADMIN_EMAIL and ADMIN_PASSWORD are now stored in the controller DB.
-// Only MONGO_URI and JWT_SECRET are strictly required at startup.
+// Only MONGO_URI and JWT_SECRET are strictly required in development.
+// Production mode requires full deployment credentials to fail fast.
 const REQUIRED_ENV = ["MONGO_URI", "JWT_SECRET"];
-const missing = REQUIRED_ENV.filter((k) => !process.env[k]);
+if (process.env.NODE_ENV === "production") {
+  REQUIRED_ENV.push(
+    "MONGO_ADMIN_URI",
+    "RAZORPAY_KEY_ID",
+    "RAZORPAY_KEY_SECRET",
+    "REDIS_URL"
+  );
+}
+const uniqueRequired = [...new Set(REQUIRED_ENV)];
+const missing = uniqueRequired.filter((k) => !process.env[k]);
 if (missing.length) {
-  logger.error(`Missing required environment variables: ${missing.join(", ")}`);
+  logger.error(`CRITICAL: Missing required environment variables on startup: ${missing.join(", ")}`);
   process.exit(1);
 }
 

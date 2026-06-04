@@ -53,12 +53,29 @@ async function getGeo() {
     const r = await fetch("https://ipapi.co/json/", {
       signal: AbortSignal.timeout(3000),
     });
-    const d = await r.json();
-    if (d.country_name) {
-      geoCache = { country: d.country_name, countryCode: d.country_code, city: d.city || "" };
-      return geoCache;
+    if (r.ok) {
+      const d = await r.json();
+      if (d.country_name) {
+        geoCache = { country: d.country_name, countryCode: d.country_code, city: d.city || "" };
+        return geoCache;
+      }
     }
   } catch {}
+
+  try {
+    // freeipapi.com — secondary fallback geolocation API
+    const r = await fetch("https://freeipapi.com/api/json", {
+      signal: AbortSignal.timeout(3000),
+    });
+    if (r.ok) {
+      const d = await r.json();
+      if (d.countryName) {
+        geoCache = { country: d.countryName, countryCode: d.countryCode, city: d.cityName || "" };
+        return geoCache;
+      }
+    }
+  } catch {}
+
   // Fallback
   geoCache = { country: "Unknown", countryCode: "XX", city: "" };
   return geoCache;

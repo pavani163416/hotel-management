@@ -14,6 +14,14 @@ const razorpay = new Razorpay({
   key_secret: process.env.RAZORPAY_KEY_SECRET || "dummy_secret",
 });
 
+// Helper to wrap Razorpay SDK calls in a promise with a timeout (default 8000ms)
+const callRazorpayWithTimeout = (promise, ms = 8000) => {
+  const timeoutPromise = new Promise((_, reject) =>
+    setTimeout(() => reject(new Error(`Razorpay API call timed out after ${ms}ms`)), ms)
+  );
+  return Promise.race([promise, timeoutPromise]);
+};
+
 /**
  * POST /api/payments/create-order
  * ── Create Razorpay Order ────────────────────────────────
@@ -24,12 +32,16 @@ export const createOrder = async (req, res, next) => {
     const user = req.user; // populated by protect middleware
 
     if (!bookingId) {
+      logger.warn("Payment order creation rejected: Booking ID is missing.");
       return res.status(400).json({ success: false, message: "Booking ID is required." });
     }
+
+    logger.info("Payment order creation request received", { bookingId, userId: user.id || user.email });
 
     // 1. Validate booking and ownership/user association
     const booking = await Booking.findById(bookingId);
     if (!booking) {
+      logger.warn("Payment order creation failed: Booking not found.", { bookingId });
       return res.status(404).json({ success: false, message: "Booking not found." });
     }
 
@@ -43,24 +55,28 @@ export const createOrder = async (req, res, next) => {
     const isStaff = ["Super Admin", "admin", "Controller", "Manager", "manager"].includes(user.role);
 
     if (!isOwner && !isStaff) {
+      logger.warn("Payment order creation unauthorized", { bookingId, userId: user.id || user.email });
       return res.status(403).json({ success: false, message: "Unauthorized access to booking payment." });
     }
 
     // 2. Determine amount from database — NEVER trust frontend amount
     const amountInINR = Math.round(booking.totalAmount);
     if (amountInINR <= 0) {
+      logger.warn("Payment order creation rejected: invalid total amount", { bookingId, amountInINR });
       return res.status(400).json({ success: false, message: "Invalid payment amount." });
     }
 
     // Check if there is already an existing successful payment for this booking
     const existingSuccess = await Payment.findOne({ bookingId, status: "SUCCESS" });
     if (existingSuccess) {
+      logger.warn("Payment order creation skipped: Booking already paid successfully", { bookingId });
       return res.status(409).json({ success: false, message: "This booking has already been paid successfully." });
     }
 
     // Check if a pending payment order already exists for this booking to avoid duplicates
     const existingPending = await Payment.findOne({ bookingId, status: "PENDING" }).sort({ createdAt: -1 });
     if (existingPending) {
+      logger.info("Reusing existing pending payment order", { bookingId, orderId: existingPending.razorpayOrderId });
       // Return existing order info to prevent duplicate order generation in Razorpay
       return res.status(200).json({
         success: true,
@@ -82,6 +98,7 @@ export const createOrder = async (req, res, next) => {
     const isMockMode = !process.env.RAZORPAY_KEY_ID || process.env.RAZORPAY_KEY_ID === "rzp_test_dummy";
 
     if (isMockMode) {
+      logger.info("Generating mock Razorpay order (Sandbox Mode)", { bookingId, amount: options.amount });
       order = {
         id: `order_mock_${crypto.randomBytes(8).toString("hex")}`,
         amount: amountInINR * 100, // in paise
@@ -89,12 +106,15 @@ export const createOrder = async (req, res, next) => {
       };
     } else {
       try {
-        order = await razorpay.orders.create(options);
+        logger.info("Initiating Live Razorpay API order creation", { bookingId, amount: options.amount });
+        order = await callRazorpayWithTimeout(razorpay.orders.create(options), 8000);
       } catch (rzpErr) {
-        logger.error("Razorpay order creation failed", { error: rzpErr.message });
+        logger.error("Razorpay order creation failed at gateway", { error: rzpErr.message, bookingId });
         return res.status(502).json({ success: false, message: "Payment gateway error. Unable to initialize order." });
       }
     }
+
+    logger.info("Payment order successfully created", { bookingId, orderId: order.id, isMockMode });
 
     // 4. Save Payment record in database as PENDING
     const payment = await Payment.create({
@@ -135,11 +155,18 @@ export const verifyPayment = async (req, res, next) => {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
 
     if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+      logger.warn("Payment verification failed: missing verification credentials", {
+        razorpay_order_id,
+        hasPaymentId: !!razorpay_payment_id,
+        hasSignature: !!razorpay_signature,
+      });
       return res.status(400).json({
         success: false,
         message: "Missing required verification credentials (order_id, payment_id, signature).",
       });
     }
+
+    logger.info("Payment signature verification start", { razorpay_order_id, razorpay_payment_id });
 
     const isMockMode = !process.env.RAZORPAY_KEY_ID || process.env.RAZORPAY_KEY_ID === "rzp_test_dummy";
 
@@ -154,7 +181,7 @@ export const verifyPayment = async (req, res, next) => {
         .digest("hex");
 
       if (generatedSignature !== razorpay_signature) {
-        logger.warn("Invalid payment signature received", { razorpay_order_id, razorpay_payment_id });
+        logger.warn("Verification failure: invalid payment signature", { razorpay_order_id, razorpay_payment_id });
         return res.status(400).json({ success: false, message: "Payment verification failed. Invalid signature." });
       }
     }
@@ -162,14 +189,18 @@ export const verifyPayment = async (req, res, next) => {
     // Verify payment record exists in the database
     const payment = await Payment.findOne({ razorpayOrderId: razorpay_order_id });
     if (!payment) {
+      logger.error("Verification failure: payment record not found in database", { razorpay_order_id });
       return res.status(404).json({ success: false, message: "Payment record not found." });
     }
+
+    logger.info("Payment signature verified successfully", { razorpay_order_id, paymentId: payment._id });
 
     return res.status(200).json({
       success: true,
       message: "Payment signature verified successfully. Awaiting authoritative webhook reconciliation.",
     });
   } catch (error) {
+    logger.error("Error during payment verification", { error: error.message, razorpay_order_id: req.body?.razorpay_order_id });
     next(error);
   }
 };
@@ -495,16 +526,21 @@ export const refundPayment = async (req, res, next) => {
     const user = req.user; // populated by protect middleware
 
     if (!paymentId) {
+      logger.warn("Refund failed: Payment ID is required.");
       return res.status(400).json({ success: false, message: "Payment ID (Razorpay ID) is required." });
     }
+
+    logger.info("Refund request received", { paymentId, amount, requestedBy: user.email || user.id });
 
     // Find the successful payment record
     const payment = await Payment.findOne({ razorpayPaymentId: paymentId });
     if (!payment) {
+      logger.error("Refund failed: Payment record not found in database", { paymentId });
       return res.status(404).json({ success: false, message: "Payment record not found." });
     }
 
     if (payment.status !== "SUCCESS") {
+      logger.warn("Refund failed: Payment is not in SUCCESS state", { paymentId, currentStatus: payment.status });
       return res.status(400).json({ success: false, message: `Only successful payments can be refunded. Current status: ${payment.status}` });
     }
 
@@ -518,9 +554,11 @@ export const refundPayment = async (req, res, next) => {
 
     let refund;
     try {
-      refund = await razorpay.payments.refund(paymentId, refundOptions);
+      logger.info("Initiating Razorpay API refund call", { paymentId, amount: refundOptions.amount });
+      refund = await callRazorpayWithTimeout(razorpay.payments.refund(paymentId, refundOptions), 8000);
+      logger.info("Razorpay API refund succeeded", { paymentId, refundId: refund.id });
     } catch (rzpErr) {
-      logger.error("Razorpay refund request failed", { error: rzpErr.message });
+      logger.error("Razorpay refund request failed at gateway", { error: rzpErr.message, paymentId });
       return res.status(502).json({ success: false, message: `Refund failed: ${rzpErr.message}` });
     }
 

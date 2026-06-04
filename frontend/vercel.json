@@ -16,6 +16,6 @@
     }
   ],
   "env": {
-    "VITE_API_URL": "https://luxestay-backend-production.up.railway.app/api"
+    "VITE_API_URL": "https://hotel-management-production-2225.up.railway.app/api"
   }
 }

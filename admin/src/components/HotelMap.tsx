@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -43,14 +43,22 @@ interface Props {
 
 const HotelMap = ({ hotels, height = "100%", className }: Props) => {
   const validHotels = hotels.filter((h) => isValidCoords(h.coords));
+  const [tileUrl, setTileUrl] = useState("https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}");
+  const [attribution, setAttribution] = useState("&copy; Google Maps");
 
   return (
     <div className={className} style={{ height, width: "100%" }}>
       <MapContainer center={[20, 0]} zoom={2} scrollWheelZoom={false}
         style={{ height: "100%", width: "100%", borderRadius: "0.75rem", background: "hsl(30 12% 96%)" }}>
         <TileLayer 
-          attribution='&copy; Google Maps' 
-          url="https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}" 
+          attribution={attribution} 
+          url={tileUrl} 
+          eventHandlers={{
+            tileerror: () => {
+              setTileUrl("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png");
+              setAttribution('&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors');
+            }
+          }}
         />
         <FitBounds hotels={hotels} />
         {validHotels.map((h) => (
