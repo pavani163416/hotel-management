@@ -8,6 +8,7 @@ import Guest from "../models/Guest.js";
 import AdditionalGuest from "../models/AdditionalGuest.js";
 import CancellationRefund from "../models/CancellationRefund.js";
 import Coupon from "../models/Coupon.js";
+import AuditLog from "../models/AuditLog.js";
 import { broadcastBookingUpdate } from "../routes/wsRoutes.js";
 import { sendBookingConfirmation, sendCancellationEmail } from "../utils/emailService.js";
 import { sendNotification } from "../utils/notificationService.js";
@@ -537,7 +538,9 @@ export const createBooking = async (req, res, next) => {
       });
     }
   } catch (error) {
-    await session.abortTransaction();
+    if (session.inTransaction()) {
+      await session.abortTransaction();
+    }
     next(error);
   } finally {
     session.endSession();
