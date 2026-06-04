@@ -8,6 +8,16 @@ import logger   from "../utils/logger.js";
 
 dns.setDefaultResultOrder("ipv4first");
 
+// Apply custom DNS servers only in local/development environments to bypass ISP-level DNS SRV blocks.
+// We avoid doing this on Railway because it breaks Railway's internal Redis hostname resolution.
+if (process.env.NODE_ENV !== "production" || !process.env.RAILWAY_ENVIRONMENT_NAME) {
+  try {
+    dns.setServers(["8.8.8.8", "8.8.4.4", "1.1.1.1"]);
+  } catch (err) {
+    logger.warn("Failed to set local DNS resolver fallback", { error: err?.message });
+  }
+}
+
 let adminConn = null;
 let adminConnPromise = null;
 let lastFailedTime = 0;
