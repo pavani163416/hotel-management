@@ -26,6 +26,7 @@ export const initializeRedis = async () => {
       tls: REDIS_TLS ? { rejectUnauthorized: false } : undefined,
       reconnectStrategy,
     },
+    disableOfflineQueue: true, // Prevent command queueing (hangs) when Redis is offline or reconnecting
   });
 
   redisClient.on("error", (error) => {
