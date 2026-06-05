@@ -139,7 +139,7 @@ const History = () => {
   };
 
   if (!user) {
-    navigate("/", { replace: true, state: { openAuth: true } });
+    nav("/", { replace: true, state: { openAuth: true } });
     return null;
   }
 
