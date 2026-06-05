@@ -123,7 +123,6 @@ const Profile = () => {
       </Layout>
     );
   }
-  }
 
   return (
     <Layout>
