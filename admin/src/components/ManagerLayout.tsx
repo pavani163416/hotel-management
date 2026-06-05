@@ -8,7 +8,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import {
   Building2, LayoutDashboard, BedDouble, CalendarCheck,
   Presentation, DollarSign, Tag, ChevronDown, LogOut, User,
-  Bell, Wifi, WifiOff, Map, Sparkles, BarChart2, ShieldAlert,
+  Bell, Wifi, WifiOff, Map, Sparkles, BarChart2, ShieldAlert, Settings,
 } from "lucide-react";
 import { useAdmin } from "@/context/AdminContext";
 import socket from "@/services/socket";
@@ -29,7 +29,7 @@ const TABS = [
 export default function ManagerLayout({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { admin, logout } = useAdmin();
+  const { admin, logout, theme } = useAdmin();
   const [profileOpen, setProfileOpen] = useState(false);
   const [notifOpen, setNotifOpen]     = useState(false);
   const [connected, setConnected]     = useState(socket.connected);
@@ -44,6 +44,18 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
     admin?.assignedHotelName || admin?.hotelName || "LuxeStay";
   const scopedHotelId = admin?.assignedHotelId || admin?.hotelId;
   const unreadCount = notifications.filter((n) => !n.isRead).length;
+
+  const isDark = theme === "dark";
+  const pageBackground = isDark
+    ? "linear-gradient(180deg, #0a1628 0%, #07101e 100%)"
+    : "linear-gradient(180deg, #f8fafc 0%, #ffffff 100%)";
+  const headerBackground = isDark ? "rgba(10,22,40,0.92)" : "rgba(255,255,255,0.92)";
+  const headerBorder = isDark ? "1px solid rgba(255,255,255,0.07)" : "1px solid #e2e8f0";
+  const panelBackground = isDark ? "#112240" : "#ffffff";
+  const panelBorder = isDark ? "1px solid rgba(255,255,255,0.1)" : "1px solid #e2e8f0";
+  const panelTextColor = isDark ? "#f0f4ff" : "#0f172a";
+  const panelDimText = isDark ? "#94a3b8" : "#64748b";
+  const hoverBg = isDark ? "rgba(255,255,255,0.07)" : "rgba(15,23,42,0.04)";
 
   /**
    * Guard: called when a manager tries to switch to a different hotel.
@@ -131,14 +143,14 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
   }, []);
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: "linear-gradient(180deg, #0a1628 0%, #07101e 100%)" }}>
+    <div className="min-h-screen flex flex-col" style={{ background: pageBackground }}>
 
       {/* ── Top Navbar ── */}
       <header className="sticky top-0 z-40" style={{
-        background: "rgba(10,22,40,0.92)",
+        background: headerBackground,
         backdropFilter: "blur(20px)",
         WebkitBackdropFilter: "blur(20px)",
-        borderBottom: "1px solid rgba(255,255,255,0.07)",
+        borderBottom: headerBorder,
       }}>
         <div className="max-w-screen-2xl mx-auto px-6 h-16 flex items-center justify-between">
 
@@ -149,16 +161,11 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
               <Building2 className="w-4 h-4 text-gold" />
             </div>
             <div>
-              <p className="text-bright font-semibold text-sm leading-tight">
+              <p className={`font-semibold text-sm leading-tight ${isDark ? "text-bright" : "text-slate-900"}`}>
                 {hotelDisplayName}
               </p>
-              <p className="text-dim text-xs leading-tight">Manager Portal</p>
+              <p className={`text-xs leading-tight ${isDark ? "text-dim" : "text-slate-500"}`}>Manager Portal</p>
             </div>
-          </div>
-
-          {/* Right controls */}
-          <div className="flex items-center gap-2">
-            {/* Live indicator */}
             <div className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold"
               style={{
                 background: connected ? "rgba(16,185,129,0.12)" : "rgba(225,29,72,0.12)",
@@ -167,14 +174,15 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
               }}>
               {connected ? <><Wifi className="w-3 h-3" /> Live</> : <><WifiOff className="w-3 h-3" /> Offline</>}
             </div>
+          </div>
 
             {/* Notifications */}
             <div ref={notifRef} className="relative">
               <button onClick={() => setNotifOpen(!notifOpen)}
                 className="relative w-9 h-9 rounded-xl flex items-center justify-center transition-all"
                 style={{ color: "#94a3b8" }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.07)"; (e.currentTarget as HTMLElement).style.color = "#f0f4ff"; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; (e.currentTarget as HTMLElement).style.color = "#94a3b8"; }}>
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = hoverBg; (e.currentTarget as HTMLElement).style.color = isDark ? "#f0f4ff" : "#0f172a"; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; (e.currentTarget as HTMLElement).style.color = isDark ? "#94a3b8" : "#64748b"; }}>
                 <Bell className="w-4 h-4" />
                 {unreadCount > 0 && (
                   <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full animate-pulse" style={{ background: "#c0392b" }} />
@@ -182,18 +190,18 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
               </button>
               {notifOpen && (
                 <div className="absolute right-0 top-full mt-2 w-80 rounded-2xl shadow-modal animate-slide-up overflow-hidden"
-                  style={{ background: "#112240", border: "1px solid rgba(255,255,255,0.1)" }}>
-                  <div className="px-4 py-3 flex items-center justify-between" style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
-                    <span className="font-semibold text-bright text-sm">Notifications</span>
-                    <span className="text-xs text-dim">{unreadCount} unread</span>
+                  style={{ background: panelBackground, border: panelBorder }}>
+                  <div className="px-4 py-3 flex items-center justify-between" style={{ borderBottom: panelBorder }}>
+                    <span className={`font-semibold text-sm ${isDark ? "text-bright" : "text-slate-900"}`}>Notifications</span>
+                    <span className={`text-xs ${isDark ? "text-dim" : "text-slate-500"}`}>{unreadCount} unread</span>
                   </div>
                   {notifications.length === 0 ? (
-                    <div className="px-4 py-8 text-center text-sm text-dim">No new notifications</div>
+                    <div className={`px-4 py-8 text-center text-sm ${isDark ? "text-dim" : "text-slate-500"}`}>No new notifications</div>
                   ) : (
-                    <div className="divide-y max-h-72 overflow-y-auto scrollbar-thin" style={{ borderColor: "rgba(255,255,255,0.05)" }}>
+                    <div className="divide-y max-h-72 overflow-y-auto scrollbar-thin" style={{ borderColor: isDark ? "rgba(255,255,255,0.05)" : "#e2e8f0" }}>
                       {notifications.map((n) => (
                         <button key={n._id || n.id} onClick={() => openNotification(n)} className="w-full text-left px-4 py-3 transition-colors"
-                          onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.04)"}
+                          onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = hoverBg}
                           onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = "transparent"}>
                           <div className="flex items-start gap-2.5">
                             {n.type === "assistance" && (
@@ -203,8 +211,8 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
                               </span>
                             )}
                             <div className="flex-1 min-w-0">
-                              <p className={`text-sm ${n.isRead ? "text-soft" : "text-bright font-semibold"}`}>{n.message || n.msg}</p>
-                              <p className="text-xs text-dim mt-0.5 capitalize">{n.type || "booking"} · {timeAgo(n.createdAt, n.time)}</p>
+                              <p className={`text-sm ${n.isRead ? (isDark ? "text-soft" : "text-slate-500") : (isDark ? "text-bright font-semibold" : "text-slate-900 font-semibold")}`}>{n.message || n.msg}</p>
+                              <p className={`text-xs mt-0.5 capitalize ${isDark ? "text-dim" : "text-slate-500"}`}>{n.type || "booking"} · {timeAgo(n.createdAt, n.time)}</p>
                             </div>
                             {!n.isRead && (
                               <span className="mt-1.5 w-2 h-2 rounded-full shrink-0 animate-pulse" style={{ background: "#c0392b" }} />
@@ -236,19 +244,25 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
               </button>
               {profileOpen && (
                 <div className="absolute right-0 top-full mt-2 w-52 rounded-2xl shadow-modal animate-slide-up overflow-hidden"
-                  style={{ background: "#112240", border: "1px solid rgba(255,255,255,0.1)" }}>
-                  <div className="px-4 py-3" style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
-                    <p className="font-semibold text-bright text-sm">{admin?.name}</p>
-                    <p className="text-xs text-dim">{admin?.email}</p>
+                  style={{ background: panelBackground, border: panelBorder }}>
+                  <div className="px-4 py-3" style={{ borderBottom: panelBorder }}>
+                    <p className={`font-semibold text-sm ${isDark ? "text-bright" : "text-slate-900"}`}>{admin?.name}</p>
+                    <p className={`text-xs ${isDark ? "text-dim" : "text-slate-500"}`}>{admin?.email}</p>
                   </div>
                   <div className="p-1.5">
                     <button onClick={() => { setProfileOpen(false); navigate("/m/profile"); }}
                       className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-soft transition-colors"
-                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.06)"; (e.currentTarget as HTMLElement).style.color = "#f0f4ff"; }}
-                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; (e.currentTarget as HTMLElement).style.color = "#94a3b8"; }}>
+                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = hoverBg; (e.currentTarget as HTMLElement).style.color = isDark ? "#f0f4ff" : "#0f172a"; }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; (e.currentTarget as HTMLElement).style.color = isDark ? "#94a3b8" : "#64748b"; }}>
                       <User className="w-4 h-4" /> My Profile
                     </button>
-                    <div className="my-1" style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }} />
+                    <button onClick={() => { setProfileOpen(false); navigate("/m/settings"); }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-soft transition-colors"
+                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = hoverBg; (e.currentTarget as HTMLElement).style.color = isDark ? "#f0f4ff" : "#0f172a"; }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; (e.currentTarget as HTMLElement).style.color = isDark ? "#94a3b8" : "#64748b"; }}>
+                      <Settings className="w-4 h-4" /> Settings
+                    </button>
+                    <div className="my-1" style={{ borderTop: headerBorder }} />
                     <button onClick={() => { logout(); navigate("/login"); }}
                       className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors"
                       style={{ color: "#e11d48" }}
@@ -261,7 +275,6 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
               )}
             </div>
           </div>
-        </div>
 
         {/* ── Tab Navigation ── */}
         <div className="max-w-screen-2xl mx-auto px-6" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
@@ -272,9 +285,9 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
               return (
                 <button key={tab.id} onClick={() => navigate(tab.path)}
                   className="flex items-center gap-2 px-4 py-3.5 text-sm font-medium border-b-2 transition-all whitespace-nowrap"
-                  style={{ color: isActive ? "#f0f4ff" : "#64748b", borderColor: isActive ? "#c0392b" : "transparent" }}
-                  onMouseEnter={e => { if (!isActive) { (e.currentTarget as HTMLElement).style.color = "#94a3b8"; (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.15)"; } }}
-                  onMouseLeave={e => { if (!isActive) { (e.currentTarget as HTMLElement).style.color = "#64748b"; (e.currentTarget as HTMLElement).style.borderColor = "transparent"; } }}>
+                  style={{ color: isActive ? (isDark ? "#f0f4ff" : "#0f172a") : (isDark ? "#64748b" : "#64748b"), borderColor: isActive ? "#c0392b" : "transparent" }}
+                  onMouseEnter={e => { if (!isActive) { (e.currentTarget as HTMLElement).style.color = isDark ? "#94a3b8" : "#0f172a"; (e.currentTarget as HTMLElement).style.borderColor = isDark ? "rgba(255,255,255,0.15)" : "rgba(15,23,42,0.15)"; } }}
+                  onMouseLeave={e => { if (!isActive) { (e.currentTarget as HTMLElement).style.color = isDark ? "#64748b" : "#64748b"; (e.currentTarget as HTMLElement).style.borderColor = "transparent"; } }}>
                   <Icon className="w-4 h-4" />
                   {tab.label}
                 </button>
@@ -294,9 +307,9 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
         <div
           className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-2xl animate-slide-up"
           style={{
-            background: "linear-gradient(135deg, #1a0a0a 0%, #2d0f0f 100%)",
-            border: "1px solid rgba(192,57,43,0.5)",
-            boxShadow: "0 8px 32px rgba(192,57,43,0.4)",
+            background: isDark ? "linear-gradient(135deg, #1a0a0a 0%, #2d0f0f 100%)" : "#f8fafc",
+            border: isDark ? "1px solid rgba(192,57,43,0.5)" : "1px solid #f1f5f9",
+            boxShadow: isDark ? "0 8px 32px rgba(192,57,43,0.4)" : "0 12px 36px rgba(15,23,42,0.12)",
             minWidth: "360px",
             maxWidth: "520px",
           }}
@@ -308,19 +321,19 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
             <ShieldAlert className="w-5 h-5" style={{ color: "#e74c3c" }} />
           </div>
           <div className="flex-1">
-            <p className="text-sm font-semibold" style={{ color: "#f0f4ff" }}>
+            <p className="text-sm font-semibold" style={{ color: isDark ? "#f0f4ff" : "#0f172a" }}>
               Access Denied
             </p>
-            <p className="text-xs mt-0.5" style={{ color: "#94a3b8" }}>
+            <p className="text-xs mt-0.5" style={{ color: isDark ? "#94a3b8" : "#475569" }}>
               {accessError}
             </p>
           </div>
           <button
             onClick={() => setAccessError(null)}
             className="text-xs shrink-0 transition-colors"
-            style={{ color: "#64748b" }}
+            style={{ color: isDark ? "#64748b" : "#475569" }}
             onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = "#e74c3c"}
-            onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = "#64748b"}
+            onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = isDark ? "#64748b" : "#475569"}
           >
             ✕
           </button>

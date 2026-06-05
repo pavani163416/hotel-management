@@ -40,6 +40,7 @@ import MHotelsOverview from "@/pages/manager/MHotelsOverview";
 import MHalls         from "@/pages/manager/MHalls";
 import MPricing       from "@/pages/manager/MPricing";
 import MProfile       from "@/pages/manager/MProfile";
+import MSettings      from "@/pages/manager/MSettings";
 import MNotifications from "@/pages/manager/MNotifications";
 import MChangePassword from "@/pages/manager/MChangePassword";
 
@@ -105,6 +106,7 @@ export default function App() {
             <Route path="/m/halls" element={<MHalls />} />
             <Route path="/m/pricing" element={<MPricing />} />
             <Route path="/m/profile" element={<MProfile />} />
+            <Route path="/m/settings" element={<MSettings />} />
             <Route path="/m/notifications" element={<MNotifications />} />
             <Route path="/m/change-password" element={<MChangePassword />} />
           </Route>

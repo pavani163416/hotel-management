@@ -326,6 +326,50 @@
     background: #f8fafc !important;
   }
 
+  body.light .glass-card {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    color: #0f172a !important;
+    box-shadow: 0 8px 32px rgba(15,23,42,0.08);
+  }
+
+  body.light .glass-card:hover {
+    background: #f8fafc !important;
+  }
+
+  body.light .glass-input {
+    background: #f8fafc !important;
+    border-color: #cbd5e1 !important;
+    color: #0f172a !important;
+  }
+
+  body.light .glass-input::placeholder {
+    color: #94a3b8 !important;
+  }
+
+  body.light .glass-input:focus {
+    box-shadow: 0 0 0 3px rgba(212,168,67,0.15) !important;
+    border-color: #d4a843 !important;
+  }
+
+  body.light .glass-select {
+    background: #ffffff !important;
+    border-color: #cbd5e1 !important;
+    color: #0f172a !important;
+  }
+
+  body.light .text-bright {
+    color: #0f172a !important;
+  }
+
+  body.light .text-dim {
+    color: #64748b !important;
+  }
+
+  body.light .text-soft {
+    color: #475569 !important;
+  }
+
   /* Credential badge */
   .credential-badge {
     background: linear-gradient(135deg, rgba(16,185,129,0.15) 0%, rgba(16,185,129,0.05) 100%);
