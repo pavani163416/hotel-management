@@ -16,6 +16,8 @@ export type Review = {
   rating: number;
   comment: string;
   date: string;
+  userId?: string;
+  userEmail?: string;
 };
 
 export type Hotel = {
