@@ -176,58 +176,58 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
             </div>
           </div>
 
+          <div className="flex items-center gap-3">
             {/* Notifications */}
-            <div ref={notifRef} className="relative">
-              <button onClick={() => setNotifOpen(!notifOpen)}
-                className="relative w-9 h-9 rounded-xl flex items-center justify-center transition-all"
-                style={{ color: "#94a3b8" }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = hoverBg; (e.currentTarget as HTMLElement).style.color = isDark ? "#f0f4ff" : "#0f172a"; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; (e.currentTarget as HTMLElement).style.color = isDark ? "#94a3b8" : "#64748b"; }}>
-                <Bell className="w-4 h-4" />
-                {unreadCount > 0 && (
-                  <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full animate-pulse" style={{ background: "#c0392b" }} />
-                )}
-              </button>
-              {notifOpen && (
-                <div className="absolute right-0 top-full mt-2 w-80 rounded-2xl shadow-modal animate-slide-up overflow-hidden"
-                  style={{ background: panelBackground, border: panelBorder }}>
-                  <div className="px-4 py-3 flex items-center justify-between" style={{ borderBottom: panelBorder }}>
-                    <span className={`font-semibold text-sm ${isDark ? "text-bright" : "text-slate-900"}`}>Notifications</span>
-                    <span className={`text-xs ${isDark ? "text-dim" : "text-slate-500"}`}>{unreadCount} unread</span>
-                  </div>
-                  {notifications.length === 0 ? (
-                    <div className={`px-4 py-8 text-center text-sm ${isDark ? "text-dim" : "text-slate-500"}`}>No new notifications</div>
-                  ) : (
-                    <div className="divide-y max-h-72 overflow-y-auto scrollbar-thin" style={{ borderColor: isDark ? "rgba(255,255,255,0.05)" : "#e2e8f0" }}>
-                      {notifications.map((n) => (
-                        <button key={n._id || n.id} onClick={() => openNotification(n)} className="w-full text-left px-4 py-3 transition-colors"
-                          onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = hoverBg}
-                          onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = "transparent"}>
-                          <div className="flex items-start gap-2.5">
-                            {n.type === "assistance" && (
-                              <span className="mt-0.5 shrink-0 text-xs px-1.5 py-0.5 rounded font-bold"
-                                style={{ background: "rgba(212,168,67,0.2)", color: "#d4a843", border: "1px solid rgba(212,168,67,0.3)" }}>
-                                HELP
-                              </span>
-                            )}
-                            <div className="flex-1 min-w-0">
-                              <p className={`text-sm ${n.isRead ? (isDark ? "text-soft" : "text-slate-500") : (isDark ? "text-bright font-semibold" : "text-slate-900 font-semibold")}`}>{n.message || n.msg}</p>
-                              <p className={`text-xs mt-0.5 capitalize ${isDark ? "text-dim" : "text-slate-500"}`}>{n.type || "booking"} · {timeAgo(n.createdAt, n.time)}</p>
-                            </div>
-                            {!n.isRead && (
-                              <span className="mt-1.5 w-2 h-2 rounded-full shrink-0 animate-pulse" style={{ background: "#c0392b" }} />
-                            )}
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
+          <div ref={notifRef} className="relative mr-3">
+            <button onClick={() => setNotifOpen(!notifOpen)}
+              className="relative w-9 h-9 rounded-xl flex items-center justify-center transition-all"
+              style={{ color: "#94a3b8" }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = hoverBg; (e.currentTarget as HTMLElement).style.color = isDark ? "#f0f4ff" : "#0f172a"; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; (e.currentTarget as HTMLElement).style.color = isDark ? "#94a3b8" : "#64748b"; }}>
+              <Bell className="w-4 h-4" />
+              {unreadCount > 0 && (
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full animate-pulse" style={{ background: "#c0392b" }} />
               )}
-            </div>
-
-            {/* Profile */}
-            <div ref={profileRef} className="relative">
+            </button>
+            {notifOpen && (
+              <div className="absolute right-0 top-full mt-2 w-80 rounded-2xl shadow-modal animate-slide-up overflow-hidden"
+                style={{ background: panelBackground, border: panelBorder }}>
+                <div className="px-4 py-3 flex items-center justify-between" style={{ borderBottom: panelBorder }}>
+                  <span className={`font-semibold text-sm ${isDark ? "text-bright" : "text-slate-900"}`}>Notifications</span>
+                  <span className={`text-xs ${isDark ? "text-dim" : "text-slate-500"}`}>{unreadCount} unread</span>
+                </div>
+                {notifications.length === 0 ? (
+                  <div className={`px-4 py-8 text-center text-sm ${isDark ? "text-dim" : "text-slate-500"}`}>No new notifications</div>
+                ) : (
+                  <div className="divide-y max-h-72 overflow-y-auto scrollbar-thin" style={{ borderColor: isDark ? "rgba(255,255,255,0.05)" : "#e2e8f0" }}>
+                    {notifications.map((n) => (
+                      <button key={n._id || n.id} onClick={() => openNotification(n)} className="w-full text-left px-4 py-3 transition-colors"
+                        onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = hoverBg}
+                        onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = "transparent"}>
+                        <div className="flex items-start gap-2.5">
+                          {n.type === "assistance" && (
+                            <span className="mt-0.5 shrink-0 text-xs px-1.5 py-0.5 rounded font-bold"
+                              style={{ background: "rgba(212,168,67,0.2)", color: "#d4a843", border: "1px solid rgba(212,168,67,0.3)" }}>
+                              HELP
+                            </span>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className={`text-sm ${n.isRead ? (isDark ? "text-soft" : "text-slate-500") : (isDark ? "text-bright font-semibold" : "text-slate-900 font-semibold")}`}>{n.message || n.msg}</p>
+                            <p className={`text-xs mt-0.5 capitalize ${isDark ? "text-dim" : "text-slate-500"}`}>{n.type || "booking"} · {timeAgo(n.createdAt, n.time)}</p>
+                          </div>
+                          {!n.isRead && (
+                            <span className="mt-1.5 w-2 h-2 rounded-full shrink-0 animate-pulse" style={{ background: "#c0392b" }} />
+                          )}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+          {/* Profile */}
+          <div ref={profileRef} className="relative">
               <button onClick={() => setProfileOpen(!profileOpen)}
                 className="flex items-center gap-2.5 pl-2 pr-3 py-1.5 rounded-xl transition-all"
                 onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.07)"}
@@ -275,6 +275,7 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
               )}
             </div>
           </div>
+        </div>
 
         {/* ── Tab Navigation ── */}
         <div className="max-w-screen-2xl mx-auto px-6" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
