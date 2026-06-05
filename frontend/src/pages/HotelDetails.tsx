@@ -1,10 +1,11 @@
 import { useNavigate, useParams } from "react-router-dom";
-import { MapPin, Star, Wifi, Coffee, Wind, Users, BedDouble, Check, LogIn, Waves, Trees, Dumbbell, Utensils, Car, ShieldCheck, Flame, Sunset, Snowflake, Bath, Tv, PocketKnife, Sailboat, Baby, PawPrint, Phone, AlertCircle, Loader2, Navigation, ExternalLink } from "lucide-react";
+import { MapPin, Star, Wifi, Coffee, Wind, Users, BedDouble, Check, LogIn, Waves, Trees, Dumbbell, Utensils, Car, ShieldCheck, Flame, Sunset, Snowflake, Bath, Tv, PocketKnife, Sailboat, Baby, PawPrint, Phone, AlertCircle, Loader2, Navigation, ExternalLink, Eye, Coffee as CoffeeIcon, XCircle } from "lucide-react";
 import Layout from "@/components/Layout";
 import { useBooking } from "@/context/BookingContext";
 import { useCurrency } from "@/context/CurrencyContext";
 import { useState, useEffect, useMemo } from "react";
 import { AuthModal } from "@/components/AuthModal";
+import Tour360Viewer from "@/components/Tour360Viewer";
 import { API } from "@/services/api";
 
 // Map amenity name → lucide icon
@@ -47,6 +48,12 @@ const HotelDetails = () => {
   // Room filters
   const [roomSort, setRoomSort] = useState<"price-asc" | "price-desc" | "default">("default");
   const [capacityFilter, setCapacityFilter] = useState(1);
+  const [bedFilter, setBedFilter] = useState("any");
+  const [breakfastFilter, setBreakfastFilter] = useState(false);
+  const [cancellationFilter, setCancellationFilter] = useState(false);
+
+  // 360° tour viewer
+  const [tour360Room, setTour360Room] = useState<{ url: string; name: string } | null>(null);
 
   // Auth popup for unauthenticated booking attempts
   const [authOpen, setAuthOpen] = useState(false);
@@ -214,12 +221,27 @@ const HotelDetails = () => {
                   <option value={3}>3+ Guests</option>
                   <option value={4}>4+ Guests</option>
                 </select>
+                <select value={bedFilter} onChange={(e) => setBedFilter(e.target.value)}
+                  className="border border-border rounded-lg px-3 py-2 text-sm bg-background outline-none focus:border-accent">
+                  <option value="any">Any Bed</option>
+                  <option value="king">King Bed</option>
+                  <option value="queen">Queen Bed</option>
+                  <option value="twin">Twin Beds</option>
+                </select>
                 <select value={roomSort} onChange={(e) => setRoomSort(e.target.value as any)}
                   className="border border-border rounded-lg px-3 py-2 text-sm bg-background outline-none focus:border-accent">
                   <option value="default">Default Order</option>
                   <option value="price-asc">Price: Low → High</option>
                   <option value="price-desc">Price: High → Low</option>
                 </select>
+                <label className="flex items-center gap-1.5 text-sm cursor-pointer select-none">
+                  <input type="checkbox" checked={breakfastFilter} onChange={(e) => setBreakfastFilter(e.target.checked)} className="accent-primary" />
+                  Breakfast
+                </label>
+                <label className="flex items-center gap-1.5 text-sm cursor-pointer select-none">
+                  <input type="checkbox" checked={cancellationFilter} onChange={(e) => setCancellationFilter(e.target.checked)} className="accent-primary" />
+                  Free Cancel
+                </label>
               </div>
             </div>
             {hotel.rooms.length === 0 ? (
@@ -229,6 +251,9 @@ const HotelDetails = () => {
             ) : (() => {
               const displayRooms = hotel.rooms
                 .filter((r) => r.capacity >= capacityFilter)
+                .filter((r) => bedFilter === "any" || r.bed?.toLowerCase().includes(bedFilter.toLowerCase()))
+                .filter((r) => !breakfastFilter || r.breakfastIncluded || r.features?.some((f) => f.toLowerCase().includes("breakfast")))
+                .filter((r) => !cancellationFilter || r.freeCancellation)
                 .sort((a, b) => roomSort === "price-asc" ? a.price - b.price : roomSort === "price-desc" ? b.price - a.price : 0);
               return (
                 <>
@@ -278,6 +303,20 @@ const HotelDetails = () => {
                             {f}
                           </span>
                         ))}
+                        {r.breakfastIncluded && (
+                          <span className="text-xs px-2 py-1 rounded bg-green-50 text-green-700 font-medium border border-green-200">🍳 Breakfast</span>
+                        )}
+                        {r.freeCancellation && (
+                          <span className="text-xs px-2 py-1 rounded bg-blue-50 text-blue-700 font-medium border border-blue-200">✓ Free Cancel</span>
+                        )}
+                        {r.tour360 && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setTour360Room({ url: r.tour360!, name: r.name }); }}
+                            className="text-xs px-2 py-1 rounded bg-accent/15 text-accent font-semibold border border-accent/30 flex items-center gap-1 hover:bg-accent/25 transition-colors"
+                          >
+                            <Eye className="w-3 h-3" /> 360° Tour
+                          </button>
+                        )}
                       </div>
                       <div className="md:text-right">
                         <p className="font-display text-xl font-bold text-primary">{format(r.price)}</p>
@@ -481,6 +520,15 @@ const HotelDetails = () => {
         }}
         defaultMode={authMode}
       />
+
+      {/* 360° Tour Viewer */}
+      {tour360Room && (
+        <Tour360Viewer
+          imageUrl={tour360Room.url}
+          roomName={tour360Room.name}
+          onClose={() => setTour360Room(null)}
+        />
+      )}
     </Layout>
   );
 };

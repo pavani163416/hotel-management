@@ -4,10 +4,12 @@ import { Calendar, Users, BedDouble, MapPin, ArrowRight, Minus, Plus } from "luc
 import Layout from "@/components/Layout";
 import Stepper from "@/components/Stepper";
 import { useBooking, calcNights } from "@/context/BookingContext";
+import { useCurrency } from "@/context/CurrencyContext";
 
 const Booking = () => {
   const nav = useNavigate();
   const { selectedHotel, selectedRoom, search, setSearch } = useBooking();
+  const { format } = useCurrency();
 
   useEffect(() => { if (!selectedHotel || !selectedRoom) nav("/hotels"); }, [selectedHotel, selectedRoom, nav]);
   if (!selectedHotel || !selectedRoom) return null;
@@ -104,7 +106,7 @@ const Booking = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Subtotal ({nights} nights)</p>
-                <p className="font-display text-3xl font-bold text-primary">${subtotal.toLocaleString()}</p>
+                <p className="font-display text-3xl font-bold text-primary">{format(subtotal)}</p>
               </div>
               <button onClick={() => nav("/guest-details")}
                 className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-3.5 rounded-xl font-semibold flex items-center gap-2 transition-base">

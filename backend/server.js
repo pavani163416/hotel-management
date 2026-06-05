@@ -38,6 +38,7 @@ import assistanceRoutes from "./routes/assistanceRoutes.js";
 import roomTypeRoutes from "./routes/roomTypeRoutes.js";
 import maintenanceRoutes from "./routes/maintenanceRoutes.js";
 import publicSupportRoutes from "./routes/publicSupportRoutes.js";
+import propertyOwnerRoutes from "./routes/propertyOwnerRoutes.js";
 import errorHandler     from "./middleware/errorHandler.js";
 import csrfProtection  from "./middleware/csrfProtection.js";
 import { apiLimiter, bookingLimiter, promoLimiter, authRateLimiter, adminRateLimiter, publicRateLimiter } from "./middleware/rateLimiter.js";
@@ -560,6 +561,7 @@ app.use("/api/room-types",    roomTypeRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/maintenance",   maintenanceRoutes);
 app.use("/api",               publicSupportRoutes);
+app.use("/api/owners",        propertyOwnerRoutes);
 
 // ── 404 handler ───────────────────────────────────────────
 app.use((req, res) => {

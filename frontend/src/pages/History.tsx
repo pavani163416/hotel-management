@@ -4,6 +4,7 @@ import { X, MapPin, BookOpen, AlertTriangle, Loader2, Clock, Download } from "lu
 import { downloadBookingReceipt, historyItemToReceipt } from "@/utils/receiptPdf";
 import Layout from "@/components/Layout";
 import { useBooking, Booking } from "@/context/BookingContext";
+import { useCurrency } from "@/context/CurrencyContext";
 import { getBookingsByEmail, getMyBookings, cancelBooking as cancelBookingApi } from "@/services/api";
 
 const CANCEL_REASONS = [
@@ -40,6 +41,7 @@ const History = () => {
   const nav = useNavigate();
   const location = useLocation();
   const { user, bookings: localBookings, cancelBooking } = useBooking();
+  const { format } = useCurrency();
   const [filter, setFilter]           = useState<"all" | "Confirmed" | "Cancelled">("all");
   const [modal, setModal]             = useState<any | null>(null);
   const [apiBookings, setApiBookings] = useState<any[]>([]);
@@ -278,7 +280,7 @@ const History = () => {
                   <div className="p-5 border-t md:border-t-0 md:border-l border-border flex md:flex-col items-end justify-between md:justify-center gap-3 md:min-w-[180px]">
                     <div className="text-right">
                       <p className="text-xs text-muted-foreground">Total</p>
-                      <p className="font-display text-xl font-bold text-primary">${b.total.toLocaleString()}</p>
+                      <p className="font-display text-xl font-bold text-primary">{format(b.total)}</p>
                     </div>
                     <div className="flex flex-col gap-2">
                       <button onClick={() => setModal(b)}
@@ -317,7 +319,7 @@ const History = () => {
               <Row label="Room"        value={modal.roomName} />
               <Row label="Dates"       value={modal.checkIn + " → " + modal.checkOut} />
               {modal.nights && <Row label="Nights" value={String(modal.nights)} />}
-              <Row label="Total Paid"  value={"$" + modal.total.toLocaleString()} />
+              <Row label="Total Paid"  value={format(modal.total)} />
               <Row label="Status"      value={statusLabel(modal.status)} />
               {modal.createdAt && (
                 <Row label="Confirmed At" value={
@@ -328,7 +330,7 @@ const History = () => {
               )}
               {modal.status === "Cancelled" && (
                 <p className="text-xs text-destructive mt-2">
-                  Refund of ${modal.total.toLocaleString()} will be processed to your original payment method.
+                  Refund of {format(modal.total)} will be processed to your original payment method.
                 </p>
               )}
             </div>
@@ -389,7 +391,7 @@ const History = () => {
               </button>
             </div>
             <p className="text-xs text-muted-foreground text-center mt-3">
-              Refund of <strong>${cancelTarget.total.toLocaleString()}</strong> will be processed to your original payment method.
+              Refund of <strong>{format(cancelTarget.total)}</strong> will be processed to your original payment method.
             </p>
           </div>
         </div>

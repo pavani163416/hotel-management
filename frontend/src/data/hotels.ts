@@ -8,6 +8,9 @@ export type Room = {
   bed: string;
   available: number;
   features: string[];
+  tour360?: string;
+  breakfastIncluded?: boolean;
+  freeCancellation?: boolean;
 };
 
 export type Review = {
