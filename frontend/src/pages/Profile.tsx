@@ -111,8 +111,18 @@ const Profile = () => {
   };
 
   if (!user) {
-    navigate("/", { replace: true, state: { openAuth: true } });
-    return null;
+    return (
+      <Layout>
+        <div className="container py-20 max-w-xl text-center flex flex-col items-center">
+          <div className="grid place-items-center w-24 h-24 rounded-full bg-accent/10 text-accent mb-6">
+            <User className="w-10 h-10" />
+          </div>
+          <h1 className="font-display text-3xl font-bold mb-4">No Profile Found</h1>
+          <p className="text-muted-foreground">Sign in to view and manage your profile details.</p>
+        </div>
+      </Layout>
+    );
+  }
   }
 
   return (
