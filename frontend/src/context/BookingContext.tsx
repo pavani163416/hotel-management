@@ -2,6 +2,7 @@ import { createContext, useContext, useState, ReactNode, useEffect } from "react
 import type { Hotel, Room } from "@/data/hotels";
 import api, { API } from "../services/api";
 import socket from "@/services/socket";
+import { toast } from "sonner";
 
 const HOTEL_CACHE_KEY = "luxe_hotels_cache";
 function mapHotel(h: any): Hotel {
@@ -194,6 +195,40 @@ export const BookingProvider = ({ children }: { children: ReactNode }) => {
     window.addEventListener("luxe_logout", handleLuxeLogout);
     return () => window.removeEventListener("luxe_logout", handleLuxeLogout);
   }, []);
+
+  // ── Global real-time notification listener ───────────────
+  // Runs on every page so users always get popup alerts,
+  // not just when they happen to be on /notifications.
+  useEffect(() => {
+    if (!user?.email) return;
+
+    // Join the user's personal notification room
+    socket.emit("registerNotifications", {
+      role: "customer",
+      userId: user.email,
+    });
+
+    const onNotification = (data: { message?: string; type?: string }) => {
+      const msg = data?.message || "You have a new notification";
+      const type = data?.type || "system";
+
+      // Show a toast regardless of which page the user is on
+      if (type === "booking") {
+        toast.success(msg, { duration: 6000, icon: "📅" });
+      } else if (type === "price") {
+        toast(msg, { duration: 6000, icon: "💰" });
+      } else if (type === "assistance") {
+        toast.warning(msg, { duration: 6000, icon: "🔔" });
+      } else {
+        toast(msg, { duration: 6000, icon: "🔔" });
+      }
+    };
+
+    socket.on("notification", onNotification);
+    return () => {
+      socket.off("notification", onNotification);
+    };
+  }, [user?.email]);
 
   // Real-time hotel updates via SSE with auto-reconnect, polling fallback
   useEffect(() => {

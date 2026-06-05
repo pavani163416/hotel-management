@@ -140,12 +140,41 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
   }, [theme]);
 
 
-  const login = (a: Admin, t: string) => {
+  // ── Re-register socket room on page load if already authenticated ──
+  // Covers the case where the admin refreshes the page with a valid stored token.
+  useEffect(() => {
+    if (!token || !admin) return;
+
+    const register = () => {
+      const role = admin.role?.toLowerCase();
+      const scope: Record<string, string> = { role: role === "manager" ? "manager" : "admin" };
+      if (admin.assignedHotelId) scope.hotelId = admin.assignedHotelId;
+      socket.emit("registerNotifications", scope);
+    };
+
+    if (socket.connected) {
+      register();
+    } else {
+      socket.once("connect", register);
+    }
+
+    return () => {
+      socket.off("connect", register);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
     setAdmin(a); setToken(t);
     localStorage.setItem("luxe_admin", JSON.stringify(a));
     localStorage.setItem("luxe_admin_token", t);
     socket.auth = { token: t };
     socket.disconnect().connect();
+    // Join the role-based notification room once connected
+    socket.once("connect", () => {
+      const role = a.role?.toLowerCase();
+      const scope: Record<string, string> = { role: role === "manager" ? "manager" : "admin" };
+      if (a.assignedHotelId) scope.hotelId = a.assignedHotelId;
+      socket.emit("registerNotifications", scope);
+    });
   };
 
   const logout = () => {
