@@ -1,11 +1,21 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { BookingProvider } from "@/context/BookingContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import RequireAuth from "@/components/RequireAuth";
+import { useEffect } from "react";
+
+// Scroll to the top of the page on every route change
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }, [pathname]);
+  return null;
+}
 
 import Home from "./pages/Home";
 import Hotels from "./pages/Hotels";
@@ -37,6 +47,7 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
         <BookingProvider>
+          <ScrollToTop />
           <Routes>
             {/* ── Public routes ─────────────────────── */}
             <Route path="/" element={<Home />} />

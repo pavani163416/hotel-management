@@ -43,15 +43,15 @@ export function ContactAdminModal({ isOpen, onClose }: ContactAdminModalProps) {
             </div>
           </a>
 
-          <a href="tel:+18005550199" className="flex items-center gap-4 p-4 rounded-xl border border-border bg-card hover:bg-muted/50 transition-colors group">
-            <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center group-hover:scale-110 transition-transform">
+          <div className="flex items-center gap-4 p-4 rounded-xl border border-border bg-card">
+            <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center">
               <Phone className="w-5 h-5" />
             </div>
             <div>
               <p className="text-sm font-semibold text-foreground">Phone Support</p>
               <p className="text-sm text-muted-foreground">+1 (800) 555-0199</p>
             </div>
-          </a>
+          </div>
 
           <button 
             onClick={onClose}
