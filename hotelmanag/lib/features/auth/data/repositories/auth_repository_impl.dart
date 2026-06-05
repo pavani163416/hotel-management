@@ -43,9 +43,9 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<Either<Failure, (UserEntity, String, String?)>> register(String name, String email, String password, String phone) async {
+  Future<Either<Failure, (UserEntity, String, String?)>> register(String name, String email, String password, String phone, {String? city, String? captchaId, String? captchaAnswer}) async {
     try {
-      final authResponse = await _remoteDataSource.register(name, email, password, phone);
+      final authResponse = await _remoteDataSource.register(name, email, password, phone, city: city, captchaId: captchaId, captchaAnswer: captchaAnswer);
       return Right((authResponse.user, authResponse.token, authResponse.otp));
     } on DioException catch (e) {
       String message = 'Registration failed';
@@ -59,6 +59,22 @@ class AuthRepositoryImpl implements AuthRepository {
       } else if (e.type == DioExceptionType.connectionError || 
                  e.type == DioExceptionType.connectionTimeout) {
         message = 'Unable to connect to the server. Please check your internet connection.';
+      }
+      return Left(ServerFailure(message));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, (String, String)?>> fetchCaptcha() async {
+    try {
+      final captcha = await _remoteDataSource.fetchCaptcha();
+      return Right(captcha);
+    } on DioException catch (e) {
+      String message = 'Failed to fetch CAPTCHA';
+      if (e.response?.data is Map) {
+        message = e.response?.data['message'] ?? message;
       }
       return Left(ServerFailure(message));
     } catch (e) {

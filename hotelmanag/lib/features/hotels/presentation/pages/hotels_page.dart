@@ -642,7 +642,14 @@ class _HotelsPageState extends State<HotelsPage> {
                     children: [
                       Icon(LucideIcons.mapPin, size: 12, color: Colors.grey[400]),
                       const SizedBox(width: 4),
-                      Text(hotel.location, style: TextStyle(fontSize: 12, color: isDark ? Colors.grey[400] : Colors.grey[600])),
+                      Expanded(
+                        child: Text(
+                          hotel.location, 
+                          style: TextStyle(fontSize: 12, color: isDark ? Colors.grey[400] : Colors.grey[600]),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
                     ],
                   ),
                   if (cardAmenities.isNotEmpty) ...[
@@ -769,7 +776,14 @@ class _HotelsPageState extends State<HotelsPage> {
                     children: [
                       Icon(LucideIcons.mapPin, size: 10, color: Colors.grey[400]),
                       const SizedBox(width: 4),
-                      Text(hotel.location, style: TextStyle(fontSize: 11, color: isDark ? Colors.grey[400] : Colors.grey[600])),
+                      Expanded(
+                        child: Text(
+                          hotel.location, 
+                          style: TextStyle(fontSize: 11, color: isDark ? Colors.grey[400] : Colors.grey[600]),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 16),

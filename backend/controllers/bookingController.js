@@ -283,19 +283,12 @@ export const createBooking = async (req, res, next) => {
       });
     }
 
-    // ── Generate placeholders for missing lead guest fields ──
-    const actualEmail = guestData?.email?.toLowerCase().trim() || "";
-    let normalizedEmail = actualEmail;
-    const crypto = await import("crypto");
-    if (!normalizedEmail) {
-      normalizedEmail = `guest_${Date.now()}_${crypto.randomInt(100000, 999999)}@placeholder.com`;
-    }
+    // ── Normalize lead guest contact info ──
+    const actualEmail = guestData.email.toLowerCase().trim();
+    const normalizedEmail = actualEmail;
 
-    const actualPhone = guestData?.phone?.trim() || "";
-    let normalizedPhone = actualPhone;
-    if (!normalizedPhone) {
-      normalizedPhone = `+1 (000) 000-0000`;
-    }
+    const actualPhone = guestData.phone.trim();
+    const normalizedPhone = actualPhone.replace(/[\s()\-]/g, "");
 
     // Removed guest overlapping booking check so a user can book multiple rooms
 

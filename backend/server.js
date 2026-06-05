@@ -1,4 +1,4 @@
-import "dotenv/config"; // reload trigger
+import "dotenv/config"; // reload trigger update
 import express          from "express";
 import cors             from "cors";
 import helmet           from "helmet";

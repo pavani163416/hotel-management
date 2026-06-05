@@ -42,7 +42,9 @@ class _OtpPageState extends State<OtpPage> {
     final success = await auth.verifyOtp(widget.email, code);
 
     if (success && mounted) {
-      context.go('/');
+      Future.microtask(() {
+        if (mounted) context.go('/');
+      });
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(auth.error ?? 'Invalid verification code.')),

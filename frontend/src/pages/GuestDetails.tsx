@@ -41,12 +41,12 @@ const GuestDetails = () => {
             </Field>
             <div className="grid sm:grid-cols-2 gap-5">
               <Field label="Email Address" error={errors.email?.message}>
-                <input type="email" {...register("email", { required: "Please enter a valid email", pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: "Please enter a valid email" } })}
+                <input type="email" {...register("email", { required: "Please enter a valid email", pattern: { value: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/, message: "Please enter a valid email" } })}
                   placeholder="you@example.com" className="w-full px-4 py-2.5 border border-border rounded-lg outline-none focus:ring-2 focus:ring-primary focus:border-primary text-sm" />
               </Field>
               <Field label="Phone Number" error={errors.phone?.message}>
-                <input {...register("phone", { required: "Please enter a valid phone", pattern: { value: /^[\d+\s\-()]{7,}$/, message: "Please enter a valid phone" } })}
-                  placeholder="+1 (555) 000-0000" className="w-full px-4 py-2.5 border border-border rounded-lg outline-none focus:ring-2 focus:ring-primary focus:border-primary text-sm" />
+                <input {...register("phone", { required: "Please enter a valid phone", pattern: { value: /^\+91\d{10}$/, message: "Phone number must start with +91 followed by 10 digits" } })}
+                  placeholder="+91 98765 43210" className="w-full px-4 py-2.5 border border-border rounded-lg outline-none focus:ring-2 focus:ring-primary focus:border-primary text-sm" />
               </Field>
             </div>
             <Field label="Special Requests (optional)">
@@ -85,12 +85,12 @@ const GuestDetails = () => {
                     </div>
                     <div className="grid sm:grid-cols-2 gap-5">
                       <Field label="Email Address" error={errors.adults?.[index]?.email?.message}>
-                        <input type="email" {...register(`adults.${index}.email`, { required: "Please enter a valid email", pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: "Please enter a valid email" } })}
+                        <input type="email" {...register(`adults.${index}.email`, { required: "Please enter a valid email", pattern: { value: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/, message: "Please enter a valid email" } })}
                           placeholder="you@example.com" className="w-full px-4 py-2.5 border border-border rounded-lg outline-none focus:ring-2 focus:ring-primary focus:border-primary text-sm" />
                       </Field>
                       <Field label="Phone Number" error={errors.adults?.[index]?.phone?.message}>
-                        <input {...register(`adults.${index}.phone`, { required: "Please enter a valid phone", pattern: { value: /^[\d+\s\-()]{7,}$/, message: "Please enter a valid phone" } })}
-                          placeholder="+1 (555) 000-0000" className="w-full px-4 py-2.5 border border-border rounded-lg outline-none focus:ring-2 focus:ring-primary focus:border-primary text-sm" />
+                        <input {...register(`adults.${index}.phone`, { required: "Please enter a valid phone", pattern: { value: /^\+91\d{10}$/, message: "Phone number must start with +91 followed by 10 digits" } })}
+                          placeholder="+91 98765 43210" className="w-full px-4 py-2.5 border border-border rounded-lg outline-none focus:ring-2 focus:ring-primary focus:border-primary text-sm" />
                       </Field>
                     </div>
                     <Field label="Special Requests (optional)">

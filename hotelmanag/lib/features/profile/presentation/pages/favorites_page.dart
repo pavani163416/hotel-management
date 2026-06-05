@@ -106,13 +106,25 @@ class FavoritesPage extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(hotel.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppTheme.primaryColor)),
+                    Text(
+                      hotel.name, 
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppTheme.primaryColor),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                     const SizedBox(height: 4),
                     Row(
                       children: [
                         Icon(LucideIcons.mapPin, size: 12, color: Colors.grey[400]),
                         const SizedBox(width: 4),
-                        Text(hotel.location, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                        Expanded(
+                          child: Text(
+                            hotel.location, 
+                            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
                       ],
                     ),
                     const Spacer(),

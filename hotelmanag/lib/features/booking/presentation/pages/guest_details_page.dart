@@ -270,9 +270,9 @@ class _GuestDetailsPageState extends State<GuestDetailsPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildLabel('EMAIL ADDRESS (OPTIONAL)'),
+                    _buildLabel('EMAIL ADDRESS *'),
                     const SizedBox(height: 8),
-                    _buildTextField('you@example.com', _leadEmailController, required: false, isEmail: true),
+                    _buildTextField('you@example.com', _leadEmailController, required: true, isEmail: true),
                   ],
                 ),
               ),
@@ -281,9 +281,9 @@ class _GuestDetailsPageState extends State<GuestDetailsPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildLabel('PHONE NUMBER (OPTIONAL)'),
+                    _buildLabel('PHONE NUMBER *'),
                     const SizedBox(height: 8),
-                    _buildTextField('+1 (555) 000-0000', _leadPhoneController, required: false),
+                    _buildTextField('+91 98765 43210', _leadPhoneController, required: true, isPhone: true),
                   ],
                 ),
               ),
@@ -354,7 +354,7 @@ class _GuestDetailsPageState extends State<GuestDetailsPage> {
                   children: [
                     _buildLabel('EMAIL ADDRESS (OPTIONAL)'),
                     const SizedBox(height: 8),
-                    _buildTextField('you@example.com', controllers['email']!),
+                    _buildTextField('you@example.com', controllers['email']!, required: false, isEmail: true),
                   ],
                 ),
               ),
@@ -365,7 +365,7 @@ class _GuestDetailsPageState extends State<GuestDetailsPage> {
                   children: [
                     _buildLabel('PHONE NUMBER (OPTIONAL)'),
                     const SizedBox(height: 8),
-                    _buildTextField('+1 (555) 000-0000', controllers['phone']!),
+                    _buildTextField('+91 98765 43210', controllers['phone']!, required: false, isPhone: true),
                   ],
                 ),
               ),
@@ -464,21 +464,27 @@ class _GuestDetailsPageState extends State<GuestDetailsPage> {
     return Text(text, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.primaryColor.withOpacity(0.5), letterSpacing: 0.5));
   }
 
-  Widget _buildTextField(String hint, TextEditingController controller, {int maxLines = 1, bool required = false, bool isEmail = false, bool isAadhar = false}) {
+  Widget _buildTextField(String hint, TextEditingController controller, {int maxLines = 1, bool required = false, bool isEmail = false, bool isAadhar = false, bool isPhone = false}) {
     return TextFormField(
       controller: controller,
       maxLines: maxLines,
-      maxLength: isAadhar ? 12 : null,
-      inputFormatters: isAadhar ? [FilteringTextInputFormatter.digitsOnly] : null,
-      keyboardType: isAadhar ? TextInputType.number : (isEmail ? TextInputType.emailAddress : TextInputType.text),
+      maxLength: isAadhar ? 12 : (isPhone ? 13 : null),
+      inputFormatters: isAadhar ? [FilteringTextInputFormatter.digitsOnly] : (isPhone ? [FilteringTextInputFormatter.allow(RegExp(r'[0-9+]'))] : null),
+      keyboardType: isAadhar ? TextInputType.number : (isEmail ? TextInputType.emailAddress : (isPhone ? TextInputType.phone : TextInputType.text)),
       validator: (value) {
         if (required && (value == null || value.isEmpty)) {
           return 'This field is required';
         }
         if (isEmail && value != null && value.isNotEmpty) {
-          final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+          final emailRegex = RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$');
           if (!emailRegex.hasMatch(value)) {
             return 'Please enter a valid email';
+          }
+        }
+        if (isPhone && value != null && value.isNotEmpty) {
+          final phoneRegex = RegExp(r'^\+91\d{10}$');
+          if (!phoneRegex.hasMatch(value.replaceAll(' ', ''))) {
+            return 'Must start with +91 followed by 10 digits';
           }
         }
         if (isAadhar && value != null && value.isNotEmpty) {

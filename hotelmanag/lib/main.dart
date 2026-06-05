@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import 'package:provider/provider.dart';
 import 'core/theme/app_theme.dart';
 import 'core/routes/app_router.dart';
@@ -74,10 +75,57 @@ class MyApp extends StatelessWidget {
       theme: AppTheme.lightTheme,
       themeMode: ThemeMode.light,
       routerConfig: AppRouter.router,
-      builder: (context, child) => NotificationPopupOverlay(
-        key: notificationPopupKey,
-        child: child ?? const SizedBox.shrink(),
+      builder: (context, child) => IdleDetector(
+        child: NotificationPopupOverlay(
+          key: notificationPopupKey,
+          child: child ?? const SizedBox.shrink(),
+        ),
       ),
+    );
+  }
+}
+
+class IdleDetector extends StatefulWidget {
+  final Widget child;
+  const IdleDetector({super.key, required this.child});
+
+  @override
+  State<IdleDetector> createState() => _IdleDetectorState();
+}
+
+class _IdleDetectorState extends State<IdleDetector> {
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _resetTimer();
+  }
+
+  void _resetTimer() {
+    _timer?.cancel();
+    _timer = Timer(const Duration(minutes: 15), _logoutUser);
+  }
+
+  void _logoutUser() {
+    final auth = context.read<AuthProvider>();
+    if (auth.isAuthenticated) {
+      auth.logout();
+    }
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Listener(
+      onPointerDown: (_) => _resetTimer(),
+      onPointerMove: (_) => _resetTimer(),
+      child: widget.child,
     );
   }
 }

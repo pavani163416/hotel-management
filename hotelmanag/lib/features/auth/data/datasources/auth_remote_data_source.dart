@@ -3,7 +3,7 @@ import 'package:hotelmanag/features/auth/data/models/user_model.dart';
 
 abstract class AuthRemoteDataSource {
   Future<AuthResponse> login(String email, String password);
-  Future<AuthResponse> register(String name, String email, String password, String phone);
+  Future<AuthResponse> register(String name, String email, String password, String phone, {String? city, String? captchaId, String? captchaAnswer});
   Future<AuthResponse> verifyOtp(String email, String code);
   Future<String?> resendOtp(String email);
   Future<AuthResponse> signInWithGoogle(String idToken);
@@ -30,6 +30,7 @@ abstract class AuthRemoteDataSource {
   Future<bool> forgotPassword(String email);
   Future<String?> sendPhoneOtp(String phone);
   Future<AuthResponse> verifyPhoneOtp(String phone, String code);
+  Future<(String, String)?> fetchCaptcha();
 }
 
 class AuthResponse {
@@ -44,6 +45,18 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   final ApiService _apiService;
 
   AuthRemoteDataSourceImpl(this._apiService);
+
+  @override
+  Future<(String, String)?> fetchCaptcha() async {
+    final response = await _apiService.get('auth/captcha');
+    if (response.data != null && response.data['success'] == true) {
+      final d = response.data['data'];
+      if (d != null) {
+        return (d['captchaId']?.toString() ?? '', d['challenge']?.toString() ?? '');
+      }
+    }
+    return null;
+  }
 
   @override
   Future<String?> sendPhoneOtp(String phone) async {
@@ -100,12 +113,15 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   }
 
   @override
-  Future<AuthResponse> register(String name, String email, String password, String phone) async {
+  Future<AuthResponse> register(String name, String email, String password, String phone, {String? city, String? captchaId, String? captchaAnswer}) async {
     final response = await _apiService.post('auth/register', data: {
       'name': name,
       'email': email,
       'password': password,
       'phone': phone,
+      if (city != null) 'city': city,
+      if (captchaId != null) 'captchaId': captchaId,
+      if (captchaAnswer != null) 'captchaAnswer': captchaAnswer,
     });
 
     final data = response.data['data'];

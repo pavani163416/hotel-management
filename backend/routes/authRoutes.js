@@ -797,7 +797,7 @@ router.post("/login", loginLimiter, validateLoginPayload, async (req, res, next)
         deviceFingerprint
       },
       getSecret(),
-      { expiresIn: "15m" }
+      { expiresIn: JWT_EXPIRES }
     );
 
     const refreshToken = jwt.sign(
@@ -1467,7 +1467,7 @@ router.get("/bookings", verifyCustomerToken, async (req, res, next) => {
       }
     }
 
-    if (guestIds.length === 0) {
+    if (guestIds.length === 0 && !userEmail) {
       return res.json({ success: true, count: 0, total: 0, page, pages: 0, data: [] });
     }
 

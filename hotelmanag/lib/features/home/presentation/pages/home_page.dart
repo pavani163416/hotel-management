@@ -752,7 +752,7 @@ class _HomePageState extends State<HomePage> {
                     child: InkWell(
                       onTap: () => context.push('/hotel/${item.id}'),
                       child: Container(
-                        height: 120,
+                        height: 130,
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(20),
@@ -769,10 +769,10 @@ class _HomePageState extends State<HomePage> {
                                 child: CachedNetworkImage(
                                   imageUrl: item.imageUrl,
                                   width: 120,
-                                  height: 120,
+                                  height: 130,
                                   fit: BoxFit.cover,
                                   memCacheWidth: 240,
-                                  memCacheHeight: 240,
+                                  memCacheHeight: 260,
                                   placeholder: (context, url) => Shimmer.fromColors(
                                     baseColor: Colors.grey[300]!,
                                     highlightColor: Colors.grey[100]!,
@@ -783,12 +783,17 @@ class _HomePageState extends State<HomePage> {
                             ),
                             Expanded(
                               child: Padding(
-                                padding: const EdgeInsets.all(16),
+                                padding: const EdgeInsets.all(12),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppTheme.primaryColor)),
+                                    Text(
+                                      item.name,
+                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppTheme.primaryColor),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
                                     const SizedBox(height: 4),
                                     Row(
                                       children: [
@@ -804,26 +809,26 @@ class _HomePageState extends State<HomePage> {
                                         ),
                                       ],
                                     ),
-                                    const SizedBox(height: 12),
+                                    const SizedBox(height: 8),
                                     Row(
                                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                       children: [
                                         Expanded(
                                           child: Text(
                                             '\$${item.pricePerNight}/night', 
-                                            style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
+                                            style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryColor, fontSize: 13),
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
                                           ),
                                         ),
-                                        const SizedBox(width: 4),
+                                        const SizedBox(width: 2),
                                         Row(
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
                                             const Icon(LucideIcons.star, size: 12, color: AppTheme.accentColor, fill: 1),
+                                            const SizedBox(width: 2),
+                                            Text(item.rating.toString(), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                                             const SizedBox(width: 4),
-                                            Text(item.rating.toString(), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                                            const SizedBox(width: 8),
                                             Consumer<FavoritesProvider>(
                                               builder: (context, provider, child) {
                                                 final isFav = provider.isFavorite(item);
@@ -831,14 +836,14 @@ class _HomePageState extends State<HomePage> {
                                                   onTap: () => provider.toggleFavorite(item),
                                                   borderRadius: BorderRadius.circular(50),
                                                   child: Container(
-                                                    padding: const EdgeInsets.all(8),
+                                                    padding: const EdgeInsets.all(6),
                                                     decoration: BoxDecoration(
                                                       color: isFav ? Colors.red.withOpacity(0.1) : AppTheme.primaryColor.withOpacity(0.05),
                                                       shape: BoxShape.circle,
                                                     ),
                                                     child: Icon(
                                                       LucideIcons.heart,
-                                                      size: 16,
+                                                      size: 14,
                                                       color: isFav ? Colors.red : AppTheme.primaryColor,
                                                       fill: isFav ? 1 : 0,
                                                     ),

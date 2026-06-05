@@ -3,6 +3,8 @@ import 'package:flutter/foundation.dart';
 import '../constants/app_constants.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../providers/auth_provider.dart';
+import '../utils/injection_container.dart';
 
 class ApiService {
   final Dio _dio;
@@ -27,6 +29,13 @@ class ApiService {
           return handler.next(options);
         },
         onError: (DioException e, handler) {
+          if (e.response?.statusCode == 401) {
+            try {
+              if (sl.isRegistered<AuthProvider>()) {
+                sl<AuthProvider>().logout();
+              }
+            } catch (_) {}
+          }
           // Convert network/timeout errors into a friendlier DioException
           if (e.type == DioExceptionType.connectionError ||
               e.type == DioExceptionType.connectionTimeout ||

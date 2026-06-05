@@ -156,11 +156,15 @@ class _LoginPageState extends State<LoginPage> {
                             if (auth.isAuthenticated) {
                               if (context.mounted) {
                                 context.read<BookingProvider>().fetchMyBookings();
-                                context.go('/');
+                                Future.microtask(() {
+                                  if (mounted) context.go('/');
+                                });
                               }
                             } else if (auth.unverifiedEmail != null) {
                               if (context.mounted) {
-                                context.push('/otp', extra: auth.unverifiedEmail);
+                                Future.microtask(() {
+                                  if (mounted) context.push('/otp', extra: auth.unverifiedEmail);
+                                });
                               }
                             } else if (auth.error != null) {
                               if (context.mounted) {
@@ -211,7 +215,9 @@ class _LoginPageState extends State<LoginPage> {
                             }
                             if (success && context.mounted) {
                               context.read<BookingProvider>().fetchMyBookings();
-                              context.go('/');
+                              Future.microtask(() {
+                                if (mounted) context.go('/');
+                              });
                             } else if (auth.error != null && context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(content: Text(auth.error!)),

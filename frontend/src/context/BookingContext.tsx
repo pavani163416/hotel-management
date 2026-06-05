@@ -204,6 +204,34 @@ export const BookingProvider = ({ children }: { children: ReactNode }) => {
     return () => { socket.off("notification", onNotification); };
   }, [user?.email]);
 
+  // Inactivity/Idle timer: log user out after 15 minutes of inactivity
+  useEffect(() => {
+    if (!user) return;
+
+    let timeoutId: ReturnType<typeof setTimeout>;
+
+    const resetTimer = () => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        setUser(null);
+      }, 15 * 60 * 1000); // 15 minutes
+    };
+
+    const events = ["mousedown", "mousemove", "keypress", "scroll", "touchstart"];
+    events.forEach((event) => {
+      window.addEventListener(event, resetTimer);
+    });
+
+    resetTimer();
+
+    return () => {
+      clearTimeout(timeoutId);
+      events.forEach((event) => {
+        window.removeEventListener(event, resetTimer);
+      });
+    };
+  }, [user]);
+
   // Real-time hotel updates via SSE with auto-reconnect, polling fallback
   useEffect(() => {
     let sse: EventSource | null = null;

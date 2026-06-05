@@ -80,6 +80,14 @@ const HotelDetails = () => {
   }, [user, pendingRoomId, hotel, setSelectedHotel, setSelectedRoom, nav]);
 
   useEffect(() => {
+    if (user) {
+      setReviewName(user.name);
+    } else {
+      setReviewName("");
+    }
+  }, [user]);
+
+  useEffect(() => {
     if (!hotel || !search.checkIn || !search.checkOut) return;
     hotel.rooms.forEach(async (r) => {
       try {

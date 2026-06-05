@@ -23,13 +23,31 @@ class AuthProvider extends ChangeNotifier {
   String? _error;
   String? _unverifiedEmail;
 
-  AuthProvider(this._authRepository, [this._apiService]);
+  AuthProvider(this._authRepository, [this._apiService]) {
+    PushNotificationService.onTokenRefresh = (token) {
+      if (isAuthenticated) {
+        _registerFcmToken();
+      }
+    };
+  }
 
   UserEntity? get user => _user;
   bool get isLoading => _isLoading;
   String? get error => _error;
   String? get unverifiedEmail => _unverifiedEmail;
   bool get isAuthenticated => _user != null;
+
+  Future<(String, String)?> fetchCaptcha() async {
+    final result = await _authRepository.fetchCaptcha();
+    return result.fold(
+      (failure) {
+        _error = failure.message;
+        notifyListeners();
+        return null;
+      },
+      (captcha) => captcha,
+    );
+  }
 
   /// Registers the device FCM token with the backend so push notifications work.
   Future<void> _registerFcmToken() async {
@@ -79,13 +97,26 @@ class AuthProvider extends ChangeNotifier {
     );
   }
 
-  Future<void> register(String name, String email, String password, String phone) async {
+  Future<void> register(
+    String name,
+    String email,
+    String password,
+    String phone, {
+    String? city,
+    String? captchaId,
+    String? captchaAnswer,
+  }) async {
     _isLoading = true;
     _error = null;
     _unverifiedEmail = null;
     notifyListeners();
 
-    final result = await _authRepository.register(name, email, password, phone);
+    final result = await _authRepository.register(
+      name, email, password, phone,
+      city: city,
+      captchaId: captchaId,
+      captchaAnswer: captchaAnswer,
+    );
 
     await result.fold(
       (failure) async {
@@ -100,6 +131,7 @@ class AuthProvider extends ChangeNotifier {
         } else {
           _user = user;
           await _saveAuthData(user, token);
+          _registerFcmToken(); // non-blocking
         }
         _isLoading = false;
         notifyListeners();

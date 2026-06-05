@@ -355,9 +355,13 @@ class _HotelDetailsPageState extends State<HotelDetailsPage> with SingleTickerPr
                 children: [
                   Icon(LucideIcons.mapPin, size: 16, color: Colors.grey[400]),
                   const SizedBox(width: 6),
-                  Text(
-                    hotel.location, 
-                    style: TextStyle(color: isDark ? Colors.grey[400] : Colors.grey[600], fontSize: 14),
+                  Expanded(
+                    child: Text(
+                      hotel.location, 
+                      style: TextStyle(color: isDark ? Colors.grey[400] : Colors.grey[600], fontSize: 14),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                 ],
               ),
@@ -793,6 +797,7 @@ class _HotelDetailsPageState extends State<HotelDetailsPage> with SingleTickerPr
         ? hotel.amenities
         : ['Free WiFi', 'Infinity Pool', 'Spa & Wellness', 'Ocean View', 'Restaurant', 'Airport Shuttle'];
     return GridView.builder(
+      shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,

@@ -70,15 +70,25 @@ export const validateBooking = [
     .withMessage("Govt ID can only contain letters, numbers, spaces, and hyphens"),
 
   body("guest.email")
-    .optional({ checkFalsy: true })
     .trim()
+    .notEmpty()
+    .withMessage("Email address is required")
     .isEmail()
     .withMessage("Please provide a valid email address")
     .normalizeEmail(),
 
   body("guest.phone")
-    .optional({ checkFalsy: true })
-    .trim(),
+    .trim()
+    .notEmpty()
+    .withMessage("Phone number is required")
+    .custom((value) => {
+      const normalized = value.replace(/[\s()\-]/g, "");
+      const e164Regex = /^\+91\d{10}$/;
+      if (!e164Regex.test(normalized)) {
+        throw new Error("Phone number must be a valid 10-digit Indian number starting with +91.");
+      }
+      return true;
+    }),
 
   body("additionalAdults")
     .optional()

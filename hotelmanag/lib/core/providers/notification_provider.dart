@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import '../utils/audio_helper.dart';
-import '../utils/audio_helper.dart';
 import '../widgets/notification_popup.dart';
 import '../../features/booking/domain/entities/booking_entity.dart';
 import '../services/push_notifications.dart';
+import '../network/api_service.dart';
 
 class NotificationItem {
   final String id;
@@ -24,52 +24,117 @@ class NotificationItem {
 }
 
 class NotificationProvider extends ChangeNotifier {
-  final Set<String> _readBookingIds = {};
+  final ApiService _apiService;
+  final Set<String> _readIds = {};
   final List<NotificationItem> _liveNotifications = [];
+  List<NotificationItem> _backendNotifications = [];
+  bool _isFetching = false;
 
-  // Get combined list of real notifications mapped from backend database bookings
+  NotificationProvider(this._apiService);
+
+  bool get isFetching => _isFetching;
+
+  /// Fetch notifications from the backend /api/notifications endpoint.
+  Future<void> fetchNotifications() async {
+    if (_isFetching) return;
+    _isFetching = true;
+    notifyListeners();
+    try {
+      final response = await _apiService.get('/notifications');
+      final raw = response.data;
+      final List dataList = (raw is Map && raw['data'] is List)
+          ? raw['data'] as List
+          : [];
+
+      _backendNotifications = dataList.map((n) {
+        final id = n['_id']?.toString() ?? DateTime.now().millisecondsSinceEpoch.toString();
+        final message = n['message']?.toString() ?? 'Notification';
+        final type = _mapType(n['type']?.toString());
+        final isRead = n['isRead'] == true;
+        final createdAt = n['createdAt'] != null
+            ? DateTime.tryParse(n['createdAt'].toString()) ?? DateTime.now()
+            : DateTime.now();
+        final isCancelled = message.toLowerCase().contains('cancel') ||
+            (n['type']?.toString().toLowerCase() == 'cancellation');
+
+        return NotificationItem(
+          id: id,
+          title: message,
+          type: type,
+          timestamp: createdAt,
+          isNew: !isRead && !_readIds.contains(id),
+          isCancelled: isCancelled,
+        );
+      }).toList();
+    } catch (e) {
+      debugPrint('[NotificationProvider] fetchNotifications error: $e');
+    } finally {
+      _isFetching = false;
+      notifyListeners();
+    }
+  }
+
+  String _mapType(String? raw) {
+    if (raw == null) return 'Booking';
+    switch (raw.toLowerCase()) {
+      case 'offer':
+      case 'promo':
+        return 'Offer';
+      case 'booking':
+      case 'confirmation':
+        return 'Booking';
+      case 'cancellation':
+        return 'Booking';
+      default:
+        return 'System';
+    }
+  }
+
+  /// Returns merged list: backend API notifications + booking-derived + live session.
   List<NotificationItem> getRealNotifications(List<BookingEntity> realBookings) {
-    final List<NotificationItem> items = [];
+    final Map<String, NotificationItem> map = {};
 
-    // 1. Map database bookings to real notifications
-    for (final booking in realBookings) {
-      final isCancelled = booking.status.toLowerCase() == 'cancelled';
-      final hotelName = booking.hotelName;
-      final roomNo = booking.roomNumber ?? '';
-      
-      final title = isCancelled
-          ? 'Your booking for $hotelName (Room $roomNo) has been cancelled.'
-          : 'Your booking for $hotelName (Room $roomNo) is confirmed!';
+    // 1. Backend API notifications (highest priority — real data)
+    for (final n in _backendNotifications) {
+      map[n.id] = n;
+    }
 
-      items.add(
-        NotificationItem(
+    // 2. Map database bookings (fallback if backend notifications are empty)
+    if (_backendNotifications.isEmpty) {
+      for (final booking in realBookings) {
+        final isCancelled = booking.status.toLowerCase() == 'cancelled';
+        final hotelName = booking.hotelName;
+        final roomNo = booking.roomNumber ?? '';
+        final title = isCancelled
+            ? 'Your booking for $hotelName (Room $roomNo) has been cancelled.'
+            : 'Your booking for $hotelName (Room $roomNo) is confirmed!';
+
+        map[booking.id] = NotificationItem(
           id: booking.id,
           title: title,
           type: 'Booking',
           timestamp: booking.createdAt ?? booking.checkIn,
-          isNew: !_readBookingIds.contains(booking.id),
+          isNew: !_readIds.contains(booking.id),
           isCancelled: isCancelled,
-        ),
-      );
-    }
-
-    // 2. Include active session live notifications if any
-    for (final live in _liveNotifications) {
-      if (!items.any((i) => i.id == live.id)) {
-        items.add(
-          NotificationItem(
-            id: live.id,
-            title: live.title,
-            type: live.type,
-            timestamp: live.timestamp,
-            isNew: !_readBookingIds.contains(live.id),
-            isCancelled: live.isCancelled,
-          ),
         );
       }
     }
 
-    // 3. Sort by newest first
+    // 3. Include active session live notifications
+    for (final live in _liveNotifications) {
+      if (!map.containsKey(live.id)) {
+        map[live.id] = NotificationItem(
+          id: live.id,
+          title: live.title,
+          type: live.type,
+          timestamp: live.timestamp,
+          isNew: !_readIds.contains(live.id),
+          isCancelled: live.isCancelled,
+        );
+      }
+    }
+
+    final items = map.values.toList();
     items.sort((a, b) => b.timestamp.compareTo(a.timestamp));
     return items;
   }
@@ -108,17 +173,25 @@ class NotificationProvider extends ChangeNotifier {
               : Colors.green,
     );
 
-    // Also trigger system notification (vibration/sound) so it displays in notification tray
+    // Also trigger system notification so it displays in notification tray
     PushNotificationService.showLocalNotification(title: title, body: subtitle);
 
-    // Sound is played inside showNotificationPopup via the overlay
     notifyListeners();
   }
 
   void markAllAsRead(List<NotificationItem> items) {
     for (final item in items) {
-      _readBookingIds.add(item.id);
+      _readIds.add(item.id);
     }
+    // Also update local backend list so dots disappear immediately
+    _backendNotifications = _backendNotifications.map((n) => NotificationItem(
+      id: n.id,
+      title: n.title,
+      type: n.type,
+      timestamp: n.timestamp,
+      isNew: false,
+      isCancelled: n.isCancelled,
+    )).toList();
     notifyListeners();
   }
 }

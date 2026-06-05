@@ -8,7 +8,7 @@ class AppConstants {
       'https://hotel-management-production-2225.up.railway.app/api/';
 
   // ── Local dev fallback (only used in debug builds on web/emulator) ──
-  static const String _localApiUrl = 'http://localhost:5001/api/';
+  static const String _localApiUrl = 'http://localhost:5000/api/';
 
   /// Returns the correct base URL for the current build/platform.
   /// - Release builds always use the production Railway URL.
@@ -23,7 +23,7 @@ class AppConstants {
     if (kIsWeb) return _localApiUrl;
 
     if (defaultTargetPlatform == TargetPlatform.windows || defaultTargetPlatform == TargetPlatform.macOS) {
-      return 'http://localhost:5001/api/';
+      return 'http://localhost:5000/api/';
     }
 
     // Physical Android/iOS device uses production for seamless testing without firewall issues
