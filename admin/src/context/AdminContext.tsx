@@ -163,6 +163,8 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const login = (a: Admin, t: string) => {
     setAdmin(a); setToken(t);
     localStorage.setItem("luxe_admin", JSON.stringify(a));
     localStorage.setItem("luxe_admin_token", t);
