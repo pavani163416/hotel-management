@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Star, MapPin, X, Maximize2, LayoutGrid, List, ChevronLeft, ChevronRight, Flame } from "lucide-react";
+import { Star, MapPin, X, Maximize2, LayoutGrid, List, ChevronLeft, ChevronRight, Flame, Search } from "lucide-react";
 import Layout from "@/components/Layout";
 import HotelMap from "@/components/HotelMap";
 import { useBooking } from "@/context/BookingContext";
@@ -21,6 +21,7 @@ const Hotels = () => {
   const [types, setTypes] = useState<string[]>(searchParams.get("type")?.split(",").filter(Boolean) || []);
   const [sort, setSort] = useState<"price-asc" | "price-desc" | "rating">((searchParams.get("sort") as any) || "rating");
   const [paymentToast, setPaymentToast] = useState<"cancelled" | "failed" | null>(null);
+  const [nameSearch, setNameSearch] = useState("");
 
   // Show toast if redirected back from a cancelled/failed payment
   useEffect(() => {
@@ -58,6 +59,7 @@ const Hotels = () => {
       const loc = h.location || "";
       const cty = h.city || "";
       if (search.location && !loc.toLowerCase().includes(search.location.toLowerCase()) && !cty.toLowerCase().includes(search.location.toLowerCase())) return false;
+      if (nameSearch.trim() && !h.name.toLowerCase().includes(nameSearch.trim().toLowerCase())) return false;
       if (h.pricePerNight > maxPrice) return false;
       if (ratingValue < minRating) return false;
       if (amenities.length && !amenities.every((a) => h.amenities.includes(a))) return false;
@@ -168,7 +170,24 @@ const Hotels = () => {
                 </h1>
                 <p className="text-muted-foreground text-sm mt-1">Showing {filtered.length} curated properties</p>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                {/* Hotel name search */}
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                  <input
+                    type="text"
+                    value={nameSearch}
+                    onChange={(e) => setNameSearch(e.target.value)}
+                    placeholder="Search by hotel name..."
+                    aria-label="Search hotels by name"
+                    className="pl-9 pr-4 py-2 border border-border rounded-lg bg-background text-sm text-primary outline-none focus:border-accent w-[200px]"
+                  />
+                  {nameSearch && (
+                    <button onClick={() => setNameSearch("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary">
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
                 <div className="flex border border-border rounded-lg overflow-hidden">
                   <button onClick={() => setView("list")} className={`p-2 transition-base ${view === "list" ? "bg-primary text-primary-foreground" : "text-primary hover:bg-secondary"}`} aria-label="List view"><List className="w-4 h-4" /></button>
                   <button onClick={() => setView("grid")} className={`p-2 transition-base ${view === "grid" ? "bg-primary text-primary-foreground" : "text-primary hover:bg-secondary"}`} aria-label="Grid view"><LayoutGrid className="w-4 h-4" /></button>

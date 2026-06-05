@@ -2,24 +2,60 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <!-- Anti-flash: apply theme before React mounts -->
     <script>
       (function() {
-        const stored = localStorage.getItem("luxe_admin_theme");
+        var stored = localStorage.getItem("luxe_theme");
         if (stored === "light" || stored === "dark") {
           document.documentElement.classList.add(stored);
           return;
         }
-        const match = document.cookie.match(/(?:^|; )luxe_theme=([^;]*)/);
-        const theme = match && (match[1] === "light" || match[1] === "dark") ? match[1] : "dark";
+        var match = document.cookie.match(/(?:^|; )luxe_theme=([^;]*)/);
+        var theme = match && (match[1] === "light" || match[1] === "dark") ? match[1] : "light";
         document.documentElement.classList.add(theme);
       })();
     </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- Primary SEO -->
     <title>LuxeStay — Discover Extraordinary Hotel Stays</title>
-    <meta name="description" content="Book luxury hotels and private residences worldwide with LuxeStay's seamless concierge-driven booking experience." />
-    <meta property="og:title" content="LuxeStay — Discover Extraordinary Stays" />
-    <meta property="og:description" content="Curated luxury hotels with seamless booking." />
+    <meta name="description" content="Book luxury hotels and private residences worldwide with LuxeStay's seamless concierge-driven booking experience. Curated stays, best price guarantee, 24/7 concierge." />
+    <meta name="keywords" content="luxury hotels, hotel booking, luxury stays, private residences, boutique hotels, LuxeStay, hotel deals" />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://hotel-management-frontend-puce.vercel.app" />
+
+    <!-- Open Graph -->
     <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="LuxeStay" />
+    <meta property="og:title" content="LuxeStay — Discover Extraordinary Hotel Stays" />
+    <meta property="og:description" content="Curated luxury hotels and private residences with seamless concierge-driven booking. Best price guarantee and 24/7 support." />
+    <meta property="og:url" content="https://hotel-management-frontend-puce.vercel.app" />
+    <meta property="og:image" content="https://hotel-management-frontend-puce.vercel.app/og-image.png" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="LuxeStay — Discover Extraordinary Hotel Stays" />
+    <meta name="twitter:description" content="Curated luxury hotels with seamless booking. Best price guarantee and 24/7 concierge." />
+    <meta name="twitter:image" content="https://hotel-management-frontend-puce.vercel.app/og-image.png" />
+
+    <!-- JSON-LD Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "TravelAgency",
+      "name": "LuxeStay",
+      "description": "Curated luxury hotel booking platform with seamless concierge-driven experience.",
+      "url": "https://hotel-management-frontend-puce.vercel.app",
+      "logo": "https://hotel-management-frontend-puce.vercel.app/favicon.ico",
+      "sameAs": [
+        "https://facebook.com",
+        "https://twitter.com",
+        "https://instagram.com",
+        "https://linkedin.com"
+      ]
+    }
+    </script>
+
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%232d3748'/><rect x='8' y='7' width='16' height='18' rx='1' fill='none' stroke='white' stroke-width='1.5'/><rect x='11' y='10' width='2.5' height='2.5' rx='0.3' fill='white'/><rect x='15' y='10' width='2.5' height='2.5' rx='0.3' fill='white'/><rect x='18.5' y='10' width='2.5' height='2.5' rx='0.3' fill='white'/><rect x='11' y='14' width='2.5' height='2.5' rx='0.3' fill='white'/><rect x='15' y='14' width='2.5' height='2.5' rx='0.3' fill='white'/><rect x='18.5' y='14' width='2.5' height='2.5' rx='0.3' fill='white'/><rect x='13' y='19' width='6' height='6' rx='0.5' fill='white'/></svg>" />
     <link rel="preconnect" href="https://checkout.razorpay.com" />
     <link rel="preconnect" href="https://cdn.razorpay.com" />

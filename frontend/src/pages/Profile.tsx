@@ -113,12 +113,12 @@ const Profile = () => {
   if (!user) {
     return (
       <Layout>
-        <div className="container py-20 max-w-xl text-center flex flex-col items-center">
-          <div className="grid place-items-center w-24 h-24 rounded-full bg-accent/10 text-accent mb-6">
-            <User className="w-10 h-10" />
+        <div className="flex flex-col items-center justify-center py-24 px-4 bg-gradient-to-br from-secondary via-background to-secondary/50 min-h-[60vh]">
+          <div className="grid place-items-center w-20 h-20 rounded-full bg-accent/10 text-accent mb-5">
+            <User className="w-9 h-9" />
           </div>
-          <h1 className="font-display text-3xl font-bold mb-4">No Profile Found</h1>
-          <p className="text-muted-foreground">Sign in to view and manage your profile details.</p>
+          <h1 className="font-display text-2xl font-bold mb-2">No Profile Found</h1>
+          <p className="text-muted-foreground text-sm">Sign in to view and manage your profile details.</p>
         </div>
       </Layout>
     );
