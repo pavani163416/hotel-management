@@ -276,6 +276,8 @@ import CancellationRefund from "../models/CancellationRefund.js";
 import Coupon             from "../models/Coupon.js";
 import { sendNotification } from "../utils/notificationService.js";
 import logger from "../utils/logger.js";
+import fs from "fs";
+import path from "path";
 import crypto from "crypto";
 import { logAudit } from "../utils/auditLogger.js";
 
@@ -286,6 +288,121 @@ router.post("/login", authLimiter, validateLoginPayload, adminLogin);
 
 // ── Protected — all routes below require valid admin JWT ──
 const protect = [verifyAdminToken, requireAdmin];
+
+// ── PUT /api/admin/change-password ────────────────────────
+router.put("/change-password", protect, async (req, res, next) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ success: false, message: "Current password and new password are required." });
+    }
+    if (newPassword.length < 8) {
+      return res.status(400).json({ success: false, message: "New password must be at least 8 characters long." });
+    }
+    if (newPassword.length > 72) {
+      return res.status(400).json({ success: false, message: "New password must be at most 72 characters long." });
+    }
+    if (!/[A-Z]/.test(newPassword)) {
+      return res.status(400).json({ success: false, message: "New password must contain at least one uppercase letter." });
+    }
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(newPassword)) {
+      return res.status(400).json({ success: false, message: "New password must contain at least one special character." });
+    }
+
+    const adminEmail = req.admin?.email;
+    if (!adminEmail) {
+      return res.status(401).json({ success: false, message: "Unable to identify admin user." });
+    }
+
+    const normalizedEmail = adminEmail.toLowerCase().trim();
+    const currentPwdTrim = currentPassword.trim();
+
+    // ── 1. Try controller DB first (same DB that login uses) ──
+    try {
+      const { default: connectAdminDB } = await import("../config/adminDb.js");
+      const conn = await connectAdminDB();
+      if (conn) {
+        const AdminUserCtrl = conn.models.AdminUser || conn.model("AdminUser", new (await import("mongoose")).default.Schema({
+          name: String,
+          email: { type: String, lowercase: true },
+          password: String,
+          role: String,
+          isActive: Boolean,
+          lastLogin: Date,
+        }, { collection: "adminusers" }));
+
+        const ctrlAdmin = await AdminUserCtrl.findOne({ email: normalizedEmail });
+        if (ctrlAdmin) {
+          const storedPwd = ctrlAdmin.password;
+          const isHashed = typeof storedPwd === "string" && storedPwd.startsWith("$2");
+          const isMatch = isHashed
+            ? await bcrypt.compare(currentPwdTrim, storedPwd)
+            : currentPwdTrim === storedPwd;
+
+          if (!isMatch) {
+            logger.info("Password verification failed (controller DB)", { email: normalizedEmail, isHashed });
+            return res.status(401).json({ success: false, message: "Current password is incorrect." });
+          }
+
+          ctrlAdmin.password = await bcrypt.hash(newPassword, 12);
+          await ctrlAdmin.save();
+          logger.info("Admin password changed via controller DB", { email: normalizedEmail });
+          return res.json({ success: true, message: "Password changed successfully." });
+        }
+      }
+    } catch (dbErr) {
+      logger.warn("Controller DB lookup failed for change-password, trying fallbacks", { error: dbErr.message });
+    }
+
+    // ── 2. Try luxestay DB AdminUser model ──
+    const adminUser = await AdminUser.findOne({ email: normalizedEmail });
+    if (adminUser) {
+      const storedPwd = adminUser.password;
+      const isHashed = typeof storedPwd === "string" && storedPwd.startsWith("$2");
+      const isMatch = isHashed
+        ? await bcrypt.compare(currentPwdTrim, storedPwd)
+        : currentPwdTrim === storedPwd;
+
+      if (!isMatch) {
+        logger.info("Password verification failed (luxestay DB)", { email: normalizedEmail, isHashed });
+        return res.status(401).json({ success: false, message: "Current password is incorrect." });
+      }
+
+      adminUser.password = await bcrypt.hash(newPassword, 12);
+      await adminUser.save();
+      logger.info("Admin password changed via luxestay DB", { email: normalizedEmail });
+      return res.json({ success: true, message: "Password changed successfully." });
+    }
+
+    // ── 3. Fallback: env-based admin ──
+    const envEmail    = process.env.ADMIN_EMAIL?.trim();
+    const envPassword = process.env.ADMIN_PASSWORD?.trim();
+    if (envEmail && normalizedEmail === envEmail.toLowerCase().trim()) {
+      const envMatch = envPassword?.startsWith("$2")
+        ? await bcrypt.compare(currentPwdTrim, envPassword)
+        : currentPwdTrim === envPassword;
+      if (!envMatch) {
+        return res.status(401).json({ success: false, message: "Current password is incorrect." });
+      }
+      // Update .env with new hashed password
+      try {
+        const newHash = await bcrypt.hash(newPassword, 12);
+        const envPath = path.resolve(process.cwd(), '.env');
+        const envContent = await fs.promises.readFile(envPath, "utf8");
+        const updatedContent = envContent.replace(/^ADMIN_PASSWORD=.*$/m, `ADMIN_PASSWORD=${newHash}`);
+        await fs.promises.writeFile(envPath, updatedContent, "utf8");
+        logger.info("Admin password changed via env", { email: normalizedEmail });
+        return res.json({ success: true, message: "Password changed successfully." });
+      } catch (e) {
+        logger.error("Failed to update .env password", e);
+        return res.status(500).json({ success: false, message: "Failed to update password configuration." });
+      }
+    }
+
+    return res.status(404).json({ success: false, message: "Admin account not found." });
+  } catch (e) { next(e); }
+});
 
 router.get("/stats",     protect, getAdminStats);
 router.get("/analytics", protect, getAdminAnalytics);

@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { BookingProvider } from "@/context/BookingContext";
+import { ThemeProvider } from "@/context/ThemeContext";
 import RequireAuth from "@/components/RequireAuth";
 
 import Home from "./pages/Home";
@@ -23,10 +24,11 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
+    <ThemeProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
         <BookingProvider>
           <Routes>
             {/* ── Public routes ─────────────────────── */}
@@ -61,6 +63,7 @@ const App = () => (
         </BookingProvider>
       </BrowserRouter>
     </TooltipProvider>
+    </ThemeProvider>
   </QueryClientProvider>
 );
 

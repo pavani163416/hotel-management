@@ -74,7 +74,15 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
   const [token, setToken] = useState<string | null>(stored.token);
 
   const [theme, setThemeState] = useState<"light" | "dark">(() => {
-    return (localStorage.getItem("luxe_admin_theme") as "light" | "dark") || "dark";
+    const stored = localStorage.getItem("luxe_admin_theme") as "light" | "dark";
+    if (stored === "light" || stored === "dark") return stored;
+
+    const match = document.cookie.match(/(?:^|; )luxe_theme=([^;]*)/);
+    if (match?.[1] === "light" || match?.[1] === "dark") {
+      return match[1] as "light" | "dark";
+    }
+
+    return "dark";
   });
 
   const [language, setLanguageState] = useState<"en" | "fr" | "de" | "es">(() => {
@@ -84,6 +92,7 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
   const setTheme = (t: "light" | "dark") => {
     setThemeState(t);
     localStorage.setItem("luxe_admin_theme", t);
+    document.cookie = `luxe_theme=${t};path=/;max-age=31536000;SameSite=Lax`;
   };
 
   const setLanguage = (lang: "en" | "fr" | "de" | "es") => {
@@ -101,7 +110,35 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
     const body = document.body;
     body.classList.remove("light", "dark");
     body.classList.add(theme);
+
+    const html = document.documentElement;
+    html.classList.remove("light", "dark");
+    html.classList.add(theme);
   }, [theme]);
+
+  // Storage listener for same-origin tab sync
+  useEffect(() => {
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === "luxe_admin_theme" && (e.newValue === "light" || e.newValue === "dark")) {
+        setThemeState(e.newValue as "light" | "dark");
+      }
+    };
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, []);
+
+  // Cookie polling for cross-origin/cross-port local sync
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const match = document.cookie.match(/(?:^|; )luxe_theme=([^;]*)/);
+      const val = match?.[1];
+      if ((val === "light" || val === "dark") && val !== theme) {
+        setThemeState(val as "light" | "dark");
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [theme]);
+
 
   const login = (a: Admin, t: string) => {
     setAdmin(a); setToken(t);

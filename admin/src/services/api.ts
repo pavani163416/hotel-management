@@ -32,7 +32,7 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (r) => r.data,
   (e) => {
-    if (e.response?.status === 401) {
+    if (e.response?.status === 401 && !e.config?.url?.includes("/change-password")) {
       // Token expired or invalid — clear session and redirect
       // Remove only the token to avoid wiping cached admin data from localStorage.
       localStorage.removeItem("luxe_admin_token");
@@ -60,6 +60,9 @@ export const requestPasswordReset = (email: string) =>
 
 export const resetPassword = (payload: { email: string; token: string; password: string }) =>
   api.post("/auth/reset-password", payload);
+
+export const adminChangePassword = (currentPassword: string, newPassword: string) =>
+  api.put("/admin/change-password", { currentPassword, newPassword });
 
 // ════════════════════════════════════════════════════════
 // DASHBOARD STATS

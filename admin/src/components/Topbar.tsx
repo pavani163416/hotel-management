@@ -473,19 +473,19 @@ export default function Topbar({ searchPlaceholder }: Props) {
                   {t(item.label)}
                 </button>
               ))}
-              <div style={{ borderTop: theme === "light" ? "1px solid #cbd5e1" : "1px solid rgba(255,255,255,0.07)" }}>
-                <button
-                  onClick={() => { setShowSettings(false); logout(); navigate("/login"); }}
-                  className="w-full text-left px-4 py-2.5 text-sm transition-colors"
-                  style={{ color: "#e11d48" }}
-                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "rgba(225,29,72,0.08)"}
-                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = "transparent"}
-                >
-                  {t("Sign Out")}
-                </button>
+                <div style={{ borderTop: theme === "light" ? "1px solid #cbd5e1" : "1px solid rgba(255,255,255,0.07)" }}>
+                  <button
+                    onClick={() => { setShowSettings(false); logout(); navigate("/login"); }}
+                    className="w-full text-left px-4 py-2.5 text-sm transition-colors"
+                    style={{ color: "#e11d48" }}
+                    onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "rgba(225,29,72,0.08)"}
+                    onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = "transparent"}
+                  >
+                    {t("Sign Out")}
+                  </button>
+                </div>
               </div>
-            </div>
-          )}
+            )}
         </div>
       </div>
     </div>

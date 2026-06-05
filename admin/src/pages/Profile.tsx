@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, User, Mail, Shield, Edit2, Save, X, KeyRound, Loader2 } from "lucide-react";
+import { ArrowLeft, User, Mail, Shield, Edit2, Save, X, KeyRound, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 import PasswordInput from "@/components/PasswordInput";
 import AdminLayout from "@/components/AdminLayout";
 import Topbar from "@/components/Topbar";
 import { useAdmin } from "@/context/AdminContext";
-import { API } from "@/services/api";
+import { API, adminChangePassword } from "@/services/api";
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -19,6 +19,11 @@ export default function Profile() {
   });
   const [pwForm, setPwForm] = useState({ current: "", next: "", confirm: "" });
   const [saved, setSaved] = useState(false);
+
+  // Change password states
+  const [pwLoading, setPwLoading] = useState(false);
+  const [pwSuccess, setPwSuccess] = useState("");
+  const [pwError, setPwError] = useState("");
 
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -64,6 +69,51 @@ export default function Profile() {
   const handleCancel = () => {
     setForm({ name: admin?.name || "", email: admin?.email || "", role: admin?.role || "Super Admin" });
     setEditing(false);
+  };
+
+  const handleChangePassword = async () => {
+    setPwError("");
+    setPwSuccess("");
+
+    // Client-side validation
+    if (!pwForm.current.trim()) {
+      setPwError("Please enter your current password.");
+      return;
+    }
+    if (!pwForm.next.trim()) {
+      setPwError("Please enter a new password.");
+      return;
+    }
+    if (pwForm.next.length < 8) {
+      setPwError("New password must be at least 8 characters long.");
+      return;
+    }
+    if (!/[A-Z]/.test(pwForm.next)) {
+      setPwError("New password must contain at least one uppercase letter.");
+      return;
+    }
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(pwForm.next)) {
+      setPwError("New password must contain at least one special character.");
+      return;
+    }
+    if (pwForm.next !== pwForm.confirm) {
+      setPwError("New password and confirm password do not match.");
+      return;
+    }
+
+    setPwLoading(true);
+    try {
+      const res: any = await adminChangePassword(pwForm.current, pwForm.next);
+      const message = res?.data?.message || res?.message || "Password changed successfully!";
+      setPwSuccess(message);
+      setPwForm({ current: "", next: "", confirm: "" });
+      setTimeout(() => setPwSuccess(""), 5000);
+    } catch (err: any) {
+      const errMsg = err?.response?.data?.message || err?.message || "Failed to change password. Please try again.";
+      setPwError(errMsg);
+    } finally {
+      setPwLoading(false);
+    }
   };
 
   const initials = (admin?.name || "A").split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2);
@@ -112,7 +162,7 @@ export default function Profile() {
                 onClick={() => setEditing(true)}
                 className="flex items-center gap-2 text-sm font-medium border border-border rounded-lg px-4 py-2 hover:bg-surface-3 transition-colors"
               >
-                <Edit2 className="w-3.5 h-3.5" /> Edit Profile
+              <Edit2 className="w-3.5 h-3.5" /> Edit Profile
               </button>
             )}
           </div>
@@ -213,7 +263,41 @@ export default function Profile() {
               </div>
             ))}
           </div>
-          <p className="text-xs text-muted mt-4">Password changes are saved locally. Connect to backend auth to persist.</p>
+
+          {/* Success message */}
+          {pwSuccess && (
+            <div className="mt-4 flex items-center gap-2 bg-success-light text-success text-sm font-medium px-4 py-2.5 rounded-lg">
+              <CheckCircle2 className="w-4 h-4 shrink-0" /> {pwSuccess}
+            </div>
+          )}
+
+          {/* Error message */}
+          {pwError && (
+            <div className="mt-4 flex items-center gap-2 bg-red-50 text-red-600 text-sm font-medium px-4 py-2.5 rounded-lg border border-red-200">
+              <AlertCircle className="w-4 h-4 shrink-0" /> {pwError}
+            </div>
+          )}
+
+          {/* Change Password button */}
+          <div className="mt-5 pt-4 border-t border-border">
+            <button
+              type="button"
+              id="change-password-btn"
+              onClick={handleChangePassword}
+              disabled={pwLoading || !pwForm.current || !pwForm.next || !pwForm.confirm}
+              className="flex items-center gap-2 text-sm font-semibold bg-primary text-white rounded-lg px-5 py-2.5 hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {pwLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" /> Changing...
+                </>
+              ) : (
+                <>
+                  <KeyRound className="w-4 h-4" /> Change Password
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </div>
     </AdminLayout>
