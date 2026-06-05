@@ -22,6 +22,17 @@ const Hotels = () => {
   const [sort, setSort] = useState<"price-asc" | "price-desc" | "rating">((searchParams.get("sort") as any) || "rating");
   const [paymentToast, setPaymentToast] = useState<"cancelled" | "failed" | null>(null);
   const [nameSearch, setNameSearch] = useState("");
+  const [nameDropdown, setNameDropdown] = useState(false);
+
+  // Suggestions: all hotel names that match current input (case-insensitive)
+  const nameSuggestions = useMemo(() => {
+    const q = nameSearch.trim().toLowerCase();
+    if (!q) return [];
+    return hotels
+      .map((h) => h.name)
+      .filter((n) => n.toLowerCase().includes(q))
+      .slice(0, 8);
+  }, [hotels, nameSearch]);
 
   // Show toast if redirected back from a cancelled/failed payment
   useEffect(() => {
@@ -171,21 +182,49 @@ const Hotels = () => {
                 <p className="text-muted-foreground text-sm mt-1">Showing {filtered.length} curated properties</p>
               </div>
               <div className="flex items-center gap-2 flex-wrap">
-                {/* Hotel name search */}
+                {/* Hotel name search with dropdown */}
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                   <input
                     type="text"
                     value={nameSearch}
-                    onChange={(e) => setNameSearch(e.target.value)}
+                    onChange={(e) => { setNameSearch(e.target.value); setNameDropdown(true); }}
+                    onFocus={() => setNameDropdown(true)}
+                    onBlur={() => setTimeout(() => setNameDropdown(false), 150)}
                     placeholder="Search by hotel name..."
                     aria-label="Search hotels by name"
-                    className="pl-9 pr-4 py-2 border border-border rounded-lg bg-background text-sm text-primary outline-none focus:border-accent w-[200px]"
+                    autoComplete="off"
+                    className="pl-9 pr-8 py-2 border border-border rounded-lg bg-background text-sm text-primary outline-none focus:border-accent w-[220px]"
                   />
                   {nameSearch && (
-                    <button onClick={() => setNameSearch("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary">
+                    <button
+                      onMouseDown={(e) => { e.preventDefault(); setNameSearch(""); setNameDropdown(false); }}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary"
+                    >
                       <X className="w-3.5 h-3.5" />
                     </button>
+                  )}
+                  {nameDropdown && nameSuggestions.length > 0 && (
+                    <div className="absolute left-0 right-0 top-full mt-1 bg-popover border border-border rounded-xl shadow-luxe z-50 overflow-hidden">
+                      {nameSuggestions.map((name) => {
+                        const q = nameSearch.trim().toLowerCase();
+                        const idx = name.toLowerCase().indexOf(q);
+                        return (
+                          <button
+                            key={name}
+                            onMouseDown={(e) => { e.preventDefault(); setNameSearch(name); setNameDropdown(false); }}
+                            className="w-full text-left px-4 py-2.5 hover:bg-accent/10 text-sm text-primary transition-base flex items-center gap-2"
+                          >
+                            <Search className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                            <span>
+                              {name.slice(0, idx)}
+                              <span className="font-bold text-accent">{name.slice(idx, idx + q.length)}</span>
+                              {name.slice(idx + q.length)}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
                   )}
                 </div>
                 <div className="flex border border-border rounded-lg overflow-hidden">
