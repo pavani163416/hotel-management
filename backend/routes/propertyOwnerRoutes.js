@@ -200,6 +200,30 @@ router.patch("/admin/:id/approve", protect, authorizeRoles("Super Admin", "admin
       { new: true }
     );
     if (!owner) return res.status(404).json({ success: false, message: "Owner not found." });
+
+    // Send notification
+    try {
+      const { sendNotification } = await import("../utils/notificationService.js");
+      await sendNotification({
+        userId: owner.email,
+        role: "customer",
+        type: "system",
+        message: `🎉 Your property owner application has been approved! You can now list your hotels on LuxeStay.`,
+      });
+    } catch {}
+
+    // Send email
+    try {
+      const { sendPasswordResetEmail } = await import("../utils/emailService.js");
+      await sendPasswordResetEmail({
+        to: owner.email,
+        name: owner.name,
+        resetUrl: `${process.env.FRONTEND_URL || "https://hotel-management-frontend-puce.vercel.app"}/owner-portal`,
+        subject: "Your LuxeStay Owner Application is Approved!",
+        message: "Congratulations! Your application has been approved. Sign in to your owner portal to start listing your properties.",
+      });
+    } catch {}
+
     return res.status(200).json({ success: true, message: "Owner approved.", data: owner });
   } catch (err) { next(err); }
 });
@@ -213,6 +237,17 @@ router.patch("/admin/:id/reject", protect, authorizeRoles("Super Admin", "admin"
       { new: true }
     );
     if (!owner) return res.status(404).json({ success: false, message: "Owner not found." });
+
+    try {
+      const { sendNotification } = await import("../utils/notificationService.js");
+      await sendNotification({
+        userId: owner.email,
+        role: "customer",
+        type: "system",
+        message: `Your property owner application was not approved. Reason: ${req.body.reason || "Please contact support for details."}`,
+      });
+    } catch {}
+
     return res.status(200).json({ success: true, message: "Owner rejected.", data: owner });
   } catch (err) { next(err); }
 });
@@ -226,6 +261,17 @@ router.patch("/admin/:id/suspend", protect, authorizeRoles("Super Admin", "admin
       { new: true }
     );
     if (!owner) return res.status(404).json({ success: false, message: "Owner not found." });
+
+    try {
+      const { sendNotification } = await import("../utils/notificationService.js");
+      await sendNotification({
+        userId: owner.email,
+        role: "customer",
+        type: "system",
+        message: `Your LuxeStay owner account has been suspended. Reason: ${req.body.reason || "Contact support for details."}`,
+      });
+    } catch {}
+
     return res.status(200).json({ success: true, message: "Owner suspended.", data: owner });
   } catch (err) { next(err); }
 });

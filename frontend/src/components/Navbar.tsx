@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
-import { Bell, Hotel, UserCircle, LogOut, Mail, CheckCircle2 } from "lucide-react";
+import { Bell, Hotel, UserCircle, LogOut, Mail, CheckCircle2, Building2 } from "lucide-react";
 import { useBooking } from "@/context/BookingContext";
 import { AuthModal } from "@/components/AuthModal";
 import CurrencySwitcher from "@/components/CurrencySwitcher";
@@ -229,6 +229,10 @@ const Navbar = () => {
               )}
             </NavLink>
           ))}
+          <Link to="/owner-portal"
+            className="ml-1 flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-accent/40 text-sm font-semibold text-accent hover:bg-accent/10 transition-base">
+            <Building2 className="w-3.5 h-3.5" /> List Your Property
+          </Link>
         </nav>
 
         <div className="flex items-center gap-3">

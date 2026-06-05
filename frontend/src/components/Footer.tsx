@@ -107,8 +107,9 @@ const Footer = () => (
         <h4 className="text-primary-foreground/90 text-sm font-semibold uppercase tracking-wider mb-4">Company</h4>
         <ul className="space-y-2.5 text-primary-foreground/70 text-sm">
           {[
-            { label: "About Us",   to: "/about" },
-            { label: "Contact Us", to: "/contact" },
+            { label: "About Us",            to: "/about" },
+            { label: "Contact Us",          to: "/contact" },
+            { label: "List Your Property",  to: "/owner-portal" },
           ].map(({ label, to }) => (
             <li key={to}>
               <Link to={to} className="hover:text-primary-foreground transition-colors">{label}</Link>
