@@ -17,6 +17,7 @@ const reviewSchema = new mongoose.Schema({
   rating:    { type: Number, min: 1, max: 5 },
   comment:   { type: String },
   date:      { type: String },
+  editedAt:  { type: Date },
   userId:    { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   userEmail: { type: String },
 });

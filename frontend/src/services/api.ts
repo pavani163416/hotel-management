@@ -94,7 +94,15 @@ api.interceptors.response.use(
         localStorage.removeItem("luxe_user");
         localStorage.removeItem("luxe_bookings");
         window.dispatchEvent(new Event("luxe_logout"));
-        return Promise.reject(refreshErr);
+        const message =
+          (refreshErr as any)?.response?.data?.message ||
+          error.response?.data?.message ||
+          "Please sign in again to continue.";
+        const customError = new Error(message) as any;
+        customError.status = (refreshErr as any)?.response?.status || error.response?.status;
+        customError.code = (refreshErr as any)?.response?.data?.code || error.response?.data?.code;
+        customError.response = (refreshErr as any)?.response || error.response;
+        return Promise.reject(customError);
       } finally {
         isRefreshing = false;
       }

@@ -110,9 +110,29 @@ export const getHotelById = async (req, res, next) => {
 // POST /api/hotels/:id/reviews
 export const addReviewToHotel = async (req, res, next) => {
   try {
-    const { author, rating, comment } = req.body;
-    if (!author || !rating || !comment) {
-      return res.status(422).json({ success: false, message: "author, rating and comment are required." });
+    const { rating, comment } = req.body;
+    if (!rating || !comment) {
+      return res.status(422).json({ success: false, message: "Rating and review text are required." });
+    }
+
+    // Require a completed stay before accepting a review.
+    const userId   = req.user?._id || req.user?.id;
+    const guestId  = req.user?.guestId;
+    const userEmail = req.user?.email?.toLowerCase().trim();
+    const author = String(req.user?.name || req.user?.fullName || userEmail?.split("@")[0] || "Guest").trim();
+    const userEmailRegex = userEmail
+      ? new RegExp(`^${userEmail.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, "i")
+      : null;
+
+    if (!userId && !guestId && !userEmail) {
+      return res.status(401).json({ success: false, message: "Authentication required to submit a review." });
+    }
+    if (!guestId && !userEmail) {
+      return res.status(403).json({
+        success: false,
+        message: "We could not match your account to a completed booking for this hotel.",
+        code: "REVIEW_BOOKING_REQUIRED",
+      });
     }
 
     const hotel = await Hotel.findOne({ hotelId: req.params.id, isActive: true });
@@ -120,12 +140,48 @@ export const addReviewToHotel = async (req, res, next) => {
       return res.status(404).json({ success: false, message: "Hotel not found" });
     }
 
-    const numericRating = Number(rating);
+    const REVIEWED_STATUSES = ["Completed", "CheckedOut"];
+    const bookingFilter = {
+      $or: [
+        ...(guestId  ? [{ guest: guestId }]       : []),
+        ...(userEmailRegex ? [{ "guestSnapshot.email": userEmailRegex }] : []),
+      ].filter(Boolean),
+      $and: [
+        { $or: [{ hotelStringId: hotel.hotelId }, { hotelId: hotel._id }] }
+      ],
+      status: { $in: REVIEWED_STATUSES },
+    };
+
+    const hasBooking = await Booking.findOne(bookingFilter).select("_id").lean();
+    if (!hasBooking) {
+      return res.status(403).json({
+        success: false,
+        message: "You can only review hotels where you have completed a stay.",
+        code: "REVIEW_BOOKING_REQUIRED",
+      });
+    }
+
+    // One review per user per hotel, keyed by userId or email.
+    const alreadyReviewed = hotel.reviews.some((r) =>
+      (userId   && String(r.userId)    === String(userId)) ||
+      (userEmail && String(r.userEmail || "").toLowerCase().trim() === userEmail)
+    );
+    if (alreadyReviewed) {
+      return res.status(409).json({
+        success: false,
+        message: "You have already reviewed this hotel. You can edit your existing review.",
+        code: "DUPLICATE_REVIEW",
+      });
+    }
+
+    const numericRating = Math.max(1, Math.min(5, Number(rating)));
     const review = {
-      author: String(author).trim(),
-      rating: numericRating,
-      comment: String(comment).trim(),
-      date: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+      author:    String(author).trim(),
+      userId:    userId || null,
+      userEmail: userEmail || null,
+      rating:    numericRating,
+      comment:   String(comment).trim().slice(0, 1000),
+      date:      new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
     };
 
     hotel.reviews.push(review);
@@ -142,6 +198,88 @@ export const addReviewToHotel = async (req, res, next) => {
     next(error);
   }
 };
+
+// PUT /api/hotels/:id/reviews/:reviewId - edit own review
+export const editReviewInHotel = async (req, res, next) => {
+  try {
+    const { rating, comment } = req.body;
+    const userId    = req.user?._id || req.user?.id;
+    const userEmail = req.user?.email?.toLowerCase().trim();
+
+    const hotel = await Hotel.findOne({ hotelId: req.params.id, isActive: true });
+    if (!hotel) return res.status(404).json({ success: false, message: "Hotel not found" });
+
+    const review = hotel.reviews.id(req.params.reviewId);
+    if (!review) return res.status(404).json({ success: false, message: "Review not found" });
+
+    // Ownership check
+    const isOwner =
+      (userId    && String(review.userId)    === String(userId)) ||
+      (userEmail && String(review.userEmail || "").toLowerCase().trim() === userEmail);
+    if (!isOwner) {
+      return res.status(403).json({ success: false, message: "You can only edit your own reviews." });
+    }
+
+    if (rating != null) review.rating = Math.max(1, Math.min(5, Number(rating)));
+    if (comment != null) review.comment = String(comment).trim().slice(0, 1000);
+    review.editedAt = new Date();
+
+    // Recompute aggregate rating
+    hotel.reviewCount = hotel.reviews.length;
+    const totalRating = hotel.reviews.reduce((sum, r) => sum + (r.rating || 0), 0);
+    hotel.rating = Number((totalRating / hotel.reviewCount).toFixed(1));
+    await hotel.save();
+
+    await invalidateHotelCache();
+    broadcastHotels();
+    res.status(200).json({ success: true, message: "Review updated", data: hotel });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// DELETE /api/hotels/:id/reviews/:reviewId - delete own review
+export const deleteReviewFromHotel = async (req, res, next) => {
+  try {
+    const userId    = req.user?._id || req.user?.id;
+    const userEmail = req.user?.email?.toLowerCase().trim();
+
+    const hotel = await Hotel.findOne({ hotelId: req.params.id, isActive: true });
+    if (!hotel) return res.status(404).json({ success: false, message: "Hotel not found" });
+
+    const review = hotel.reviews.id(req.params.reviewId);
+    if (!review) return res.status(404).json({ success: false, message: "Review not found" });
+
+    // Ownership check (admins can also delete)
+    const isOwner =
+      (userId    && String(review.userId)    === String(userId)) ||
+      (userEmail && String(review.userEmail || "").toLowerCase().trim() === userEmail);
+    const isAdmin = req.user?.role && ["admin", "Super Admin", "Controller"].includes(req.user.role);
+
+    if (!isOwner && !isAdmin) {
+      return res.status(403).json({ success: false, message: "You can only delete your own reviews." });
+    }
+
+    review.deleteOne();
+
+    // Recompute aggregate rating
+    hotel.reviewCount = hotel.reviews.length;
+    if (hotel.reviewCount > 0) {
+      const totalRating = hotel.reviews.reduce((sum, r) => sum + (r.rating || 0), 0);
+      hotel.rating = Number((totalRating / hotel.reviewCount).toFixed(1));
+    } else {
+      hotel.rating = undefined;
+    }
+    await hotel.save();
+
+    await invalidateHotelCache();
+    broadcastHotels();
+    res.status(200).json({ success: true, message: "Review deleted", data: hotel });
+  } catch (error) {
+    next(error);
+  }
+};
+
 
 // POST /api/hotels (admin only)
 export const createHotel = async (req, res, next) => {

@@ -109,7 +109,7 @@
  *         description: Room removed successfully
  */
 import express from "express";
-import { getHotels, getHotelById, createHotel, updateHotel, deleteHotel, addRoomToHotel, removeRoomFromHotel, updateRoomInHotel, addReviewToHotel } from "../controllers/hotelController.js";
+import { getHotels, getHotelById, createHotel, updateHotel, deleteHotel, addRoomToHotel, removeRoomFromHotel, updateRoomInHotel, addReviewToHotel, editReviewInHotel, deleteReviewFromHotel } from "../controllers/hotelController.js";
 import { protect, authorizeRoles, validateOwnership, requireObjectId } from "../middleware/auth.js";
 import { validate, schemas } from "../middleware/zodValidation.js";
 
@@ -127,6 +127,10 @@ router.route("/:id")
 router.route("/:id/reviews")
   .post(protect, validate(schemas.addReview), addReviewToHotel);
 
+router.route("/:id/reviews/:reviewId")
+  .put(protect, validate(schemas.editReview), editReviewInHotel)
+  .delete(protect, deleteReviewFromHotel);
+
 router.route("/:id/rooms")
   .post(protect, validateOwnership("Hotel"), addRoomToHotel);
 
@@ -135,3 +139,4 @@ router.route("/:id/rooms/:roomId")
   .delete(protect, validateOwnership("Hotel"), removeRoomFromHotel);
 
 export default router;
+
