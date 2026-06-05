@@ -51,6 +51,7 @@ const HotelDetails = () => {
   const [bedFilter, setBedFilter] = useState("any");
   const [breakfastFilter, setBreakfastFilter] = useState(false);
   const [cancellationFilter, setCancellationFilter] = useState(false);
+  const [availableOnlyFilter, setAvailableOnlyFilter] = useState(false);
 
   // 360° tour viewer
   const [tour360Room, setTour360Room] = useState<{ url: string; name: string } | null>(null);
@@ -242,6 +243,10 @@ const HotelDetails = () => {
                   <input type="checkbox" checked={cancellationFilter} onChange={(e) => setCancellationFilter(e.target.checked)} className="accent-primary" />
                   Free Cancel
                 </label>
+                <label className="flex items-center gap-1.5 text-sm cursor-pointer select-none">
+                  <input type="checkbox" checked={availableOnlyFilter} onChange={(e) => setAvailableOnlyFilter(e.target.checked)} className="accent-primary" />
+                  Available only
+                </label>
               </div>
             </div>
             {hotel.rooms.length === 0 ? (
@@ -254,6 +259,11 @@ const HotelDetails = () => {
                 .filter((r) => bedFilter === "any" || r.bed?.toLowerCase().includes(bedFilter.toLowerCase()))
                 .filter((r) => !breakfastFilter || r.breakfastIncluded || r.features?.some((f) => f.toLowerCase().includes("breakfast")))
                 .filter((r) => !cancellationFilter || r.freeCancellation)
+                .filter((r) => {
+                  if (!availableOnlyFilter) return true;
+                  const live = availCount[r.id];
+                  return live != null ? live > 0 : r.available > 0;
+                })
                 .sort((a, b) => roomSort === "price-asc" ? a.price - b.price : roomSort === "price-desc" ? b.price - a.price : 0);
               return (
                 <>
@@ -451,16 +461,14 @@ const HotelDetails = () => {
                 <>
                   <a
                     href={`https://www.google.com/maps?q=${hotel.coords[0]},${hotel.coords[1]}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    target="_blank" rel="noopener noreferrer"
                     className="flex items-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl font-semibold text-sm hover:bg-primary/90 transition-base"
                   >
                     <ExternalLink className="w-4 h-4" /> Open in Google Maps
                   </a>
                   <a
                     href={`https://www.google.com/maps/dir/?api=1&destination=${hotel.coords[0]},${hotel.coords[1]}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    target="_blank" rel="noopener noreferrer"
                     className="flex items-center gap-2 px-4 py-2.5 border border-border rounded-xl font-semibold text-sm hover:bg-secondary transition-base"
                   >
                     <Navigation className="w-4 h-4" /> Get Directions
@@ -470,8 +478,7 @@ const HotelDetails = () => {
               {(!hotel.coords || hotel.coords[0] === 0) && (
                 <a
                   href={`https://www.google.com/maps/search/${encodeURIComponent(hotel.name + " " + hotel.location)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  target="_blank" rel="noopener noreferrer"
                   className="flex items-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl font-semibold text-sm hover:bg-primary/90 transition-base"
                 >
                   <ExternalLink className="w-4 h-4" /> Search on Google Maps
@@ -493,17 +500,7 @@ const HotelDetails = () => {
                   </p>
                 )}
               </div>
-              <div className="p-5 border border-border rounded-2xl bg-card">
-                <div className="flex items-center gap-2 mb-2">
-                  <Navigation className="w-4 h-4 text-accent" />
-                  <span className="font-semibold text-sm">Nearby</span>
-                </div>
-                <ul className="space-y-1 text-sm text-muted-foreground">
-                  <li>✈ Search nearby airports on Google Maps</li>
-                  <li>🏛 Explore local landmarks and attractions</li>
-                  <li>🚉 Find transport connections nearby</li>
-                </ul>
-              </div>
+              <NearbyPlaces coords={hotel.coords} hotelName={hotel.name} />
             </div>
           </div>
         )}
@@ -534,3 +531,124 @@ const HotelDetails = () => {
 };
 
 export default HotelDetails;
+
+// ── NearbyPlaces: uses OpenStreetMap Overpass API (free, no key needed) ──
+const AMENITY_ICONS: Record<string, string> = {
+  airport: "✈",
+  museum: "🏛",
+  restaurant: "🍽",
+  hospital: "🏥",
+  park: "🌿",
+  train_station: "🚉",
+  bus_station: "🚌",
+  pharmacy: "💊",
+  bank: "🏦",
+  attraction: "⭐",
+  mall: "🛍",
+};
+
+interface NearbyPlace {
+  name: string;
+  type: string;
+  dist: number;
+}
+
+const NearbyPlaces = ({ coords, hotelName }: { coords?: [number, number]; hotelName: string }) => {
+  const [places, setPlaces] = useState<NearbyPlace[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [fetched, setFetched] = useState(false);
+
+  const fetchNearby = async () => {
+    if (!coords || coords[0] === 0) return;
+    setLoading(true);
+    try {
+      const [lat, lon] = coords;
+      const radius = 2000; // 2km
+      const query = `
+        [out:json][timeout:10];
+        (
+          node["aeroway"="aerodrome"](around:20000,${lat},${lon});
+          node["tourism"="attraction"](around:${radius},${lat},${lon});
+          node["amenity"~"restaurant|hospital|pharmacy|bank"](around:${radius},${lat},${lon});
+          node["railway"~"station|halt"](around:${radius},${lat},${lon});
+          node["highway"="bus_stop"](around:${radius},${lat},${lon});
+          node["leisure"="park"](around:${radius},${lat},${lon});
+          node["shop"="mall"](around:${radius},${lat},${lon});
+        );
+        out body 20;
+      `;
+      const res = await fetch("https://overpass-api.de/api/interpreter", {
+        method: "POST",
+        body: query,
+      });
+      const data = await res.json();
+      const items: NearbyPlace[] = (data.elements || [])
+        .filter((e: any) => e.tags?.name)
+        .map((e: any) => {
+          const dLat = e.lat - lat;
+          const dLon = e.lon - lon;
+          const dist = Math.round(Math.sqrt(dLat * dLat + dLon * dLon) * 111000);
+          const type =
+            e.tags.aeroway === "aerodrome" ? "airport" :
+            e.tags.tourism === "attraction" ? "attraction" :
+            e.tags.amenity || e.tags.railway || e.tags.leisure || "place";
+          return { name: e.tags.name, type, dist };
+        })
+        .sort((a: NearbyPlace, b: NearbyPlace) => a.dist - b.dist)
+        .slice(0, 8);
+      setPlaces(items);
+    } catch { /* silent — Overpass may timeout */ }
+    finally { setLoading(false); setFetched(true); }
+  };
+
+  useEffect(() => {
+    if (coords && coords[0] !== 0) fetchNearby();
+  }, [coords?.join(",")]);
+
+  if (!coords || coords[0] === 0) {
+    return (
+      <div className="p-5 border border-border rounded-2xl bg-card">
+        <div className="flex items-center gap-2 mb-2">
+          <Navigation className="w-4 h-4 text-accent" />
+          <span className="font-semibold text-sm">Nearby Places</span>
+        </div>
+        <a href={`https://www.google.com/maps/search/attractions+near+${encodeURIComponent(hotelName)}`}
+          target="_blank" rel="noopener noreferrer"
+          className="text-sm text-primary hover:underline">
+          Search nearby on Google Maps →
+        </a>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-5 border border-border rounded-2xl bg-card">
+      <div className="flex items-center gap-2 mb-3">
+        <Navigation className="w-4 h-4 text-accent" />
+        <span className="font-semibold text-sm">Nearby Places</span>
+      </div>
+      {loading && <p className="text-xs text-muted-foreground">Loading nearby places...</p>}
+      {fetched && places.length === 0 && (
+        <p className="text-xs text-muted-foreground">No nearby places found in database.</p>
+      )}
+      <ul className="space-y-1.5">
+        {places.map((p, i) => (
+          <li key={i} className="flex items-center gap-2 text-sm">
+            <span>{AMENITY_ICONS[p.type] || "📍"}</span>
+            <span className="text-primary font-medium flex-1 truncate">{p.name}</span>
+            <span className="text-xs text-muted-foreground shrink-0">
+              {p.dist < 1000 ? `${p.dist}m` : `${(p.dist / 1000).toFixed(1)}km`}
+            </span>
+          </li>
+        ))}
+      </ul>
+      {places.length > 0 && (
+        <a href={`https://www.google.com/maps/search/attractions/@${coords[0]},${coords[1]},15z`}
+          target="_blank" rel="noopener noreferrer"
+          className="text-xs text-primary hover:underline mt-2 block">
+          View more on Google Maps →
+        </a>
+      )}
+    </div>
+  );
+};
