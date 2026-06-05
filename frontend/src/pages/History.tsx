@@ -139,8 +139,17 @@ const History = () => {
   };
 
   if (!user) {
-    nav("/", { replace: true, state: { openAuth: true } });
-    return null;
+    return (
+      <Layout>
+        <div className="container py-20 max-w-xl text-center flex flex-col items-center">
+          <div className="grid place-items-center w-24 h-24 rounded-full bg-accent/10 text-accent mb-6">
+            <BookOpen className="w-10 h-10" />
+          </div>
+          <h1 className="font-display text-3xl font-bold mb-4">No Bookings Yet</h1>
+          <p className="text-muted-foreground">You don't have any booking history. Sign in to view your stays.</p>
+        </div>
+      </Layout>
+    );
   }
 
   // Merge: API bookings are source of truth; local fills gaps
