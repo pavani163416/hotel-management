@@ -123,6 +123,12 @@ const userSchema = new mongoose.Schema(
       type:    Date,
       default: null,
     },
+
+    // FCM push notification token (set by mobile app after login)
+    fcmToken: {
+      type:    String,
+      default: null,
+    },
   },
   {
     timestamps: true,

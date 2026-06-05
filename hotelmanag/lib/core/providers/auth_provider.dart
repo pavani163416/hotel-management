@@ -12,21 +12,37 @@ import '../../features/auth/domain/entities/user_entity.dart';
 import '../../features/auth/data/models/user_model.dart';
 import '../constants/app_constants.dart';
 import '../../core/errors/failures.dart';
+import '../services/push_notifications.dart';
+import '../network/api_service.dart';
 
 class AuthProvider extends ChangeNotifier {
   final AuthRepository _authRepository;
+  final ApiService? _apiService;
   UserEntity? _user;
   bool _isLoading = false;
   String? _error;
   String? _unverifiedEmail;
 
-  AuthProvider(this._authRepository);
+  AuthProvider(this._authRepository, [this._apiService]);
 
   UserEntity? get user => _user;
   bool get isLoading => _isLoading;
   String? get error => _error;
   String? get unverifiedEmail => _unverifiedEmail;
   bool get isAuthenticated => _user != null;
+
+  /// Registers the device FCM token with the backend so push notifications work.
+  Future<void> _registerFcmToken() async {
+    if (kIsWeb) return; // FCM tokens not needed on web
+    try {
+      final token = PushNotificationService.fcmToken;
+      if (token == null || token.isEmpty) return;
+      await _apiService?.post('/auth/fcm-token', data: {'fcmToken': token});
+      debugPrint('[FCM] Token registered with backend');
+    } catch (e) {
+      debugPrint('[FCM] Token registration failed (non-blocking): $e');
+    }
+  }
 
   Future<void> login(String email, String password) async {
     _isLoading = true;
@@ -58,6 +74,7 @@ class AuthProvider extends ChangeNotifier {
         await _saveAuthData(user, token);
         _isLoading = false;
         notifyListeners();
+        _registerFcmToken(); // non-blocking
       },
     );
   }
@@ -111,6 +128,7 @@ class AuthProvider extends ChangeNotifier {
         await _saveAuthData(user, token);
         _isLoading = false;
         notifyListeners();
+        _registerFcmToken(); // non-blocking
         return true;
       },
     );

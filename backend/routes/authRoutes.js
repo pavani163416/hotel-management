@@ -1898,4 +1898,21 @@ router.post("/logout-all", verifyCustomerToken, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// ── POST /api/auth/fcm-token ──────────────────────────────
+// Registers or refreshes the device FCM token for the authenticated customer.
+// Called by the mobile app after every login and when the token refreshes.
+router.post("/fcm-token", verifyCustomerToken, async (req, res, next) => {
+  try {
+    const { fcmToken } = req.body;
+    if (!fcmToken || typeof fcmToken !== "string") {
+      return res.status(400).json({ success: false, message: "fcmToken is required." });
+    }
+
+    await User.findByIdAndUpdate(req.customer.id, { fcmToken: fcmToken.trim() });
+    return res.status(200).json({ success: true, message: "FCM token registered." });
+  } catch (err) {
+    next(err);
+  }
+});
+
 export default router;

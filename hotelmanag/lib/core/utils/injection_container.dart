@@ -49,7 +49,7 @@ Future<void> init() async {
   );
 
   // Providers
-  sl.registerLazySingleton(() => AuthProvider(sl()));
+  sl.registerLazySingleton(() => AuthProvider(sl(), sl<ApiService>()));
   sl.registerLazySingleton(() => HotelProvider(sl()));
   sl.registerLazySingleton(() => BookingProvider(sl()));
   sl.registerLazySingleton(() => PromoProvider(sl()));

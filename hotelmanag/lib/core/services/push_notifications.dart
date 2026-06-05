@@ -17,6 +17,13 @@ class PushNotificationService {
   static final FlutterLocalNotificationsPlugin _localNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
 
+  /// Cached FCM token — set after initialize() and on token refresh
+  static String? _cachedFcmToken;
+  static Function(String)? onTokenRefresh;
+
+  /// Returns the current FCM device token, or null if not available.
+  static String? get fcmToken => _cachedFcmToken;
+
   static Future<void> initialize() async {
     if (kIsWeb) {
       debugPrint('PushNotificationService: Initialization skipped on Web.');
@@ -107,9 +114,19 @@ class PushNotificationService {
     try {
       String? token = await _firebaseMessaging.getToken();
       debugPrint("FCM Token: [REDACTED_FOR_SECURITY]");
+      // Store token for later registration with backend
+      if (token != null) {
+        _cachedFcmToken = token;
+      }
     } catch (e) {
       debugPrint("PushNotificationService: Failed to get FCM token: $e");
     }
+
+    // Listen for token refreshes
+    _firebaseMessaging.onTokenRefresh.listen((newToken) {
+      _cachedFcmToken = newToken;
+      onTokenRefresh?.call(newToken);
+    });
   }
 
   static void _showLocalNotification(RemoteMessage message, AndroidNotificationChannel channel) {
