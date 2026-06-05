@@ -22,7 +22,7 @@ const Hotels = () => {
   const [sort, setSort] = useState<"price-asc" | "price-desc" | "rating">((searchParams.get("sort") as any) || "rating");
   const [paymentToast, setPaymentToast] = useState<"cancelled" | "failed" | null>(null);
   const [nameSearch, setNameSearch] = useState("");
-  const [nameFilter, setNameFilter] = useState(""); // only applied on submit
+  const [nameFilter, setNameFilter] = useState("");
   const [nameDropdown, setNameDropdown] = useState(false);
 
   // Suggestions: all hotel names that match current input (case-insensitive)
@@ -38,6 +38,12 @@ const Hotels = () => {
   const applyNameSearch = (value?: string) => {
     const v = (value ?? nameSearch).trim();
     setNameFilter(v);
+    setNameDropdown(false);
+  };
+
+  const clearNameSearch = () => {
+    setNameSearch("");
+    setNameFilter("");
     setNameDropdown(false);
   };
 
@@ -200,10 +206,17 @@ const Hotels = () => {
                       <input
                         type="text"
                         value={nameSearch}
-                        onChange={(e) => { setNameSearch(e.target.value); setNameDropdown(true); setNameFilter(""); }}
+                        onChange={(e) => {
+                          setNameSearch(e.target.value);
+                          setNameDropdown(true);
+                          setNameFilter("");
+                        }}
                         onFocus={() => setNameDropdown(true)}
                         onBlur={() => setTimeout(() => setNameDropdown(false), 150)}
-                        onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); applyNameSearch(); } if (e.key === "Escape") { setNameDropdown(false); } }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") { e.preventDefault(); applyNameSearch(); }
+                          if (e.key === "Escape") { clearNameSearch(); }
+                        }}
                         placeholder="Search hotel name..."
                         aria-label="Search hotels by name"
                         autoComplete="off"
@@ -212,8 +225,9 @@ const Hotels = () => {
                       {nameSearch && (
                         <button
                           type="button"
-                          onMouseDown={(e) => { e.preventDefault(); setNameSearch(""); setNameFilter(""); setNameDropdown(false); }}
+                          onMouseDown={(e) => { e.preventDefault(); clearNameSearch(); }}
                           className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary"
+                          aria-label="Clear search"
                         >
                           <X className="w-3.5 h-3.5" />
                         </button>
@@ -221,9 +235,11 @@ const Hotels = () => {
                     </div>
                     <button
                       type="submit"
-                      className="bg-primary hover:bg-primary/90 text-primary-foreground px-3 py-2 rounded-r-lg border border-primary text-sm font-medium transition-base flex items-center gap-1.5"
+                      className="bg-primary hover:bg-primary/80 active:scale-95 text-primary-foreground px-3.5 py-2 rounded-r-lg border-l-0 border border-primary text-sm font-semibold transition-all flex items-center gap-1.5 cursor-pointer select-none"
+                      aria-label="Search"
                     >
                       <Search className="w-4 h-4" />
+                      <span className="hidden sm:inline">Search</span>
                     </button>
                   </form>
                   {nameDropdown && nameSuggestions.length > 0 && (
