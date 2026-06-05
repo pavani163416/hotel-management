@@ -18,6 +18,7 @@ import {
   buildOverlapQuery,
   syncRoomLegacyStatus,
   NON_BOOKABLE_STATUSES,
+  ACTIVE_BOOKING_STATUSES,
 } from "../services/roomAllocationService.js";
 import { acquireLock, releaseLock } from "../cache/redisCache.js";
 import { enqueueEmailJob } from "../queues/emailQueue.js";
@@ -176,7 +177,7 @@ export const createBooking = async (req, res, next) => {
         const activeBookingsCount = await Booking.countDocuments({
           hotelId: actualHotel._id,
           roomType: targetRoomType,
-          status: { $in: ["Confirmed", "CheckedIn", "Pending"] },
+          status: { $in: ACTIVE_BOOKING_STATUSES },
           checkIn: { $lt: new Date(checkOut) },
           checkOut: { $gt: new Date(checkIn) }
         }).session(session);
@@ -477,33 +478,31 @@ export const createBooking = async (req, res, next) => {
     };
     broadcastBookingUpdate(bookingPayload);
 
-    // ── Only notify managers for CONFIRMED bookings (cash/walk-in) ──
-    // For online payment bookings (Pending), manager notifications are deferred
-    // until payment is captured and confirmed via the Razorpay webhook.
-    if (booking.status === "Confirmed" || booking.status === "CONFIRMED") {
-      sendNotification({
-        hotelId: room.hotelStringId || room.hotelId?.toString() || null,
-        role: "manager",
-        message: "New booking received",
-        type: "booking",
-      }).catch(() => {});
-    }
+    // ── EVENT 1 – BOOKING CREATED ──
+    // Notify User
+    sendNotification({
+      userId: guestData.email,
+      role: "customer",
+      message: (booking.status === "Confirmed" || booking.status === "CONFIRMED")
+        ? "Booking Confirmed"
+        : "Your booking is created and awaiting payment confirmation.",
+      type: "booking",
+    }).catch(() => {});
 
-    if (booking.status === "Confirmed" || booking.status === "CONFIRMED") {
-      sendNotification({
-        userId: guestData.email,
-        role: "customer",
-        message: "Your booking is confirmed",
-        type: "booking",
-      }).catch(() => {});
-    } else {
-      sendNotification({
-        userId: guestData.email,
-        role: "customer",
-        message: "Your booking is created and awaiting payment confirmation.",
-        type: "booking",
-      }).catch(() => {});
-    }
+    // Notify Admin
+    sendNotification({
+      role: "admin",
+      message: `New booking created: ${booking.bookingRef}`,
+      type: "booking",
+    }).catch(() => {});
+
+    // Notify Manager
+    sendNotification({
+      hotelId: room.hotelStringId || room.hotelId?.toString() || null,
+      role: "manager",
+      message: `New booking created: ${booking.bookingRef}`,
+      type: "booking",
+    }).catch(() => {});
 
     // Emit Socket.IO event for real-time admin dashboard update
     const io = req.app.get("io");

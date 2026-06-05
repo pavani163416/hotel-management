@@ -4,7 +4,6 @@ import api, { API } from "../services/api";
 import socket from "@/services/socket";
 
 const HOTEL_CACHE_KEY = "luxe_hotels_cache";
-
 function mapHotel(h: any): Hotel {
   const actualReviews = Array.isArray(h.reviews) ? h.reviews : [];
   const actualReviewCount = actualReviews.length;
@@ -13,10 +12,12 @@ function mapHotel(h: any): Hotel {
     : undefined;
 
   return {
-    id: h.hotelId,
-    name: h.name,
-    location: h.location,
-    city: h.city,
+    id: h.hotelId || h.id || "",
+    name: h.name || "",
+    location: h.location || "",
+    city: h.city || "",
+    state: h.state || "",
+    country: h.country || "",
     description: h.description || "",
     image: h.image || "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&q=80",
     gallery: h.gallery?.length ? h.gallery : [h.image || "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&q=80"],
@@ -51,6 +52,8 @@ function mapHotel(h: any): Hotel {
       rating: r.rating || 5,
       comment: r.comment || "",
       date: r.date || "",
+      userId: r.userId,
+      userEmail: r.userEmail || "",
     })),
   };
 }
@@ -142,7 +145,9 @@ type Ctx = {
   cancelBooking: (id: string) => void;
   user: UserProfile | null;
   setUser: (u: UserProfile | null) => void;
-  submitReview: (hotelId: string, review: { author: string; rating: number; comment: string }) => Promise<void>;
+  submitReview: (hotelId: string, review: { rating: number; comment: string }) => Promise<void>;
+  editReview: (hotelId: string, reviewId: string, review: { rating: number; comment: string }) => Promise<void>;
+  deleteReview: (hotelId: string, reviewId: string) => Promise<void>;
 };
 
 const BookingCtx = createContext<Ctx | null>(null);
@@ -330,7 +335,7 @@ export const BookingProvider = ({ children }: { children: ReactNode }) => {
 
   const submitReview = async (
     hotelId: string,
-    review: { author: string; rating: number; comment: string }
+    review: { rating: number; comment: string }
   ) => {
     try {
       const response = await api.post(`/hotels/${hotelId}/reviews`, review);
@@ -350,11 +355,53 @@ export const BookingProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const editReview = async (
+    hotelId: string,
+    reviewId: string,
+    review: { rating: number; comment: string }
+  ) => {
+    try {
+      const response = await api.put(`/hotels/${hotelId}/reviews/${reviewId}`, review);
+      const json = response.data;
+      if (!json.success) {
+        throw new Error(json.message || "Failed to update review.");
+      }
+
+      const updatedHotel = mapHotel(json.data);
+      setHotels((prev) => {
+        const next = prev.map((h) => (h.id === updatedHotel.id ? updatedHotel : h));
+        localStorage.setItem(HOTEL_CACHE_KEY, JSON.stringify(next));
+        return next;
+      });
+    } catch (err: any) {
+      throw new Error(err.message || "Failed to update review.");
+    }
+  };
+
+  const deleteReview = async (hotelId: string, reviewId: string) => {
+    try {
+      const response = await api.delete(`/hotels/${hotelId}/reviews/${reviewId}`);
+      const json = response.data;
+      if (!json.success) {
+        throw new Error(json.message || "Failed to delete review.");
+      }
+
+      const updatedHotel = mapHotel(json.data);
+      setHotels((prev) => {
+        const next = prev.map((h) => (h.id === updatedHotel.id ? updatedHotel : h));
+        localStorage.setItem(HOTEL_CACHE_KEY, JSON.stringify(next));
+        return next;
+      });
+    } catch (err: any) {
+      throw new Error(err.message || "Failed to delete review.");
+    }
+  };
+
   return (
     <BookingCtx.Provider value={{
       hotels, search, setSearch, selectedHotel, setSelectedHotel,
       selectedRoom, setSelectedRoom, guest, setGuest, promo, applyPromo,
-      bookings, addBooking, cancelBooking, user, setUser, submitReview,
+      bookings, addBooking, cancelBooking, user, setUser, submitReview, editReview, deleteReview,
     }}>
       {children}
     </BookingCtx.Provider>

@@ -6,7 +6,7 @@ import Booking from "../models/Booking.js";
 import Room from "../models/Room.js";
 
 /** Statuses that block inventory for date ranges */
-export const ACTIVE_BOOKING_STATUSES = ["Confirmed", "CheckedIn", "Pending"];
+export const ACTIVE_BOOKING_STATUSES = ["Confirmed", "CheckedIn", "Pending", "CONFIRMED", "PENDING_PAYMENT"];
 
 /** Operational statuses that prevent new bookings regardless of dates */
 export const NON_BOOKABLE_STATUSES = ["Maintenance", "Blocked"];

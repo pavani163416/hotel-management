@@ -29,7 +29,19 @@ export const getDynamicRoomsForHotel = async (hotelId) => {
 
 export const getEnrichedHotelsData = async (city, minPrice, maxPrice) => {
   const filter = { isActive: true };
-  if (city) filter.city = new RegExp(city, "i");
+  if (city) {
+    const searchRegex = new RegExp(city, "i");
+    filter.$or = [
+      { name: searchRegex },
+      { city: searchRegex },
+      { location: searchRegex },
+      { type: searchRegex },
+      { description: searchRegex },
+      { state: searchRegex },
+      { country: searchRegex },
+      { amenities: searchRegex }
+    ];
+  }
   if (minPrice || maxPrice) {
     filter.pricePerNight = {};
     if (minPrice) filter.pricePerNight.$gte = Number(minPrice);
@@ -42,8 +54,8 @@ export const getEnrichedHotelsData = async (city, minPrice, maxPrice) => {
   if (hotelIds.length > 0) {
     const now = new Date();
     const currentYear = now.getFullYear();
-    const activeStatuses = ["Confirmed", "CheckedIn", "Pending"];
-    const revenueStatuses = ["Confirmed", "Completed", "CheckedIn", "CheckedOut"];
+    const activeStatuses = ["Confirmed", "CheckedIn", "Pending", "CONFIRMED", "PENDING_PAYMENT"];
+    const revenueStatuses = ["Confirmed", "Completed", "CheckedIn", "CheckedOut", "CONFIRMED"];
 
     const hotelStats = await Booking.aggregate([
       {

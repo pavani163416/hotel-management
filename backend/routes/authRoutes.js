@@ -203,6 +203,7 @@ import { cacheGet, cacheSet, cacheDel } from "../cache/redisCache.js";
 import { getRedisClient, isRedisReady } from "../config/redis.js";
 import { enqueueEmailJob } from "../queues/emailQueue.js";
 import AuditLog from "../models/AuditLog.js";
+import { generateCaptcha, verifyCaptcha } from "../utils/captcha.js";
 import {
   validateLoginPayload,
   validateRegisterPayload,
@@ -353,6 +354,17 @@ export const verifyCustomerToken = (req, res, next) => {
   }
 };
 
+// ── GET /api/auth/captcha ─────────────────────────────────
+// Returns a new math CAPTCHA challenge (captchaId + challenge string).
+router.get("/captcha", async (req, res) => {
+  try {
+    const { captchaId, challenge } = await generateCaptcha();
+    return res.json({ success: true, data: { captchaId, challenge } });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: "Failed to generate CAPTCHA." });
+  }
+});
+
 // ── POST /api/auth/register ───────────────────────────────
 router.post("/register", authLimiter, validateRegisterPayload, async (req, res, next) => {
   try {
@@ -390,6 +402,38 @@ router.post("/register", authLimiter, validateRegisterPayload, async (req, res, 
     }
 
     const normalEmail = email.toLowerCase().trim();
+
+    // ── CAPTCHA verification (mandatory for registration) ─────
+    const { captchaId, captchaAnswer } = req.body;
+    
+    // CAPTCHA is now mandatory - must be provided and valid
+    if (!captchaId || !captchaAnswer) {
+      logger.warn("Registration attempt with missing CAPTCHA", {
+        email: normalEmail,
+        ip: req.ip,
+        hasCaptchaId: !!captchaId,
+        hasCaptchaAnswer: !!captchaAnswer,
+      });
+      return res.status(400).json({
+        success: false,
+        message: "Security check is required. Please complete the CAPTCHA challenge.",
+        code: "CAPTCHA_REQUIRED",
+      });
+    }
+    
+    const captchaValid = await verifyCaptcha(captchaId, captchaAnswer);
+    if (!captchaValid) {
+      logger.warn("Registration attempt with invalid CAPTCHA", {
+        email: normalEmail,
+        captchaId,
+        ip: req.ip,
+      });
+      return res.status(400).json({
+        success: false,
+        message: "Incorrect security check answer. Please try again.",
+        code: "CAPTCHA_INVALID",
+      });
+    }
 
     // Check if user account already exists
     let user = await User.findOne({ email: normalEmail });
@@ -608,6 +652,38 @@ router.post("/login", loginLimiter, validateLoginPayload, async (req, res, next)
     }
 
     const normalEmail = email.toLowerCase().trim();
+
+    // ── CAPTCHA verification (mandatory for login) ─────
+    const { captchaId: loginCaptchaId, captchaAnswer: loginCaptchaAnswer } = req.body;
+    
+    // CAPTCHA is now mandatory - must be provided and valid
+    if (!loginCaptchaId || !loginCaptchaAnswer) {
+      logger.warn("Login attempt with missing CAPTCHA", {
+        email: normalEmail,
+        ip: req.ip,
+        hasCaptchaId: !!loginCaptchaId,
+        hasCaptchaAnswer: !!loginCaptchaAnswer,
+      });
+      return res.status(400).json({
+        success: false,
+        message: "Security check is required. Please complete the CAPTCHA challenge.",
+        code: "CAPTCHA_REQUIRED",
+      });
+    }
+    
+    const loginCaptchaValid = await verifyCaptcha(loginCaptchaId, loginCaptchaAnswer);
+    if (!loginCaptchaValid) {
+      logger.warn("Login attempt with invalid CAPTCHA", {
+        email: normalEmail,
+        captchaId: loginCaptchaId,
+        ip: req.ip,
+      });
+      return res.status(400).json({
+        success: false,
+        message: "Incorrect security check answer. Please try again.",
+        code: "CAPTCHA_INVALID",
+      });
+    }
 
     // Look up user with passwordHash explicitly included
     const user = await User.findOne({ email: normalEmail }).select("+passwordHash");

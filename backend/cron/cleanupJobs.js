@@ -1,6 +1,8 @@
 import cron from "node-cron";
 import User from "../models/User.js";
 import Guest from "../models/Guest.js";
+import Booking from "../models/Booking.js";
+import { syncRoomLegacyStatus } from "../services/roomAllocationService.js";
 import logger from "../utils/logger.js";
 
 // Run every hour to check for accounts pending verification that are older than 24 hours
@@ -37,5 +39,38 @@ export const initCleanupJobs = () => {
     }
   });
 
-  logger.info("Account cleanup cron job initialized.");
+  // Run every 5 minutes to find abandoned "Pending" status bookings older than 15 minutes
+  cron.schedule("*/5 * * * *", async () => {
+    logger.info("Running scheduled cleanup for abandoned Pending bookings...");
+    try {
+      const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
+      const abandonedBookings = await Booking.find({
+        status: "Pending",
+        createdAt: { $lt: fifteenMinutesAgo }
+      });
+
+      if (abandonedBookings.length === 0) {
+        logger.info("No abandoned Pending bookings found.");
+        return;
+      }
+
+      logger.info(`Found ${abandonedBookings.length} abandoned Pending bookings. Cleaning up...`);
+
+      for (const booking of abandonedBookings) {
+        booking.status = "PAYMENT_CANCELLED";
+        await booking.save();
+        if (booking.room) {
+          await syncRoomLegacyStatus(booking.room).catch((err) => {
+            logger.error(`Error syncing room legacy status for room ${booking.room}: ${err.message}`);
+          });
+        }
+      }
+
+      logger.info(`Cleaned up ${abandonedBookings.length} abandoned Pending bookings.`);
+    } catch (err) {
+      logger.error("Error during scheduled cleanup of abandoned Pending bookings", { error: err.message });
+    }
+  });
+
+  logger.info("Account cleanup and abandoned booking cleanup cron jobs initialized.");
 };

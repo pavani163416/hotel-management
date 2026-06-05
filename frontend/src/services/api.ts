@@ -43,16 +43,69 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// ── Response interceptor: unwrap data / normalise errors ──
+// ── Response interceptor: silent token refresh + retry ────
+let isRefreshing = false;
+let failedQueue: { resolve: (v: any) => void; reject: (e: any) => void }[] = [];
+
+const processQueue = (error: any, token: string | null = null) => {
+  failedQueue.forEach((p) => (error ? p.reject(error) : p.resolve(token)));
+  failedQueue = [];
+};
+
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
-    // Intercept 401 Unauthorized errors to automatically clean up expired/invalid sessions
-    if (error.response?.status === 401) {
-      localStorage.removeItem("luxe_customer_token");
-      localStorage.removeItem("luxe_user");
-      localStorage.removeItem("luxe_bookings");
-      window.dispatchEvent(new Event("luxe_logout"));
+  async (error) => {
+    const originalRequest = error.config;
+
+    // Only attempt refresh on 401, and only once per original request
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      if (isRefreshing) {
+        // Queue concurrent requests while refresh is in-flight
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        }).then((token) => {
+          originalRequest.headers.Authorization = `Bearer ${token}`;
+          return api(originalRequest);
+        });
+      }
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      try {
+        const res = await axios.post(
+          `${API_URL}/auth/refresh-token`,
+          {},
+          { withCredentials: true }
+        );
+        const newToken: string = res.data?.data?.token || res.data?.token;
+        if (newToken) {
+          localStorage.setItem("luxe_customer_token", newToken);
+          api.defaults.headers.common.Authorization = `Bearer ${newToken}`;
+          originalRequest.headers.Authorization = `Bearer ${newToken}`;
+          processQueue(null, newToken);
+          return api(originalRequest);
+        }
+        throw new Error("No token in refresh response");
+      } catch (refreshErr) {
+        processQueue(refreshErr, null);
+        // Refresh failed → real logout
+        localStorage.removeItem("luxe_customer_token");
+        localStorage.removeItem("luxe_user");
+        localStorage.removeItem("luxe_bookings");
+        window.dispatchEvent(new Event("luxe_logout"));
+        const message =
+          (refreshErr as any)?.response?.data?.message ||
+          error.response?.data?.message ||
+          "Please sign in again to continue.";
+        const customError = new Error(message) as any;
+        customError.status = (refreshErr as any)?.response?.status || error.response?.status;
+        customError.code = (refreshErr as any)?.response?.data?.code || error.response?.data?.code;
+        customError.response = (refreshErr as any)?.response || error.response;
+        return Promise.reject(customError);
+      } finally {
+        isRefreshing = false;
+      }
     }
 
     const message =
@@ -67,6 +120,7 @@ api.interceptors.response.use(
     return Promise.reject(customError);
   }
 );
+
 
 export default api;
 

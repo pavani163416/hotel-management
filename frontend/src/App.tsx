@@ -19,6 +19,13 @@ import History from "./pages/History";
 import Profile from "./pages/Profile";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
+import Notifications from "./pages/Notifications";
+
+// ── Footer / Informational pages ─────────────────────────
+import About from "./pages/About";
+import Terms from "./pages/Terms";
+import Privacy from "./pages/Privacy";
+import Contact from "./pages/Contact";
 
 const queryClient = new QueryClient();
 
@@ -36,6 +43,12 @@ const App = () => (
             <Route path="/hotels" element={<Hotels />} />
             <Route path="/hotel/:id" element={<HotelDetails />} />
 
+            {/* ── Informational / Footer pages ────── */}
+            <Route path="/about" element={<About />} />
+            <Route path="/terms" element={<Terms />} />
+            <Route path="/privacy" element={<Privacy />} />
+            <Route path="/contact" element={<Contact />} />
+
             {/* ── Protected routes (must be signed in) ─ */}
             <Route path="/booking" element={
               <RequireAuth><Booking /></RequireAuth>
@@ -51,6 +64,9 @@ const App = () => (
             } />
             <Route path="/confirmation" element={
               <RequireAuth><Confirmation /></RequireAuth>
+            } />
+            <Route path="/notifications" element={
+              <RequireAuth><Notifications /></RequireAuth>
             } />
 
             {/* ── These handle their own inline auth UI ─ */}
@@ -68,3 +84,4 @@ const App = () => (
 );
 
 export default App;
+

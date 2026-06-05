@@ -1,0 +1,133 @@
+import Layout from "@/components/Layout";
+import { useState } from "react";
+import { MapPin, Phone, Mail, Clock, Send, Loader2, CheckCircle2 } from "lucide-react";
+import api from "@/services/api";
+
+const Contact = () => {
+  const [form, setForm] = useState({ name: "", email: "", subject: "", message: "" });
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState("");
+
+  const handle = (k: string, v: string) => setForm((p) => ({ ...p, [k]: v }));
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.name || !form.email || !form.message) {
+      setError("Please fill all required fields.");
+      return;
+    }
+    setError(""); setLoading(true);
+    try {
+      await api.post("/public/support/create", {
+        guestName: form.name,
+        guestEmail: form.email,
+        subject: form.subject || "Contact Form Inquiry",
+        message: form.message,
+        category: "Other",
+      });
+      setSuccess(true);
+    } catch (err: any) {
+      setError(err.response?.data?.message || err.message || "Failed to send. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Layout>
+      {/* Hero */}
+      <div className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground py-20 px-4">
+        <div className="container max-w-3xl mx-auto text-center">
+          <h1 className="font-display text-5xl font-bold mb-5">Get in Touch</h1>
+          <p className="text-primary-foreground/80 text-xl">
+            Whether you have a question, feedback, or just want to say hello — we'd love to hear from you.
+          </p>
+        </div>
+      </div>
+
+      <div className="container max-w-5xl mx-auto py-16 px-4">
+        <div className="grid md:grid-cols-2 gap-12">
+          {/* Contact Info */}
+          <div>
+            <h2 className="font-display text-3xl font-bold text-foreground mb-6">Contact Information</h2>
+            <div className="space-y-6">
+              {[
+                { icon: MapPin, title: "Headquarters", text: "123 Luxury Avenue, Bandra West, Mumbai 400050, India" },
+                { icon: Phone, title: "Phone", text: "+1 (800) 123-4567\n+91 98765 43210" },
+                { icon: Mail, title: "Email", text: "hello@luxestay.com\nsupport@luxestay.com" },
+                { icon: Clock, title: "Working Hours", text: "Mon–Fri: 9:00 AM – 8:00 PM IST\nWeekends: 10:00 AM – 6:00 PM IST" },
+              ].map(({ icon: Icon, title, text }) => (
+                <div key={title} className="flex gap-4">
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <Icon className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <div className="font-semibold text-foreground mb-0.5">{title}</div>
+                    <p className="text-muted-foreground text-sm whitespace-pre-line">{text}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Map Placeholder */}
+            <div className="mt-8 bg-secondary/50 border border-border rounded-2xl h-48 flex items-center justify-center">
+              <div className="text-center text-muted-foreground">
+                <MapPin className="w-8 h-8 mx-auto mb-2 text-primary" />
+                <p className="text-sm">123 Luxury Avenue, Mumbai</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Form */}
+          <div>
+            <h2 className="font-display text-3xl font-bold text-foreground mb-6">Send a Message</h2>
+            {success ? (
+              <div className="bg-green-50 border border-green-200 rounded-2xl p-10 text-center">
+                <CheckCircle2 className="w-12 h-12 text-green-500 mx-auto mb-4" />
+                <h3 className="font-display text-xl font-bold text-green-800 mb-2">Message Sent!</h3>
+                <p className="text-green-700 text-sm">Thank you for reaching out. We'll get back to you within 24 hours.</p>
+              </div>
+            ) : (
+              <form onSubmit={submit} className="space-y-5">
+                <div className="grid sm:grid-cols-2 gap-5">
+                  <div>
+                    <label htmlFor="contact-name" className="block text-sm font-medium text-foreground mb-1.5">Name <span className="text-destructive">*</span></label>
+                    <input id="contact-name" type="text" value={form.name} onChange={(e) => handle("name", e.target.value)}
+                      placeholder="Your full name"
+                      className="w-full px-4 py-2.5 border border-border rounded-xl outline-none focus:ring-2 focus:ring-primary text-sm" />
+                  </div>
+                  <div>
+                    <label htmlFor="contact-email" className="block text-sm font-medium text-foreground mb-1.5">Email <span className="text-destructive">*</span></label>
+                    <input id="contact-email" type="email" value={form.email} onChange={(e) => handle("email", e.target.value)}
+                      placeholder="name@example.com"
+                      className="w-full px-4 py-2.5 border border-border rounded-xl outline-none focus:ring-2 focus:ring-primary text-sm" />
+                  </div>
+                </div>
+                <div>
+                  <label htmlFor="contact-subject" className="block text-sm font-medium text-foreground mb-1.5">Subject</label>
+                  <input id="contact-subject" type="text" value={form.subject} onChange={(e) => handle("subject", e.target.value)}
+                    placeholder="What's this about?"
+                    className="w-full px-4 py-2.5 border border-border rounded-xl outline-none focus:ring-2 focus:ring-primary text-sm" />
+                </div>
+                <div>
+                  <label htmlFor="contact-message" className="block text-sm font-medium text-foreground mb-1.5">Message <span className="text-destructive">*</span></label>
+                  <textarea id="contact-message" rows={6} value={form.message} onChange={(e) => handle("message", e.target.value)}
+                    placeholder="Tell us how we can help..."
+                    className="w-full px-4 py-2.5 border border-border rounded-xl outline-none focus:ring-2 focus:ring-primary text-sm resize-none" />
+                </div>
+                {error && <p className="text-destructive text-sm font-medium">{error}</p>}
+                <button type="submit" disabled={loading}
+                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-3 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors">
+                  {loading ? <><Loader2 className="w-5 h-5 animate-spin" /> Sending...</> : <><Send className="w-4 h-4" /> Send Message</>}
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
+      </div>
+    </Layout>
+  );
+};
+
+export default Contact;
