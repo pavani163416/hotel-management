@@ -1,8 +1,9 @@
 import { useNavigate, useParams } from "react-router-dom";
-import { MapPin, Star, Wifi, Coffee, Wind, Users, BedDouble, Check, LogIn, Waves, Trees, Dumbbell, Utensils, Car, ShieldCheck, Flame, Sunset, Snowflake, Bath, Tv, PocketKnife, Sailboat, Baby, PawPrint, Phone, AlertCircle, Loader2 } from "lucide-react";
+import { MapPin, Star, Wifi, Coffee, Wind, Users, BedDouble, Check, LogIn, Waves, Trees, Dumbbell, Utensils, Car, ShieldCheck, Flame, Sunset, Snowflake, Bath, Tv, PocketKnife, Sailboat, Baby, PawPrint, Phone, AlertCircle, Loader2, Navigation, ExternalLink } from "lucide-react";
 import Layout from "@/components/Layout";
 import { useBooking } from "@/context/BookingContext";
-import { useState, useEffect, type FormEvent } from "react";
+import { useCurrency } from "@/context/CurrencyContext";
+import { useState, useEffect, useMemo } from "react";
 import { AuthModal } from "@/components/AuthModal";
 import { API } from "@/services/api";
 
@@ -35,12 +36,17 @@ const HotelDetails = () => {
   const { id } = useParams();
   const nav = useNavigate();
   const { hotels, user, search, setSelectedHotel, setSelectedRoom, submitReview } = useBooking();
+  const { format } = useCurrency();
   const hotel = hotels.find((h) => h.id === id);
-  const [tab, setTab] = useState<"rooms" | "amenities" | "reviews">("rooms");
+  const [tab, setTab] = useState<"rooms" | "amenities" | "reviews" | "location">("rooms");
   const [reviewText, setReviewText] = useState("");
   const [reviewName, setReviewName] = useState("");
   const [reviewRating, setReviewRating] = useState(5);
   const [err, setErr] = useState("");
+
+  // Room filters
+  const [roomSort, setRoomSort] = useState<"price-asc" | "price-desc" | "default">("default");
+  const [capacityFilter, setCapacityFilter] = useState(1);
 
   // Auth popup for unauthenticated booking attempts
   const [authOpen, setAuthOpen] = useState(false);
@@ -186,7 +192,7 @@ const HotelDetails = () => {
 
         {/* Tabs */}
         <div className="flex gap-1 border-b border-border mt-8">
-          {(["rooms", "amenities", "reviews"] as const).map((t) => (
+          {(["rooms", "amenities", "reviews", "location"] as const).map((t) => (
             <button key={t} onClick={() => setTab(t)}
               className={`px-5 py-3 text-sm font-semibold capitalize relative transition-base ${tab === t ? "text-primary" : "text-muted-foreground hover:text-primary"}`}>
               {t} {t === "reviews" && `(${allReviews.length})`}
@@ -197,18 +203,43 @@ const HotelDetails = () => {
 
         {tab === "rooms" && (
           <div className="mt-8">
-            <h2 className="font-display text-2xl font-bold mb-5">Select Your Room</h2>
+            {/* Room Filters */}
+            <div className="flex items-center gap-3 flex-wrap mb-5">
+              <h2 className="font-display text-2xl font-bold flex-1">Select Your Room</h2>
+              <div className="flex items-center gap-2 flex-wrap">
+                <select value={capacityFilter} onChange={(e) => setCapacityFilter(Number(e.target.value))}
+                  className="border border-border rounded-lg px-3 py-2 text-sm bg-background outline-none focus:border-accent">
+                  <option value={1}>Any Capacity</option>
+                  <option value={2}>2+ Guests</option>
+                  <option value={3}>3+ Guests</option>
+                  <option value={4}>4+ Guests</option>
+                </select>
+                <select value={roomSort} onChange={(e) => setRoomSort(e.target.value as any)}
+                  className="border border-border rounded-lg px-3 py-2 text-sm bg-background outline-none focus:border-accent">
+                  <option value="default">Default Order</option>
+                  <option value="price-asc">Price: Low → High</option>
+                  <option value="price-desc">Price: High → Low</option>
+                </select>
+              </div>
+            </div>
             {hotel.rooms.length === 0 ? (
               <div className="rounded-2xl border border-border bg-card p-8 text-center text-muted-foreground">
                 No rooms are currently available for this hotel. Please check back later or select another property.
               </div>
-            ) : (
-              <>
+            ) : (() => {
+              const displayRooms = hotel.rooms
+                .filter((r) => r.capacity >= capacityFilter)
+                .sort((a, b) => roomSort === "price-asc" ? a.price - b.price : roomSort === "price-desc" ? b.price - a.price : 0);
+              return (
+                <>
+                  {displayRooms.length === 0 && (
+                    <p className="text-muted-foreground text-sm mb-4">No rooms match the selected filters.</p>
+                  )}
                 <div className="border border-border rounded-2xl overflow-hidden bg-card">
                   <div className="hidden md:grid grid-cols-[2fr_2fr_1fr_auto] bg-primary text-primary-foreground text-xs uppercase tracking-wider font-semibold">
                     <div className="p-4">Room Type</div><div className="p-4">Key Features</div><div className="p-4 text-right">Daily Price</div><div className="p-4">Action</div>
                   </div>
-                  {hotel.rooms.map((r) => {
+                  {displayRooms.map((r) => {
                     const roomsLeft: number | null =
                       availCount[r.id] != null
                         ? (availCount[r.id] as number)
@@ -249,7 +280,7 @@ const HotelDetails = () => {
                         ))}
                       </div>
                       <div className="md:text-right">
-                        <p className="font-display text-xl font-bold text-primary">${r.price}</p>
+                        <p className="font-display text-xl font-bold text-primary">{format(r.price)}</p>
                         <p className="text-xs text-muted-foreground">per night</p>
                       </div>
                       <div className="flex flex-col items-stretch gap-1 md:min-w-[140px]">
@@ -292,7 +323,8 @@ const HotelDetails = () => {
                   <p className="text-muted-foreground leading-relaxed">{hotel.description}</p>
                 </div>
               </>
-            )}
+              );
+            })()}
           </div>
         )}
         {tab === "amenities" && (
@@ -345,6 +377,95 @@ const HotelDetails = () => {
                 Submit Review
               </button>
             </form>
+          </div>
+        )}
+
+        {tab === "location" && (
+          <div className="mt-8 space-y-6">
+            {/* Map embed */}
+            {hotel.coords && hotel.coords[0] !== 0 && hotel.coords[1] !== 0 ? (
+              <div className="rounded-2xl overflow-hidden border border-border h-80">
+                <iframe
+                  title="Hotel Location"
+                  width="100%"
+                  height="100%"
+                  style={{ border: 0 }}
+                  loading="lazy"
+                  allowFullScreen
+                  referrerPolicy="no-referrer-when-downgrade"
+                  src={`https://www.google.com/maps?q=${hotel.coords[0]},${hotel.coords[1]}&z=15&output=embed`}
+                />
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-border bg-secondary/40 h-48 flex items-center justify-center">
+                <div className="text-center text-muted-foreground">
+                  <MapPin className="w-8 h-8 mx-auto mb-2 text-accent" />
+                  <p className="text-sm font-medium">{hotel.location}</p>
+                  <p className="text-xs mt-1">Exact coordinates not available</p>
+                </div>
+              </div>
+            )}
+
+            {/* Action buttons */}
+            <div className="flex flex-wrap gap-3">
+              {hotel.coords && hotel.coords[0] !== 0 && (
+                <>
+                  <a
+                    href={`https://www.google.com/maps?q=${hotel.coords[0]},${hotel.coords[1]}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl font-semibold text-sm hover:bg-primary/90 transition-base"
+                  >
+                    <ExternalLink className="w-4 h-4" /> Open in Google Maps
+                  </a>
+                  <a
+                    href={`https://www.google.com/maps/dir/?api=1&destination=${hotel.coords[0]},${hotel.coords[1]}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-4 py-2.5 border border-border rounded-xl font-semibold text-sm hover:bg-secondary transition-base"
+                  >
+                    <Navigation className="w-4 h-4" /> Get Directions
+                  </a>
+                </>
+              )}
+              {(!hotel.coords || hotel.coords[0] === 0) && (
+                <a
+                  href={`https://www.google.com/maps/search/${encodeURIComponent(hotel.name + " " + hotel.location)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl font-semibold text-sm hover:bg-primary/90 transition-base"
+                >
+                  <ExternalLink className="w-4 h-4" /> Search on Google Maps
+                </a>
+              )}
+            </div>
+
+            {/* Location info */}
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div className="p-5 border border-border rounded-2xl bg-card">
+                <div className="flex items-center gap-2 mb-2">
+                  <MapPin className="w-4 h-4 text-accent" />
+                  <span className="font-semibold text-sm">Address</span>
+                </div>
+                <p className="text-muted-foreground text-sm">{hotel.location}</p>
+                {hotel.coords && hotel.coords[0] !== 0 && (
+                  <p className="text-xs text-muted-foreground mt-1 font-mono">
+                    {hotel.coords[0].toFixed(4)}, {hotel.coords[1].toFixed(4)}
+                  </p>
+                )}
+              </div>
+              <div className="p-5 border border-border rounded-2xl bg-card">
+                <div className="flex items-center gap-2 mb-2">
+                  <Navigation className="w-4 h-4 text-accent" />
+                  <span className="font-semibold text-sm">Nearby</span>
+                </div>
+                <ul className="space-y-1 text-sm text-muted-foreground">
+                  <li>✈ Search nearby airports on Google Maps</li>
+                  <li>🏛 Explore local landmarks and attractions</li>
+                  <li>🚉 Find transport connections nearby</li>
+                </ul>
+              </div>
+            </div>
           </div>
         )}
       </div>

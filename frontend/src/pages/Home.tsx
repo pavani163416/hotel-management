@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { MapPin, Calendar, Users, Search, Star, ArrowRight, Sparkles, ShieldCheck, Headphones } from "lucide-react";
 import { useBooking } from "@/context/BookingContext";
+import { useCurrency } from "@/context/CurrencyContext";
 import Layout from "@/components/Layout";
 import { useState, useMemo } from "react";
 import hero3d from "@/assets/hero-3d.png";
@@ -23,6 +24,7 @@ const TOP_DESTINATIONS = [
 const Home = () => {
   const nav = useNavigate();
   const { search, setSearch, hotels } = useBooking();
+  const { format } = useCurrency();
   const [local, setLocal] = useState(search);
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
@@ -183,7 +185,7 @@ const Home = () => {
                   <p className="text-sm text-muted-foreground">{h.location}</p>
                 </div>
                 <p className="text-sm font-semibold text-primary whitespace-nowrap">
-                  From ${h.pricePerNight}<span className="text-muted-foreground font-normal">/night</span>
+                  From {format(h.pricePerNight)}<span className="text-muted-foreground font-normal">/night</span>
                 </p>
               </div>
             </button>

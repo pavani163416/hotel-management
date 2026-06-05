@@ -3,6 +3,7 @@ import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { Bell, Hotel, UserCircle, LogOut, Mail, CheckCircle2 } from "lucide-react";
 import { useBooking } from "@/context/BookingContext";
 import { AuthModal } from "@/components/AuthModal";
+import CurrencySwitcher from "@/components/CurrencySwitcher";
 import socket from "@/services/socket";
 import api, { getNotifications, markNotificationRead, createNotification, API } from "@/services/api";
 import { toast } from "sonner";
@@ -231,6 +232,7 @@ const Navbar = () => {
         </nav>
 
         <div className="flex items-center gap-3">
+          <CurrencySwitcher />
           {user ? (
             <>
               <div className="relative">

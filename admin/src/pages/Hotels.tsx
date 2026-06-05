@@ -50,6 +50,7 @@ export default function Hotels() {
   const [form, setForm] = useState({
     name: "", subtitle: "", location: "", country: "",
     pricePerNight: "500", status: "Active" as Hotel["status"],
+    lat: "0", lng: "0",
     amenities: ["Free WiFi", "Restaurant", "Concierge"] as string[],
     roomInventory: {
       standard: { total: 20, price: 5000 },
@@ -80,6 +81,7 @@ export default function Hotels() {
     setEditTarget(null);
     setForm({
       name: "", subtitle: "", location: "", country: "", pricePerNight: "500", status: "Active",
+      lat: "0", lng: "0",
       amenities: ["Free WiFi", "Restaurant", "Concierge"],
       roomInventory: {
         standard: { total: 20, price: 5000 },
@@ -100,6 +102,8 @@ export default function Hotels() {
     setEditTarget(h);
     setForm({
       name: h.name, subtitle: h.subtitle, location: h.location, country: h.country, pricePerNight: "500", status: h.status,
+      lat: String((h as any).coords?.[0] ?? 0),
+      lng: String((h as any).coords?.[1] ?? 0),
       amenities: h.amenities?.length ? h.amenities : ["Free WiFi", "Restaurant", "Concierge"],
       roomInventory: (h as any).roomInventory || {
         standard: { total: 20, price: 5000 },
@@ -285,7 +289,7 @@ export default function Hotels() {
       reviewCount:   0,
       pricePerNight: price,
       type:          "Hotel",
-      coords:        [0, 0],
+      coords:        [parseFloat(form.lat) || 0, parseFloat(form.lng) || 0],
       amenities:     form.amenities,
       isActive:      form.status === "Active",
       country:       form.country.toUpperCase(),
@@ -690,6 +694,23 @@ export default function Hotels() {
                   className="w-full px-3 py-2.5 border border-border rounded-lg text-sm outline-none focus:border-primary" />
               </div>
             </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">Latitude</label>
+                <input type="number" step="any" value={form.lat}
+                  onChange={(e) => setForm({ ...form, lat: e.target.value })}
+                  placeholder="e.g. 48.8738"
+                  className="w-full px-3 py-2.5 border border-border rounded-lg text-sm outline-none focus:border-primary" />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">Longitude</label>
+                <input type="number" step="any" value={form.lng}
+                  onChange={(e) => setForm({ ...form, lng: e.target.value })}
+                  placeholder="e.g. 2.2950"
+                  className="w-full px-3 py-2.5 border border-border rounded-lg text-sm outline-none focus:border-primary" />
+              </div>
+            </div>
+            <p className="text-[10px] text-muted -mt-2">Find coordinates at <a href="https://www.latlong.net" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">latlong.net</a></p>
             <div className="border border-border rounded-xl p-4 space-y-3">
               <p className="text-xs font-semibold text-muted uppercase tracking-wider">Room Inventory & Pricing</p>
               <div className="space-y-3">

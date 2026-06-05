@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { BookingProvider } from "@/context/BookingContext";
 import { ThemeProvider } from "@/context/ThemeContext";
+import { CurrencyProvider } from "@/context/CurrencyContext";
 import RequireAuth from "@/components/RequireAuth";
 import { useEffect } from "react";
 
@@ -46,6 +47,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+        <CurrencyProvider>
         <BookingProvider>
           <ScrollToTop />
           <Routes>
@@ -88,6 +90,7 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BookingProvider>
+        </CurrencyProvider>
       </BrowserRouter>
     </TooltipProvider>
     </ThemeProvider>
