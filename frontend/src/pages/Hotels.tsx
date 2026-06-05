@@ -200,7 +200,7 @@ const Hotels = () => {
                       <input
                         type="text"
                         value={nameSearch}
-                        onChange={(e) => { setNameSearch(e.target.value); setNameDropdown(true); if (!e.target.value.trim()) { setNameFilter(""); } }}
+                        onChange={(e) => { setNameSearch(e.target.value); setNameDropdown(true); setNameFilter(""); }}
                         onFocus={() => setNameDropdown(true)}
                         onBlur={() => setTimeout(() => setNameDropdown(false), 150)}
                         onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); applyNameSearch(); } if (e.key === "Escape") { setNameDropdown(false); } }}
