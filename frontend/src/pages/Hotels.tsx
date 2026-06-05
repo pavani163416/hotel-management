@@ -98,7 +98,7 @@ const Hotels = () => {
 
       <div className="bg-gradient-to-br from-secondary via-background to-secondary/50 min-h-screen">
         <div className="container py-8">
-        <div className="grid lg:grid-cols-[300px_1fr] gap-8">
+          <div className="grid lg:grid-cols-[300px_1fr] gap-8">
           {/* SIDEBAR */}
           <aside className="lg:sticky lg:top-20 lg:self-start space-y-5 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto pr-1">
             <div className="rounded-xl border border-border overflow-hidden bg-card">
@@ -195,6 +195,7 @@ const Hotels = () => {
               <div className="grid sm:grid-cols-2 gap-5">{filtered.map((h) => <HotelGridCard key={h.id} hotel={h} onView={() => nav(`/hotel/${h.id}`)} />)}</div>
             )}
           </section>
+        </div>
         </div>
       </div>
 
