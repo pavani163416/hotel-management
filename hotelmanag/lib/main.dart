@@ -46,7 +46,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => di.sl<AuthProvider>()),
         ChangeNotifierProvider(create: (_) => di.sl<HotelProvider>()),
         ChangeNotifierProvider(create: (_) => di.sl<BookingProvider>()),
-        ChangeNotifierProvider(create: (_) => NotificationProvider()),
+        ChangeNotifierProvider(create: (_) => di.sl<NotificationProvider>()),
         ChangeNotifierProvider(create: (_) => di.sl<PromoProvider>()),
       ],
       child: const MyApp(),
