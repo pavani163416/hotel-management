@@ -75,7 +75,7 @@ const Hotels = () => {
     return () => clearTimeout(t);
   }, [maxPrice, minRating, amenities, types, sort, setSearchParams]);
 
-  useEffect(() => { const t = setTimeout(() => setLoading(false), 350); return () => clearTimeout(t); }, []);
+  useEffect(() => { setLoading(false); }, []);
 
   const filtered = useMemo(() => {
     let list = hotels.filter((h) => {
@@ -202,7 +202,6 @@ const Hotels = () => {
                     className="flex items-center"
                   >
                     <div className="relative">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                       <input
                         type="text"
                         value={nameSearch}
@@ -220,7 +219,7 @@ const Hotels = () => {
                         placeholder="Search hotel name..."
                         aria-label="Search hotels by name"
                         autoComplete="off"
-                        className="pl-9 pr-8 py-2 border border-border rounded-l-lg bg-background text-sm text-primary outline-none focus:border-accent w-[190px]"
+                        className="pl-4 pr-8 py-2 border border-border rounded-l-lg bg-background text-sm text-primary outline-none focus:border-accent w-[190px]"
                       />
                       {nameSearch && (
                         <button
