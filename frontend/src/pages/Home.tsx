@@ -62,7 +62,7 @@ const Home = () => {
               <Sparkles className="w-3.5 h-3.5" /> Curated Luxury Stays
             </span>
             <h1 className="font-display text-4xl sm:text-5xl md:text-6xl font-bold text-primary tracking-tight mt-5 leading-[1.05]">
-              Discover <span style={{ color: "#C8860A" }}>Extraordinary</span><br /> Stays Worldwide
+              Discover <span style={{ color: "#A0722A" }}>Extraordinary</span><br /> Stays Worldwide
             </h1>
             <p className="mt-5 text-muted-foreground text-base md:text-lg max-w-lg">
               Hand-picked hotels and private residences with a seamless, concierge-driven booking experience.
