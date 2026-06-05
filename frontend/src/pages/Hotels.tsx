@@ -22,6 +22,7 @@ const Hotels = () => {
   const [sort, setSort] = useState<"price-asc" | "price-desc" | "rating">((searchParams.get("sort") as any) || "rating");
   const [paymentToast, setPaymentToast] = useState<"cancelled" | "failed" | null>(null);
   const [nameSearch, setNameSearch] = useState("");
+  const [nameFilter, setNameFilter] = useState(""); // only applied on submit
   const [nameDropdown, setNameDropdown] = useState(false);
 
   // Suggestions: all hotel names that match current input (case-insensitive)
@@ -33,6 +34,12 @@ const Hotels = () => {
       .filter((n) => n.toLowerCase().includes(q))
       .slice(0, 8);
   }, [hotels, nameSearch]);
+
+  const applyNameSearch = (value?: string) => {
+    const v = (value ?? nameSearch).trim();
+    setNameFilter(v);
+    setNameDropdown(false);
+  };
 
   // Show toast if redirected back from a cancelled/failed payment
   useEffect(() => {
@@ -70,7 +77,7 @@ const Hotels = () => {
       const loc = h.location || "";
       const cty = h.city || "";
       if (search.location && !loc.toLowerCase().includes(search.location.toLowerCase()) && !cty.toLowerCase().includes(search.location.toLowerCase())) return false;
-      if (nameSearch.trim() && !h.name.toLowerCase().includes(nameSearch.trim().toLowerCase())) return false;
+      if (nameFilter.trim() && !h.name.toLowerCase().includes(nameFilter.trim().toLowerCase())) return false;
       if (h.pricePerNight > maxPrice) return false;
       if (ratingValue < minRating) return false;
       if (amenities.length && !amenities.every((a) => h.amenities.includes(a))) return false;
@@ -184,35 +191,50 @@ const Hotels = () => {
               <div className="flex items-center gap-2 flex-wrap">
                 {/* Hotel name search with dropdown */}
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                  <input
-                    type="text"
-                    value={nameSearch}
-                    onChange={(e) => { setNameSearch(e.target.value); setNameDropdown(true); }}
-                    onFocus={() => setNameDropdown(true)}
-                    onBlur={() => setTimeout(() => setNameDropdown(false), 150)}
-                    placeholder="Search by hotel name..."
-                    aria-label="Search hotels by name"
-                    autoComplete="off"
-                    className="pl-9 pr-8 py-2 border border-border rounded-lg bg-background text-sm text-primary outline-none focus:border-accent w-[220px]"
-                  />
-                  {nameSearch && (
+                  <form
+                    onSubmit={(e) => { e.preventDefault(); applyNameSearch(); }}
+                    className="flex items-center"
+                  >
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                      <input
+                        type="text"
+                        value={nameSearch}
+                        onChange={(e) => { setNameSearch(e.target.value); setNameDropdown(true); if (!e.target.value.trim()) { setNameFilter(""); } }}
+                        onFocus={() => setNameDropdown(true)}
+                        onBlur={() => setTimeout(() => setNameDropdown(false), 150)}
+                        onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); applyNameSearch(); } if (e.key === "Escape") { setNameDropdown(false); } }}
+                        placeholder="Search hotel name..."
+                        aria-label="Search hotels by name"
+                        autoComplete="off"
+                        className="pl-9 pr-8 py-2 border border-border rounded-l-lg bg-background text-sm text-primary outline-none focus:border-accent w-[190px]"
+                      />
+                      {nameSearch && (
+                        <button
+                          type="button"
+                          onMouseDown={(e) => { e.preventDefault(); setNameSearch(""); setNameFilter(""); setNameDropdown(false); }}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
                     <button
-                      onMouseDown={(e) => { e.preventDefault(); setNameSearch(""); setNameDropdown(false); }}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary"
+                      type="submit"
+                      className="bg-primary hover:bg-primary/90 text-primary-foreground px-3 py-2 rounded-r-lg border border-primary text-sm font-medium transition-base flex items-center gap-1.5"
                     >
-                      <X className="w-3.5 h-3.5" />
+                      <Search className="w-4 h-4" />
                     </button>
-                  )}
+                  </form>
                   {nameDropdown && nameSuggestions.length > 0 && (
-                    <div className="absolute left-0 right-0 top-full mt-1 bg-popover border border-border rounded-xl shadow-luxe z-50 overflow-hidden">
+                    <div className="absolute left-0 top-full mt-1 bg-popover border border-border rounded-xl shadow-luxe z-50 overflow-hidden w-[240px]">
                       {nameSuggestions.map((name) => {
                         const q = nameSearch.trim().toLowerCase();
                         const idx = name.toLowerCase().indexOf(q);
                         return (
                           <button
                             key={name}
-                            onMouseDown={(e) => { e.preventDefault(); setNameSearch(name); setNameDropdown(false); }}
+                            onMouseDown={(e) => { e.preventDefault(); setNameSearch(name); applyNameSearch(name); }}
                             className="w-full text-left px-4 py-2.5 hover:bg-accent/10 text-sm text-primary transition-base flex items-center gap-2"
                           >
                             <Search className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
