@@ -44,7 +44,7 @@ type AuthModalProps = {
   defaultMode?: "signin" | "signup";
 };
 
-function AuthModalInner({ isOpen, onClose, defaultMode, mode, setMode, loading, setLoading, error, setError, email, setEmail, password, setPassword, name, setName, phone, setPhone, countryCode, setCountryCode, city, setCity, otpSent, setOtpSent, verificationCode, setVerificationCode, otpMessage, setOtpMessage, resendCooldown, setResendCooldown, showContactAdmin, setShowContactAdmin, resetForm, handleOpenChange, handleSignIn, handleSignUp, finishAuth, handleSendPhoneOTP, handleVerifyPhoneOTP, handleVerifyEmailOTP, handleResendEmailOTP, renderAuthOptions, handleForgotPassword, captchaId, captchaChallenge, captchaAnswer, setCaptchaAnswer, captchaLoading, fetchCaptcha }: any) {
+function AuthModalInner({ isOpen, onClose, defaultMode, mode, setMode, loading, setLoading, error, setError, email, setEmail, password, setPassword, name, setName, phone, setPhone, countryCode, setCountryCode, city, setCity, otpSent, setOtpSent, verificationCode, setVerificationCode, otpMessage, setOtpMessage, resendCooldown, setResendCooldown, showContactAdmin, setShowContactAdmin, resetForm, handleOpenChange, handleSignIn, handleSignUp, finishAuth, handleSendPhoneOTP, handleVerifyPhoneOTP, handleVerifyEmailOTP, handleResendEmailOTP, renderAuthOptions, handleForgotPassword }: any) {
   // We extract the Google Login hook into a child component wrapped in GoogleOAuthProvider
   const login = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
@@ -96,9 +96,9 @@ function AuthModalInner({ isOpen, onClose, defaultMode, mode, setMode, loading, 
   );
 
   return (
-    <DialogContent className="w-[min(92vw,760px)] max-w-[760px] max-h-[calc(100vh-5rem)] overflow-y-auto p-5 sm:p-6" aria-describedby={undefined}>
+    <DialogContent className="sm:max-w-[425px]" aria-describedby={undefined}>
       <DialogHeader>
-        <DialogTitle className="font-display text-xl sm:text-2xl font-bold">
+        <DialogTitle className="font-display text-2xl font-bold">
           {mode === "signin" ? "Welcome Back" : mode === "phone" ? "Continue with Phone" : mode === "verify_email_otp" ? "Verify Your Email" : mode === "forgot_password" ? "Reset Password" : "Create an Account"}
         </DialogTitle>
       </DialogHeader>
@@ -121,23 +121,6 @@ function AuthModalInner({ isOpen, onClose, defaultMode, mode, setMode, loading, 
                 className="text-xs text-primary hover:underline font-semibold">Forgot Password?</button>
             </div>
           </div>
-          {captchaChallenge && (
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <label className="block text-sm font-medium">Security Check</label>
-                <button type="button" onClick={fetchCaptcha} disabled={captchaLoading}
-                  className="text-xs text-primary hover:underline flex items-center gap-1">
-                  {captchaLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : "↻"} New challenge
-                </button>
-              </div>
-              <div className="bg-secondary/60 border border-border rounded-lg px-4 py-2 text-sm font-mono font-semibold text-foreground">
-                {captchaChallenge}
-              </div>
-              <input type="text" value={captchaAnswer} onChange={e => setCaptchaAnswer(e.target.value)}
-                className="w-full px-4 py-2 border border-border rounded-lg outline-none focus:ring-2 focus:ring-primary text-sm"
-                placeholder="Your answer" autoComplete="off" inputMode="numeric" />
-            </div>
-          )}
           {error && <p className="text-destructive text-sm font-medium">{error}</p>}
           <button type="submit" disabled={loading}
             className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-3 rounded-xl font-semibold flex items-center justify-center transition-base mt-2">
@@ -151,7 +134,7 @@ function AuthModalInner({ isOpen, onClose, defaultMode, mode, setMode, loading, 
           </p>
         </form>
       ) : mode === "signup" ? (
-        <form onSubmit={handleSignUp} className="grid gap-3 mt-3 sm:grid-cols-2">
+        <form onSubmit={handleSignUp} className="space-y-4 mt-4">
           <div className="space-y-2">
             <label className="block text-sm font-medium">Full Name <span className="text-destructive">*</span></label>
             <input type="text" value={name} onChange={e => setName(e.target.value)}
@@ -169,7 +152,7 @@ function AuthModalInner({ isOpen, onClose, defaultMode, mode, setMode, loading, 
             <PasswordInput value={password} onChange={e => setPassword((e.target as HTMLInputElement).value)}
               className="w-full px-4 py-2 border border-border rounded-lg outline-none focus:border-accent"
               placeholder="8 - 15 characters" autoComplete="new-password" />
-            <div className="grid grid-cols-2 text-[11px] gap-y-1 gap-x-2 mt-1.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 text-xs gap-y-1.5 gap-x-2 mt-2">
               <div className={`flex items-center gap-1.5 ${(password.length >= 8 && password.length <= 15) ? "text-green-600 font-medium" : "text-muted-foreground"}`}>
                 <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${(password.length >= 8 && password.length <= 15) ? 'border-green-600 bg-green-600' : 'border-muted-foreground'}`}>
                   {(password.length >= 8 && password.length <= 15) && <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
@@ -219,30 +202,13 @@ function AuthModalInner({ isOpen, onClose, defaultMode, mode, setMode, loading, 
               className="w-full px-4 py-2 border border-border rounded-lg outline-none focus:border-accent"
               placeholder="New York" autoComplete="address-level2" />
           </div>
-          {captchaChallenge && (
-            <div className="space-y-1.5 sm:col-span-2">
-              <div className="flex items-center justify-between">
-                <label className="block text-sm font-medium">Security Check</label>
-                <button type="button" onClick={fetchCaptcha} disabled={captchaLoading}
-                  className="text-xs text-primary hover:underline flex items-center gap-1">
-                  {captchaLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : "↻"} New challenge
-                </button>
-              </div>
-              <div className="bg-secondary/60 border border-border rounded-lg px-4 py-2 text-sm font-mono font-semibold text-foreground">
-                {captchaChallenge}
-              </div>
-              <input type="text" value={captchaAnswer} onChange={e => setCaptchaAnswer(e.target.value)}
-                className="w-full px-4 py-2 border border-border rounded-lg outline-none focus:ring-2 focus:ring-primary text-sm"
-                placeholder="Your answer" autoComplete="off" inputMode="numeric" />
-            </div>
-          )}
-          {error && <p className="text-destructive text-sm font-medium sm:col-span-2">{error}</p>}
+          {error && <p className="text-destructive text-sm font-medium">{error}</p>}
           <button type="submit" disabled={loading}
-            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-3 rounded-xl font-semibold flex items-center justify-center transition-base sm:col-span-2">
+            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-3 rounded-xl font-semibold flex items-center justify-center transition-base mt-2">
             {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Create Account"}
           </button>
-          <div className="sm:col-span-2">{authOptions}</div>
-          <p className="text-center text-sm text-muted-foreground sm:col-span-2">
+          {authOptions}
+          <p className="text-center text-sm text-muted-foreground mt-4">
             Already have an account?{" "}
             <button type="button" onClick={() => { localStorage.removeItem("luxe_pending_email"); setMode("signin"); resetForm(); }}
               className="text-primary hover:underline font-semibold">Sign In</button>
@@ -394,11 +360,6 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
   const [otpMessage, setOtpMessage] = useState("");
   const [resendCooldown, setResendCooldown] = useState(0);
   const [showContactAdmin, setShowContactAdmin] = useState(false);
-  // CAPTCHA
-  const [captchaId, setCaptchaId] = useState("");
-  const [captchaChallenge, setCaptchaChallenge] = useState("");
-  const [captchaAnswer, setCaptchaAnswer] = useState("");
-  const [captchaLoading, setCaptchaLoading] = useState(false);
 
   useEffect(() => {
     let timer: any;
@@ -423,30 +384,12 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
         setMode(defaultMode);
       }
       setError("");
-      fetchCaptcha(); // load a fresh CAPTCHA every time the modal opens
     }
   }, [isOpen, defaultMode]);
-
-
-  const fetchCaptcha = async () => {
-    setCaptchaLoading(true);
-    setCaptchaAnswer("");
-    try {
-      const res: any = await api.get("/auth/captcha");
-      const d = res.data?.data ?? res.data;
-      setCaptchaId(d.captchaId || "");
-      setCaptchaChallenge(d.challenge || "");
-    } catch {
-      setCaptchaChallenge(""); setCaptchaId("");
-    } finally {
-      setCaptchaLoading(false);
-    }
-  };
 
   const resetForm = () => {
     setEmail(""); setPassword(""); setName(""); setPhone(""); setCity(""); setError("");
     setOtpSent(false); setVerificationCode(""); setOtpMessage(""); setResendCooldown(0);
-    setCaptchaAnswer("");
     // Don't clear localStorage pending email here, let explicit actions do it
   };
 
@@ -455,49 +398,30 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) { setError("Please enter email and password."); return; }
-    if (captchaChallenge && !captchaAnswer.trim()) { setError("Please answer the security check."); return; }
     setError(""); setLoading(true);
     try {
-      const payload: any = { email: email.trim().toLowerCase(), password };
-      if (captchaId && captchaAnswer.trim()) {
-        payload.captchaId = captchaId;
-        payload.captchaAnswer = captchaAnswer.trim();
-      }
-      const res: any = await api.post("/auth/login", payload);
+      const res: any = await api.post("/auth/login", { email, password });
       const d = res.data?.data ?? res.data;
       localStorage.setItem("luxe_customer_token", d.token);
       setUser({ name: d.name, email: d.email, phone: d.phone || "", city: d.city || "" });
       onClose(); resetForm();
     } catch (err: any) {
       const respData = err.response?.data;
-      if (respData?.requiresVerification || respData?.code === "UNVERIFIED_EMAIL") {
+      if (respData?.requiresVerification || respData?.code === "UNVERIFIED_EMAIL" || err.code === "UNVERIFIED_EMAIL") {
         const pendingEmail = respData?.email || email;
         localStorage.setItem("luxe_pending_email", pendingEmail);
         setEmail(pendingEmail);
         setMode("verify_email_otp");
+        
         setOtpMessage(respData?.message || "Your account is pending verification. A verification code has been sent to your email.");
         setError("");
-        setResendCooldown(60);
+        setResendCooldown(60); // Trigger cooldown on auto-resend
       } else {
         setError(respData?.message || err.message || "Sign in failed. Please try again.");
-        fetchCaptcha(); // refresh challenge after failed attempt
       }
     } finally {
       setLoading(false);
     }
-  };
-
-  const validatePhone = (phoneNum: string, cc: string): string | null => {
-    const clean = phoneNum.replace(/[\s\-()]/g, "");
-    if (!clean) return "Phone number is required.";
-    if (!/^\d+$/.test(clean)) return "Phone number must contain only digits.";
-    if (cc === "+91") {
-      if (clean.length !== 10) return "Indian phone numbers must be exactly 10 digits.";
-      if (!/^[6-9]/.test(clean)) return "Indian mobile numbers must start with 6, 7, 8, or 9.";
-    } else {
-      if (clean.length < 7 || clean.length > 15) return "Phone number must be between 7 and 15 digits.";
-    }
-    return null;
   };
 
   const handleSignUp = async (e: React.FormEvent) => {
@@ -508,18 +432,10 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
     if (!/[A-Z]/.test(password)) { setError("Password must contain at least one capital letter."); return; }
     if (!/[0-9]/.test(password)) { setError("Password must contain at least one number."); return; }
     if (!/[^A-Za-z0-9]/.test(password)) { setError("Password must contain at least one special character."); return; }
-    const phoneErr = validatePhone(phone, countryCode);
-    if (phoneErr) { setError(phoneErr); return; }
-    if (captchaChallenge && !captchaAnswer.trim()) { setError("Please answer the security check."); return; }
     setError(""); setLoading(true);
     try {
       const fullPhone = `${countryCode}${phone.trim()}`;
-      const payload: any = { name: name.trim(), email: email.trim().toLowerCase(), password, phone: fullPhone, city };
-      if (captchaId && captchaAnswer.trim()) {
-        payload.captchaId = captchaId;
-        payload.captchaAnswer = captchaAnswer.trim();
-      }
-      const res: any = await api.post("/auth/register", payload);
+      const res: any = await api.post("/auth/register", { name, email, password, phone: fullPhone, city });
       const d = res.data?.data ?? res.data;
       if (d.isVerified === false) {
         localStorage.setItem("luxe_pending_email", d.email || email);
@@ -534,7 +450,6 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
       }
     } catch (err: any) {
       setError(err.response?.data?.message || err.message || "Registration failed. Please try again.");
-      fetchCaptcha(); // refresh challenge after failed attempt
     } finally {
       setLoading(false);
     }
@@ -662,8 +577,6 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
           finishAuth={finishAuth} handleSendPhoneOTP={handleSendPhoneOTP} handleVerifyPhoneOTP={handleVerifyPhoneOTP}
           handleVerifyEmailOTP={handleVerifyEmailOTP} handleResendEmailOTP={handleResendEmailOTP}
           handleForgotPassword={handleForgotPassword}
-          captchaId={captchaId} captchaChallenge={captchaChallenge} captchaAnswer={captchaAnswer}
-          setCaptchaAnswer={setCaptchaAnswer} captchaLoading={captchaLoading} fetchCaptcha={fetchCaptcha}
         />
       </GoogleOAuthProvider>
       <ContactAdminModal 

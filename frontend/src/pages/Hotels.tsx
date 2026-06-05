@@ -55,21 +55,9 @@ const Hotels = () => {
   const filtered = useMemo(() => {
     let list = hotels.filter((h) => {
       const ratingValue = typeof h.rating === "number" ? h.rating : 0;
-      if (search.location) {
-        const query = search.location.toLowerCase();
-        const matchesName = h.name?.toLowerCase().includes(query);
-        const matchesLocation = h.location?.toLowerCase().includes(query);
-        const matchesCity = h.city?.toLowerCase().includes(query);
-        const matchesState = h.state?.toLowerCase().includes(query);
-        const matchesCountry = h.country?.toLowerCase().includes(query);
-        const matchesType = h.type?.toLowerCase().includes(query);
-        const matchesDesc = h.description?.toLowerCase().includes(query);
-        const matchesAmenities = h.amenities?.some((a) => a.toLowerCase().includes(query));
-
-        if (!matchesName && !matchesLocation && !matchesCity && !matchesState && !matchesCountry && !matchesType && !matchesDesc && !matchesAmenities) {
-          return false;
-        }
-      }
+      const loc = h.location || "";
+      const cty = h.city || "";
+      if (search.location && !loc.toLowerCase().includes(search.location.toLowerCase()) && !cty.toLowerCase().includes(search.location.toLowerCase())) return false;
       if (h.pricePerNight > maxPrice) return false;
       if (ratingValue < minRating) return false;
       if (amenities.length && !amenities.every((a) => h.amenities.includes(a))) return false;
@@ -108,12 +96,12 @@ const Hotels = () => {
         </div>
       )}
 
-      <div className="container max-w-[1540px] py-6">
-        <div className="grid lg:grid-cols-[280px_1fr] gap-6">
+      <div className="container py-8">
+        <div className="grid lg:grid-cols-[300px_1fr] gap-8">
           {/* SIDEBAR */}
-          <aside className="lg:sticky lg:top-20 lg:self-start space-y-4 lg:max-h-[calc(100vh-5.5rem)] lg:overflow-y-auto pr-1">
+          <aside className="lg:sticky lg:top-20 lg:self-start space-y-5 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto pr-1">
             <div className="rounded-xl border border-border overflow-hidden bg-card">
-              <div className="h-36 relative">
+              <div className="h-44 relative">
                 <HotelMap hotels={filtered} onHotelClick={(id) => nav(`/hotel/${id}`)} />
               </div>
               <button onClick={() => setMapOpen(true)} className="w-full flex items-center justify-center gap-2 py-2.5 text-xs font-semibold text-primary border-t border-border hover:bg-secondary transition-base">
@@ -169,7 +157,7 @@ const Hotels = () => {
           </aside>
 
           {/* RIGHT */}
-          <section className="space-y-6 min-w-0">
+          <section className="space-y-8 min-w-0">
             {deals.length > 0 && <TopDeals deals={deals} onView={(id) => nav(`/hotel/${id}`)} />}
 
             <div className="flex items-end justify-between gap-3 flex-wrap">
@@ -193,7 +181,7 @@ const Hotels = () => {
             </div>
 
             {loading ? (
-              <div className="space-y-4">{[1, 2, 3].map((i) => <div key={i} className="h-40 bg-secondary rounded-2xl animate-pulse" />)}</div>
+              <div className="space-y-5">{[1, 2, 3].map((i) => <div key={i} className="h-48 bg-secondary rounded-2xl animate-pulse" />)}</div>
             ) : filtered.length === 0 ? (
               <div className="text-center py-20 bg-secondary/50 rounded-2xl border border-border">
                 <X className="w-10 h-10 mx-auto text-muted-foreground mb-3" />
@@ -201,7 +189,7 @@ const Hotels = () => {
                 <button onClick={clearAll} className="mt-3 text-accent text-sm font-semibold hover:underline">Clear filters</button>
               </div>
             ) : view === "list" ? (
-              <div className="space-y-4">{filtered.map((h) => <HotelListCard key={h.id} hotel={h} onView={() => nav(`/hotel/${h.id}`)} />)}</div>
+              <div className="space-y-5">{filtered.map((h) => <HotelListCard key={h.id} hotel={h} onView={() => nav(`/hotel/${h.id}`)} />)}</div>
             ) : (
               <div className="grid sm:grid-cols-2 gap-5">{filtered.map((h) => <HotelGridCard key={h.id} hotel={h} onView={() => nav(`/hotel/${h.id}`)} />)}</div>
             )}
@@ -232,8 +220,8 @@ const Hotels = () => {
 };
 
 const FilterCard = ({ title, children }: { title: string; children: React.ReactNode }) => (
-  <div className="bg-card border border-border rounded-xl p-3.5">
-    <h3 className="font-semibold text-primary mb-2.5 text-sm">{title}</h3>
+  <div className="bg-card border border-border rounded-xl p-4">
+    <h3 className="font-semibold text-primary mb-3 text-sm">{title}</h3>
     {children}
   </div>
 );
@@ -244,8 +232,8 @@ const TopDeals = ({ deals, onView }: { deals: any[]; onView: (id: string) => voi
     if (el) el.scrollBy({ left: dir === "l" ? -340 : 340, behavior: "smooth" });
   };
   return (
-    <div className="bg-card border border-border rounded-2xl p-4">
-      <div className="flex items-center justify-between mb-3">
+    <div className="bg-card border border-border rounded-2xl p-5">
+      <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <span className="grid place-items-center w-8 h-8 rounded-lg bg-accent/15 text-accent"><Flame className="w-4 h-4" /></span>
           <div>
@@ -260,13 +248,13 @@ const TopDeals = ({ deals, onView }: { deals: any[]; onView: (id: string) => voi
       </div>
       <div id="deals-rail" className="flex gap-4 overflow-x-auto scroll-smooth pb-2 -mx-1 px-1 snap-x">
         {deals.map((h) => (
-          <article key={h.id} onClick={() => onView(h.id)} className="snap-start min-w-[300px] max-w-[300px] bg-background rounded-xl overflow-hidden border border-border hover:shadow-elegant transition-base hover:scale-[1.02] group cursor-pointer">
-            <div className="relative aspect-[16/8] overflow-hidden">
+          <article key={h.id} onClick={() => onView(h.id)} className="snap-start min-w-[280px] max-w-[280px] bg-background rounded-xl overflow-hidden border border-border hover:shadow-elegant transition-base hover:scale-[1.02] group cursor-pointer">
+            <div className="relative aspect-[16/10] overflow-hidden">
               <img src={h.image} alt={h.name} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-base duration-500" />
               <span className="absolute top-2 left-2 bg-accent text-accent-foreground text-[10px] uppercase tracking-wider font-bold px-2 py-1 rounded">Top Deal</span>
               {h.discountPct && <span className="absolute top-2 right-2 bg-primary text-primary-foreground text-[10px] font-bold px-2 py-1 rounded">-{h.discountPct}%</span>}
             </div>
-            <div className="p-3.5">
+            <div className="p-4">
               <div className="flex items-start justify-between gap-2 mb-1">
                 <h3 className="font-semibold text-primary text-sm truncate">{h.name}</h3>
                 {typeof h.rating === "number" && h.rating > 0 && (
@@ -294,12 +282,12 @@ const HotelListCard = ({ hotel: h, onView }: { hotel: any; onView: () => void })
   const totalAvail = h.rooms.reduce((s: number, r: any) => s + r.available, 0);
   return (
     <article onClick={onView} className="bg-card rounded-2xl border border-border overflow-hidden hover:shadow-elegant hover:border-brown/40 transition-base group animate-fade-in cursor-pointer">
-      <div className="grid md:grid-cols-[240px_1fr_auto]">
+      <div className="grid md:grid-cols-[260px_1fr_auto]">
         <div className="relative aspect-[4/3] md:aspect-auto md:h-full overflow-hidden">
           <img src={h.image} alt={h.name} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-base duration-500" />
           {h.isDeal && <span className="absolute top-3 left-3 bg-accent text-accent-foreground text-[10px] uppercase tracking-wider font-bold px-2.5 py-1 rounded">Top Deal</span>}
         </div>
-        <div className="p-4 flex flex-col gap-2">
+        <div className="p-5 flex flex-col gap-2">
           <div className="flex items-start justify-between gap-3">
             <h3 className="font-display text-lg font-bold text-primary">{h.name}</h3>
             <div className="flex items-center gap-1 text-sm font-semibold whitespace-nowrap">
@@ -317,16 +305,16 @@ const HotelListCard = ({ hotel: h, onView }: { hotel: any; onView: () => void })
           <div className="flex flex-wrap gap-1.5">
             {h.amenities.slice(0, 4).map((a: string) => <span key={a} className="text-xs px-2.5 py-1 rounded-md bg-secondary text-brown font-medium">{a}</span>)}
           </div>
-          <p className="text-sm text-muted-foreground line-clamp-2 max-w-3xl">{h.description}</p>
+          <p className="text-sm text-muted-foreground line-clamp-2">{h.description}</p>
         </div>
-        <div className="p-4 border-t md:border-t-0 md:border-l border-border flex md:flex-col items-end md:items-end justify-between md:justify-center gap-3 md:min-w-[160px]">
+        <div className="p-5 border-t md:border-t-0 md:border-l border-border flex md:flex-col items-end md:items-end justify-between md:justify-center gap-3 md:min-w-[170px]">
           <div className="text-right">
             <p className="text-xs text-muted-foreground">Starting from</p>
             {h.originalPrice && <p className="text-xs text-muted-foreground line-through">${h.originalPrice}</p>}
-            <p className="font-display text-xl font-bold text-primary">${h.pricePerNight}</p>
+            <p className="font-display text-2xl font-bold text-primary">${h.pricePerNight}</p>
             <p className="text-xs text-muted-foreground">per night</p>
           </div>
-          <button onClick={(e) => { e.stopPropagation(); onView(); }} className="bg-accent hover:bg-accent/90 text-accent-foreground px-4 py-2 rounded-lg font-semibold text-sm transition-base">View Details</button>
+          <button onClick={(e) => { e.stopPropagation(); onView(); }} className="bg-accent hover:bg-accent/90 text-accent-foreground px-5 py-2.5 rounded-lg font-semibold text-sm transition-base">View Details</button>
         </div>
       </div>
     </article>

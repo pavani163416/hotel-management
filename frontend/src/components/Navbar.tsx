@@ -271,13 +271,6 @@ const Navbar = () => {
                         </button>
                       ))}
                     </div>
-                    <Link
-                      to="/notifications"
-                      onClick={() => setShowNotifications(false)}
-                      className="block text-center py-2.5 text-xs font-semibold text-accent hover:bg-secondary border-t border-border transition-base"
-                    >
-                      View All Notifications
-                    </Link>
                   </div>
                 )}
               </div>
