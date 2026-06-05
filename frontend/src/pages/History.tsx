@@ -4,7 +4,6 @@ import { X, MapPin, BookOpen, AlertTriangle, Loader2, Clock, Download } from "lu
 import { downloadBookingReceipt, historyItemToReceipt } from "@/utils/receiptPdf";
 import Layout from "@/components/Layout";
 import { useBooking, Booking } from "@/context/BookingContext";
-import { AuthModal } from "@/components/AuthModal";
 import { getBookingsByEmail, getMyBookings, cancelBooking as cancelBookingApi } from "@/services/api";
 
 const CANCEL_REASONS = [
@@ -140,30 +139,8 @@ const History = () => {
   };
 
   if (!user) {
-    return (
-      <Layout>
-        <div className="container py-20 max-w-xl text-center flex flex-col items-center">
-          <div className="grid place-items-center w-24 h-24 rounded-full bg-accent/10 text-accent mb-6">
-            <BookOpen className="w-10 h-10" />
-          </div>
-          <h1 className="font-display text-3xl font-bold mb-4">Booking History</h1>
-          <p className="text-muted-foreground mb-8">
-            Sign in to view and manage your upcoming stays and past adventures.
-          </p>
-          <div className="flex items-center gap-4">
-            <button onClick={() => { setAuthMode("signin"); setAuthOpen(true); }}
-              className="px-6 py-2.5 text-sm font-semibold rounded-lg bg-accent text-accent-foreground hover:bg-accent/90 transition-base">
-              Sign In
-            </button>
-            <button onClick={() => { setAuthMode("signup"); setAuthOpen(true); }}
-              className="px-6 py-2.5 text-sm font-semibold rounded-lg border border-border hover:bg-accent/5 transition-base">
-              Create Account
-            </button>
-          </div>
-        </div>
-        <AuthModal isOpen={authOpen} onClose={() => setAuthOpen(false)} defaultMode={authMode} />
-      </Layout>
-    );
+    navigate("/", { replace: true, state: { openAuth: true } });
+    return null;
   }
 
   // Merge: API bookings are source of truth; local fills gaps

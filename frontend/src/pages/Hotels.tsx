@@ -96,15 +96,16 @@ const Hotels = () => {
         </div>
       )}
 
-      <div className="container py-8">
+      <div className="bg-gradient-to-br from-secondary via-background to-secondary/50 min-h-screen">
+        <div className="container py-8">
         <div className="grid lg:grid-cols-[300px_1fr] gap-8">
           {/* SIDEBAR */}
           <aside className="lg:sticky lg:top-20 lg:self-start space-y-5 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto pr-1">
             <div className="rounded-xl border border-border overflow-hidden bg-card">
-              <div className="h-44 relative">
+              <div className="h-60 relative">
                 <HotelMap hotels={filtered} onHotelClick={(id) => nav(`/hotel/${id}`)} />
               </div>
-              <button onClick={() => setMapOpen(true)} className="w-full flex items-center justify-center gap-2 py-2.5 text-xs font-semibold text-primary border-t border-border hover:bg-secondary transition-base">
+              <button onClick={() => setMapOpen(true)} className="w-full flex items-center justify-center gap-2 py-3 text-xs font-semibold text-primary border-t border-border hover:bg-secondary transition-base">
                 <Maximize2 className="w-3.5 h-3.5" /> Explore Map
               </button>
             </div>

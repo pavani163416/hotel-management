@@ -1,17 +1,17 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { User, Save, LogOut, Mail, CheckCircle2, Key } from "lucide-react";
 import PasswordInput from "@/components/PasswordInput";
 import Layout from "@/components/Layout";
 import { useBooking } from "@/context/BookingContext";
-import { AuthModal } from "@/components/AuthModal";
 import { createNotification, changePassword } from "@/services/api";
 import { AssistanceModal } from "@/components/AssistanceModal";
 
 const Profile = () => {
   const { user, setUser, bookings, selectedHotel } = useBooking();
+  const navigate = useNavigate();
   const [form, setForm] = useState(user || { name: "", email: "", phone: "", city: "" });
   const [saved, setSaved] = useState(false);
-  const [authOpen, setAuthOpen] = useState(false);
   const [authMode, setAuthMode] = useState<"signin" | "signup">("signin");
   const [requesting, setRequesting] = useState(false);
   const [requestSuccess, setRequestSuccess] = useState(false);
@@ -25,7 +25,7 @@ const Profile = () => {
 
   useEffect(() => { if (user) setForm(user); }, [user]);
 
-  const openAuth = (mode: "signin" | "signup") => { setAuthMode(mode); setAuthOpen(true); };
+  const openAuth = (mode: "signin" | "signup") => { setAuthMode(mode); navigate("/", { replace: true, state: { openAuth: true } }); };
 
   const normalizeDate = (value?: string) => {
     if (!value) return null;
@@ -111,20 +111,8 @@ const Profile = () => {
   };
 
   if (!user) {
-    return (
-      <Layout>
-        <div className="container py-20 max-w-xl text-center flex flex-col items-center">
-          <div className="grid place-items-center w-24 h-24 rounded-full bg-accent/10 text-accent mb-6"><User className="w-10 h-10" /></div>
-          <h1 className="font-display text-3xl font-bold mb-4">Account Profile</h1>
-          <p className="text-muted-foreground mb-8">Please log in to view and manage your profile details and booking history.</p>
-          <div className="flex items-center gap-4">
-            <button onClick={() => openAuth("signin")} className="px-6 py-2.5 text-sm font-semibold rounded-lg bg-accent text-accent-foreground hover:bg-accent/90 transition-base">Sign In</button>
-            <button onClick={() => openAuth("signup")} className="px-6 py-2.5 text-sm font-semibold rounded-lg border border-border hover:bg-accent/5 transition-base">Create Account</button>
-          </div>
-        </div>
-        <AuthModal isOpen={authOpen} onClose={() => setAuthOpen(false)} defaultMode={authMode} />
-      </Layout>
-    );
+    navigate("/", { replace: true, state: { openAuth: true } });
+    return null;
   }
 
   return (
