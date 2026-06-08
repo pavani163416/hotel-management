@@ -8,7 +8,6 @@ export type Room = {
   bed: string;
   available: number;
   features: string[];
-  tour360?: string;
   breakfastIncluded?: boolean;
   freeCancellation?: boolean;
 };
@@ -113,7 +112,7 @@ export const HOTELS: Hotel[] = [
     coords: [4.1755, 73.5093],
     amenities: ["Infinity Pool", "Spa & Wellness", "Beach Access", "Free WiFi", "Restaurant", "Water Sports"],
     rooms: [
-      { id: "r1", roomTypeId: "villa", name: "Beach Villa", description: "Private beachfront villa with plunge pool", price: 1850, capacity: 2, bed: "1 King Bed", available: 5, features: ["Plunge Pool", "Butler", "Beach Access"], tour360: "https://images.unsplash.com/photo-1582719508461-905c673771fd?w=2400&q=90" },
+      { id: "r1", roomTypeId: "villa", name: "Beach Villa", description: "Private beachfront villa with plunge pool", price: 1850, capacity: 2, bed: "1 King Bed", available: 5, features: ["Plunge Pool", "Butler", "Beach Access"] },
       { id: "r2", roomTypeId: "villa", name: "Overwater Bungalow", description: "Glass-floor bungalow over the lagoon", price: 2400, capacity: 2, bed: "1 King Bed", available: 2, features: ["Glass Floor", "Direct Ocean Access", "Butler"] },
     ],
     reviews: [],

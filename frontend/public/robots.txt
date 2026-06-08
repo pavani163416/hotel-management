@@ -1,0 +1,17 @@
+# LuxeStay robots.txt
+# This file tells crawlers and security scanners where to find all pages and API endpoints.
+
+User-agent: *
+Allow: /
+
+# Disallow authenticated/private pages
+Disallow: /booking
+Disallow: /guest-details
+Disallow: /review
+Disallow: /payment
+Disallow: /confirmation
+Disallow: /notifications
+
+# Sitemap references — scanners follow these to discover all pages and API endpoints
+Sitemap: https://hotel-management-production-2225.up.railway.app/sitemap.xml
+Sitemap: https://hotel-management-production-2225.up.railway.app/api/sitemap.json

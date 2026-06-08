@@ -39,8 +39,10 @@ import roomTypeRoutes from "./routes/roomTypeRoutes.js";
 import maintenanceRoutes from "./routes/maintenanceRoutes.js";
 import publicSupportRoutes from "./routes/publicSupportRoutes.js";
 import propertyOwnerRoutes from "./routes/propertyOwnerRoutes.js";
+import sitemapRoutes    from "./routes/sitemapRoutes.js";
 import errorHandler     from "./middleware/errorHandler.js";
 import csrfProtection  from "./middleware/csrfProtection.js";
+import { swaggerCspMiddleware } from "./middleware/csp.js";
 import { apiLimiter, bookingLimiter, promoLimiter, authRateLimiter, adminRateLimiter, publicRateLimiter } from "./middleware/rateLimiter.js";
 import { roomNames, setNotificationIo } from "./utils/notificationService.js";
 import logger           from "./utils/logger.js";
@@ -205,16 +207,18 @@ const isTrustedVercelDomain = (origin) => {
   }
 };
 
+const isValidOrigin = (origin) => {
+  if (!origin || origin === "null" || origin === "undefined") return false;
+  if (allowedOrigins.includes(origin)) return true;
+  if (origin.startsWith("http://localhost:") || origin.startsWith("http://127.0.0.1:")) return true;
+  if (isTrustedVercelDomain(origin)) return true;
+  return false;
+};
+
 const corsOptions = {
   origin: function (origin, callback) {
-    if (origin === "null" || origin === "undefined") return callback(null, false);
-    // Allow requests with no origin (Postman, curl, server-to-server)
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) return callback(null, true);
-    // Allow any localhost port for development (e.g., Flutter Web)
-    if (origin.startsWith("http://localhost:") || origin.startsWith("http://127.0.0.1:")) return callback(null, true);
-    // Allow only trusted vercel.app domains and project preview subdomains
-    if (isTrustedVercelDomain(origin)) return callback(null, true);
+    if (!origin) return callback(null, true); // Allow server-to-server / curl
+    if (isValidOrigin(origin)) return callback(null, true);
     callback(null, false);
   },
   methods:        ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
@@ -223,48 +227,15 @@ const corsOptions = {
 };
 
 const socketCorsOrigin = (origin, callback) => {
-  if (origin === "null" || origin === "undefined") return callback(null, false);
   if (!origin) return callback(null, true);
-  if (allowedOrigins.includes(origin)) return callback(null, true);
-  if (origin.startsWith("http://localhost:") || origin.startsWith("http://127.0.0.1:")) return callback(null, true);
-  if (isTrustedVercelDomain(origin)) return callback(null, true);
+  if (isValidOrigin(origin)) return callback(null, true);
   callback(null, false);
 };
 
-// Handle preflight for all routes FIRST — before any other middleware
-app.use((req, res, next) => {
-  if (req.method === "OPTIONS") {
-    const origin = req.headers["origin"];
-    if (origin && origin !== "null" && origin !== "undefined") {
-      res.setHeader("Access-Control-Allow-Origin", origin);
-    }
-    res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With, Upgrade");
-    res.setHeader("Access-Control-Allow-Credentials", "true");
-    res.removeHeader("X-Powered-By");
-    res.removeHeader("Server");
-    return res.sendStatus(204);
-  }
-  next();
-});
-app.options("*", cors(corsOptions));
-app.use(cors(corsOptions));
-
-// ── Swagger / API documentation ──────────────────────────
-app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
-app.get(["/api/docs", "/api/docs/"], (req, res) => swaggerUi.setup(swaggerDocument)(req, res));
-app.get("/api/docs.json", (req, res) => res.json(swaggerDocument));
-app.get("/api/docs/swagger.json", (req, res) => res.json(swaggerDocument));
-app.get("/api/search", getHotels);
-
-// ── Additional headers for WebSocket support ──────────────
-app.use((req, res, next) => {
-  res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
-  res.setHeader("Pragma", "no-cache");
-  next();
-});
-
-// ── GLB-003: Content-Security-Policy (strict API-only) ───────
+// ── GLB-003: Content-Security-Policy and Security Headers ──
+// Applied globally HERE (before OPTIONS, CORS, and sitemap routes)
+// so that scanners testing /sitemap.xml or sending OPTIONS
+// will properly see X-Content-Type-Options: nosniff
 app.use(helmet({
   hsts: isProd ? {
     maxAge:            31536000,
@@ -331,6 +302,50 @@ app.use(helmet({
     },
   },
 }));
+
+// Handle preflight for all routes FIRST — before any other middleware
+app.use((req, res, next) => {
+  if (req.method === "OPTIONS") {
+    const origin = req.headers["origin"];
+    // Fix: Cross-Domain Misconfiguration
+    // Only echo origin if it is explicitly trusted.
+    if (isValidOrigin(origin)) {
+      res.setHeader("Access-Control-Allow-Origin", origin);
+    }
+    res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With, Upgrade");
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+    res.removeHeader("X-Powered-By");
+    res.removeHeader("Server");
+    return res.sendStatus(204);
+  }
+  next();
+});
+app.options("*", cors(corsOptions));
+app.use(cors(corsOptions));
+
+// ── Sitemap, robots.txt, and route discovery ─────────────
+// Mounted BEFORE CSRF middleware so unauthenticated crawlers/scanners
+// can access discovery endpoints without needing an Origin header.
+app.use(sitemapRoutes);
+
+// ── Swagger / API documentation ──────────────────────────
+// Apply the Swagger-specific CSP so the UI works while keeping the
+// relaxed policy scoped only to documentation routes.
+app.use("/api/docs", swaggerCspMiddleware, swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+app.get(["/api/docs", "/api/docs/"], swaggerCspMiddleware, (req, res) => swaggerUi.setup(swaggerDocument)(req, res));
+app.get("/api/docs.json", (req, res) => res.json(swaggerDocument));
+app.get("/api/docs/swagger.json", (req, res) => res.json(swaggerDocument));
+app.get("/api/search", getHotels);
+
+// ── Additional headers for WebSocket support ──────────────
+app.use((req, res, next) => {
+  res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+  res.setHeader("Pragma", "no-cache");
+  next();
+});
+
+// (Helmet CSP and Security Headers moved up above OPTIONS handler)
 
 // ── GLB-007: HTTP Verb Tampering — allow only known methods ──
 const ALLOWED_METHODS = new Set(["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"]);
@@ -562,6 +577,29 @@ app.use("/api/notifications", notificationRoutes);
 app.use("/api/maintenance",   maintenanceRoutes);
 app.use("/api",               publicSupportRoutes);
 app.use("/api/owners",        propertyOwnerRoutes);
+
+// ── CSP Violation Report endpoint ────────────────────────
+// Browsers send JSON violation reports here when CSP blocks something.
+// This helps catch misconfigurations or real attacks in production.
+// The endpoint is intentionally unauthenticated (browsers send reports
+// without credentials) but rate-limited to prevent abuse.
+app.post("/api/csp-report", express.json({ type: ["application/json", "application/csp-report"], limit: "10kb" }), (req, res) => {
+  const report = req.body?.["csp-report"] || req.body;
+  if (report) {
+    logger.warn("CSP Violation", {
+      blockedUri:         report["blocked-uri"]          || report.blockedURI,
+      violatedDirective:  report["violated-directive"]   || report.violatedDirective,
+      effectiveDirective: report["effective-directive"]  || report.effectiveDirective,
+      documentUri:        report["document-uri"]         || report.documentURI,
+      originalPolicy:     report["original-policy"]      || report.originalPolicy,
+      sourceFile:         report["source-file"]          || report.sourceFile,
+      lineNumber:         report["line-number"]          || report.lineNumber,
+      columnNumber:       report["column-number"]        || report.columnNumber,
+      ip:                 req.ip,
+    });
+  }
+  res.status(204).end();
+});
 
 // ── 404 handler ───────────────────────────────────────────
 app.use((req, res) => {

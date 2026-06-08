@@ -22,9 +22,47 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  
+  <!-- Content Security Policy (CSP) for enhanced protection against XSS and injection attacks -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://accounts.google.com https://checkout.razorpay.com https://cdn.razorpay.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://checkout.razorpay.com https://cdn.razorpay.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: https: blob:; connect-src 'self' https://hotel-management-production-2225.up.railway.app wss://hotel-management-production-2225.up.railway.app https://api.razorpay.com https://lumberjack.razorpay.com https://checkout.razorpay.com https://cdn.razorpay.com ws://localhost:* http://localhost:*; frame-src 'self' https://accounts.google.com https://checkout.razorpay.com https://cdn.razorpay.com https://api.razorpay.com;" />
 </head>
 
 <body>
+  <!-- Hidden links for AJAX DAST scanner (e.g. ZAP, Burp) discovery coverage -->
+  <nav style="display:none;" aria-hidden="true" id="dast-scanner-routes">
+    <a href="/login">Login</a>
+    <a href="/reset-password">Reset Password</a>
+    <a href="/dashboard">Dashboard</a>
+    <a href="/hotels">Hotels</a>
+    <a href="/rooms">Rooms</a>
+    <a href="/hotel-map">Hotel Map</a>
+    <a href="/bookings">Bookings</a>
+    <a href="/payments">Payments</a>
+    <a href="/guests">Guests</a>
+    <a href="/revenue">Revenue</a>
+    <a href="/analytics">Analytics</a>
+    <a href="/insights">Insights</a>
+    <a href="/managers">Managers</a>
+    <a href="/coupons">Coupons</a>
+    <a href="/top-deals">Top Deals</a>
+    <a href="/profile">Profile</a>
+    <a href="/notifications">Notifications</a>
+    <a href="/price-requests">Price Requests</a>
+    <a href="/settings">Settings</a>
+    <a href="/owners">Owners</a>
+    <a href="/m/dashboard">Manager Dashboard</a>
+    <a href="/m/hotel-map">Manager Floor Map</a>
+    <a href="/m/bookings">Manager Bookings</a>
+    <a href="/m/rooms">Manager Rooms</a>
+    <a href="/m/financials">Manager Financials</a>
+    <a href="/m/hotels-overview">Manager Hotels Overview</a>
+    <a href="/m/halls">Manager Halls</a>
+    <a href="/m/pricing">Manager Pricing</a>
+    <a href="/m/profile">Manager Profile</a>
+    <a href="/m/settings">Manager Settings</a>
+    <a href="/m/notifications">Manager Notifications</a>
+    <a href="/m/change-password">Manager Change Password</a>
+  </nav>
   <div id="root"></div>
   <script type="module" src="/src/main.tsx"></script>
 </body>

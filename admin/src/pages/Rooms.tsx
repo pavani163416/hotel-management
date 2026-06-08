@@ -35,7 +35,6 @@ type FormState = {
   bed: string;
   features: string;
   floor: string;
-  tour360: string;
   breakfastIncluded: boolean;
   freeCancellation: boolean;
 };
@@ -153,7 +152,7 @@ export default function Rooms() {
 
   const openAdd = () => {
     setEditTarget(null);
-    setForm({ name: "", type: "Standard", price: "", capacity: "2", bed: "1 King Bed", features: "WiFi, AC", floor: "1", tour360: "", breakfastIncluded: false, freeCancellation: false });
+    setForm({ name: "", type: "Standard", price: "", capacity: "2", bed: "1 King Bed", features: "WiFi, AC", floor: "1", breakfastIncluded: false, freeCancellation: false });
     setSubmitted(false);
     setAddOpen(true);
   };
@@ -168,7 +167,6 @@ export default function Rooms() {
       bed:      r.bed,
       features: r.features.join(", "),
       floor:    String(r.floor ?? 1),
-      tour360:  (r as any).tour360 || "",
       breakfastIncluded: !!(r as any).breakfastIncluded,
       freeCancellation:  !!(r as any).freeCancellation,
     });
@@ -214,7 +212,6 @@ export default function Rooms() {
       available:   1,
       features,
       floor:       floorNum,
-      tour360:     form.tour360.trim() || undefined,
       breakfastIncluded: form.breakfastIncluded,
       freeCancellation:  form.freeCancellation,
       // Extra fields passed through so backend can build the standalone Room doc
@@ -504,14 +501,6 @@ export default function Rooms() {
                   placeholder="e.g. 3"
                   className="w-full px-3 py-2.5 border border-border rounded-lg text-sm outline-none focus:border-primary" />
                 <p className="text-[10px] text-muted mt-1">Used in the Floor Map view for managers.</p>
-              </div>
-              <div className="col-span-2">
-                <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">360° Tour Image URL</label>
-                <input type="url" value={form.tour360}
-                  onChange={(e) => setForm({ ...form, tour360: e.target.value })}
-                  placeholder="https://... (panorama image URL)"
-                  className="w-full px-3 py-2.5 border border-border rounded-lg text-sm outline-none focus:border-primary" />
-                <p className="text-[10px] text-muted mt-1">Upload a panorama image to Cloudinary and paste the URL here. Users will see a "360° Tour" button.</p>
               </div>
               <div className="col-span-2 flex items-center gap-6">
                 <label className="flex items-center gap-2 cursor-pointer">

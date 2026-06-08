@@ -1,12 +1,11 @@
 import { useNavigate, useParams } from "react-router-dom";
-import { MapPin, Star, Wifi, Coffee, Wind, Users, BedDouble, Check, LogIn, Waves, Trees, Dumbbell, Utensils, Car, ShieldCheck, Flame, Sunset, Snowflake, Bath, Tv, PocketKnife, Sailboat, Baby, PawPrint, Phone, AlertCircle, Loader2, Navigation, ExternalLink, Eye, Coffee as CoffeeIcon, XCircle } from "lucide-react";
+import { MapPin, Star, Wifi, Coffee, Wind, Users, BedDouble, Check, LogIn, Waves, Trees, Dumbbell, Utensils, Car, ShieldCheck, Flame, Sunset, Snowflake, Bath, Tv, PocketKnife, Sailboat, Baby, PawPrint, Phone, AlertCircle, Loader2, Navigation, ExternalLink } from "lucide-react";
 import Layout from "@/components/Layout";
 import { useBooking } from "@/context/BookingContext";
 import { useCurrency } from "@/context/CurrencyContext";
 import { useState, useEffect, useMemo } from "react";
 import { AuthModal } from "@/components/AuthModal";
-import Tour360Viewer from "@/components/Tour360Viewer";
-import { API, getMyBookings } from "@/services/api";
+import { API } from "@/services/api";
 
 // Map amenity name → lucide icon
 const amenityIcon = (name: string) => {
@@ -53,9 +52,6 @@ const HotelDetails = () => {
   const [cancellationFilter, setCancellationFilter] = useState(false);
   const [availableOnlyFilter, setAvailableOnlyFilter] = useState(false);
 
-  // 360° tour viewer
-  const [tour360Room, setTour360Room] = useState<{ url: string; name: string } | null>(null);
-
   // Auth popup for unauthenticated booking attempts
   const [authOpen, setAuthOpen] = useState(false);
   const [authMode, setAuthMode] = useState<"signin" | "signup">("signin");
@@ -65,36 +61,6 @@ const HotelDetails = () => {
   const [roomStatus, setRoomStatus] = useState<Record<string, { checking: boolean; error: string }>>({});
   // Live available-count per room type: roomId → number | null
   const [availCount, setAvailCount] = useState<Record<string, number | null>>({})
-
-  // Visited state for review check
-  const [hasVisited, setHasVisited] = useState(false);
-  const [checkingVisited, setCheckingVisited] = useState(false);
-
-  // Check if authenticated user has checked out or completed a stay
-  useEffect(() => {
-    if (!user || !hotel) {
-      setHasVisited(false);
-      return;
-    }
-    const checkVisitedStatus = async () => {
-      setCheckingVisited(true);
-      try {
-        const res: any = await getMyBookings();
-        if (res?.success && Array.isArray(res?.data)) {
-          const visited = res.data.some((b: any) =>
-            (b.hotelId === hotel.id || b.hotelStringId === hotel.id) &&
-            ["Completed", "CheckedOut"].includes(b.status)
-          );
-          setHasVisited(visited);
-        }
-      } catch {
-        setHasVisited(false);
-      } finally {
-        setCheckingVisited(false);
-      }
-    };
-    checkVisitedStatus();
-  }, [user, hotel?.id]);
 
   // When user signs in and there's a pending room → proceed to booking
   useEffect(() => {
@@ -357,14 +323,6 @@ const HotelDetails = () => {
                         {r.freeCancellation && (
                           <span className="text-xs px-2 py-1 rounded bg-blue-50 text-blue-700 font-medium border border-blue-200">✓ Free Cancel</span>
                         )}
-                        {r.tour360 && (
-                          <button
-                            onClick={(e) => { e.stopPropagation(); setTour360Room({ url: r.tour360!, name: r.name }); }}
-                            className="text-xs px-2 py-1 rounded bg-accent/15 text-accent font-semibold border border-accent/30 flex items-center gap-1 hover:bg-accent/25 transition-colors"
-                          >
-                            <Eye className="w-3 h-3" /> 360° Tour
-                          </button>
-                        )}
                       </div>
                       <div className="md:text-right">
                         <p className="font-display text-xl font-bold text-primary">{format(r.price)}</p>
@@ -446,58 +404,24 @@ const HotelDetails = () => {
                 </div>
               ))}
             </div>
-            {checkingVisited ? (
-              <div className="bg-card border border-border rounded-2xl p-6 h-fit flex items-center justify-center">
-                <Loader2 className="w-6 h-6 animate-spin text-accent" />
-                <span className="text-sm text-muted-foreground ml-2">Checking verified stay...</span>
+            <form onSubmit={handleSubmitReview} className="bg-card border border-border rounded-2xl p-6 h-fit space-y-4">
+              <h3 className="font-display text-lg font-bold">Write a Review</h3>
+              <input value={reviewName} onChange={(e) => setReviewName(e.target.value)} placeholder="Your name"
+                className="w-full px-4 py-2.5 border border-border rounded-lg outline-none focus:border-accent text-sm" />
+              <div className="flex items-center gap-1.5">
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <button type="button" key={n} onClick={() => setReviewRating(n)} className="focus:outline-none">
+                    <Star className={`w-6 h-6 transition-base ${n <= reviewRating ? "fill-accent text-accent" : "text-muted-foreground/30 fill-none"}`} />
+                  </button>
+                ))}
               </div>
-            ) : !user ? (
-              <div className="bg-card border border-border rounded-2xl p-6 h-fit text-center space-y-3">
-                <div className="w-12 h-12 rounded-full bg-accent/10 text-accent grid place-items-center mx-auto">
-                  <LogIn className="w-6 h-6" />
-                </div>
-                <h3 className="font-display text-lg font-bold">Write a Review</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  Please sign in to write a review. Only guests who have completed a stay at this hotel can submit reviews.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => { setAuthMode("signin"); setAuthOpen(true); }}
-                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-2.5 rounded-lg font-semibold text-sm transition-base"
-                >
-                  Sign In
-                </button>
-              </div>
-            ) : !hasVisited ? (
-              <div className="bg-card border border-border rounded-2xl p-6 h-fit text-center space-y-3">
-                <div className="w-12 h-12 rounded-full bg-accent/10 text-accent grid place-items-center mx-auto">
-                  <AlertCircle className="w-6 h-6" />
-                </div>
-                <h3 className="font-display text-lg font-bold">Verified Stays Only</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  Only guests who have completed a stay at this hotel can write a review. We couldn't find a completed booking for this property in your account.
-                </p>
-              </div>
-            ) : (
-              <form onSubmit={handleSubmitReview} className="bg-card border border-border rounded-2xl p-6 h-fit space-y-4">
-                <h3 className="font-display text-lg font-bold">Write a Review</h3>
-                <input value={reviewName} onChange={(e) => setReviewName(e.target.value)} placeholder="Your name"
-                  className="w-full px-4 py-2.5 border border-border rounded-lg outline-none focus:border-accent text-sm" />
-                <div className="flex items-center gap-1.5">
-                  {[1, 2, 3, 4, 5].map((n) => (
-                    <button type="button" key={n} onClick={() => setReviewRating(n)} className="focus:outline-none">
-                      <Star className={`w-6 h-6 transition-base ${n <= reviewRating ? "fill-accent text-accent" : "text-muted-foreground/30 fill-none"}`} />
-                    </button>
-                  ))}
-                </div>
-                <textarea value={reviewText} onChange={(e) => setReviewText(e.target.value)} placeholder="Share your experience..." rows={4}
-                  className="w-full px-4 py-2.5 border border-border rounded-lg outline-none focus:ring-2 focus:ring-primary focus:border-primary text-sm resize-none" />
-                {err && <p className="text-destructive text-xs">{err}</p>}
-                <button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-2.5 rounded-lg font-semibold text-sm transition-base">
-                  Submit Review
-                </button>
-              </form>
-            )}
+              <textarea value={reviewText} onChange={(e) => setReviewText(e.target.value)} placeholder="Share your experience..." rows={4}
+                className="w-full px-4 py-2.5 border border-border rounded-lg outline-none focus:ring-2 focus:ring-primary focus:border-primary text-sm resize-none" />
+              {err && <p className="text-destructive text-xs">{err}</p>}
+              <button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-2.5 rounded-lg font-semibold text-sm transition-base">
+                Submit Review
+              </button>
+            </form>
           </div>
         )}
 
@@ -578,26 +502,15 @@ const HotelDetails = () => {
         )}
       </div>
 
-      {/* Auth popup — shown when unauthenticated user clicks Select Room */}
+      {/* Auth popup */}
       <AuthModal
         isOpen={authOpen}
         onClose={() => {
           setAuthOpen(false);
-          // If user cancelled without signing in, clear the pending room
-          // so they stay on the hotel page without any redirect
           if (!user) setPendingRoomId(null);
         }}
         defaultMode={authMode}
       />
-
-      {/* 360° Tour Viewer */}
-      {tour360Room && (
-        <Tour360Viewer
-          imageUrl={tour360Room.url}
-          roomName={tour360Room.name}
-          onClose={() => setTour360Room(null)}
-        />
-      )}
     </Layout>
   );
 };
