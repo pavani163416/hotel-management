@@ -11,9 +11,9 @@ class AuthRepositoryImpl implements AuthRepository {
   AuthRepositoryImpl(this._remoteDataSource);
 
   @override
-  Future<Either<Failure, (UserEntity, String)>> login(String email, String password) async {
+  Future<Either<Failure, (UserEntity, String)>> login(String email, String password, {String? captchaId, String? captchaAnswer}) async {
     try {
-      final authResponse = await _remoteDataSource.login(email, password);
+      final authResponse = await _remoteDataSource.login(email, password, captchaId: captchaId, captchaAnswer: captchaAnswer);
       return Right((authResponse.user, authResponse.token));
     } on DioException catch (e) {
       String message = 'Login failed';

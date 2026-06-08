@@ -2,7 +2,7 @@ import 'package:hotelmanag/core/network/api_service.dart';
 import 'package:hotelmanag/features/auth/data/models/user_model.dart';
 
 abstract class AuthRemoteDataSource {
-  Future<AuthResponse> login(String email, String password);
+  Future<AuthResponse> login(String email, String password, {String? captchaId, String? captchaAnswer});
   Future<AuthResponse> register(String name, String email, String password, String phone, {String? city, String? captchaId, String? captchaAnswer});
   Future<AuthResponse> verifyOtp(String email, String code);
   Future<String?> resendOtp(String email);
@@ -94,10 +94,12 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   }
 
   @override
-  Future<AuthResponse> login(String email, String password) async {
+  Future<AuthResponse> login(String email, String password, {String? captchaId, String? captchaAnswer}) async {
     final response = await _apiService.post('auth/login', data: {
       'email': email,
       'password': password,
+      if (captchaId != null) 'captchaId': captchaId,
+      if (captchaAnswer != null) 'captchaAnswer': captchaAnswer,
     });
 
     final data = response.data['data'];

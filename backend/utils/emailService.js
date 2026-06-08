@@ -411,22 +411,13 @@ export const sendOtpEmail = async ({ to, name, otp }) => {
   try {
     const { data, error } = await sendMailInternal({ to, subject, html });
     if (error) {
-      console.log("\n========================================================");
-      console.log(`📧  [Resend Free Tier Info] Delivery blocked to: ${to}`);
-      console.log("    (Resend requires a custom verified domain to send to external recipients)");
-      console.log(`🔑  DEVELOPMENT OTP CODE: ${otp}`);
-      console.log("========================================================\n");
-      return { id: "mock_resend_id", bypassed: true };
+      throw new Error(error.message || "Email delivery failed.");
     }
 
     console.log("EMAIL SENT SUCCESS:", data);
     return data;
   } catch (err) {
     console.error("EMAIL SEND EXCEPTION:", err);
-    console.log("\n========================================================");
-    console.log(`⚠️  [Email Bypass] Failed to send email to: ${to}`);
-    console.log(`🔑  YOUR OTP CODE IS: ${otp}`);
-    console.log("========================================================\n");
-    return { id: "mock_resend_id_exception", bypassed: true };
+    throw new Error("Failed to send verification email. Please ensure your email address is correct.");
   }
 };

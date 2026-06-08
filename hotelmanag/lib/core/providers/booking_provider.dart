@@ -169,8 +169,8 @@ class BookingProvider extends ChangeNotifier {
   }
 
   // --- Finalize Booking ---
-  Future<bool> completeBooking(String paymentMethod) async {
-    if (_currentHotel == null) return false;
+  Future<BookingEntity?> completeBooking(String paymentMethod) async {
+    if (_currentHotel == null) return null;
     
     _isLoading = true;
     _error = null;
@@ -230,13 +230,13 @@ class BookingProvider extends ChangeNotifier {
         _error = failure.message;
         _isLoading = false;
         notifyListeners();
-        return false;
+        return null;
       },
       (booking) {
         _bookings.insert(0, booking); // Add backend booking
         _isLoading = false;
         notifyListeners();
-        return true;
+        return booking;
       }
     );
   }

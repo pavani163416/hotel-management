@@ -81,8 +81,9 @@ export const createOrder = async (req, res, next) => {
       return res.status(200).json({
         success: true,
         orderId: existingPending.razorpayOrderId,
-        amount: existingPending.amount,
+        amount: existingPending.amount * 100,
         currency: existingPending.currency,
+        key: process.env.RAZORPAY_KEY_ID || "rzp_test_dummy",
       });
     }
 
@@ -140,6 +141,7 @@ export const createOrder = async (req, res, next) => {
       orderId: order.id,
       amount: order.amount, // in paise
       currency: order.currency,
+      key: process.env.RAZORPAY_KEY_ID || "rzp_test_dummy",
     });
   } catch (error) {
     next(error);

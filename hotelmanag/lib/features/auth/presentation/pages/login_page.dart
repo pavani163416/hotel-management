@@ -7,6 +7,7 @@ import '../../../../core/widgets/custom_text_field.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/providers/booking_provider.dart';
 import '../widgets/phone_auth_bottom_sheet.dart';
+import 'dart:math';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -23,10 +24,42 @@ class _LoginPageState extends State<LoginPage> {
   bool _isLoggingIn = false;
   bool _isGoogleLoggingIn = false;
 
+  String _captchaChallenge = '';
+  String? _captchaId;
+  final _captchaController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchCaptcha();
+  }
+
+  void _fetchCaptcha() async {
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+    final result = await auth.fetchCaptcha();
+    if (result != null) {
+      setState(() {
+        _captchaId = result.$1;
+        _captchaChallenge = result.$2;
+        _captchaController.clear();
+      });
+    } else {
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+      final random = Random();
+      final challenge = String.fromCharCodes(Iterable.generate(6, (_) => chars.codeUnitAt(random.nextInt(chars.length))));
+      setState(() {
+        _captchaChallenge = challenge;
+        _captchaId = 'local_$challenge';
+        _captchaController.clear();
+      });
+    }
+  }
+
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _captchaController.dispose();
     super.dispose();
   }
 
@@ -85,6 +118,74 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
               const SizedBox(height: 16),
+
+              // ── CAPTCHA ───────────────────────────────
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Security Check',
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.primaryColor)),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      height: 54,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Colors.grey.shade200, Colors.grey.shade300],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey.shade400, width: 1.5),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(_captchaChallenge,
+                        style: const TextStyle(
+                          fontFamily: 'monospace',
+                          fontSize: 22,
+                          letterSpacing: 6,
+                          fontWeight: FontWeight.w800,
+                          color: AppTheme.primaryColor,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Container(
+                    height: 54,
+                    width: 54,
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryColor.withOpacity(0.05),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppTheme.primaryColor.withOpacity(0.2)),
+                    ),
+                    child: IconButton(
+                      icon: const Icon(Icons.refresh, color: AppTheme.primaryColor),
+                      tooltip: 'New challenge',
+                      onPressed: _fetchCaptcha,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              CustomTextField(
+                label: 'Enter the security check *',
+                hint: 'Type the letters and numbers',
+                controller: _captchaController,
+              ),
+              const SizedBox(height: 16),
+
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -148,8 +249,19 @@ class _LoginPageState extends State<LoginPage> {
                     onPressed: (_isLoggingIn || _isGoogleLoggingIn)
                         ? () {}
                         : () async {
+                            if (_captchaId == null || _captchaController.text.trim().isEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Please complete the security check.')),
+                              );
+                              return;
+                            }
                             setState(() => _isLoggingIn = true);
-                            await auth.login(_emailController.text, _passwordController.text);
+                            await auth.login(
+                              _emailController.text,
+                              _passwordController.text,
+                              captchaId: _captchaId,
+                              captchaAnswer: _captchaController.text.trim(),
+                            );
                             if (mounted) {
                               setState(() => _isLoggingIn = false);
                             }

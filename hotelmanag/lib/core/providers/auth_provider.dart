@@ -62,13 +62,13 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> login(String email, String password) async {
+  Future<void> login(String email, String password, {String? captchaId, String? captchaAnswer}) async {
     _isLoading = true;
     _error = null;
     _unverifiedEmail = null;
     notifyListeners();
 
-    final result = await _authRepository.login(email, password);
+    final result = await _authRepository.login(email, password, captchaId: captchaId, captchaAnswer: captchaAnswer);
 
     await result.fold(
       (failure) async {

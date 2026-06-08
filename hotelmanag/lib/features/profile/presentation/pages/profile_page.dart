@@ -234,7 +234,7 @@ class _ProfilePageState extends State<ProfilePage> {
           const SizedBox(height: 16),
           const Divider(),
           const SizedBox(height: 16),
-          _buildSupportInfoRow(context, LucideIcons.userCheck, 'Admin Name', 'Alex Rivera (Chief Concierge)'),
+          _buildSupportInfoRow(context, LucideIcons.userCheck, 'Admin Name', 'LuxeStay Concierge'),
           const SizedBox(height: 12),
           _buildSupportInfoRow(
             context,
@@ -634,11 +634,11 @@ class _ProfilePageState extends State<ProfilePage> {
           children: [
             Text('Personal Information', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
             const SizedBox(height: 24),
-            CustomTextField(label: 'Full Name', hint: 'Alex Johnson', prefixIcon: LucideIcons.user, controller: _nameController),
+            CustomTextField(label: 'Full Name', hint: 'Your full name', prefixIcon: LucideIcons.user, controller: _nameController),
             const SizedBox(height: 16),
-            CustomTextField(label: 'Email Address', hint: 'alex.j@example.com', prefixIcon: LucideIcons.mail, keyboardType: TextInputType.emailAddress, controller: _emailController),
+            CustomTextField(label: 'Email Address', hint: 'Your email address', prefixIcon: LucideIcons.mail, keyboardType: TextInputType.emailAddress, controller: _emailController),
             const SizedBox(height: 16),
-            CustomTextField(label: 'Phone Number', hint: '+1 234 567 890', prefixIcon: LucideIcons.phone, keyboardType: TextInputType.phone, controller: _phoneController),
+            CustomTextField(label: 'Phone Number', hint: 'Your phone number', prefixIcon: LucideIcons.phone, keyboardType: TextInputType.phone, controller: _phoneController),
             const SizedBox(height: 32),
             _buildSaveButton(context),
             const SizedBox(height: 32),
@@ -1488,7 +1488,8 @@ class _ProfilePageState extends State<ProfilePage> {
         Navigator.pop(context);
         setState(() {
           if (isDestructive) {
-            _profileImageUrl = 'https://ui-avatars.com/api/?name=Alex+Johnson&background=F5E6CA&color=2C3E50';
+            _profileImageUrl = '';
+            _profileImageFile = null;
           } else {
             final randomId = DateTime.now().millisecondsSinceEpoch;
             _profileImageUrl = 'https://picsum.photos/seed/$randomId/200';

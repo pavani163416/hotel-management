@@ -11,7 +11,9 @@ import 'package:shimmer/shimmer.dart';
 import '../../../../core/providers/booking_provider.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/providers/favorites_provider.dart';
-
+import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 class _RoomRow {
   final RoomEntity room;
   final int price;
@@ -67,25 +69,9 @@ class _HotelDetailsPageState extends State<HotelDetailsPage> with SingleTickerPr
       list.addAll(hotel.gallery);
     }
     
-    if (list.length < 2) {
-      final seed = hotel.name.hashCode;
-      final pools = [
-        'https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&w=600&q=80',
-        'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=600&q=80',
-        'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=600&q=80',
-      ];
-      final interiors = [
-        'https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=600&q=80',
-        'https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=600&q=80',
-        'https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&w=600&q=80',
-      ];
-      
-      if (list.isEmpty) {
-        list.add(pools[seed % pools.length]);
-      }
-      if (list.length < 2) {
-        list.add(interiors[(seed + 1) % interiors.length]);
-      }
+    // Fill remaining with main image to avoid hardcoded fallbacks
+    while (list.length < 2) {
+      list.add(hotel.imageUrl);
     }
     
     return list;
@@ -172,19 +158,45 @@ class _HotelDetailsPageState extends State<HotelDetailsPage> with SingleTickerPr
 
     if (!isWide) {
       if (allImages.length <= 1) {
-        return Hero(
-          tag: 'hotel_image_${hotel.id}',
-          child: SizedBox(
-            height: 250,
-            width: double.infinity,
-            child: CachedNetworkImage(
-              imageUrl: hotel.imageUrl,
-              fit: BoxFit.cover,
-              memCacheWidth: 800,
-              memCacheHeight: 500,
-              placeholder: (context, url) => Container(color: Colors.grey[200]),
+        return Stack(
+          children: [
+            Hero(
+              tag: 'hotel_image_${hotel.id}',
+              child: SizedBox(
+                height: 250,
+                width: double.infinity,
+                child: CachedNetworkImage(
+                  imageUrl: hotel.imageUrl,
+                  fit: BoxFit.cover,
+                  memCacheWidth: 800,
+                  memCacheHeight: 500,
+                  placeholder: (context, url) => Container(color: Colors.grey[200]),
+                ),
+              ),
             ),
-          ),
+            Positioned(
+              bottom: 16,
+              left: 16,
+              child: GestureDetector(
+                onTap: () => _launchGoogleMaps(context, hotel),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4, offset: Offset(0, 2))],
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(LucideIcons.map, size: 14, color: Colors.black87),
+                      SizedBox(width: 6),
+                      Text('Google Maps', style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 12)),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
         );
       }
 
@@ -235,6 +247,29 @@ class _HotelDetailsPageState extends State<HotelDetailsPage> with SingleTickerPr
                     color: Colors.white,
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+            // Map Indicator Overlay
+            Positioned(
+              bottom: 16,
+              left: 16,
+              child: GestureDetector(
+                onTap: () => _launchGoogleMaps(context, hotel),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4, offset: Offset(0, 2))],
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(LucideIcons.map, size: 14, color: Colors.black87),
+                      SizedBox(width: 6),
+                      Text('Google Maps', style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 12)),
+                    ],
                   ),
                 ),
               ),
@@ -312,16 +347,44 @@ class _HotelDetailsPageState extends State<HotelDetailsPage> with SingleTickerPr
                 ),
                 const SizedBox(height: 12),
                 Expanded(
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(16),
-                    child: CachedNetworkImage(
-                      imageUrl: secondaryImgs[1],
-                      fit: BoxFit.cover,
-                      width: double.infinity,
-                      memCacheWidth: 400,
-                      memCacheHeight: 280,
-                      placeholder: (context, url) => Container(color: Colors.grey[200]),
-                    ),
+                  child: Stack(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: CachedNetworkImage(
+                          imageUrl: secondaryImgs[1],
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          memCacheWidth: 400,
+                          memCacheHeight: 280,
+                          placeholder: (context, url) => Container(color: Colors.grey[200]),
+                        ),
+                      ),
+                      Positioned.fill(
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(16),
+                            onTap: () => _launchGoogleMaps(context, hotel),
+                            child: Container(
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                color: Colors.black.withOpacity(0.3),
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: const Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(LucideIcons.mapPin, color: Colors.white, size: 28),
+                                  SizedBox(height: 8),
+                                  Text('Open in Google Maps', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -342,23 +405,27 @@ class _HotelDetailsPageState extends State<HotelDetailsPage> with SingleTickerPr
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                hotel.name,
+                hotel.name, 
                 style: TextStyle(
                   fontSize: 28, 
                   fontWeight: FontWeight.bold, 
                   color: Theme.of(context).colorScheme.onSurface,
                   fontFamily: 'Serif',
+                  height: 1.2,
                 ),
               ),
               const SizedBox(height: 8),
               Row(
                 children: [
-                  Icon(LucideIcons.mapPin, size: 16, color: Colors.grey[400]),
+                  Icon(LucideIcons.mapPin, size: 16, color: AppTheme.accentColor),
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
                       hotel.location, 
-                      style: TextStyle(color: isDark ? Colors.grey[400] : Colors.grey[600], fontSize: 14),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6), 
+                        fontSize: 14,
+                      ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -831,6 +898,20 @@ class _HotelDetailsPageState extends State<HotelDetailsPage> with SingleTickerPr
         );
       },
     );
+  }
+
+  Future<void> _launchGoogleMaps(BuildContext context, HotelEntity hotel) async {
+    final query = Uri.encodeComponent('${hotel.name} ${hotel.location}');
+    final url = Uri.parse('https://www.google.com/maps/search/?api=1&query=$query');
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    } else {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not open Google Maps.')),
+        );
+      }
+    }
   }
 
   Widget _buildReviewsTab(HotelEntity hotel) {

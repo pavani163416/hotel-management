@@ -196,7 +196,7 @@ class _OtpPageState extends State<OtpPage> {
                             child: TextField(
                               controller: _controllers[index],
                               focusNode: _focusNodes[index],
-                              keyboardType: TextInputType.number,
+                              keyboardType: TextInputType.text,
                               textAlign: TextAlign.center,
                               style: const TextStyle(
                                 fontSize: 20, 
@@ -204,7 +204,7 @@ class _OtpPageState extends State<OtpPage> {
                                 color: AppTheme.primaryColor
                               ),
                               maxLength: 1,
-                              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                              inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9]'))],
                               decoration: const InputDecoration(
                                 counterText: '',
                                 border: InputBorder.none,

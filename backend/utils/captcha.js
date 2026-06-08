@@ -43,41 +43,26 @@ setInterval(() => {
 // ── CAPTCHA generation ────────────────────────────────────────────────────────
 const OPS = ["+", "-", "*"];
 
-/**
- * Generate a math CAPTCHA challenge.
- * @returns {{ captchaId: string, challenge: string }}
- */
 export const generateCaptcha = async () => {
-  const op  = OPS[Math.floor(Math.random() * OPS.length)];
-  const a   = Math.floor(Math.random() * 10) + 1; // 1–10
-  const b   = Math.floor(Math.random() * 10) + 1;
-
-  let answer;
-  let question;
-  if (op === "+") { answer = a + b; question = `${a} + ${b}`; }
-  else if (op === "-") {
-    // Ensure non-negative result
-    const [big, small] = a >= b ? [a, b] : [b, a];
-    answer = big - small; question = `${big} - ${small}`;
-  } else {
-    // Multiplication: keep numbers small so it's quick to solve
-    const x = Math.floor(Math.random() * 5) + 1;
-    const y = Math.floor(Math.random() * 5) + 1;
-    answer = x * y; question = `${x} × ${y}`;
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%&";
+  let challengeStr = "";
+  for (let i = 0; i < 8; i++) {
+    challengeStr += chars.charAt(Math.floor(Math.random() * chars.length));
   }
 
   const captchaId = randomUUID();
-  const challenge = `What is ${question}?`;
+  const challenge = challengeStr;
+  const answer = challengeStr;
 
   if (isRedisReady()) {
     try {
-      await getRedisClient().set(`captcha:${captchaId}`, String(answer), { EX: CAPTCHA_TTL_SECONDS });
+      await getRedisClient().set(`captcha:${captchaId}`, answer, { EX: CAPTCHA_TTL_SECONDS });
     } catch (err) {
       logger.warn("CAPTCHA Redis set failed, using memory fallback", { error: err.message });
-      memSet(captchaId, String(answer));
+      memSet(captchaId, answer);
     }
   } else {
-    memSet(captchaId, String(answer));
+    memSet(captchaId, answer);
   }
 
   return { captchaId, challenge };
@@ -125,9 +110,9 @@ export const verifyCaptcha = async (captchaId, providedAnswer) => {
     return false;
   }
 
-  // Trim and compare answers
-  const normalizedStored = String(stored).trim().toLowerCase();
-  const normalizedProvided = String(providedAnswer).trim().toLowerCase();
+  // Trim and compare answers exactly (case-sensitive)
+  const normalizedStored = String(stored).trim();
+  const normalizedProvided = String(providedAnswer).trim();
   
   const isValid = normalizedStored === normalizedProvided;
   

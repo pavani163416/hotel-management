@@ -29,6 +29,13 @@ class CustomTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).colorScheme.brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final fillColor = isDark ? const Color(0xFF19222E) : Colors.white;
+    final borderColor = isDark ? Colors.white24 : AppTheme.primaryColor.withOpacity(0.1);
+    final iconColor = isDark ? Colors.white70 : AppTheme.primaryColor;
+    final hintColor = isDark ? Colors.white38 : AppTheme.primaryColor.withOpacity(0.3);
+
     return TextFormField(
       controller: controller,
       obscureText: obscureText,
@@ -36,24 +43,25 @@ class CustomTextField extends StatelessWidget {
       validator: validator,
       autofillHints: autofillHints,
       maxLength: maxLength,
-      cursorColor: AppTheme.primaryColor,
+      cursorColor: AppTheme.accentColor,
+      style: TextStyle(color: textColor),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: const TextStyle(color: AppTheme.primaryColor),
+        labelStyle: TextStyle(color: isDark ? Colors.white70 : AppTheme.primaryColor),
         hintText: hint,
-        hintStyle: TextStyle(color: AppTheme.primaryColor.withOpacity(0.3)),
-        prefixIcon: prefixIcon != null ? Icon(prefixIcon, size: 20, color: AppTheme.primaryColor) : null,
+        hintStyle: TextStyle(color: hintColor),
+        prefixIcon: prefixIcon != null ? Icon(prefixIcon, size: 20, color: iconColor) : null,
         suffixIcon: suffixIcon,
         counterText: maxLength != null ? '' : null,
         filled: true,
-        fillColor: Colors.white,
+        fillColor: fillColor,
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: AppTheme.primaryColor.withOpacity(0.1)),
+          borderSide: BorderSide(color: borderColor),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppTheme.primaryColor, width: 1.5),
+          borderSide: const BorderSide(color: AppTheme.accentColor, width: 1.5),
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),

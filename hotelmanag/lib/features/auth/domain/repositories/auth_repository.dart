@@ -3,7 +3,7 @@ import '../../../../core/errors/failures.dart';
 import '../entities/user_entity.dart';
 
 abstract class AuthRepository {
-  Future<Either<Failure, (UserEntity, String)>> login(String email, String password);
+  Future<Either<Failure, (UserEntity, String)>> login(String email, String password, {String? captchaId, String? captchaAnswer});
   Future<Either<Failure, (UserEntity, String, String?)>> register(String name, String email, String password, String phone, {String? city, String? captchaId, String? captchaAnswer});
   Future<Either<Failure, (UserEntity, String)>> verifyOtp(String email, String code);
   Future<Either<Failure, String?>> resendOtp(String email);

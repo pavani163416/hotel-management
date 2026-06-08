@@ -212,7 +212,7 @@ class _PhoneAuthBottomSheetState extends State<PhoneAuthBottomSheet> {
           ] else ...[
             TextField(
               controller: _otpController,
-              keyboardType: TextInputType.number,
+              keyboardType: TextInputType.text,
               maxLength: 6,
               decoration: InputDecoration(
                 labelText: 'Verification Code',

@@ -8,6 +8,9 @@ import '../../../../core/widgets/main_layout.dart';
 import '../../../../core/widgets/stepper_widget.dart';
 import '../../../../core/providers/booking_provider.dart';
 import '../../../../core/providers/notification_provider.dart';
+import 'package:razorpay_flutter/razorpay_flutter.dart';
+import '../../../../core/network/api_service.dart';
+import '../../../../core/utils/injection_container.dart';
 
 class PaymentPage extends StatefulWidget {
   const PaymentPage({super.key});
@@ -33,9 +36,18 @@ class _PaymentPageState extends State<PaymentPage> {
   late final TextEditingController _cvvController;
   late final TextEditingController _idNumberController;
 
+  late Razorpay _razorpay;
+  String? _currentBookingId;
+  String? _currentOrderId;
+
   @override
   void initState() {
     super.initState();
+    _razorpay = Razorpay();
+    _razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, _handlePaymentSuccess);
+    _razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, _handlePaymentError);
+    _razorpay.on(Razorpay.EVENT_EXTERNAL_WALLET, _handleExternalWallet);
+    
     _cardNumberController = TextEditingController();
     _upiIdController = TextEditingController();
     _cardHolderController = TextEditingController();
@@ -52,7 +64,56 @@ class _PaymentPageState extends State<PaymentPage> {
     _expiryController.dispose();
     _cvvController.dispose();
     _idNumberController.dispose();
+    _razorpay.clear();
     super.dispose();
+  }
+
+  void _handlePaymentSuccess(PaymentSuccessResponse response) async {
+    try {
+      final api = sl<ApiService>();
+      await api.post('/api/payments/verify', data: {
+        'razorpay_order_id': response.orderId ?? _currentOrderId,
+        'razorpay_payment_id': response.paymentId,
+        'razorpay_signature': response.signature,
+      });
+      if (mounted) {
+        try {
+          context.read<NotificationProvider>().addNotification(
+            'Booking Confirmed! 🎉',
+            subtitle: 'Your payment was successful and stay is confirmed.',
+            isCancelled: false,
+          );
+        } catch (_) {}
+        context.push('/confirmation');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Payment verification failed'), backgroundColor: Colors.redAccent),
+        );
+      }
+    }
+  }
+
+  void _handlePaymentError(PaymentFailureResponse response) async {
+    try {
+      if (_currentOrderId != null || _currentBookingId != null) {
+        final api = sl<ApiService>();
+        await api.post('/api/payments/cancel', data: {
+          'orderId': _currentOrderId,
+          'bookingId': _currentBookingId,
+        });
+      }
+    } catch (_) {}
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Payment failed: ${response.message}'), backgroundColor: Colors.redAccent),
+      );
+    }
+  }
+
+  void _handleExternalWallet(ExternalWalletResponse response) {
+    // Optional: handle external wallets
   }
 
   Future<void> _processPayment(BookingProvider provider) async {
@@ -113,17 +174,39 @@ class _PaymentPageState extends State<PaymentPage> {
         return;
       }
       
-      final success = await provider.completeBooking(_selectedMethod);
-      if (success) {
-        if (mounted) {
-          try {
-            context.read<NotificationProvider>().addNotification(
-              'Booking Confirmed! 🎉',
-              subtitle: 'Your stay at ${context.read<BookingProvider>().currentHotel?.name ?? 'the hotel'} is confirmed.',
-              isCancelled: false,
+      final booking = await provider.completeBooking(_selectedMethod);
+      if (booking != null) {
+        _currentBookingId = booking.id;
+        try {
+          final api = sl<ApiService>();
+          final res = await api.post('/api/payments/create-order', data: {'bookingId': booking.id});
+          final data = res.data;
+          
+          if (data['success'] == true) {
+            _currentOrderId = data['orderId'];
+            
+            var options = {
+              'key': data['key'] ?? 'rzp_test_dummy', 
+              'amount': data['amount'],
+              'name': 'LuxeStay',
+              'description': 'Booking Payment',
+              'order_id': _currentOrderId,
+              'prefill': {
+                'contact': provider.leadGuest['phone'],
+                'email': provider.leadGuest['email'],
+              }
+            };
+            
+            _razorpay.open(options);
+          } else {
+            throw Exception('Failed to create payment order');
+          }
+        } catch (e) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Could not initialize payment gateway.'), backgroundColor: Colors.redAccent),
             );
-          } catch (_) {}
-          context.push('/confirmation');
+          }
         }
       } else {
         if (mounted) {

@@ -403,6 +403,15 @@ router.post("/register", authLimiter, validateRegisterPayload, async (req, res, 
 
     const normalEmail = email.toLowerCase().trim();
 
+    const allowedDomains = ["gmail.com", "yahoo.com", "outlook.com", "hotmail.com", "icloud.com"];
+    const emailDomain = normalEmail.split('@')[1];
+    if (!emailDomain || !allowedDomains.includes(emailDomain)) {
+      return res.status(400).json({
+        success: false,
+        message: "Please register with a valid, real email provider (e.g., @gmail.com, @yahoo.com).",
+      });
+    }
+
     // ── CAPTCHA verification (mandatory for registration) ─────
     const { captchaId, captchaAnswer } = req.body;
     
@@ -652,6 +661,15 @@ router.post("/login", loginLimiter, validateLoginPayload, async (req, res, next)
     }
 
     const normalEmail = email.toLowerCase().trim();
+
+    const allowedDomains = ["gmail.com", "yahoo.com", "outlook.com", "hotmail.com", "icloud.com"];
+    const emailDomain = normalEmail.split('@')[1];
+    if (!emailDomain || !allowedDomains.includes(emailDomain)) {
+      return res.status(400).json({
+        success: false,
+        message: "Please login with a valid, real email provider (e.g., @gmail.com, @yahoo.com).",
+      });
+    }
 
     // ── CAPTCHA verification (mandatory for login) ─────
     const { captchaId: loginCaptchaId, captchaAnswer: loginCaptchaAnswer } = req.body;

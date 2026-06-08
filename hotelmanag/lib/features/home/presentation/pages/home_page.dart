@@ -329,29 +329,38 @@ class _HomePageState extends State<HomePage> {
     return Stack(
       children: [
         // Premium Background Image
-        Container(
-          height: 500, // Balanced height to avoid overflow
-          width: double.infinity,
-          foregroundDecoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Colors.black.withOpacity(0.3),
-                Colors.transparent,
-                AppTheme.backgroundColor.withOpacity(0.9),
-                AppTheme.backgroundColor,
-              ],
-              stops: const [0.0, 0.4, 0.8, 1.0], // Adjusted stops for quicker fade
-            ),
-          ),
-          child: CachedNetworkImage(
-            imageUrl: 'https://images.unsplash.com/photo-1571896349842-33c89424de2d?q=80&w=1600',
-            fit: BoxFit.cover,
-            memCacheWidth: 1000,
-            memCacheHeight: 700,
-            placeholder: (context, url) => Container(color: AppTheme.primaryColor),
-          ),
+        Consumer<HotelProvider>(
+          builder: (context, provider, child) {
+            final String heroImage = provider.allHotels.isNotEmpty 
+                ? provider.allHotels.first.imageUrl 
+                : '';
+            return Container(
+              height: 500, // Balanced height to avoid overflow
+              width: double.infinity,
+              foregroundDecoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.black.withOpacity(0.3),
+                    Colors.transparent,
+                    AppTheme.backgroundColor.withOpacity(0.9),
+                    AppTheme.backgroundColor,
+                  ],
+                  stops: const [0.0, 0.4, 0.8, 1.0], // Adjusted stops for quicker fade
+                ),
+              ),
+              child: heroImage.isNotEmpty 
+                  ? CachedNetworkImage(
+                      imageUrl: heroImage,
+                      fit: BoxFit.cover,
+                      memCacheWidth: 1000,
+                      memCacheHeight: 700,
+                      placeholder: (context, url) => Container(color: AppTheme.primaryColor),
+                    )
+                  : Container(color: AppTheme.primaryColor),
+            );
+          },
         ),
         // Hero Content
         Positioned.fill(
@@ -383,11 +392,13 @@ class _HomePageState extends State<HomePage> {
                                   ),
                                   child: CircleAvatar(
                                     radius: 18,
+                                    backgroundColor: AppTheme.accentColor,
                                     backgroundImage: (profileImage != null && profileImage.isNotEmpty)
                                         ? CachedNetworkImageProvider(profileImage)
-                                        : CachedNetworkImageProvider(
-                                            'https://ui-avatars.com/api/?name=${Uri.encodeComponent(name.isEmpty ? 'Guest' : name)}&background=F5E6CA&color=2C3E50',
-                                          ),
+                                        : null,
+                                    child: (profileImage == null || profileImage.isEmpty)
+                                        ? const Icon(LucideIcons.user, size: 20, color: AppTheme.primaryColor)
+                                        : null,
                                   ),
                                 );
                               },

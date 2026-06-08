@@ -5,6 +5,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/providers/booking_provider.dart';
 import '../widgets/phone_auth_bottom_sheet.dart';
+import 'dart:math';
 
 /// Country codes — mirrors web AuthModal COUNTRY_CODES list.
 const _countryCodes = [
@@ -78,29 +79,32 @@ class _RegisterPageState extends State<RegisterPage> {
 
   Future<void> _fetchCaptcha() async {
     setState(() { _captchaLoading = true; _captchaController.clear(); });
-    try {
-      final auth = context.read<AuthProvider>();
-      final result = await auth.fetchCaptcha();
-      if (result != null && mounted) {
-        setState(() {
-          _captchaId        = result.$1;
-          _captchaChallenge = result.$2;
-        });
-      }
-    } catch (_) {}
-    if (mounted) setState(() => _captchaLoading = false);
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+    final result = await auth.fetchCaptcha();
+    if (result != null) {
+      setState(() {
+        _captchaId = result.$1;
+        _captchaChallenge = result.$2;
+        _captchaLoading = false;
+      });
+    } else {
+      // Local fallback
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+      final random = Random();
+      final challenge = String.fromCharCodes(Iterable.generate(6, (_) => chars.codeUnitAt(random.nextInt(chars.length))));
+      setState(() {
+        _captchaChallenge = challenge;
+        _captchaId = 'local_$challenge';
+        _captchaLoading = false;
+      });
+    }
   }
 
   String? _validatePhone(String phone, String cc) {
     final clean = phone.replaceAll(RegExp(r'[\s\-()]'), '');
     if (clean.isEmpty) return 'Phone number is required.';
     if (!RegExp(r'^\d+$').hasMatch(clean)) return 'Phone number must contain only digits.';
-    if (cc == '+91') {
-      if (clean.length != 10) return 'Indian phone numbers must be exactly 10 digits.';
-      if (!RegExp(r'^[6-9]').hasMatch(clean)) return 'Indian mobile numbers must start with 6, 7, 8, or 9.';
-    } else {
-      if (clean.length < 7 || clean.length > 15) return 'Phone number must be 7–15 digits.';
-    }
+    if (clean.length != 10) return 'Phone number must be exactly 10 digits.';
     return null;
   }
 
@@ -127,13 +131,13 @@ class _RegisterPageState extends State<RegisterPage> {
     if (password.length > 15) { _showSnack('Password must not exceed 15 characters.'); return; }
     if (!RegExp(r'[A-Z]').hasMatch(password)) { _showSnack('Password must contain at least one capital letter.'); return; }
     if (!RegExp(r'[0-9]').hasMatch(password)) { _showSnack('Password must contain at least one number.'); return; }
-    if (!RegExp(r'[^A-Za-z0-9]').hasMatch(password)) { _showSnack('Password must contain at least one special character.'); return; }
+    if (!RegExp(r'[^A-Za-z0-9]|_').hasMatch(password)) { _showSnack('Password must contain at least one special character (e.g. _ @ #).'); return; }
 
     final phoneErr = _validatePhone(phone, _countryCode);
     if (phoneErr != null) { _showSnack(phoneErr); return; }
 
-    if (_captchaChallenge.isNotEmpty && _captchaController.text.trim().isEmpty) {
-      _showSnack('Please answer the security check.');
+    if (_captchaId.isEmpty || _captchaController.text.trim().isEmpty) {
+      _showSnack('Please complete the security check.');
       return;
     }
 
@@ -342,40 +346,67 @@ class _RegisterPageState extends State<RegisterPage> {
                   children: [
                     const Text('Security Check',
                       style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.primaryColor)),
-                    TextButton.icon(
-                      icon: _captchaLoading
-                          ? const SizedBox(width: 12, height: 12,
-                              child: CircularProgressIndicator(strokeWidth: 2))
-                          : const Icon(Icons.refresh, size: 14),
-                      label: const Text('New challenge', style: TextStyle(fontSize: 12)),
-                      onPressed: _captchaLoading ? null : _fetchCaptcha,
-                      style: TextButton.styleFrom(
-                        padding: EdgeInsets.zero,
-                        minimumSize: Size.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        foregroundColor: AppTheme.primaryColor,
-                      ),
-                    ),
                   ],
                 ),
                 const SizedBox(height: 6),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey.shade300),
-                  ),
-                  child: Text(_captchaChallenge,
-                    style: const TextStyle(fontFamily: 'monospace',
-                      fontSize: 15, fontWeight: FontWeight.bold)),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        height: 54,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [Colors.grey.shade200, Colors.grey.shade300],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.grey.shade400, width: 1.5),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.05),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(_captchaChallenge,
+                          style: const TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 22,
+                            letterSpacing: 6,
+                            fontWeight: FontWeight.w800,
+                            color: AppTheme.primaryColor,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Container(
+                      height: 54,
+                      width: 54,
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryColor.withOpacity(0.05),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppTheme.primaryColor.withOpacity(0.2)),
+                      ),
+                      child: IconButton(
+                        icon: _captchaLoading
+                            ? const SizedBox(width: 16, height: 16,
+                                child: CircularProgressIndicator(strokeWidth: 2))
+                            : const Icon(Icons.refresh, color: AppTheme.primaryColor),
+                        tooltip: 'New challenge',
+                        onPressed: _captchaLoading ? null : _fetchCaptcha,
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 8),
                 _textField(
                   controller: _captchaController,
                   hint: 'Your answer',
-                  keyboardType: TextInputType.number,
+                  keyboardType: TextInputType.text,
                 ),
                 const SizedBox(height: 16),
               ],
