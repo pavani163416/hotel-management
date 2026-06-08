@@ -202,18 +202,7 @@ const SupportCentre = () => {
           <p className="text-primary-foreground/80 text-xl mb-8">
             Find answers instantly or reach our team directly.
           </p>
-          {/* Search bar */}
-          <div className="relative max-w-xl mx-auto">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search help articles..."
-              aria-label="Search FAQ"
-              className="w-full pl-12 pr-4 py-4 rounded-2xl text-foreground bg-background border border-border shadow-lg outline-none focus:ring-2 focus:ring-primary text-sm"
-            />
-          </div>
+
         </div>
       </div>
 
@@ -221,7 +210,6 @@ const SupportCentre = () => {
       <div className="bg-secondary/40 border-b border-border">
         <div className="container py-5 grid sm:grid-cols-3 gap-4">
           {[
-            { icon: MessageCircle, title: "Live Chat", desc: "Instant support 24/7", action: "Start Chat", href: "/contact" },
             { icon: Mail, title: "Email Support", desc: "support@luxestay.com", action: "Send Email", href: "mailto:support@luxestay.com" },
             { icon: Phone, title: "Phone Support", desc: "+1 (800) 123-4567", action: "Call Now", href: "tel:+18001234567" },
           ].map((item) => (
