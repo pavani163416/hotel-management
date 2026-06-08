@@ -39,8 +39,10 @@ import roomTypeRoutes from "./routes/roomTypeRoutes.js";
 import maintenanceRoutes from "./routes/maintenanceRoutes.js";
 import publicSupportRoutes from "./routes/publicSupportRoutes.js";
 import propertyOwnerRoutes from "./routes/propertyOwnerRoutes.js";
+import sitemapRoutes    from "./routes/sitemapRoutes.js";
 import errorHandler     from "./middleware/errorHandler.js";
 import csrfProtection  from "./middleware/csrfProtection.js";
+import { swaggerCspMiddleware } from "./middleware/csp.js";
 import { apiLimiter, bookingLimiter, promoLimiter, authRateLimiter, adminRateLimiter, publicRateLimiter } from "./middleware/rateLimiter.js";
 import { roomNames, setNotificationIo } from "./utils/notificationService.js";
 import logger           from "./utils/logger.js";
@@ -250,9 +252,16 @@ app.use((req, res, next) => {
 app.options("*", cors(corsOptions));
 app.use(cors(corsOptions));
 
+// ── Sitemap, robots.txt, and route discovery ─────────────
+// Mounted BEFORE CSRF middleware so unauthenticated crawlers/scanners
+// can access discovery endpoints without needing an Origin header.
+app.use(sitemapRoutes);
+
 // ── Swagger / API documentation ──────────────────────────
-app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
-app.get(["/api/docs", "/api/docs/"], (req, res) => swaggerUi.setup(swaggerDocument)(req, res));
+// Apply the Swagger-specific CSP so the UI works while keeping the
+// relaxed policy scoped only to documentation routes.
+app.use("/api/docs", swaggerCspMiddleware, swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+app.get(["/api/docs", "/api/docs/"], swaggerCspMiddleware, (req, res) => swaggerUi.setup(swaggerDocument)(req, res));
 app.get("/api/docs.json", (req, res) => res.json(swaggerDocument));
 app.get("/api/docs/swagger.json", (req, res) => res.json(swaggerDocument));
 app.get("/api/search", getHotels);
@@ -562,6 +571,29 @@ app.use("/api/notifications", notificationRoutes);
 app.use("/api/maintenance",   maintenanceRoutes);
 app.use("/api",               publicSupportRoutes);
 app.use("/api/owners",        propertyOwnerRoutes);
+
+// ── CSP Violation Report endpoint ────────────────────────
+// Browsers send JSON violation reports here when CSP blocks something.
+// This helps catch misconfigurations or real attacks in production.
+// The endpoint is intentionally unauthenticated (browsers send reports
+// without credentials) but rate-limited to prevent abuse.
+app.post("/api/csp-report", express.json({ type: ["application/json", "application/csp-report"], limit: "10kb" }), (req, res) => {
+  const report = req.body?.["csp-report"] || req.body;
+  if (report) {
+    logger.warn("CSP Violation", {
+      blockedUri:         report["blocked-uri"]          || report.blockedURI,
+      violatedDirective:  report["violated-directive"]   || report.violatedDirective,
+      effectiveDirective: report["effective-directive"]  || report.effectiveDirective,
+      documentUri:        report["document-uri"]         || report.documentURI,
+      originalPolicy:     report["original-policy"]      || report.originalPolicy,
+      sourceFile:         report["source-file"]          || report.sourceFile,
+      lineNumber:         report["line-number"]          || report.lineNumber,
+      columnNumber:       report["column-number"]        || report.columnNumber,
+      ip:                 req.ip,
+    });
+  }
+  res.status(204).end();
+});
 
 // ── 404 handler ───────────────────────────────────────────
 app.use((req, res) => {
