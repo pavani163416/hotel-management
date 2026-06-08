@@ -21,6 +21,7 @@ const links = [
   { to: "/hotels", label: "Hotels" },
   { to: "/history", label: "History" },
   { to: "/profile", label: "Profile" },
+  { to: "/support-centre", label: "Support" },
 ];
 
 type NotificationItem = {

@@ -88,12 +88,6 @@ const roomSchema = new mongoose.Schema(
       default: [],
     },
 
-    // 360° virtual tour panorama image URL
-    tour360: {
-      type: String,
-      default: null,
-    },
-
     // Room features for filtering
     breakfastIncluded: {
       type: Boolean,

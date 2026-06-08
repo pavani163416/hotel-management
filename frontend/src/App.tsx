@@ -38,6 +38,7 @@ import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import Contact from "./pages/Contact";
 import OwnerPortal from "./pages/OwnerPortal";
+import SupportCentre from "./pages/SupportCentre";
 
 const queryClient = new QueryClient();
 
@@ -63,6 +64,7 @@ const App = () => (
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/owner-portal" element={<OwnerPortal />} />
+            <Route path="/support-centre" element={<SupportCentre />} />
 
             {/* ── Protected routes (must be signed in) ─ */}
             <Route path="/booking" element={

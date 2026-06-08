@@ -1,11 +1,10 @@
 import { useNavigate, useParams } from "react-router-dom";
-import { MapPin, Star, Wifi, Coffee, Wind, Users, BedDouble, Check, LogIn, Waves, Trees, Dumbbell, Utensils, Car, ShieldCheck, Flame, Sunset, Snowflake, Bath, Tv, PocketKnife, Sailboat, Baby, PawPrint, Phone, AlertCircle, Loader2, Navigation, ExternalLink, Eye, Coffee as CoffeeIcon, XCircle } from "lucide-react";
+import { MapPin, Star, Wifi, Coffee, Wind, Users, BedDouble, Check, LogIn, Waves, Trees, Dumbbell, Utensils, Car, ShieldCheck, Flame, Sunset, Snowflake, Bath, Tv, PocketKnife, Sailboat, Baby, PawPrint, Phone, AlertCircle, Loader2, Navigation, ExternalLink } from "lucide-react";
 import Layout from "@/components/Layout";
 import { useBooking } from "@/context/BookingContext";
 import { useCurrency } from "@/context/CurrencyContext";
 import { useState, useEffect, useMemo } from "react";
 import { AuthModal } from "@/components/AuthModal";
-import Tour360Viewer from "@/components/Tour360Viewer";
 import { API } from "@/services/api";
 
 // Map amenity name → lucide icon
@@ -52,9 +51,6 @@ const HotelDetails = () => {
   const [breakfastFilter, setBreakfastFilter] = useState(false);
   const [cancellationFilter, setCancellationFilter] = useState(false);
   const [availableOnlyFilter, setAvailableOnlyFilter] = useState(false);
-
-  // 360° tour viewer
-  const [tour360Room, setTour360Room] = useState<{ url: string; name: string } | null>(null);
 
   // Auth popup for unauthenticated booking attempts
   const [authOpen, setAuthOpen] = useState(false);
@@ -327,14 +323,6 @@ const HotelDetails = () => {
                         {r.freeCancellation && (
                           <span className="text-xs px-2 py-1 rounded bg-blue-50 text-blue-700 font-medium border border-blue-200">✓ Free Cancel</span>
                         )}
-                        {r.tour360 && (
-                          <button
-                            onClick={(e) => { e.stopPropagation(); setTour360Room({ url: r.tour360!, name: r.name }); }}
-                            className="text-xs px-2 py-1 rounded bg-accent/15 text-accent font-semibold border border-accent/30 flex items-center gap-1 hover:bg-accent/25 transition-colors"
-                          >
-                            <Eye className="w-3 h-3" /> 360° Tour
-                          </button>
-                        )}
                       </div>
                       <div className="md:text-right">
                         <p className="font-display text-xl font-bold text-primary">{format(r.price)}</p>
@@ -514,26 +502,15 @@ const HotelDetails = () => {
         )}
       </div>
 
-      {/* Auth popup — shown when unauthenticated user clicks Select Room */}
+      {/* Auth popup */}
       <AuthModal
         isOpen={authOpen}
         onClose={() => {
           setAuthOpen(false);
-          // If user cancelled without signing in, clear the pending room
-          // so they stay on the hotel page without any redirect
           if (!user) setPendingRoomId(null);
         }}
         defaultMode={authMode}
       />
-
-      {/* 360° Tour Viewer */}
-      {tour360Room && (
-        <Tour360Viewer
-          imageUrl={tour360Room.url}
-          roomName={tour360Room.name}
-          onClose={() => setTour360Room(null)}
-        />
-      )}
     </Layout>
   );
 };

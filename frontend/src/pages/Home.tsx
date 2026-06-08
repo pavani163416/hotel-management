@@ -30,17 +30,14 @@ const Home = () => {
 
   const query = local.location.trim().toLowerCase();
   const filteredLocations = useMemo(() => {
-    if (!query) return [];
     const set = new Set<string>();
     hotels.forEach((h) => {
-      if (h.city && h.city.toLowerCase().includes(query)) {
-        set.add(h.city);
-      }
-      if (h.location && h.location.toLowerCase().includes(query)) {
-        set.add(h.location);
-      }
+      if (h.city) set.add(h.city);
+      if (h.location) set.add(h.location);
     });
-    return Array.from(set);
+    const all = Array.from(set);
+    if (!query) return all.slice(0, 8); // show top 8 cities on empty focus
+    return all.filter((loc) => loc.toLowerCase().includes(query));
   }, [hotels, query]);
 
   const submit = (e: React.FormEvent) => {
