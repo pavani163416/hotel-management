@@ -123,6 +123,8 @@ function resolveCoords(h: any): [number, number] {
   // Last resort: return [0, 0] — HotelMap will skip this marker
   return [0, 0];
 }
+
+function getCachedHotels(): Hotel[] {
   try {
     const raw = localStorage.getItem(HOTEL_CACHE_KEY);
     const parsed = raw ? JSON.parse(raw) : [];
