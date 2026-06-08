@@ -208,7 +208,7 @@ const SupportCentre = () => {
 
       {/* Quick contact strip */}
       <div className="bg-secondary/40 border-b border-border">
-        <div className="container py-5 grid sm:grid-cols-3 gap-4">
+        <div className="container max-w-3xl mx-auto py-5 grid sm:grid-cols-2 gap-4">
           {[
             { icon: Mail, title: "Email Support", desc: "support@luxestay.com", action: "Send Email", href: "mailto:support@luxestay.com" },
             { icon: Phone, title: "Phone Support", desc: "+1 (800) 123-4567", action: "Call Now", href: "tel:+18001234567" },
