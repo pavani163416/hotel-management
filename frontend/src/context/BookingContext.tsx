@@ -44,6 +44,9 @@ function mapHotel(h: any): Hotel {
           bed: r.bed || "1 King Bed",
           available: r.available ?? 1,
           features: r.features || ["WiFi"],
+          tour360: r.tour360 || undefined,
+          breakfastIncluded: r.breakfastIncluded || false,
+          freeCancellation: r.freeCancellation || false,
         }))
       : [],
     reviews: (h.reviews || []).map((r: any) => ({
