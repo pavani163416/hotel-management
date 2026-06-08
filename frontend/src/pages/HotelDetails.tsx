@@ -6,7 +6,7 @@ import { useCurrency } from "@/context/CurrencyContext";
 import { useState, useEffect, useMemo } from "react";
 import { AuthModal } from "@/components/AuthModal";
 import Tour360Viewer from "@/components/Tour360Viewer";
-import { API } from "@/services/api";
+import { API, getMyBookings } from "@/services/api";
 
 // Map amenity name → lucide icon
 const amenityIcon = (name: string) => {
@@ -65,6 +65,36 @@ const HotelDetails = () => {
   const [roomStatus, setRoomStatus] = useState<Record<string, { checking: boolean; error: string }>>({});
   // Live available-count per room type: roomId → number | null
   const [availCount, setAvailCount] = useState<Record<string, number | null>>({})
+
+  // Visited state for review check
+  const [hasVisited, setHasVisited] = useState(false);
+  const [checkingVisited, setCheckingVisited] = useState(false);
+
+  // Check if authenticated user has checked out or completed a stay
+  useEffect(() => {
+    if (!user || !hotel) {
+      setHasVisited(false);
+      return;
+    }
+    const checkVisitedStatus = async () => {
+      setCheckingVisited(true);
+      try {
+        const res: any = await getMyBookings();
+        if (res?.success && Array.isArray(res?.data)) {
+          const visited = res.data.some((b: any) =>
+            (b.hotelId === hotel.id || b.hotelStringId === hotel.id) &&
+            ["Completed", "CheckedOut"].includes(b.status)
+          );
+          setHasVisited(visited);
+        }
+      } catch {
+        setHasVisited(false);
+      } finally {
+        setCheckingVisited(false);
+      }
+    };
+    checkVisitedStatus();
+  }, [user, hotel?.id]);
 
   // When user signs in and there's a pending room → proceed to booking
   useEffect(() => {
@@ -416,24 +446,58 @@ const HotelDetails = () => {
                 </div>
               ))}
             </div>
-            <form onSubmit={handleSubmitReview} className="bg-card border border-border rounded-2xl p-6 h-fit space-y-4">
-              <h3 className="font-display text-lg font-bold">Write a Review</h3>
-              <input value={reviewName} onChange={(e) => setReviewName(e.target.value)} placeholder="Your name"
-                className="w-full px-4 py-2.5 border border-border rounded-lg outline-none focus:border-accent text-sm" />
-              <div className="flex items-center gap-1.5">
-                {[1, 2, 3, 4, 5].map((n) => (
-                  <button type="button" key={n} onClick={() => setReviewRating(n)} className="focus:outline-none">
-                    <Star className={`w-6 h-6 transition-base ${n <= reviewRating ? "fill-accent text-accent" : "text-muted-foreground/30 fill-none"}`} />
-                  </button>
-                ))}
+            {checkingVisited ? (
+              <div className="bg-card border border-border rounded-2xl p-6 h-fit flex items-center justify-center">
+                <Loader2 className="w-6 h-6 animate-spin text-accent" />
+                <span className="text-sm text-muted-foreground ml-2">Checking verified stay...</span>
               </div>
-              <textarea value={reviewText} onChange={(e) => setReviewText(e.target.value)} placeholder="Share your experience..." rows={4}
-                className="w-full px-4 py-2.5 border border-border rounded-lg outline-none focus:ring-2 focus:ring-primary focus:border-primary text-sm resize-none" />
-              {err && <p className="text-destructive text-xs">{err}</p>}
-              <button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-2.5 rounded-lg font-semibold text-sm transition-base">
-                Submit Review
-              </button>
-            </form>
+            ) : !user ? (
+              <div className="bg-card border border-border rounded-2xl p-6 h-fit text-center space-y-3">
+                <div className="w-12 h-12 rounded-full bg-accent/10 text-accent grid place-items-center mx-auto">
+                  <LogIn className="w-6 h-6" />
+                </div>
+                <h3 className="font-display text-lg font-bold">Write a Review</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Please sign in to write a review. Only guests who have completed a stay at this hotel can submit reviews.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => { setAuthMode("signin"); setAuthOpen(true); }}
+                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-2.5 rounded-lg font-semibold text-sm transition-base"
+                >
+                  Sign In
+                </button>
+              </div>
+            ) : !hasVisited ? (
+              <div className="bg-card border border-border rounded-2xl p-6 h-fit text-center space-y-3">
+                <div className="w-12 h-12 rounded-full bg-accent/10 text-accent grid place-items-center mx-auto">
+                  <AlertCircle className="w-6 h-6" />
+                </div>
+                <h3 className="font-display text-lg font-bold">Verified Stays Only</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Only guests who have completed a stay at this hotel can write a review. We couldn't find a completed booking for this property in your account.
+                </p>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmitReview} className="bg-card border border-border rounded-2xl p-6 h-fit space-y-4">
+                <h3 className="font-display text-lg font-bold">Write a Review</h3>
+                <input value={reviewName} onChange={(e) => setReviewName(e.target.value)} placeholder="Your name"
+                  className="w-full px-4 py-2.5 border border-border rounded-lg outline-none focus:border-accent text-sm" />
+                <div className="flex items-center gap-1.5">
+                  {[1, 2, 3, 4, 5].map((n) => (
+                    <button type="button" key={n} onClick={() => setReviewRating(n)} className="focus:outline-none">
+                      <Star className={`w-6 h-6 transition-base ${n <= reviewRating ? "fill-accent text-accent" : "text-muted-foreground/30 fill-none"}`} />
+                    </button>
+                  ))}
+                </div>
+                <textarea value={reviewText} onChange={(e) => setReviewText(e.target.value)} placeholder="Share your experience..." rows={4}
+                  className="w-full px-4 py-2.5 border border-border rounded-lg outline-none focus:ring-2 focus:ring-primary focus:border-primary text-sm resize-none" />
+                {err && <p className="text-destructive text-xs">{err}</p>}
+                <button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-2.5 rounded-lg font-semibold text-sm transition-base">
+                  Submit Review
+                </button>
+              </form>
+            )}
           </div>
         )}
 
