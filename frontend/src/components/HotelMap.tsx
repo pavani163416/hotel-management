@@ -12,12 +12,27 @@ const goldIcon = L.divIcon({
   popupAnchor: [0, -28],
 });
 
+/** A hotel has valid map coords only if both lat and lon are non-zero numbers */
+const hasValidCoords = (h: Hotel): boolean => {
+  const [lat, lon] = h.coords ?? [0, 0];
+  return (
+    typeof lat === "number" && !isNaN(lat) && lat !== 0 &&
+    typeof lon === "number" && !isNaN(lon) && lon !== 0
+  );
+};
+
 const FitBounds = ({ hotels }: { hotels: Hotel[] }) => {
   const map = useMap();
   useEffect(() => {
-    if (!hotels.length) return;
-    const bounds = L.latLngBounds(hotels.map((h) => h.coords));
-    map.fitBounds(bounds, { padding: [30, 30], maxZoom: 6 });
+    const valid = hotels.filter(hasValidCoords);
+    if (!valid.length) return;
+    if (valid.length === 1) {
+      // Single marker — zoom in directly instead of fitting a 0-area bounds
+      map.setView(valid[0].coords, 12);
+      return;
+    }
+    const bounds = L.latLngBounds(valid.map((h) => h.coords));
+    map.fitBounds(bounds, { padding: [40, 40], maxZoom: 10 });
   }, [hotels, map]);
   return null;
 };
@@ -33,32 +48,64 @@ const HotelMap = ({ hotels, height = "100%", onHotelClick, className }: Props) =
   const [tileUrl, setTileUrl] = useState("https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}");
   const [attribution, setAttribution] = useState("&copy; Google Maps");
 
+  // Only render markers for hotels with valid coordinates
+  const mappableHotels = hotels.filter(hasValidCoords);
+
+  if (mappableHotels.length === 0) {
+    return (
+      <div className={className} style={{ height, width: "100%", display: "flex", alignItems: "center", justifyContent: "center", background: "hsl(30 12% 96%)", borderRadius: "0.75rem" }}>
+        <div style={{ textAlign: "center", color: "hsl(25 15% 38%)", padding: "1rem" }}>
+          <div style={{ fontSize: 28, marginBottom: 8 }}>📍</div>
+          <p style={{ fontSize: 13, fontWeight: 600 }}>No location data</p>
+          <p style={{ fontSize: 11, marginTop: 4 }}>Add coordinates in admin to show hotels on map</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={className} style={{ height, width: "100%" }}>
-      <MapContainer center={[20, 0]} zoom={2} scrollWheelZoom={false}
-        style={{ height: "100%", width: "100%", borderRadius: "0.75rem", background: "hsl(30 12% 96%)" }}>
-        <TileLayer 
-          attribution={attribution} 
-          url={tileUrl} 
+      <MapContainer
+        center={mappableHotels[0].coords}
+        zoom={4}
+        scrollWheelZoom={false}
+        style={{ height: "100%", width: "100%", borderRadius: "0.75rem", background: "hsl(30 12% 96%)" }}
+      >
+        <TileLayer
+          attribution={attribution}
+          url={tileUrl}
           eventHandlers={{
             tileerror: () => {
               setTileUrl("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png");
               setAttribution('&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors');
-            }
+            },
           }}
         />
-        <FitBounds hotels={hotels} />
-        {hotels.map((h) => (
+        <FitBounds hotels={mappableHotels} />
+        {mappableHotels.map((h) => (
           <Marker key={h.id} position={h.coords} icon={goldIcon}>
             <Popup>
               <div style={{ minWidth: 180 }}>
-                <img src={h.image} alt={h.name} style={{ width: "100%", height: 90, objectFit: "cover", borderRadius: 6, marginBottom: 6 }} />
+                <img
+                  src={h.image}
+                  alt={h.name}
+                  style={{ width: "100%", height: 90, objectFit: "cover", borderRadius: 6, marginBottom: 6 }}
+                />
                 <div style={{ fontWeight: 600, color: "hsl(60 14% 8%)", fontSize: 13 }}>{h.name}</div>
                 <div style={{ color: "hsl(25 15% 38%)", fontSize: 11 }}>{h.location}</div>
-                <div style={{ marginTop: 4, fontSize: 12, color: "hsl(60 14% 8%)" }}>⭐ {h.rating} · <strong>${h.pricePerNight}</strong>/night</div>
+                <div style={{ marginTop: 4, fontSize: 12, color: "hsl(60 14% 8%)" }}>
+                  ⭐ {h.rating ?? "–"} · <strong>${h.pricePerNight}</strong>/night
+                </div>
                 {onHotelClick && (
-                  <button onClick={() => onHotelClick(h.id)}
-                    style={{ marginTop: 6, width: "100%", padding: "6px 10px", borderRadius: 6, background: "hsl(37 26% 84%)", color: "hsl(213 14% 31%)", border: "none", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+                  <button
+                    onClick={() => onHotelClick(h.id)}
+                    style={{
+                      marginTop: 6, width: "100%", padding: "6px 10px",
+                      borderRadius: 6, background: "hsl(37 26% 84%)",
+                      color: "hsl(213 14% 31%)", border: "none",
+                      fontSize: 12, fontWeight: 600, cursor: "pointer",
+                    }}
+                  >
                     View Details
                   </button>
                 )}

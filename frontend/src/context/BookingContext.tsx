@@ -31,7 +31,7 @@ function mapHotel(h: any): Hotel {
     discountPct: h.discountPct,
     isDeal: h.isDeal || false,
     type: (h.type as Hotel["type"]) || "Hotel",
-    coords: (h.coords || [0, 0]) as [number, number],
+    coords: resolveCoords(h),
     amenities: h.amenities || ["Free WiFi"],
     rooms: (h.rooms || []).length > 0
       ? (h.rooms || []).map((r: any) => ({
@@ -56,7 +56,73 @@ function mapHotel(h: any): Hotel {
   };
 }
 
-function getCachedHotels(): Hotel[] {
+// ── City → approximate coordinates lookup ────────────────
+// Used as a fallback when a hotel is saved without explicit coordinates.
+// Covers the most common hotel cities worldwide.
+const CITY_COORDS: Record<string, [number, number]> = {
+  // Asia
+  "tokyo": [35.6895, 139.6917], "japan": [36.2048, 138.2529],
+  "singapore": [1.3521, 103.8198], "bangkok": [13.7563, 100.5018],
+  "dubai": [25.2048, 55.2708], "abu dhabi": [24.4539, 54.3773],
+  "hong kong": [22.3193, 114.1694], "shanghai": [31.2304, 121.4737],
+  "beijing": [39.9042, 116.4074], "mumbai": [19.0760, 72.8777],
+  "delhi": [28.6139, 77.2090], "bangalore": [12.9716, 77.5946],
+  "chennai": [13.0827, 80.2707], "kolkata": [22.5726, 88.3639],
+  "hyderabad": [17.3850, 78.4867], "bali": [-8.3405, 115.0920],
+  "jakarta": [-6.2088, 106.8456], "kuala lumpur": [3.1390, 101.6869],
+  "seoul": [37.5665, 126.9780], "osaka": [34.6937, 135.5023],
+  "maldives": [4.1755, 73.5093], "colombo": [6.9271, 79.8612],
+  "kathmandu": [27.7172, 85.3240], "dhaka": [23.8103, 90.4125],
+  // Europe
+  "paris": [48.8566, 2.3522], "london": [51.5074, -0.1278],
+  "rome": [41.9028, 12.4964], "milan": [45.4654, 9.1859],
+  "barcelona": [41.3851, 2.1734], "madrid": [40.4168, -3.7038],
+  "amsterdam": [52.3676, 4.9041], "berlin": [52.5200, 13.4050],
+  "vienna": [48.2082, 16.3738], "prague": [50.0755, 14.4378],
+  "budapest": [47.4979, 19.0402], "istanbul": [41.0082, 28.9784],
+  "athens": [37.9838, 23.7275], "lisbon": [38.7169, -9.1399],
+  "zurich": [47.3769, 8.5417], "geneva": [46.2044, 6.1432],
+  "zermatt": [46.0207, 7.7491], "santorini": [36.3932, 25.4615],
+  "mykonos": [37.4467, 25.3289], "dubrovnik": [42.6507, 18.0944],
+  "venice": [45.4408, 12.3155], "florence": [43.7696, 11.2558],
+  "monaco": [43.7384, 7.4246], "Nice": [43.7102, 7.2620],
+  // Americas
+  "new york": [40.7128, -74.0060], "los angeles": [34.0522, -118.2437],
+  "miami": [25.7617, -80.1918], "chicago": [41.8781, -87.6298],
+  "san francisco": [37.7749, -122.4194], "las vegas": [36.1699, -115.1398],
+  "toronto": [43.6532, -79.3832], "vancouver": [49.2827, -123.1207],
+  "mexico city": [19.4326, -99.1332], "cancun": [21.1619, -86.8515],
+  "rio de janeiro": [-22.9068, -43.1729], "são paulo": [-23.5505, -46.6333],
+  "buenos aires": [-34.6037, -58.3816], "bogota": [4.7110, -74.0721],
+  // Africa & Middle East
+  "cairo": [30.0444, 31.2357], "marrakech": [31.6295, -7.9811],
+  "cape town": [-33.9249, 18.4241], "johannesburg": [-26.2041, 28.0473],
+  "nairobi": [-1.2921, 36.8219], "riyadh": [24.7136, 46.6753],
+  "doha": [25.2854, 51.5310], "muscat": [23.5880, 58.3829],
+  // Oceania
+  "sydney": [-33.8688, 151.2093], "melbourne": [-37.8136, 144.9631],
+  "auckland": [-36.8485, 174.7633],
+};
+
+function resolveCoords(h: any): [number, number] {
+  const raw = h.coords;
+  if (
+    Array.isArray(raw) && raw.length === 2 &&
+    typeof raw[0] === "number" && raw[0] !== 0 &&
+    typeof raw[1] === "number" && raw[1] !== 0
+  ) {
+    return raw as [number, number];
+  }
+
+  // Try to match city or location string against lookup table
+  const haystack = `${h.city || ""} ${h.location || ""} ${h.name || ""}`.toLowerCase();
+  for (const [key, coords] of Object.entries(CITY_COORDS)) {
+    if (haystack.includes(key)) return coords;
+  }
+
+  // Last resort: return [0, 0] — HotelMap will skip this marker
+  return [0, 0];
+}
   try {
     const raw = localStorage.getItem(HOTEL_CACHE_KEY);
     const parsed = raw ? JSON.parse(raw) : [];
