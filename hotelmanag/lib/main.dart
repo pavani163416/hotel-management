@@ -9,6 +9,7 @@ import 'core/providers/hotel_provider.dart';
 import 'core/providers/booking_provider.dart';
 import 'core/providers/theme_provider.dart';
 import 'core/providers/promo_provider.dart';
+import 'core/providers/currency_provider.dart';
 import 'core/widgets/notification_popup.dart';
 import 'dart:ui';
 import 'core/utils/injection_container.dart' as di;
@@ -48,6 +49,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => di.sl<BookingProvider>()),
         ChangeNotifierProvider(create: (_) => di.sl<NotificationProvider>()),
         ChangeNotifierProvider(create: (_) => di.sl<PromoProvider>()),
+        ChangeNotifierProvider(create: (_) => CurrencyProvider()),
       ],
       child: const MyApp(),
     ),

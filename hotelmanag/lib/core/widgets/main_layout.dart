@@ -7,6 +7,7 @@ import 'notification_modal.dart';
 import '../providers/notification_provider.dart';
 import '../providers/booking_provider.dart';
 import '../providers/hotel_provider.dart';
+import '../providers/currency_provider.dart';
 import 'package:provider/provider.dart';
 
 class MainLayout extends StatelessWidget {
@@ -122,6 +123,28 @@ class MainLayout extends StatelessWidget {
                     ),
                   ),
               ],
+            );
+          },
+        ),
+        Consumer<CurrencyProvider>(
+          builder: (context, currencyProvider, child) {
+            return DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                value: currencyProvider.currency,
+                icon: const Icon(LucideIcons.chevronDown, color: AppTheme.primaryColor, size: 16),
+                style: const TextStyle(color: AppTheme.primaryColor, fontSize: 13, fontWeight: FontWeight.bold),
+                onChanged: (String? newValue) {
+                  if (newValue != null) {
+                    currencyProvider.setCurrency(newValue);
+                  }
+                },
+                items: CurrencyProvider.rates.keys.map<DropdownMenuItem<String>>((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(value),
+                  );
+                }).toList(),
+              ),
             );
           },
         ),

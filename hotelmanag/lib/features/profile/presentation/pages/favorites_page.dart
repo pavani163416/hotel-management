@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/main_layout.dart';
 import '../../../../core/providers/favorites_provider.dart';
+import '../../../../core/providers/currency_provider.dart';
 import '../../../../shared/domain/entities/hotel_entity.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:go_router/go_router.dart';
@@ -133,7 +134,7 @@ class FavoritesPage extends StatelessWidget {
                       children: [
                         Expanded(
                           child: Text(
-                            '\$${hotel.pricePerNight}/night', 
+                            '${context.read<CurrencyProvider>().format(hotel.pricePerNight)}/night', 
                             style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,

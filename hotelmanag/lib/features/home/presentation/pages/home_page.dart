@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import '../../../../core/providers/currency_provider.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -284,7 +285,7 @@ class _HomePageState extends State<HomePage> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text('\$${item.pricePerNight}', style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+                              Text(context.read<CurrencyProvider>().format(item.pricePerNight), style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
                               Consumer<FavoritesProvider>(
                                 builder: (context, provider, child) {
                                   final isFav = provider.isFavorite(item);
@@ -826,7 +827,7 @@ class _HomePageState extends State<HomePage> {
                                       children: [
                                         Expanded(
                                           child: Text(
-                                            '\$${item.pricePerNight}/night', 
+                                            '${context.read<CurrencyProvider>().format(item.pricePerNight)}/night', 
                                             style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryColor, fontSize: 13),
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
@@ -1582,7 +1583,7 @@ class FeaturedCard extends StatelessWidget {
                   RichText(
                     text: TextSpan(
                       children: [
-                        TextSpan(text: '\$${hotel.pricePerNight}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+                        TextSpan(text: context.read<CurrencyProvider>().format(hotel.pricePerNight), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
                         TextSpan(text: ' / night', style: TextStyle(fontSize: 11, color: Colors.grey[500])),
                       ],
                     ),

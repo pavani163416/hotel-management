@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -150,14 +151,19 @@ class _LoginPageState extends State<LoginPage> {
                         ],
                       ),
                       alignment: Alignment.center,
-                      child: Text(_captchaChallenge,
-                        style: const TextStyle(
-                          fontFamily: 'monospace',
-                          fontSize: 22,
-                          letterSpacing: 6,
-                          fontWeight: FontWeight.w800,
-                          color: AppTheme.primaryColor,
-                        ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: _captchaChallenge.trim().startsWith('<svg') 
+                          ? SvgPicture.string(_captchaChallenge, fit: BoxFit.fill)
+                          : Text(_captchaChallenge,
+                              style: const TextStyle(
+                                fontFamily: 'monospace',
+                                fontSize: 22,
+                                letterSpacing: 6,
+                                fontWeight: FontWeight.w800,
+                                color: AppTheme.primaryColor,
+                              ),
+                            ),
                       ),
                     ),
                   ),

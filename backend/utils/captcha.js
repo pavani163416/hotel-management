@@ -41,18 +41,20 @@ setInterval(() => {
 }, 5 * 60 * 1000);
 
 // ── CAPTCHA generation ────────────────────────────────────────────────────────
-const OPS = ["+", "-", "*"];
+import svgCaptcha from "svg-captcha";
 
 export const generateCaptcha = async () => {
-  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%&";
-  let challengeStr = "";
-  for (let i = 0; i < 8; i++) {
-    challengeStr += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
+  const captcha = svgCaptcha.create({
+    size: 6,
+    ignoreChars: '0o1i',
+    noise: 3,
+    color: true,
+    background: '#f4f4f4'
+  });
 
   const captchaId = randomUUID();
-  const challenge = challengeStr;
-  const answer = challengeStr;
+  const challenge = captcha.data; // The SVG markup
+  const answer = captcha.text;
 
   if (isRedisReady()) {
     try {

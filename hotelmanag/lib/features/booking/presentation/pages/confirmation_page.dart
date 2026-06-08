@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/main_layout.dart';
 import '../../../../core/providers/booking_provider.dart';
+import '../../../../core/providers/currency_provider.dart';
 import '../../../../core/utils/receipt_generator.dart';
 import '../../domain/entities/booking_entity.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -166,11 +167,11 @@ class ConfirmationPage extends StatelessWidget {
                 const SizedBox(height: 24),
 
                 // ── Price breakdown ───────────────────────────
-                _priceRow('Subtotal', '\$${NumberFormat("#,###").format(provider.subtotal)}'),
-                _priceRow('Service Fee', '\$${NumberFormat("#,###").format(provider.serviceFee)}'),
-                _priceRow('Taxes', '\$${NumberFormat("#,###").format(provider.taxes)}'),
+                _priceRow('Subtotal', context.read<CurrencyProvider>().format(provider.subtotal)),
+                _priceRow('Service Fee', context.read<CurrencyProvider>().format(provider.serviceFee)),
+                _priceRow('Taxes', context.read<CurrencyProvider>().format(provider.taxes)),
                 if (provider.discountAmount > 0)
-                  _priceRow('Discount', '-\$${NumberFormat("#,###").format(provider.discountAmount)}', valueColor: Colors.green),
+                  _priceRow('Discount', '-' + context.read<CurrencyProvider>().format(provider.discountAmount), valueColor: Colors.green),
                 const SizedBox(height: 8),
                 const Divider(color: AppTheme.mutedColor),
                 const SizedBox(height: 8),
@@ -179,7 +180,7 @@ class ConfirmationPage extends StatelessWidget {
                   children: [
                     const Text('Total Paid', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
                     Text(
-                      '\$${NumberFormat("#,###").format(provider.total)}',
+                      context.read<CurrencyProvider>().format(provider.total),
                       style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
                     ),
                   ],

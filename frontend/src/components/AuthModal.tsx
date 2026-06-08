@@ -130,8 +130,10 @@ function AuthModalInner({ isOpen, onClose, defaultMode, mode, setMode, loading, 
                   {captchaLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : "↻"} New challenge
                 </button>
               </div>
-              <div className="bg-secondary/60 border border-border rounded-lg px-4 py-2 text-sm font-mono font-semibold text-foreground">
-                {captchaChallenge}
+              <div className="bg-secondary/60 border border-border rounded-lg px-4 py-2 text-sm font-mono font-semibold text-foreground flex justify-center items-center">
+                {captchaChallenge.trim().startsWith('<svg') 
+                  ? <div dangerouslySetInnerHTML={{ __html: captchaChallenge }} />
+                  : captchaChallenge}
               </div>
               <input type="text" value={captchaAnswer} onChange={e => setCaptchaAnswer(e.target.value)}
                 className="w-full px-4 py-2 border border-border rounded-lg outline-none focus:ring-2 focus:ring-primary text-sm"
@@ -228,8 +230,10 @@ function AuthModalInner({ isOpen, onClose, defaultMode, mode, setMode, loading, 
                   {captchaLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : "↻"} New challenge
                 </button>
               </div>
-              <div className="bg-secondary/60 border border-border rounded-lg px-4 py-2 text-sm font-mono font-semibold text-foreground">
-                {captchaChallenge}
+              <div className="bg-secondary/60 border border-border rounded-lg px-4 py-2 text-sm font-mono font-semibold text-foreground flex justify-center items-center">
+                {captchaChallenge.trim().startsWith('<svg') 
+                  ? <div dangerouslySetInnerHTML={{ __html: captchaChallenge }} />
+                  : captchaChallenge}
               </div>
               <input type="text" value={captchaAnswer} onChange={e => setCaptchaAnswer(e.target.value)}
                 className="w-full px-4 py-2 border border-border rounded-lg outline-none focus:ring-2 focus:ring-primary text-sm"

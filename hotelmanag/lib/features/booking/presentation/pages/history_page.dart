@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/providers/currency_provider.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -237,7 +238,7 @@ class BookingListItem extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Text('Total', style: TextStyle(fontSize: 10, color: Colors.grey)),
-                  Text('\$${NumberFormat("#,###").format(booking.totalAmount)}', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+                  Text(context.read<CurrencyProvider>().format(booking.totalAmount), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
                   const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: () => _showBookingDetails(context),
@@ -312,7 +313,7 @@ class BookingListItem extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       const Text('Total Paid', style: TextStyle(fontSize: 10, color: Colors.grey)),
-                      Text('\$${NumberFormat("#,###").format(booking.totalAmount)}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+                      Text(context.read<CurrencyProvider>().format(booking.totalAmount), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
                     ],
                   ),
                 ],
@@ -524,9 +525,9 @@ class BookingListItem extends StatelessWidget {
               if (booking.paymentMethod != null) _buildDetailRow('Payment', booking.paymentMethod!.toUpperCase()),
               _buildDetailRow('Dates', dateString),
               _buildDetailRow('Nights', '${booking.nights ?? nights}'),
-              if (booking.subtotal != null) _buildDetailRow('Subtotal', '\$${NumberFormat("#,###").format(booking.subtotal)}'),
-              if (booking.taxes != null) _buildDetailRow('Taxes & Fees', '\$${NumberFormat("#,###").format(booking.taxes)}'),
-              _buildDetailRow('Total Paid', '\$${NumberFormat("#,###").format(booking.totalAmount)}', isBold: true),
+              if (booking.subtotal != null) _buildDetailRow('Subtotal', context.read<CurrencyProvider>().format(booking.subtotal)),
+              if (booking.taxes != null) _buildDetailRow('Taxes & Fees', context.read<CurrencyProvider>().format(booking.taxes)),
+              _buildDetailRow('Total Paid', context.read<CurrencyProvider>().format(booking.totalAmount), isBold: true),
               _buildDetailRow('Status', booking.status),
               _buildDetailRow('Confirmed At', createdString),
               const SizedBox(height: 20),

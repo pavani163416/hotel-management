@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/providers/currency_provider.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -207,7 +208,7 @@ class _BookingPageState extends State<BookingPage> {
                         children: [
                           Text('Subtotal (${provider.nights} nights)', style: const TextStyle(fontSize: 12, color: Colors.grey)),
                           Text(
-                            '\$${NumberFormat("#,###").format(provider.subtotal)}',
+                            context.read<CurrencyProvider>().format(provider.subtotal),
                             style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,

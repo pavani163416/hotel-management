@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -318,11 +319,29 @@ class _RegisterPageState extends State<RegisterPage> {
                   ),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: _textField(
+                    child: TextFormField(
                       controller: _phoneController,
-                      hint: '555 000 0000',
+                      maxLength: 10,
+                      buildCounter: (context, {required currentLength, required isFocused, maxLength}) => null,
                       autofillHints: const [AutofillHints.telephoneNumber],
                       keyboardType: TextInputType.phone,
+                      decoration: InputDecoration(
+                        hintText: '555 000 0000',
+                        hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: AppTheme.accentColor, width: 1.5),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      ),
                     ),
                   ),
                 ],
@@ -371,14 +390,19 @@ class _RegisterPageState extends State<RegisterPage> {
                           ],
                         ),
                         alignment: Alignment.center,
-                        child: Text(_captchaChallenge,
-                          style: const TextStyle(
-                            fontFamily: 'monospace',
-                            fontSize: 22,
-                            letterSpacing: 6,
-                            fontWeight: FontWeight.w800,
-                            color: AppTheme.primaryColor,
-                          ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: _captchaChallenge.trim().startsWith('<svg') 
+                            ? SvgPicture.string(_captchaChallenge, fit: BoxFit.fill)
+                            : Text(_captchaChallenge,
+                                style: const TextStyle(
+                                  fontFamily: 'monospace',
+                                  fontSize: 22,
+                                  letterSpacing: 6,
+                                  fontWeight: FontWeight.w800,
+                                  color: AppTheme.primaryColor,
+                                ),
+                              ),
                         ),
                       ),
                     ),

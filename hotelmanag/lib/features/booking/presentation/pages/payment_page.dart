@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/providers/currency_provider.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -175,6 +176,12 @@ class _PaymentPageState extends State<PaymentPage> {
       }
       
       final booking = await provider.completeBooking(_selectedMethod);
+      
+      // Security: Clear sensitive card data from memory immediately after booking creation
+      _cardNumberController.clear();
+      _cvvController.clear();
+      _expiryController.clear();
+
       if (booking != null) {
         _currentBookingId = booking.id;
         try {
@@ -187,13 +194,13 @@ class _PaymentPageState extends State<PaymentPage> {
             
             var options = {
               'key': data['key'] ?? 'rzp_test_dummy', 
-              'amount': data['amount'],
+              'amount': (data['amount'] as num).toInt(),
               'name': 'LuxeStay',
               'description': 'Booking Payment',
               'order_id': _currentOrderId,
               'prefill': {
-                'contact': provider.leadGuest['phone'],
-                'email': provider.leadGuest['email'],
+                'contact': provider.leadGuest['phone'] ?? '',
+                'email': provider.leadGuest['email'] ?? '',
               }
             };
             
@@ -301,8 +308,38 @@ class _PaymentPageState extends State<PaymentPage> {
       return const MainLayout(child: Center(child: Text('No hotel selected')));
     }
 
-    return MainLayout(
-      child: SingleChildScrollView(
+    return PopScope(
+      canPop: !provider.isLoading,
+      onPopInvoked: (didPop) async {
+        if (didPop) return;
+        if (provider.isLoading) {
+          final shouldPop = await showDialog<bool>(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Cancel Payment?'),
+              content: const Text('Payment is currently processing. If you go back now, you may be charged without completing the booking. Are you sure?'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('No, Wait'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text('Yes, Cancel', style: TextStyle(color: Colors.red)),
+                ),
+              ],
+            ),
+          );
+          if (shouldPop == true) {
+            // Unblock and pop manually if they insist
+            if (context.mounted) {
+              Navigator.of(context).pop();
+            }
+          }
+        }
+      },
+      child: MainLayout(
+        child: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32),
           child: Column(
@@ -378,7 +415,7 @@ class _PaymentPageState extends State<PaymentPage> {
           ),
         ),
       ),
-    );
+    ));
   }
 
   Widget _buildGuestIdentityVerification(BookingProvider provider) {
@@ -678,7 +715,7 @@ class _PaymentPageState extends State<PaymentPage> {
                 ),
               )
             : Text(
-                'Pay \$${NumberFormat("#,###").format(provider.total)}',
+                'Pay ${context.read<CurrencyProvider>().format(provider.total)}',
                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
       ),
@@ -698,9 +735,9 @@ class _PaymentPageState extends State<PaymentPage> {
           const SizedBox(height: 24),
           const Divider(color: AppTheme.mutedColor),
           const SizedBox(height: 24),
-          _buildPriceRow('Subtotal', '\$${NumberFormat("#,###").format(provider.subtotal)}'),
-          _buildPriceRow('Service Fee', '\$${NumberFormat("#,###").format(provider.serviceFee)}'),
-          _buildPriceRow('Taxes (GST)', '\$${NumberFormat("#,###").format(provider.taxes)}'),
+          _buildPriceRow('Subtotal', context.read<CurrencyProvider>().format(provider.subtotal)),
+          _buildPriceRow('Service Fee', context.read<CurrencyProvider>().format(provider.serviceFee)),
+          _buildPriceRow('Taxes (GST)', context.read<CurrencyProvider>().format(provider.taxes)),
           const SizedBox(height: 24),
           const Divider(color: AppTheme.mutedColor),
           const SizedBox(height: 24),
@@ -708,7 +745,7 @@ class _PaymentPageState extends State<PaymentPage> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text('Total', style: TextStyle(fontSize: 14, color: AppTheme.primaryColor)),
-              Text('\$${NumberFormat("#,###").format(provider.total)}', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+              Text(context.read<CurrencyProvider>().format(provider.total), style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
             ],
           ),
           const SizedBox(height: 48),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/providers/currency_provider.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -677,7 +678,7 @@ class _HotelDetailsPageState extends State<HotelDetailsPage> with SingleTickerPr
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
-                              Text('\$${row.price}', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: row.isSoldOut ? Theme.of(context).colorScheme.onSurface.withOpacity(0.35) : Theme.of(context).colorScheme.onSurface)),
+                              Text(context.read<CurrencyProvider>().format(row.price), style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: row.isSoldOut ? Theme.of(context).colorScheme.onSurface.withOpacity(0.35) : Theme.of(context).colorScheme.onSurface)),
                               Text('per night', style: TextStyle(fontSize: 11, color: isDark ? Colors.grey[400] : Colors.grey[600])),
                             ],
                           ),
@@ -808,7 +809,7 @@ class _HotelDetailsPageState extends State<HotelDetailsPage> with SingleTickerPr
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('\$${row.price}',
+                            Text(context.read<CurrencyProvider>().format(row.price),
                                 style: TextStyle(
                                     fontSize: 20,
                                     fontWeight: FontWeight.bold,

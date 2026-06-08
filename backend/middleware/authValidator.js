@@ -16,7 +16,7 @@ const validatePassword = (value) => {
   if (value.length < 8) return "Password must be at least 8 characters long";
   if (value.length > 72) return "Password must be at most 72 characters long";
   if (!/[A-Z]/.test(value)) return "Password must contain at least one uppercase letter";
-  if (!/[!@#$%^&*(),.?":{}|<>]/.test(value)) return "Password must contain at least one special character";
+  if (!/[!@#$%^&*(),.?":{}|<>_]/.test(value)) return "Password must contain at least one special character";
   return null;
 };
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/providers/currency_provider.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -260,11 +261,11 @@ class _ReviewPageState extends State<ReviewPage> {
         children: [
           const Text('PRICE SUMMARY', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.primaryColor, letterSpacing: 1)),
           const SizedBox(height: 24),
-          _buildPriceRow('Standard (${provider.nights} nights)', '\$${NumberFormat("#,###").format(provider.subtotal)}'),
-          _buildPriceRow('Service Fee', '\$${NumberFormat("#,###").format(provider.serviceFee)}'),
-          _buildPriceRow('Taxes', '\$${NumberFormat("#,###").format(provider.taxes)}'),
+          _buildPriceRow('Standard (${provider.nights} nights)', context.read<CurrencyProvider>().format(provider.subtotal)),
+          _buildPriceRow('Service Fee', context.read<CurrencyProvider>().format(provider.serviceFee)),
+          _buildPriceRow('Taxes', context.read<CurrencyProvider>().format(provider.taxes)),
           if (provider.discountAmount > 0)
-            _buildPriceRow('Discount (${provider.appliedPromoCode})', '-\$${NumberFormat("#,###").format(provider.discountAmount)}', isDiscount: true),
+            _buildPriceRow('Discount (${provider.appliedPromoCode})', '-' + context.read<CurrencyProvider>().format(provider.discountAmount), isDiscount: true),
           
           const SizedBox(height: 16),
           const Divider(color: AppTheme.mutedColor),
@@ -402,7 +403,7 @@ class _ReviewPageState extends State<ReviewPage> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text('Total Amount', style: TextStyle(fontSize: 14, color: AppTheme.primaryColor)),
-              Text('\$${NumberFormat("#,###").format(provider.total)}', style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+              Text(context.read<CurrencyProvider>().format(provider.total), style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
             ],
           ),
           const SizedBox(height: 24),

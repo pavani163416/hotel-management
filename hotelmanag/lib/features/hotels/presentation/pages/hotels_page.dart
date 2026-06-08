@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/providers/currency_provider.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -155,8 +156,8 @@ class _HotelsPageState extends State<HotelsPage> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('\$${provider.priceRange.start.toInt()}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
-            Text('\$${provider.priceRange.end.toInt()}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+            Text(context.read<CurrencyProvider>().format(provider.priceRange.start), style: const TextStyle(fontSize: 12, color: Colors.grey)),
+            Text(context.read<CurrencyProvider>().format(provider.priceRange.end), style: const TextStyle(fontSize: 12, color: Colors.grey)),
           ],
         ),
         RangeSlider(
@@ -411,8 +412,8 @@ class _HotelsPageState extends State<HotelsPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         if (hasDiscount)
-                          Text('\$${hotel.originalPrice!.toInt()}', style: TextStyle(fontSize: 9, color: isDark ? Colors.grey[500] : Colors.grey, decoration: TextDecoration.lineThrough)),
-                        Text('\$${hotel.pricePerNight.toInt()}/night', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary)),
+                          Text(context.read<CurrencyProvider>().format(hotel.originalPrice!), style: TextStyle(fontSize: 9, color: isDark ? Colors.grey[500] : Colors.grey, decoration: TextDecoration.lineThrough)),
+                        Text('${context.read<CurrencyProvider>().format(hotel.pricePerNight)}/night', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary)),
                       ],
                     ),
                     ElevatedButton(
@@ -674,9 +675,9 @@ class _HotelsPageState extends State<HotelsPage> {
               children: [
                 Text('Starting from', style: TextStyle(fontSize: 11, color: isDark ? Colors.grey[400] : Colors.grey)),
                 if (hasDiscount)
-                  Text('\$${hotel.originalPrice!.toInt()}', style: TextStyle(fontSize: 11, color: isDark ? Colors.grey[500] : Colors.grey, decoration: TextDecoration.lineThrough)),
+                  Text(context.read<CurrencyProvider>().format(hotel.originalPrice!), style: TextStyle(fontSize: 11, color: isDark ? Colors.grey[500] : Colors.grey, decoration: TextDecoration.lineThrough)),
                 const SizedBox(height: 2),
-                Text('\$${hotel.pricePerNight.toInt()}', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary)),
+                Text(context.read<CurrencyProvider>().format(hotel.pricePerNight), style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary)),
                 Text('per night', style: TextStyle(fontSize: 11, color: isDark ? Colors.grey[400] : Colors.grey)),
                 const SizedBox(height: 16),
                 SizedBox(
@@ -795,7 +796,7 @@ class _HotelsPageState extends State<HotelsPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text('Starting from', style: TextStyle(fontSize: 9, color: isDark ? Colors.grey[400] : Colors.grey)),
-                          Text('\$${hotel.pricePerNight.toInt()}', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary)),
+                          Text(context.read<CurrencyProvider>().format(hotel.pricePerNight), style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary)),
                           Text('per night', style: TextStyle(fontSize: 9, color: isDark ? Colors.grey[400] : Colors.grey)),
                         ],
                       ),
