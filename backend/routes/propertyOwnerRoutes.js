@@ -10,6 +10,7 @@ import Booking from "../models/Booking.js";
 import { protect, authorizeRoles } from "../middleware/auth.js";
 import logger from "../utils/logger.js";
 import { uploadPublicSupport } from "../middleware/uploadMiddleware.js";
+import { sendOwnerApprovalEmail, sendOwnerRejectionEmail } from "../utils/emailService.js";
 
 const router = express.Router();
 const OWNER_JWT_EXPIRES = "7d";
@@ -23,10 +24,9 @@ const uploadBufferToCloudinary = async (buffer, filename, mimetype) => {
     api_secret: process.env.CLOUDINARY_API_SECRET,
   });
   return new Promise((resolve, reject) => {
-    const isPdf = mimetype === "application/pdf";
     const uploadOptions = {
       folder: "luxestay/kyc",
-      resource_type: isPdf ? "raw" : "auto", 
+      resource_type: "auto", 
       public_id: filename.split('.')[0] + "-" + Date.now(),
     };
     const uploadStream = cloudinary.uploader.upload_stream(
@@ -206,6 +206,11 @@ router.patch("/admin/:id/approve", protect, authorizeRoles("Super Admin", "admin
     if (user) {
       user.role = "owner";
       await user.save();
+      
+      // Trigger approval email notification
+      await sendOwnerApprovalEmail({ to: user.email, name: user.name }).catch((err) => {
+        logger.error("Error sending owner approval email:", err);
+      });
     }
 
     try {
@@ -233,6 +238,16 @@ router.patch("/admin/:id/reject", protect, authorizeRoles("Super Admin", "admin"
     if (!app) return res.status(404).json({ success: false, message: "Application not found." });
 
     const user = await User.findById(app.userId);
+    if (user) {
+      // Trigger rejection email notification
+      await sendOwnerRejectionEmail({
+        to: user.email,
+        name: user.name,
+        reason: req.body.reason || "Please verify your uploaded business license or identity proof documents and try again."
+      }).catch((err) => {
+        logger.error("Error sending owner rejection email:", err);
+      });
+    }
 
     try {
       const { sendNotification } = await import("../utils/notificationService.js");

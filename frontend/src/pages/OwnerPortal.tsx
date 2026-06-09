@@ -293,7 +293,7 @@ const OwnerPortal = () => {
           </div>
           <h1 className="font-display text-3xl font-bold mb-3">Application Under Review</h1>
           <p className="text-muted-foreground mb-6">
-            Your owner application is pending approval. Our partner verification team will review your business information and KYC documents shortly.
+            Your owner application is pending approval. Our partner verification team will review your business information and KYC documents shortly. You will receive an email notification once your application has been processed by the admin.
           </p>
           <div className="bg-secondary/30 border border-border rounded-xl p-4 mb-6 text-left space-y-2 text-sm">
             <p><strong>Business Name:</strong> {appDetails?.businessName}</p>

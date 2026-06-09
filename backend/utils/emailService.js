@@ -421,3 +421,151 @@ export const sendOtpEmail = async ({ to, name, otp }) => {
     throw new Error("Failed to send verification email. Please ensure your email address is correct.");
   }
 };
+
+// ─────────────────────────────────────────────────────────
+// sendOwnerApprovalEmail
+// Called when admin approves an owner application
+// ─────────────────────────────────────────────────────────
+export const sendOwnerApprovalEmail = async ({ to, name }) => {
+  if (!process.env.RESEND_API_KEY && (!process.env.SMTP_USER || !process.env.SMTP_PASS)) {
+    console.log("📧 [Email] No email service configured — skipping owner approval email.");
+    return;
+  }
+
+  console.log(`📧 [Email] Triggering owner approval email → ${to}`);
+
+  const subject = `🎉 Your LuxeStay Owner Application has been Approved!`;
+  const html = `
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"/></head>
+<body style="margin:0;padding:0;background:#f4f4f0;font-family:'Helvetica Neue',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f0;padding:40px 0;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+        <tr>
+          <td style="background:#1a1f2e;padding:32px 40px;text-align:center;">
+            <h1 style="color:#ffffff;margin:0;font-size:26px;font-weight:700;">LuxeStay</h1>
+          </td>
+        </tr>
+        <tr>
+          <td style="background:#27ae60;padding:20px 40px;text-align:center;">
+            <h2 style="color:#ffffff;margin:0;font-size:20px;font-weight:600;">Application Approved</h2>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:32px 40px;text-align:left;color:#374151;">
+            <p style="margin:0 0 16px;font-size:16px;">Hi <strong>${name || "LuxeStay Partner"}</strong>,</p>
+            <p style="margin:0 0 20px;font-size:14px;color:#6b7280;line-height:1.7;">
+              Congratulations! Your application to become a verified LuxeStay property partner has been reviewed and **approved** by our administrator.
+            </p>
+            <p style="margin:0 0 20px;font-size:14px;color:#6b7280;line-height:1.7;">
+              You can now access your **Owner Dashboard** at LuxeStay and list/manage your hotels and resorts.
+            </p>
+            <p style="text-align:center;margin:30px 0 24px;">
+              <a href="https://hotel-management-frontend-puce.vercel.app/owner-portal" target="_blank" rel="noopener noreferrer"
+                style="display:inline-block;padding:14px 28px;background:#1a1f2e;color:#ffffff;text-decoration:none;border-radius:999px;font-weight:700;">
+                Go to Owner Portal
+              </a>
+            </p>
+          </td>
+        </tr>
+        <tr>
+          <td style="background:#f9fafb;border-top:1px solid #e5e7eb;padding:20px 40px;text-align:center;">
+            <p style="margin:0;color:#9ca3af;font-size:12px;">© 2026 LuxeStay Hospitality. All rights reserved.</p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>
+  `;
+
+  try {
+    const { data, error } = await sendMailInternal({ to, subject, html });
+    if (error) {
+      console.error("📧 [Email] Owner approval send error:", error);
+    } else {
+      console.log(`📧 [Email] Owner approval email sent → ${to} | ID: ${data?.id}`);
+    }
+  } catch (err) {
+    console.error("📧 [Email] Exception sending owner approval email:", err.message);
+  }
+};
+
+// ─────────────────────────────────────────────────────────
+// sendOwnerRejectionEmail
+// Called when admin rejects an owner application
+// ─────────────────────────────────────────────────────────
+export const sendOwnerRejectionEmail = async ({ to, name, reason }) => {
+  if (!process.env.RESEND_API_KEY && (!process.env.SMTP_USER || !process.env.SMTP_PASS)) {
+    console.log("📧 [Email] No email service configured — skipping owner rejection email.");
+    return;
+  }
+
+  console.log(`📧 [Email] Triggering owner rejection email → ${to}`);
+
+  const subject = `Update on your LuxeStay Owner Application`;
+  const html = `
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"/></head>
+<body style="margin:0;padding:0;background:#f4f4f0;font-family:'Helvetica Neue',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f0;padding:40px 0;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+        <tr>
+          <td style="background:#1a1f2e;padding:32px 40px;text-align:center;">
+            <h1 style="color:#ffffff;margin:0;font-size:26px;font-weight:700;">LuxeStay</h1>
+          </td>
+        </tr>
+        <tr>
+          <td style="background:#dc2626;padding:20px 40px;text-align:center;">
+            <h2 style="color:#ffffff;margin:0;font-size:20px;font-weight:600;">Application Status Update</h2>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:32px 40px;text-align:left;color:#374151;">
+            <p style="margin:0 0 16px;font-size:16px;">Hi <strong>${name || "LuxeStay Partner"}</strong>,</p>
+            <p style="margin:0 0 20px;font-size:14px;color:#6b7280;line-height:1.7;">
+              Thank you for applying to become a verified LuxeStay property partner. After reviewing your application details and KYC documents, our administrator was **unable to approve** your application at this time.
+            </p>
+            <div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;padding:16px;margin-bottom:20px;font-size:14px;color:#b91c1c;">
+              <strong>Reason for Rejection:</strong><br/>
+              ${reason || "Please verify your uploaded business license or identity proof documents and try again."}
+            </div>
+            <p style="margin:0 0 20px;font-size:14px;color:#6b7280;line-height:1.7;">
+              You can re-apply by logging into the **Owner Portal** and submitting updated documents.
+            </p>
+            <p style="text-align:center;margin:30px 0 24px;">
+              <a href="https://hotel-management-frontend-puce.vercel.app/owner-portal" target="_blank" rel="noopener noreferrer"
+                style="display:inline-block;padding:14px 28px;background:#1a1f2e;color:#ffffff;text-decoration:none;border-radius:999px;font-weight:700;">
+                Go to Owner Portal
+              </a>
+            </p>
+          </td>
+        </tr>
+        <tr>
+          <td style="background:#f9fafb;border-top:1px solid #e5e7eb;padding:20px 40px;text-align:center;">
+            <p style="margin:0;color:#9ca3af;font-size:12px;">© 2026 LuxeStay Hospitality. All rights reserved.</p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>
+  `;
+
+  try {
+    const { data, error } = await sendMailInternal({ to, subject, html });
+    if (error) {
+      console.error("📧 [Email] Owner rejection send error:", error);
+    } else {
+      console.log(`📧 [Email] Owner rejection email sent → ${to} | ID: ${data?.id}`);
+    }
+  } catch (err) {
+    console.error("📧 [Email] Exception sending owner rejection email:", err.message);
+  }
+};
