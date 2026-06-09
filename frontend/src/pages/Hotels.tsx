@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Star, MapPin, X, Maximize2, LayoutGrid, List, ChevronLeft, ChevronRight, Flame, Search } from "lucide-react";
+import { Star, MapPin, X, Maximize2, LayoutGrid, List, ChevronLeft, ChevronRight, Flame, Search, Heart } from "lucide-react";
 import Layout from "@/components/Layout";
 import HotelMap from "@/components/HotelMap";
 import { useBooking } from "@/context/BookingContext";
+import { useWishlist } from "@/context/WishlistContext";
 import { useCurrency } from "@/context/CurrencyContext";
 import { ALL_AMENITIES } from "@/data/hotels";
 
@@ -12,6 +13,7 @@ const PROPERTY_TYPES = ["Hotel", "Resort", "Villa", "Suite"] as const;
 const Hotels = () => {
   const nav = useNavigate();
   const { hotels, search } = useBooking();
+  const { wishlist, toggleWishlist, isWishlisted } = useWishlist();
   const { format } = useCurrency();
   const [searchParams, setSearchParams] = useSearchParams();
   const [loading, setLoading] = useState(true);
@@ -187,7 +189,7 @@ const Hotels = () => {
 
           {/* RIGHT */}
           <section className="space-y-8 min-w-0">
-            {deals.length > 0 && <TopDeals deals={deals} onView={(id) => nav(`/hotel/${id}`)} format={format} />}
+            {deals.length > 0 && <TopDeals deals={deals} onView={(id) => nav(`/hotel/${id}`)} format={format} wishlist={wishlist} toggleWishlist={toggleWishlist} nav={nav} />}
 
             <div className="flex items-end justify-between gap-3 flex-wrap">
               <div>
@@ -287,9 +289,9 @@ const Hotels = () => {
                 <button onClick={clearAll} className="mt-3 text-accent text-sm font-semibold hover:underline">Clear filters</button>
               </div>
             ) : view === "list" ? (
-              <div className="space-y-5">{filtered.map((h) => <HotelListCard key={h.id} hotel={h} onView={() => nav(`/hotel/${h.id}`)} format={format} />)}</div>
+              <div className="space-y-5">{filtered.map((h) => <HotelListCard key={h.id} hotel={h} onView={() => nav(`/hotel/${h.id}`)} format={format} wishlist={wishlist} toggleWishlist={toggleWishlist} nav={nav} />)}</div>
             ) : (
-              <div className="grid sm:grid-cols-2 gap-5">{filtered.map((h) => <HotelGridCard key={h.id} hotel={h} onView={() => nav(`/hotel/${h.id}`)} format={format} />)}</div>
+              <div className="grid sm:grid-cols-2 gap-5">{filtered.map((h) => <HotelGridCard key={h.id} hotel={h} onView={() => nav(`/hotel/${h.id}`)} format={format} wishlist={wishlist} toggleWishlist={toggleWishlist} nav={nav} />)}</div>
             )}
           </section>
         </div>
@@ -325,7 +327,8 @@ const FilterCard = ({ title, children }: { title: string; children: React.ReactN
   </div>
 );
 
-const TopDeals = ({ deals, onView, format }: { deals: any[]; onView: (id: string) => void; format: (n: number) => string }) => {
+const TopDeals = ({ deals, onView, format, wishlist, toggleWishlist, nav }: { deals: any[]; onView: (id: string) => void; format: (n: number) => string; wishlist: string[]; toggleWishlist: (id: string) => void; nav: any; }) => {
+  const isWishlisted = (id: string) => wishlist.includes(id);
   const scroll = (dir: "l" | "r") => {
     const el = document.getElementById("deals-rail");
     if (el) el.scrollBy({ left: dir === "l" ? -340 : 340, behavior: "smooth" });
@@ -350,7 +353,13 @@ const TopDeals = ({ deals, onView, format }: { deals: any[]; onView: (id: string
           <article key={h.id} onClick={() => onView(h.id)} className="snap-start min-w-[280px] max-w-[280px] bg-background rounded-xl overflow-hidden border border-border hover:shadow-elegant transition-base hover:scale-[1.02] group cursor-pointer">
             <div className="relative aspect-[16/10] overflow-hidden">
               <img src={h.image} alt={h.name} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-base duration-500" />
-              <span className="absolute top-2 left-2 bg-accent text-accent-foreground text-[10px] uppercase tracking-wider font-bold px-2 py-1 rounded">Top Deal</span>
+              <button
+                onClick={(e) => { e.stopPropagation(); toggleWishlist(h.id); nav("/wishlist"); }}
+                className="absolute top-2 left-2 bg-background/95 backdrop-blur w-7 h-7 rounded-full grid place-items-center hover:scale-110 transition-transform shadow-md"
+                aria-label="Add to wishlist"
+              >
+                <Heart className={`w-3.5 h-3.5 ${isWishlisted(h.id) ? "fill-red-500 text-red-500" : "text-muted-foreground"}`} />
+              </button>
               {h.discountPct && <span className="absolute top-2 right-2 bg-primary text-primary-foreground text-[10px] font-bold px-2 py-1 rounded">-{h.discountPct}%</span>}
             </div>
             <div className="p-4">
@@ -361,13 +370,12 @@ const TopDeals = ({ deals, onView, format }: { deals: any[]; onView: (id: string
                 )}
               </div>
               <p className="text-xs text-muted-foreground truncate mb-3">{h.location}</p>
-              <div className="flex items-end justify-between">
+              <div className="flex items-end justify-between mt-2">
                 <div>
                   {h.originalPrice && <span className="text-[11px] text-muted-foreground line-through mr-1">{format(h.originalPrice)}</span>}
-                  <span className="font-display text-lg font-bold text-primary">{format(h.pricePerNight)}</span>
-                  <span className="text-[11px] text-muted-foreground">/night</span>
+                  <span className="font-display text-lg font-bold text-primary leading-none block mt-1">{format(h.pricePerNight)}<span className="text-[11px] text-muted-foreground font-normal ml-0.5">/night</span></span>
                 </div>
-                <button onClick={(e) => { e.stopPropagation(); onView(h.id); }} className="text-xs font-semibold bg-accent text-accent-foreground px-3 py-1.5 rounded-md hover:bg-accent/90 transition-base">Book Now</button>
+                <button onClick={(e) => { e.stopPropagation(); onView(h.id); }} className="text-xs font-semibold bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:bg-primary/90 transition-base shrink-0">Book Now</button>
               </div>
             </div>
           </article>
@@ -377,14 +385,21 @@ const TopDeals = ({ deals, onView, format }: { deals: any[]; onView: (id: string
   );
 };
 
-const HotelListCard = ({ hotel: h, onView, format }: { hotel: any; onView: () => void; format: (n: number) => string }) => {
+const HotelListCard = ({ hotel: h, onView, format, wishlist, toggleWishlist, nav }: { hotel: any; onView: () => void; format: (n: number) => string; wishlist: string[]; toggleWishlist: (id: string) => void; nav: any; }) => {
   const totalAvail = h.rooms.reduce((s: number, r: any) => s + r.available, 0);
+  const isWishlisted = wishlist.includes(h.id);
   return (
     <article onClick={onView} className="bg-card rounded-2xl border border-border overflow-hidden hover:shadow-elegant hover:border-brown/40 transition-base group animate-fade-in cursor-pointer">
       <div className="grid md:grid-cols-[260px_1fr_auto]">
         <div className="relative aspect-[4/3] md:aspect-auto md:h-full overflow-hidden">
           <img src={h.image} alt={h.name} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-base duration-500" />
-          {h.isDeal && <span className="absolute top-3 left-3 bg-accent text-accent-foreground text-[10px] uppercase tracking-wider font-bold px-2.5 py-1 rounded">Top Deal</span>}
+          <button
+            onClick={(e) => { e.stopPropagation(); toggleWishlist(h.id); nav("/wishlist"); }}
+            className="absolute top-3 left-3 bg-background/95 backdrop-blur w-8 h-8 rounded-full grid place-items-center hover:scale-110 transition-transform shadow-md border border-border/50"
+            aria-label="Add to wishlist"
+          >
+            <Heart className={`w-4 h-4 ${isWishlisted ? "fill-red-500 text-red-500" : "text-muted-foreground"}`} />
+          </button>
         </div>
         <div className="p-5 flex flex-col gap-2">
           <div className="flex items-start justify-between gap-3">
@@ -417,17 +432,20 @@ const HotelListCard = ({ hotel: h, onView, format }: { hotel: any; onView: () =>
   );
 };
 
-const HotelGridCard = ({ hotel: h, onView, format }: { hotel: any; onView: () => void; format: (n: number) => string }) => (
-  <article onClick={onView} className="bg-card rounded-2xl border border-border overflow-hidden hover:shadow-elegant hover:border-brown/40 transition-base hover:scale-[1.02] group animate-fade-in cursor-pointer">
-    <div className="relative aspect-[4/3] overflow-hidden">
-      <img src={h.image} alt={h.name} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-base duration-500" />
-      {h.isDeal && <span className="absolute top-3 left-3 bg-accent text-accent-foreground text-[10px] uppercase tracking-wider font-bold px-2.5 py-1 rounded">Top Deal</span>}
-      {typeof h.rating === "number" && h.rating > 0 && (
-        <div className="absolute top-3 right-3 bg-background/95 backdrop-blur px-2.5 py-1 rounded-md text-xs font-semibold flex items-center gap-1">
-          <Star className="w-3 h-3 fill-accent text-accent" /> {h.rating}
-        </div>
-      )}
-    </div>
+const HotelGridCard = ({ hotel: h, onView, format, wishlist, toggleWishlist, nav }: { hotel: any; onView: () => void; format: (n: number) => string; wishlist: string[]; toggleWishlist: (id: string) => void; nav: any; }) => {
+  const isWishlisted = wishlist.includes(h.id);
+  return (
+    <article onClick={onView} className="bg-card rounded-2xl border border-border overflow-hidden hover:shadow-elegant hover:border-brown/40 transition-base hover:scale-[1.02] group animate-fade-in cursor-pointer">
+      <div className="relative aspect-[4/3] overflow-hidden">
+        <img src={h.image} alt={h.name} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-base duration-500" />
+        <button
+          onClick={(e) => { e.stopPropagation(); toggleWishlist(h.id); nav("/wishlist"); }}
+          className="absolute top-3 left-3 bg-background/95 backdrop-blur w-8 h-8 rounded-full grid place-items-center hover:scale-110 transition-transform shadow-md border border-border/50"
+          aria-label="Add to wishlist"
+        >
+          <Heart className={`w-4 h-4 ${isWishlisted ? "fill-red-500 text-red-500" : "text-muted-foreground"}`} />
+        </button>
+      </div>
     <div className="p-5">
       <h3 className="font-display text-lg font-bold text-primary truncate">{h.name}</h3>
       <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1"><MapPin className="w-3.5 h-3.5" /> {h.location}</p>
@@ -443,6 +461,7 @@ const HotelGridCard = ({ hotel: h, onView, format }: { hotel: any; onView: () =>
       </div>
     </div>
   </article>
-);
+  );
+};
 
 export default Hotels;

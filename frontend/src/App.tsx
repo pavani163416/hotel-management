@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { BookingProvider } from "@/context/BookingContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { CurrencyProvider } from "@/context/CurrencyContext";
+import { WishlistProvider } from "@/context/WishlistContext";
 import RequireAuth from "@/components/RequireAuth";
 import { useEffect } from "react";
 
@@ -31,6 +32,7 @@ import Profile from "./pages/Profile";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 import Notifications from "./pages/Notifications";
+import Wishlist from "./pages/Wishlist";
 
 // ── Footer / Informational pages ─────────────────────────
 import About from "./pages/About";
@@ -51,12 +53,14 @@ const App = () => (
         <BrowserRouter>
         <CurrencyProvider>
         <BookingProvider>
+        <WishlistProvider>
           <ScrollToTop />
           <Routes>
             {/* ── Public routes ─────────────────────── */}
             <Route path="/" element={<Home />} />
             <Route path="/hotels" element={<Hotels />} />
             <Route path="/hotel/:id" element={<HotelDetails />} />
+            <Route path="/wishlist" element={<Wishlist />} />
 
             {/* ── Informational / Footer pages ────── */}
             <Route path="/about" element={<About />} />
@@ -93,6 +97,7 @@ const App = () => (
 
             <Route path="*" element={<NotFound />} />
           </Routes>
+        </WishlistProvider>
         </BookingProvider>
         </CurrencyProvider>
       </BrowserRouter>

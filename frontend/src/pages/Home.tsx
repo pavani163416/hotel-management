@@ -1,6 +1,7 @@
 import { useNavigate, Link } from "react-router-dom";
-import { MapPin, Calendar, Users, Search, Star, ArrowRight, Sparkles, ShieldCheck, Headphones } from "lucide-react";
+import { MapPin, Calendar, Users, Search, Star, ArrowRight, Sparkles, ShieldCheck, Headphones, Heart } from "lucide-react";
 import { useBooking } from "@/context/BookingContext";
+import { useWishlist } from "@/context/WishlistContext";
 import { useCurrency } from "@/context/CurrencyContext";
 import Layout from "@/components/Layout";
 import { useState, useMemo } from "react";
@@ -24,6 +25,7 @@ const TOP_DESTINATIONS = [
 const Home = () => {
   const nav = useNavigate();
   const { search, setSearch, hotels } = useBooking();
+  const { wishlist, toggleWishlist, isWishlisted } = useWishlist();
   const { format } = useCurrency();
   const [local, setLocal] = useState(search);
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -185,9 +187,13 @@ const Home = () => {
               <div className="relative aspect-[4/3] overflow-hidden rounded-2xl mb-3 shadow-elegant hover:shadow-luxe transition-base">
                 <img src={h.image} alt={h.name} loading="lazy"
                   className="w-full h-full object-cover group-hover:scale-105 transition-base duration-500" />
-                <div className="absolute top-3 left-3 bg-background/95 backdrop-blur px-2.5 py-1 rounded-md text-xs font-semibold flex items-center gap-1">
-                  <Star className="w-3 h-3 fill-accent text-accent" /> {h.rating}
-                </div>
+                <button
+                  onClick={(e) => { e.stopPropagation(); toggleWishlist(h.id); nav("/wishlist"); }}
+                  className="absolute top-3 left-3 bg-background/95 backdrop-blur w-8 h-8 rounded-full grid place-items-center hover:scale-110 transition-transform shadow-md border border-border/50"
+                  aria-label="Add to wishlist"
+                >
+                  <Heart className={`w-4 h-4 ${isWishlisted(h.id) ? "fill-red-500 text-red-500" : "text-muted-foreground"}`} />
+                </button>
               </div>
               <div className="flex items-start justify-between gap-2">
                 <div>

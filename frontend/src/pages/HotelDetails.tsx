@@ -170,6 +170,20 @@ const HotelDetails = () => {
     }
   };
 
+  if (!hotel) {
+    return (
+      <Layout>
+        <div className="container py-20 text-center min-h-[60vh] flex flex-col items-center justify-center">
+          <h1 className="text-3xl font-display font-bold text-primary mb-4">Hotel Not Found</h1>
+          <p className="text-muted-foreground mb-8">We couldn't find the property you're looking for.</p>
+          <button onClick={() => nav("/hotels")} className="bg-primary text-primary-foreground px-6 py-3 rounded-xl font-semibold hover:bg-primary/90 transition-base">
+            Browse All Hotels
+          </button>
+        </div>
+      </Layout>
+    );
+  }
+
   return (
     <Layout>
       {/* Gallery */}

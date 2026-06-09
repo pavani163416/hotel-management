@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
-import { Bell, Hotel, UserCircle, LogOut, Mail, CheckCircle2, Building2 } from "lucide-react";
+import { Bell, Hotel, UserCircle, LogOut, Mail, CheckCircle2, Building2, Heart } from "lucide-react";
 import { useBooking } from "@/context/BookingContext";
+import { useWishlist } from "@/context/WishlistContext";
 import { AuthModal } from "@/components/AuthModal";
 import CurrencySwitcher from "@/components/CurrencySwitcher";
 import socket from "@/services/socket";
@@ -43,6 +44,7 @@ const Navbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, setUser, bookings, selectedHotel } = useBooking();
+  const { wishlist } = useWishlist();
 
   const [authOpen, setAuthOpen] = useState(false);
   const [authMode, setAuthMode] = useState<"signin" | "signup">("signin");
@@ -233,6 +235,18 @@ const Navbar = () => {
 
         <div className="flex items-center gap-3">
           <CurrencySwitcher />
+          <button
+            onClick={() => navigate('/wishlist')}
+            className="relative w-9 h-9 grid place-items-center rounded-full hover:bg-accent/5 transition-base border border-transparent hover:border-border"
+            aria-label="Wishlist"
+          >
+            <Heart className="w-4 h-4 text-muted-foreground" />
+            {wishlist.length > 0 && (
+              <span className="absolute top-0.5 right-0.5 min-w-4 h-4 px-1 rounded-full bg-red-500 text-white text-[10px] font-bold grid place-items-center">
+                {wishlist.length}
+              </span>
+            )}
+          </button>
           {user ? (
             <>
               <div className="relative">
@@ -288,7 +302,7 @@ const Navbar = () => {
                     <Link to="/profile" className="w-full cursor-pointer">Profile</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link to="/owner-portal" className="w-full cursor-pointer flex items-center gap-1.5 text-accent">
+                    <Link to="/owner-portal" className="w-full cursor-pointer flex items-center gap-1.5 text-primary hover:text-accent font-medium">
                       <Building2 className="w-3.5 h-3.5" /> List Your Property
                     </Link>
                   </DropdownMenuItem>
