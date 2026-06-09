@@ -52,8 +52,8 @@ android {
         release {
             // Use our production signing config
             signingConfig = signingConfigs.getByName("release")
-            isMinifyEnabled = false
-            isShrinkResources = false
+            isMinifyEnabled = true
+            isShrinkResources = true
         }
         getByName("debug") {
             signingConfig = signingConfigs.getByName("release")
