@@ -8,8 +8,9 @@ import { AuthModal } from "@/components/AuthModal";
 import { API } from "@/services/api";
 
 // Map amenity name → lucide icon
-const amenityIcon = (name: string) => {
-  const n = name.toLowerCase();
+const amenityIcon = (n: string) => {
+  if (!n) return null;
+  n = n.toLowerCase();
   if (n.includes("wifi") || n.includes("wi-fi") || n.includes("internet")) return <Wifi className="w-4 h-4" />;
   if (n.includes("pool") || n.includes("infinity")) return <Waves className="w-4 h-4" />;
   if (n.includes("garden") || n.includes("park") || n.includes("nature")) return <Trees className="w-4 h-4" />;
@@ -286,7 +287,7 @@ const HotelDetails = () => {
               const displayRooms = hotel.rooms
                 .filter((r) => r.capacity >= capacityFilter)
                 .filter((r) => bedFilter === "any" || r.bed?.toLowerCase().includes(bedFilter.toLowerCase()))
-                .filter((r) => !breakfastFilter || r.breakfastIncluded || r.features?.some((f) => f.toLowerCase().includes("breakfast")))
+                .filter((r) => !breakfastFilter || r.breakfastIncluded || (Array.isArray(r.features) && r.features.some((f) => f.toLowerCase().includes("breakfast"))))
                 .filter((r) => !cancellationFilter || r.freeCancellation)
                 .filter((r) => {
                   if (!availableOnlyFilter) return true;
@@ -336,7 +337,7 @@ const HotelDetails = () => {
                         ) : null}
                       </div>
                       <div className="flex flex-wrap gap-1.5">
-                        {r.features.map((f) => (
+                        {(Array.isArray(r.features) ? r.features : []).map((f) => (
                           <span key={f} className="text-xs px-2 py-1 rounded bg-secondary text-primary font-medium flex items-center gap-1">
                             {amenityIcon(f)}
                             {f}
@@ -399,7 +400,7 @@ const HotelDetails = () => {
         )}
         {tab === "amenities" && (
           <div className="mt-8 grid sm:grid-cols-2 md:grid-cols-3 gap-3">
-            {hotel.amenities.map((a) => (
+            {(Array.isArray(hotel.amenities) ? hotel.amenities : []).map((a) => (
               <div key={a} className="flex items-center gap-3 p-4 border border-border rounded-xl bg-card">
                 <span className="grid place-items-center w-9 h-9 rounded-lg bg-accent/10 text-accent">
                   {amenityIcon(a)}
