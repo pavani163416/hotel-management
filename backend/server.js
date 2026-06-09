@@ -400,8 +400,16 @@ if (isProd) {
 // ── GLB-005: Request Body Size Limit — tight cap ────────────
 // Limit to 100kb for JSON / urlencoded / text; allow up to 10mb only
 // for explicit upload endpoints (applied per-router in uploadRoutes.js).
+const isUploadPath = (path) => {
+  return (
+    path.startsWith("/api/upload/image") ||
+    path.startsWith("/api/owners/apply") ||
+    path.startsWith("/api/public/support/create")
+  );
+};
+
 app.use((req, res, next) => {
-  if (req.path.startsWith("/api/upload/image")) {
+  if (isUploadPath(req.path)) {
     return next();
   }
   const contentLength = req.headers["content-length"];
@@ -412,7 +420,7 @@ app.use((req, res, next) => {
 });
 
 app.use((req, res, next) => {
-  if (req.path.startsWith("/api/upload/image")) {
+  if (isUploadPath(req.path)) {
     return next();
   }
   express.json({
@@ -424,14 +432,14 @@ app.use((req, res, next) => {
 });
 
 app.use((req, res, next) => {
-  if (req.path.startsWith("/api/upload/image")) {
+  if (isUploadPath(req.path)) {
     return next();
   }
   express.urlencoded({ extended: true, limit: "100kb" })(req, res, next);
 });
 
 app.use((req, res, next) => {
-  if (req.path.startsWith("/api/upload/image")) {
+  if (isUploadPath(req.path)) {
     return next();
   }
   express.text({ type: "text/plain", limit: "100kb" })(req, res, next);
