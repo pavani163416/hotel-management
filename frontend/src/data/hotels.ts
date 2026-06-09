@@ -36,6 +36,7 @@ export type Hotel = {
   isDeal?: boolean;
   type?: "Hotel" | "Resort" | "Villa" | "Suite";
   coords: [number, number];
+  mapUrl?: string;
   amenities: string[];
   rooms: Room[];
   reviews: Review[];

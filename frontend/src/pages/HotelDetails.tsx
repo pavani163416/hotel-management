@@ -428,7 +428,29 @@ const HotelDetails = () => {
         {tab === "location" && (
           <div className="mt-8 space-y-6">
             {/* Map embed */}
-            {hotel.coords && hotel.coords[0] !== 0 && hotel.coords[1] !== 0 ? (
+            {hotel.mapUrl ? (
+              <a
+                href={hotel.mapUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block rounded-2xl overflow-hidden border border-border h-80 relative group cursor-pointer"
+              >
+                <iframe
+                  title="Hotel Location"
+                  width="100%"
+                  height="100%"
+                  style={{ border: 0, pointerEvents: "none" }}
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  src={hotel.mapUrl.includes("embed") ? hotel.mapUrl : `https://maps.google.com/maps?q=${encodeURIComponent(hotel.name + " " + hotel.location)}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
+                />
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-200 flex items-center justify-center">
+                  <span className="bg-background/90 text-primary px-4 py-2 rounded-xl text-xs font-semibold shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center gap-1.5 border border-border">
+                    <ExternalLink className="w-3.5 h-3.5" /> View on Google Maps
+                  </span>
+                </div>
+              </a>
+            ) : hotel.coords && hotel.coords[0] !== 0 && hotel.coords[1] !== 0 ? (
               <a
                 href={`https://www.google.com/maps?q=${hotel.coords[0]},${hotel.coords[1]}`}
                 target="_blank"
@@ -462,7 +484,15 @@ const HotelDetails = () => {
 
             {/* Action buttons */}
             <div className="flex flex-wrap gap-3">
-              {hotel.coords && hotel.coords[0] !== 0 && (
+              {hotel.mapUrl ? (
+                <a
+                  href={hotel.mapUrl}
+                  target="_blank" rel="noopener noreferrer"
+                  className="flex items-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl font-semibold text-sm hover:bg-primary/90 transition-base"
+                >
+                  <ExternalLink className="w-4 h-4" /> Open in Google Maps
+                </a>
+              ) : hotel.coords && hotel.coords[0] !== 0 && (
                 <>
                   <a
                     href={`https://www.google.com/maps?q=${hotel.coords[0]},${hotel.coords[1]}`}

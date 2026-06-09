@@ -41,6 +41,7 @@ const hotelSchema = new mongoose.Schema(
     isDeal:        { type: Boolean, default: false },
     type:          { type: String, enum: ["Hotel", "Resort", "Villa", "Suite"], default: "Hotel" },
     coords:        { type: [Number], default: [0, 0] },
+    mapUrl:        { type: String, default: "" },
     amenities:     [String],
     rooms:         [roomSchema],
     roomInventory: {
