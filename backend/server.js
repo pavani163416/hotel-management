@@ -279,6 +279,8 @@ app.use(helmet({
         "https://cdn.razorpay.com",
         "https://api.razorpay.com",
         "https://accounts.google.com",
+        "https://maps.google.com",
+        "https://www.google.com",
       ],
       // XHR/fetch to Razorpay APIs, Google APIs, and our backend
       connectSrc:    [
