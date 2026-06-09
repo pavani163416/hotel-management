@@ -17,6 +17,11 @@ const OWNER_JWT_EXPIRES = "7d";
 // Helper for Cloudinary stream upload
 const uploadBufferToCloudinary = async (buffer, filename, mimetype) => {
   const { v2: cloudinary } = await import("cloudinary");
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key:    process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+  });
   return new Promise((resolve, reject) => {
     const isPdf = mimetype === "application/pdf";
     const uploadOptions = {
