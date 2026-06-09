@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import {
   Building2, Upload, CheckCircle2, AlertCircle, Loader2, LogIn,
   FileText, TrendingUp, Globe, ShieldCheck, Headphones, ArrowRight,
-  Star, Users, DollarSign, X
+  Star, Users, DollarSign, X, Eye, EyeOff
 } from "lucide-react";
 import Layout from "@/components/Layout";
 import api, { API } from "@/services/api";
@@ -49,6 +49,7 @@ const OwnerPortal = () => {
   const [dashLoading, setDashLoading] = useState(false);
 
   const [modal, setModal] = useState<"login" | "register" | "verify" | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
 
   const [form, setForm] = useState({ name: "", email: "", password: "", phone: "" });
   const [otp, setOtp] = useState("");
@@ -85,7 +86,11 @@ const OwnerPortal = () => {
     if (!form.name.trim()) { setError("Name is required."); return; }
     if (!form.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) { setError("Valid email is required."); return; }
     if (!form.phone.trim()) { setError("Phone number is required."); return; }
-    if (form.password.length < 8) { setError("Password must be at least 8 characters."); return; }
+    const passwordRegex = /^(?=.*[A-Z])(?=.*[!@#$%^&*(),.?":{}|<>]).{8,}$/;
+    if (!passwordRegex.test(form.password)) {
+      setError("Password must be at least 8 characters long and contain at least one uppercase letter and one special character.");
+      return;
+    }
     setError(""); setLoading(true);
     try {
       await api.post("/owners/register", form);
@@ -326,8 +331,13 @@ const OwnerPortal = () => {
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1.5">Password</label>
-                <input type="password" value={form.password} onChange={(e) => handle("password", e.target.value)}
-                  className="w-full px-4 py-2.5 border border-border rounded-xl outline-none focus:ring-2 focus:ring-primary text-sm" required />
+                <div className="relative">
+                  <input type={showPassword ? "text" : "password"} value={form.password} onChange={(e) => handle("password", e.target.value)}
+                    className="w-full px-4 py-2.5 pr-11 border border-border rounded-xl outline-none focus:ring-2 focus:ring-primary text-sm" required />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary">
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
               </div>
               <button type="submit" disabled={loading}
                 className="w-full bg-primary text-primary-foreground py-3 rounded-xl font-semibold flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors disabled:opacity-60">
@@ -348,7 +358,6 @@ const OwnerPortal = () => {
                 { label: "Full Name *", key: "name", type: "text", placeholder: "John Smith" },
                 { label: "Email Address *", key: "email", type: "email", placeholder: "john@hotel.com" },
                 { label: "Phone Number *", key: "phone", type: "tel", placeholder: "+91 98765 43210" },
-                { label: "Password *", key: "password", type: "password", placeholder: "Min 8 characters" },
               ].map(({ label, key, type, placeholder }) => (
                 <div key={key}>
                   <label className="block text-sm font-medium mb-1.5">{label}</label>
@@ -357,6 +366,17 @@ const OwnerPortal = () => {
                     className="w-full px-4 py-2.5 border border-border rounded-xl outline-none focus:ring-2 focus:ring-primary text-sm" required />
                 </div>
               ))}
+              <div>
+                <label className="block text-sm font-medium mb-1.5">Password *</label>
+                <div className="relative">
+                  <input type={showPassword ? "text" : "password"} value={form.password} onChange={(e) => handle("password", e.target.value)}
+                    placeholder="Min 8 chars, 1 uppercase, 1 special char"
+                    className="w-full px-4 py-2.5 pr-11 border border-border rounded-xl outline-none focus:ring-2 focus:ring-primary text-sm" required />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary">
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
               <button type="submit" disabled={loading}
                 className="w-full bg-primary text-primary-foreground py-3 rounded-xl font-semibold flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors disabled:opacity-60">
                 {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Creating account...</> : "Create Owner Account"}
