@@ -20,7 +20,6 @@ const links = [
   { to: "/", label: "Home" },
   { to: "/hotels", label: "Hotels" },
   { to: "/history", label: "History" },
-  { to: "/profile", label: "Profile" },
   { to: "/support-centre", label: "Support" },
 ];
 
@@ -230,10 +229,6 @@ const Navbar = () => {
               )}
             </NavLink>
           ))}
-          <Link to="/owner-portal"
-            className="ml-1 flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-accent/40 text-sm font-semibold text-accent hover:bg-accent/10 transition-base">
-            <Building2 className="w-3.5 h-3.5" /> List Your Property
-          </Link>
         </nav>
 
         <div className="flex items-center gap-3">
