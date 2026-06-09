@@ -289,6 +289,7 @@ class _LoginPageState extends State<LoginPage> {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(content: Text(auth.error!)),
                                 );
+                                _fetchCaptcha(); // Refresh captcha because the old one is consumed and deleted
                               }
                             }
                           },

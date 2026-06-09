@@ -147,7 +147,7 @@ const Hotels = () => {
 
             <FilterCard title="Price Range">
               <div className="flex items-center justify-between text-sm font-medium text-primary mb-2">
-                <span className="text-muted-foreground text-xs">$0</span><span>${maxPrice}</span>
+                <span className="text-muted-foreground text-xs">{format(0)}</span><span>{format(maxPrice)}</span>
               </div>
               <input type="range" min={100} max={5000} step={50} value={maxPrice} onChange={(e) => setMaxPrice(Number(e.target.value))} className="w-full accent-primary" />
             </FilterCard>

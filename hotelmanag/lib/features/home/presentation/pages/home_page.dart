@@ -285,7 +285,7 @@ class _HomePageState extends State<HomePage> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(context.read<CurrencyProvider>().format(item.pricePerNight), style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+                              Text(context.watch<CurrencyProvider>().format(item.pricePerNight), style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
                               Consumer<FavoritesProvider>(
                                 builder: (context, provider, child) {
                                   final isFav = provider.isFavorite(item);
@@ -426,43 +426,84 @@ class _HomePageState extends State<HomePage> {
                           ],
                         ),
                       ),
-                      Consumer2<NotificationProvider, BookingProvider>(
-                        builder: (context, provider, bookingProv, child) {
-                          final items = provider.getRealNotifications(bookingProv.bookings);
-                          final unreadCount = items.where((i) => i.isNew).length;
-                          return Stack(
-                            children: [
-                              IconButton(
-                                icon: const Icon(LucideIcons.bell, color: Colors.white, size: 24),
-                                onPressed: () {
-                                  showModalBottomSheet(
-                                    context: context,
-                                    isScrollControlled: true,
-                                    backgroundColor: Colors.transparent,
-                                    builder: (context) => const NotificationModal(),
-                                  );
-                                },
-                              ),
-                              if (unreadCount > 0)
-                                Positioned(
-                                  top: 4,
-                                  right: 4,
-                                  child: Container(
-                                    padding: const EdgeInsets.all(4),
-                                    decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
-                                    child: Text(
-                                      '$unreadCount',
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 8,
-                                        fontWeight: FontWeight.bold,
+                      Row(
+                        children: [
+                          Consumer2<NotificationProvider, BookingProvider>(
+                            builder: (context, provider, bookingProv, child) {
+                              final items = provider.getRealNotifications(bookingProv.bookings);
+                              final unreadCount = items.where((i) => i.isNew).length;
+                              return Stack(
+                                children: [
+                                  IconButton(
+                                    icon: const Icon(LucideIcons.bell, color: Colors.white, size: 24),
+                                    onPressed: () {
+                                      showModalBottomSheet(
+                                        context: context,
+                                        isScrollControlled: true,
+                                        backgroundColor: Colors.transparent,
+                                        builder: (context) => const NotificationModal(),
+                                      );
+                                    },
+                                  ),
+                                  if (unreadCount > 0)
+                                    Positioned(
+                                      top: 4,
+                                      right: 4,
+                                      child: Container(
+                                        padding: const EdgeInsets.all(4),
+                                        decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                                        child: Text(
+                                          '$unreadCount',
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 8,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
                                       ),
                                     ),
+                                ],
+                              );
+                            },
+                          ),
+                          const SizedBox(width: 8),
+                          Consumer<CurrencyProvider>(
+                            builder: (context, currencyProvider, child) {
+                              return Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.15),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(color: Colors.white.withOpacity(0.3)),
+                                ),
+                                child: DropdownButtonHideUnderline(
+                                  child: DropdownButton<String>(
+                                    isDense: true,
+                                    value: currencyProvider.currency,
+                                    icon: const Padding(
+                                      padding: EdgeInsets.only(left: 4),
+                                      child: Icon(LucideIcons.chevronDown, color: Colors.white, size: 14),
+                                    ),
+                                    style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+                                    dropdownColor: AppTheme.primaryColor.withOpacity(0.95),
+                                    borderRadius: BorderRadius.circular(16),
+                                    onChanged: (String? newValue) {
+                                      if (newValue != null) {
+                                        currencyProvider.setCurrency(newValue);
+                                      }
+                                    },
+                                    items: CurrencyProvider.rates.keys.map<DropdownMenuItem<String>>((String value) {
+                                      return DropdownMenuItem<String>(
+                                        value: value,
+                                        child: Text(value),
+                                      );
+                                    }).toList(),
                                   ),
                                 ),
-                            ],
-                          );
-                        },
+                              );
+                            },
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -688,7 +729,7 @@ class _HomePageState extends State<HomePage> {
   Widget _buildSpecialOffers(BuildContext context) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-      height: 160,
+      constraints: const BoxConstraints(minHeight: 160),
       width: double.infinity,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
@@ -827,7 +868,7 @@ class _HomePageState extends State<HomePage> {
                                       children: [
                                         Expanded(
                                           child: Text(
-                                            '${context.read<CurrencyProvider>().format(item.pricePerNight)}/night', 
+                                            '${context.watch<CurrencyProvider>().format(item.pricePerNight)}/night', 
                                             style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryColor, fontSize: 13),
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
@@ -1583,7 +1624,7 @@ class FeaturedCard extends StatelessWidget {
                   RichText(
                     text: TextSpan(
                       children: [
-                        TextSpan(text: context.read<CurrencyProvider>().format(hotel.pricePerNight), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+                        TextSpan(text: context.watch<CurrencyProvider>().format(hotel.pricePerNight), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
                         TextSpan(text: ' / night', style: TextStyle(fontSize: 11, color: Colors.grey[500])),
                       ],
                     ),

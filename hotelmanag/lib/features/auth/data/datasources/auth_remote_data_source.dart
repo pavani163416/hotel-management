@@ -52,7 +52,11 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     if (response.data != null && response.data['success'] == true) {
       final d = response.data['data'];
       if (d != null) {
-        return (d['captchaId']?.toString() ?? '', d['challenge']?.toString() ?? '');
+        String challenge = d['challenge']?.toString() ?? '';
+        // flutter_svg does not support percentage width/height in rect tags.
+        challenge = challenge.replaceAll('width="100%"', 'width="150"');
+        challenge = challenge.replaceAll('height="100%"', 'height="50"');
+        return (d['captchaId']?.toString() ?? '', challenge);
       }
     }
     return null;

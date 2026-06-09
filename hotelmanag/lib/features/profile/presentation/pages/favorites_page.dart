@@ -134,7 +134,7 @@ class FavoritesPage extends StatelessWidget {
                       children: [
                         Expanded(
                           child: Text(
-                            '${context.read<CurrencyProvider>().format(hotel.pricePerNight)}/night', 
+                            '${context.watch<CurrencyProvider>().format(hotel.pricePerNight)}/night', 
                             style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,

@@ -208,7 +208,7 @@ class _BookingPageState extends State<BookingPage> {
                         children: [
                           Text('Subtotal (${provider.nights} nights)', style: const TextStyle(fontSize: 12, color: Colors.grey)),
                           Text(
-                            context.read<CurrencyProvider>().format(provider.subtotal),
+                            context.watch<CurrencyProvider>().format(provider.subtotal),
                             style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,

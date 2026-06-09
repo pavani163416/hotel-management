@@ -26,8 +26,13 @@ class AppConstants {
       return 'http://localhost:5000/api/';
     }
 
-    // Physical Android/iOS device uses production for seamless testing without firewall issues
-    return _productionApiUrl;
+    if (defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS) {
+      // For physical devices on the same Wi-Fi, use the host computer's local IP address
+      return 'http://192.168.1.60:5000/api/';
+    }
+
+    // Default fallback
+    return 'http://localhost:5000/api/';
   }
   
   // Storage Keys

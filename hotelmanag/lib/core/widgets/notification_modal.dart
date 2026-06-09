@@ -87,48 +87,55 @@ class _NotificationModalState extends State<NotificationModal> {
                                 color: titleColor, fontFamily: 'Serif',
                               ),
                             ),
-                            Row(
-                              children: [
-                                if (provider.isFetching)
-                                  Padding(
-                                    padding: const EdgeInsets.only(right: 8),
-                                    child: SizedBox(
-                                      width: 14, height: 14,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2, color: subColor,
+                            Flexible(
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Row(
+                                  children: [
+                                    if (provider.isFetching)
+                                      Padding(
+                                        padding: const EdgeInsets.only(right: 8),
+                                        child: SizedBox(
+                                          width: 14, height: 14,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2, color: subColor,
+                                          ),
+                                        ),
                                       ),
+                                    Text('$unreadCount unread',
+                                      style: TextStyle(fontSize: 13, color: subColor,
+                                        fontWeight: FontWeight.w500)),
+                                    TextButton(
+                                      style: TextButton.styleFrom(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                                        minimumSize: Size.zero,
+                                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                      ),
+                                      onPressed: () {
+                                        provider.markAllAsRead(items);
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(
+                                            content: Text('All notifications marked as read'),
+                                            behavior: SnackBarBehavior.floating,
+                                          ),
+                                        );
+                                      },
+                                      child: const Text('Mark all read',
+                                        style: TextStyle(color: Color(0xFFC0A080),
+                                          fontWeight: FontWeight.bold, fontSize: 13)),
                                     ),
-                                  ),
-                                Text('$unreadCount unread',
-                                  style: TextStyle(fontSize: 13, color: subColor,
-                                    fontWeight: FontWeight.w500)),
-                                TextButton(
-                                  style: TextButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                                    minimumSize: Size.zero,
-                                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                  ),
-                                  onPressed: () {
-                                    provider.markAllAsRead(items);
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text('All notifications marked as read'),
-                                        behavior: SnackBarBehavior.floating,
-                                      ),
-                                    );
-                                  },
-                                  child: const Text('Mark all read',
-                                    style: TextStyle(color: Color(0xFFC0A080),
-                                      fontWeight: FontWeight.bold, fontSize: 13)),
+                                    IconButton(
+                                      icon: Icon(Icons.refresh, size: 18, color: subColor),
+                                      tooltip: 'Refresh',
+                                      padding: EdgeInsets.zero,
+                                      constraints: const BoxConstraints(),
+                                      onPressed: provider.isFetching
+                                          ? null
+                                          : () => provider.fetchNotifications(),
+                                    ),
+                                  ],
                                 ),
-                                IconButton(
-                                  icon: Icon(Icons.refresh, size: 18, color: subColor),
-                                  tooltip: 'Refresh',
-                                  onPressed: provider.isFetching
-                                      ? null
-                                      : () => provider.fetchNotifications(),
-                                ),
-                              ],
+                              ),
                             ),
                           ],
                         ),

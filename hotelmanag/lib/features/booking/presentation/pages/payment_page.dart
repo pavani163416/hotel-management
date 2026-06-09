@@ -72,7 +72,7 @@ class _PaymentPageState extends State<PaymentPage> {
   void _handlePaymentSuccess(PaymentSuccessResponse response) async {
     try {
       final api = sl<ApiService>();
-      await api.post('/api/payments/verify', data: {
+      await api.post('payments/verify', data: {
         'razorpay_order_id': response.orderId ?? _currentOrderId,
         'razorpay_payment_id': response.paymentId,
         'razorpay_signature': response.signature,
@@ -100,7 +100,7 @@ class _PaymentPageState extends State<PaymentPage> {
     try {
       if (_currentOrderId != null || _currentBookingId != null) {
         final api = sl<ApiService>();
-        await api.post('/api/payments/cancel', data: {
+        await api.post('payments/cancel', data: {
           'orderId': _currentOrderId,
           'bookingId': _currentBookingId,
         });
@@ -186,23 +186,35 @@ class _PaymentPageState extends State<PaymentPage> {
         _currentBookingId = booking.id;
         try {
           final api = sl<ApiService>();
-          final res = await api.post('/api/payments/create-order', data: {'bookingId': booking.id});
+          final res = await api.post('payments/create-order', data: {'bookingId': booking.id});
           final data = res.data;
           
           if (data['success'] == true) {
             _currentOrderId = data['orderId'];
             
-            var options = {
+            var prefill = <String, String>{};
+            if (provider.leadGuest['phone']?.isNotEmpty == true) {
+              prefill['contact'] = provider.leadGuest['phone']!;
+            }
+            if (provider.leadGuest['email']?.isNotEmpty == true) {
+              prefill['email'] = provider.leadGuest['email']!;
+            }
+            if (provider.leadGuest['name']?.isNotEmpty == true) {
+              prefill['name'] = provider.leadGuest['name']!;
+            }
+
+            var options = <String, dynamic>{
               'key': data['key'] ?? 'rzp_test_dummy', 
               'amount': (data['amount'] as num).toInt(),
+              'currency': data['currency'] ?? 'INR',
               'name': 'LuxeStay',
               'description': 'Booking Payment',
               'order_id': _currentOrderId,
-              'prefill': {
-                'contact': provider.leadGuest['phone'] ?? '',
-                'email': provider.leadGuest['email'] ?? '',
-              }
             };
+            
+            if (prefill.isNotEmpty) {
+              options['prefill'] = prefill;
+            }
             
             _razorpay.open(options);
           } else {
@@ -715,7 +727,7 @@ class _PaymentPageState extends State<PaymentPage> {
                 ),
               )
             : Text(
-                'Pay ${context.read<CurrencyProvider>().format(provider.total)}',
+                'Pay ${context.watch<CurrencyProvider>().format(provider.total)}',
                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
       ),
@@ -735,9 +747,9 @@ class _PaymentPageState extends State<PaymentPage> {
           const SizedBox(height: 24),
           const Divider(color: AppTheme.mutedColor),
           const SizedBox(height: 24),
-          _buildPriceRow('Subtotal', context.read<CurrencyProvider>().format(provider.subtotal)),
-          _buildPriceRow('Service Fee', context.read<CurrencyProvider>().format(provider.serviceFee)),
-          _buildPriceRow('Taxes (GST)', context.read<CurrencyProvider>().format(provider.taxes)),
+          _buildPriceRow('Subtotal', context.watch<CurrencyProvider>().format(provider.subtotal)),
+          _buildPriceRow('Service Fee', context.watch<CurrencyProvider>().format(provider.serviceFee)),
+          _buildPriceRow('Taxes (GST)', context.watch<CurrencyProvider>().format(provider.taxes)),
           const SizedBox(height: 24),
           const Divider(color: AppTheme.mutedColor),
           const SizedBox(height: 24),
@@ -745,7 +757,7 @@ class _PaymentPageState extends State<PaymentPage> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text('Total', style: TextStyle(fontSize: 14, color: AppTheme.primaryColor)),
-              Text(context.read<CurrencyProvider>().format(provider.total), style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+              Text(context.watch<CurrencyProvider>().format(provider.total), style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
             ],
           ),
           const SizedBox(height: 48),

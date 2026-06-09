@@ -832,7 +832,7 @@ router.post("/login", loginLimiter, validateLoginPayload, async (req, res, next)
       try {
         const client = getRedisClient();
         if (client) {
-          await client.sadd(`user_refresh_tokens:${user._id.toString()}`, refreshToken);
+          await client.sAdd(`user_refresh_tokens:${user._id.toString()}`, refreshToken);
         }
       } catch (e) {
         logger.warn("Failed to add refresh token to user set in Redis", { userId: user._id, error: e.message });
@@ -1596,7 +1596,7 @@ router.post("/verify-otp", otpRateLimiter, async (req, res, next) => {
       try {
         const client = getRedisClient();
         if (client) {
-          await client.sadd(`user_refresh_tokens:${user._id.toString()}`, refreshToken);
+          await client.sAdd(`user_refresh_tokens:${user._id.toString()}`, refreshToken);
         }
       } catch (e) {
         logger.warn("Failed to add refresh token to user set in Redis on verification", { userId: user._id, error: e.message });
@@ -1739,8 +1739,8 @@ router.post("/refresh-token", async (req, res, next) => {
       try {
         const client = getRedisClient();
         if (client) {
-          await client.srem(`user_refresh_tokens:${user._id.toString()}`, token);
-          await client.sadd(`user_refresh_tokens:${user._id.toString()}`, newRefreshToken);
+          await client.sRem(`user_refresh_tokens:${user._id.toString()}`, token);
+          await client.sAdd(`user_refresh_tokens:${user._id.toString()}`, newRefreshToken);
         }
       } catch (e) {
         logger.warn("Failed to update refresh token set in Redis during rotation", { userId: user._id, error: e.message });
@@ -1794,7 +1794,7 @@ router.post("/logout", async (req, res, next) => {
           if (isRedisReady()) {
             const client = getRedisClient();
             if (client) {
-              await client.srem(`user_refresh_tokens:${userId.toString()}`, token);
+              await client.sRem(`user_refresh_tokens:${userId.toString()}`, token);
             }
           } else {
             const set = localUserRefreshTokens.get(userId.toString());

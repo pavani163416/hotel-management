@@ -3,6 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { Hotel } from "@/data/hotels";
+import { useCurrency } from "@/context/CurrencyContext";
 
 const goldIcon = L.divIcon({
   className: "luxe-marker",
@@ -45,6 +46,7 @@ interface Props {
 }
 
 const HotelMap = ({ hotels, height = "100%", onHotelClick, className }: Props) => {
+  const { format } = useCurrency();
   const [tileUrl, setTileUrl] = useState("https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}");
   const [attribution, setAttribution] = useState("&copy; Google Maps");
 
@@ -94,7 +96,7 @@ const HotelMap = ({ hotels, height = "100%", onHotelClick, className }: Props) =
                 <div style={{ fontWeight: 600, color: "hsl(60 14% 8%)", fontSize: 13 }}>{h.name}</div>
                 <div style={{ color: "hsl(25 15% 38%)", fontSize: 11 }}>{h.location}</div>
                 <div style={{ marginTop: 4, fontSize: 12, color: "hsl(60 14% 8%)" }}>
-                  ⭐ {h.rating ?? "–"} · <strong>${h.pricePerNight}</strong>/night
+                  ⭐ {h.rating ?? "–"} · <strong>{format(h.pricePerNight)}</strong>/night
                 </div>
                 {onHotelClick && (
                   <button

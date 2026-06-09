@@ -147,7 +147,6 @@ class PushNotificationService {
             priority: Priority.high,
             icon: '@mipmap/ic_launcher',
             playSound: true,
-            sound: const RawResourceAndroidNotificationSound('notification'),
           ),
         ),
       );
@@ -164,7 +163,6 @@ class PushNotificationService {
       icon: '@mipmap/ic_launcher',
       playSound: true,
       enableVibration: true,
-      sound: RawResourceAndroidNotificationSound('notification'),
     );
     
     await _localNotificationsPlugin.show(

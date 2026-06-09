@@ -283,7 +283,7 @@ class _GuestDetailsPageState extends State<GuestDetailsPage> {
                   children: [
                     _buildLabel('PHONE NUMBER *'),
                     const SizedBox(height: 8),
-                    _buildTextField('+91 98765 43210', _leadPhoneController, required: true, isPhone: true),
+                    _PhoneInputField(controller: _leadPhoneController, required: true),
                   ],
                 ),
               ),
@@ -365,7 +365,7 @@ class _GuestDetailsPageState extends State<GuestDetailsPage> {
                   children: [
                     _buildLabel('PHONE NUMBER (OPTIONAL)'),
                     const SizedBox(height: 8),
-                    _buildTextField('+91 98765 43210', controllers['phone']!, required: false, isPhone: true),
+                    _PhoneInputField(controller: controllers['phone']!, required: false),
                   ],
                 ),
               ),
@@ -505,6 +505,118 @@ class _GuestDetailsPageState extends State<GuestDetailsPage> {
         enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppTheme.mutedColor)),
         focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppTheme.primaryColor, width: 1.2)),
         errorStyle: const TextStyle(fontSize: 11, color: Colors.redAccent),
+      ),
+    );
+  }
+}
+
+class _PhoneInputField extends StatefulWidget {
+  final TextEditingController controller;
+  final bool required;
+  const _PhoneInputField({Key? key, required this.controller, this.required = false}) : super(key: key);
+
+  @override
+  State<_PhoneInputField> createState() => _PhoneInputFieldState();
+}
+
+class _PhoneInputFieldState extends State<_PhoneInputField> {
+  String _countryCode = '+91';
+  late TextEditingController _numberController;
+
+  @override
+  void initState() {
+    super.initState();
+    _numberController = TextEditingController();
+    final text = widget.controller.text.trim();
+    if (text.startsWith('+')) {
+      final parts = text.split(' ');
+      if (parts.length > 1) {
+        _countryCode = parts[0];
+        _numberController.text = parts.sublist(1).join(' ');
+      } else {
+        if (text.startsWith('+91')) {
+          _countryCode = '+91';
+          _numberController.text = text.substring(3).trim();
+        } else {
+          _countryCode = '+1';
+          _numberController.text = text.substring(2).trim();
+        }
+      }
+    } else {
+      _numberController.text = text;
+    }
+    
+    // Initial sync
+    if (widget.controller.text.isEmpty) {
+      widget.controller.text = '$_countryCode ';
+    }
+    
+    _numberController.addListener(_updateMainController);
+  }
+
+  @override
+  void dispose() {
+    _numberController.removeListener(_updateMainController);
+    _numberController.dispose();
+    super.dispose();
+  }
+
+  void _updateMainController() {
+    widget.controller.text = '$_countryCode ${_numberController.text}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return TextFormField(
+      controller: _numberController,
+      maxLength: 10,
+      keyboardType: TextInputType.phone,
+      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+      validator: (value) {
+        if (widget.required && (value == null || value.isEmpty)) {
+          return 'This field is required';
+        }
+        if (value != null && value.isNotEmpty && value.length < 10) {
+          return 'Enter 10-digit number';
+        }
+        return null;
+      },
+      decoration: InputDecoration(
+        hintText: '98765 43210',
+        hintStyle: TextStyle(color: Colors.grey[400], fontSize: 13),
+        filled: true,
+        fillColor: Colors.white,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppTheme.mutedColor)),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppTheme.mutedColor)),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppTheme.primaryColor, width: 1.2)),
+        errorStyle: const TextStyle(fontSize: 11, color: Colors.redAccent),
+        counterText: '',
+        prefixIcon: Container(
+          padding: const EdgeInsets.only(left: 12, right: 4),
+          margin: const EdgeInsets.only(right: 8),
+          decoration: const BoxDecoration(
+            border: Border(right: BorderSide(color: AppTheme.mutedColor)),
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              value: _countryCode,
+              icon: const Icon(LucideIcons.chevronDown, color: AppTheme.primaryColor, size: 16),
+              items: ['+91', '+1', '+44', '+61', '+81'].map((String code) {
+                return DropdownMenuItem<String>(
+                  value: code,
+                  child: Text(code, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+                );
+              }).toList(),
+              onChanged: (value) {
+                if (value != null) {
+                  setState(() => _countryCode = value);
+                  _updateMainController();
+                }
+              },
+            ),
+          ),
+        ),
       ),
     );
   }

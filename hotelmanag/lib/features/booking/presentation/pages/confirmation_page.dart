@@ -167,11 +167,11 @@ class ConfirmationPage extends StatelessWidget {
                 const SizedBox(height: 24),
 
                 // ── Price breakdown ───────────────────────────
-                _priceRow('Subtotal', context.read<CurrencyProvider>().format(provider.subtotal)),
-                _priceRow('Service Fee', context.read<CurrencyProvider>().format(provider.serviceFee)),
-                _priceRow('Taxes', context.read<CurrencyProvider>().format(provider.taxes)),
+                _priceRow('Subtotal', context.watch<CurrencyProvider>().format(provider.subtotal)),
+                _priceRow('Service Fee', context.watch<CurrencyProvider>().format(provider.serviceFee)),
+                _priceRow('Taxes', context.watch<CurrencyProvider>().format(provider.taxes)),
                 if (provider.discountAmount > 0)
-                  _priceRow('Discount', '-' + context.read<CurrencyProvider>().format(provider.discountAmount), valueColor: Colors.green),
+                  _priceRow('Discount', '-' + context.watch<CurrencyProvider>().format(provider.discountAmount), valueColor: Colors.green),
                 const SizedBox(height: 8),
                 const Divider(color: AppTheme.mutedColor),
                 const SizedBox(height: 8),
@@ -180,7 +180,7 @@ class ConfirmationPage extends StatelessWidget {
                   children: [
                     const Text('Total Paid', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
                     Text(
-                      context.read<CurrencyProvider>().format(provider.total),
+                      context.watch<CurrencyProvider>().format(provider.total),
                       style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
                     ),
                   ],

@@ -53,7 +53,11 @@ export const generateCaptcha = async () => {
   });
 
   const captchaId = randomUUID();
-  const challenge = captcha.data; // The SVG markup
+  let challenge = captcha.data; // The SVG markup
+  
+  // flutter_svg on mobile cannot parse percentage widths inside SVGs.
+  challenge = challenge.replace(/width="100%"/g, 'width="150"').replace(/height="100%"/g, 'height="50"');
+  
   const answer = captcha.text;
 
   if (isRedisReady()) {
@@ -112,9 +116,9 @@ export const verifyCaptcha = async (captchaId, providedAnswer) => {
     return false;
   }
 
-  // Trim and compare answers exactly (case-sensitive)
-  const normalizedStored = String(stored).trim();
-  const normalizedProvided = String(providedAnswer).trim();
+  // Trim and compare answers (case-insensitive)
+  const normalizedStored = String(stored).trim().toLowerCase();
+  const normalizedProvided = String(providedAnswer).trim().toLowerCase();
   
   const isValid = normalizedStored === normalizedProvided;
   
