@@ -325,33 +325,19 @@ class _PaymentPageState extends State<PaymentPage> {
       onPopInvoked: (didPop) async {
         if (didPop) return;
         if (provider.isLoading) {
-          final shouldPop = await showDialog<bool>(
-            context: context,
-            builder: (context) => AlertDialog(
-              title: const Text('Cancel Payment?'),
-              content: const Text('Payment is currently processing. If you go back now, you may be charged without completing the booking. Are you sure?'),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(false),
-                  child: const Text('No, Wait'),
-                ),
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(true),
-                  child: const Text('Yes, Cancel', style: TextStyle(color: Colors.red)),
-                ),
-              ],
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Please do not close the app while payment is processing.'),
+              backgroundColor: Colors.redAccent,
+              duration: Duration(seconds: 2),
             ),
           );
-          if (shouldPop == true) {
-            // Unblock and pop manually if they insist
-            if (context.mounted) {
-              Navigator.of(context).pop();
-            }
-          }
         }
       },
-      child: MainLayout(
-        child: SingleChildScrollView(
+      child: Stack(
+        children: [
+          MainLayout(
+            child: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32),
           child: Column(
@@ -427,7 +413,35 @@ class _PaymentPageState extends State<PaymentPage> {
           ),
         ),
       ),
-    ));
+          ),
+          if (provider.isLoading)
+            Positioned.fill(
+              child: Container(
+                color: Colors.black.withOpacity(0.6),
+                child: const Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      CircularProgressIndicator(color: Colors.white),
+                      SizedBox(height: 24),
+                      Text(
+                        'Processing Payment...',
+                        style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        'Please do not close the app while payment is processing.',
+                        style: TextStyle(color: Colors.white, fontSize: 14),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
   }
 
   Widget _buildGuestIdentityVerification(BookingProvider provider) {
