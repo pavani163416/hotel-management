@@ -34,9 +34,12 @@ const api = axios.create({
 // ── Request interceptor: attach token ────────────────────
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("luxe_customer_token");
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    // Only attach customer token if an Authorization header isn't already explicitly provided
+    if (!config.headers.Authorization) {
+      const token = localStorage.getItem("luxe_customer_token");
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
     }
     return config;
   },
