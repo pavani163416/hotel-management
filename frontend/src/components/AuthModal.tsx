@@ -533,7 +533,7 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
         setResendCooldown(60);
       } else {
         localStorage.setItem("luxe_customer_token", d.token);
-        setUser({ name: d.name, email: d.email, phone: d.phone || "", city: d.city || "" });
+        setUser({ name: d.name, email: d.email, phone: d.phone || "", city: d.city || "", role: d.role || "customer" });
         onClose(); resetForm();
       }
     } catch (err: any) {
@@ -547,7 +547,7 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
   const finishAuth = (d: any) => {
     localStorage.removeItem("luxe_pending_email");
     localStorage.setItem("luxe_customer_token", d.token);
-    setUser({ name: d.name, email: d.email, phone: d.phone || "", city: d.city || "" });
+    setUser({ name: d.name, email: d.email, phone: d.phone || "", city: d.city || "", role: d.role || "customer" });
     onClose(); resetForm();
   };
 

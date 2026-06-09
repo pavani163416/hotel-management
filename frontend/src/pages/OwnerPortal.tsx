@@ -25,14 +25,8 @@ function validateFiles(files: FileList): string | null {
 }
 
 const OwnerPortal = () => {
-  const [token, setToken] = useState<string | null>(() => localStorage.getItem("luxe_customer_token"));
-  const [user, setUser] = useState<any>(() => {
-    try {
-      return JSON.parse(localStorage.getItem("luxe_user") || "null");
-    } catch {
-      return null;
-    }
-  });
+  const { user } = useBooking();
+  const token = localStorage.getItem("luxe_customer_token");
 
   const [appStatus, setAppStatus] = useState<string>("not_applied");
   const [appDetails, setAppDetails] = useState<any>(null);
@@ -53,34 +47,24 @@ const OwnerPortal = () => {
   const [files, setFiles] = useState<FileList | null>(null);
   const [fileError, setFileError] = useState("");
 
-  // Listen for login/logout changes
+  // Diagnostics log & State resolver
   useEffect(() => {
-    const handleStorageChange = () => {
-      setToken(localStorage.getItem("luxe_customer_token"));
-      try {
-        setUser(JSON.parse(localStorage.getItem("luxe_user") || "null"));
-      } catch {
-        setUser(null);
-      }
-    };
-    window.addEventListener("storage", handleStorageChange);
-    window.addEventListener("luxe_logout", handleStorageChange);
-    return () => {
-      window.removeEventListener("storage", handleStorageChange);
-      window.removeEventListener("luxe_logout", handleStorageChange);
-    };
-  }, []);
+    const activeToken = localStorage.getItem("luxe_customer_token");
+    console.log("[OwnerPortal Diagnostics]", {
+      currentUser: user ? { name: user.name, email: user.email } : null,
+      currentRole: user?.role,
+      isAuthenticated: !!user && !!activeToken,
+      applicationStatus: appStatus,
+    });
 
-  // Fetch status if token changes
-  useEffect(() => {
-    if (token) {
+    if (user && activeToken) {
       fetchApplicationStatus();
     } else {
       setAppStatus("not_applied");
       setAppDetails(null);
       setDashboardData(null);
     }
-  }, [token]);
+  }, [user]);
 
   const fetchApplicationStatus = async () => {
     setLoading(true);
@@ -91,9 +75,7 @@ const OwnerPortal = () => {
       setAppStatus(data.status || "not_applied");
       setAppDetails(data.application || null);
 
-      // If approved, load dashboard
-      const currentUser = JSON.parse(localStorage.getItem("luxe_user") || "null");
-      if (currentUser?.role === "owner") {
+      if (user?.role === "owner" || data.status === "approved") {
         await loadDashboard();
       }
     } catch (err: any) {
