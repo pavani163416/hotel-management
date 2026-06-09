@@ -58,6 +58,10 @@ const userSchema = new mongoose.Schema(
       default: "",
     },
 
+    wishlist: [{
+      type: String,
+    }],
+
     paymentMethods: [
       {
         type: { type: String, enum: ['card', 'upi', 'netbanking', 'debit', 'credit'], default: 'card' },

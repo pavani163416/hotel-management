@@ -43,7 +43,7 @@ function mapHotel(h: any): Hotel {
           capacity: r.capacity || 2,
           bed: r.bed || "1 King Bed",
           available: r.available ?? 1,
-          features: r.features || ["WiFi"],
+          features: Array.isArray(r.features) ? r.features : (typeof r.features === 'string' ? r.features.split(' ') : ["WiFi"]),
           breakfastIncluded: r.breakfastIncluded || false,
           freeCancellation: r.freeCancellation || false,
         }))
@@ -194,6 +194,7 @@ export type UserProfile = {
   email: string;
   phone: string;
   city: string;
+  wishlist?: string[];
 };
 
 type Ctx = {

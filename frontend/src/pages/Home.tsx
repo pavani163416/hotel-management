@@ -188,7 +188,7 @@ const Home = () => {
                 <img src={h.image} alt={h.name} loading="lazy"
                   className="w-full h-full object-cover group-hover:scale-105 transition-base duration-500" />
                 <button
-                  onClick={(e) => { e.stopPropagation(); toggleWishlist(h.id); nav("/wishlist"); }}
+                  onClick={(e) => { e.stopPropagation(); toggleWishlist(h.id); }}
                   className="absolute top-3 left-3 bg-background/95 backdrop-blur w-8 h-8 rounded-full grid place-items-center hover:scale-110 transition-transform shadow-md border border-border/50"
                   aria-label="Add to wishlist"
                 >

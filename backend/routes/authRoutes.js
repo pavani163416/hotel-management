@@ -865,6 +865,7 @@ router.post("/login", loginLimiter, validateLoginPayload, async (req, res, next)
         email: user.email,
         phone: user.phone,
         city: user.city,
+          wishlist: user.wishlist || [],
         profileImage: user.profileImage,
         coverImage: user.coverImage,
         paymentMethods: user.paymentMethods,
@@ -985,6 +986,7 @@ router.post("/phone/verify", otpRateLimiter, async (req, res, next) => {
         email: user.email,
         phone: user.phone,
         city: user.city,
+          wishlist: user.wishlist || [],
         profileImage: user.profileImage,
         coverImage: user.coverImage,
         paymentMethods: user.paymentMethods,
@@ -1085,6 +1087,7 @@ router.post("/google", async (req, res, next) => {
         email: user.email,
         phone: user.phone,
         city: user.city,
+          wishlist: user.wishlist || [],
         profileImage: user.profileImage,
         coverImage: user.coverImage,
         paymentMethods: user.paymentMethods,
@@ -1228,6 +1231,7 @@ router.post("/firebase", async (req, res, next) => {
         email: user.email,
         phone: user.phone,
         city: user.city,
+          wishlist: user.wishlist || [],
         profileImage: user.profileImage,
         coverImage: user.coverImage,
         paymentMethods: user.paymentMethods,
@@ -1252,12 +1256,33 @@ router.get("/me", verifyCustomerToken, async (req, res, next) => {
         email: user.email,
         phone: user.phone,
         city: user.city,
+          wishlist: user.wishlist || [],
         profileImage: user.profileImage,
         coverImage: user.coverImage,
         paymentMethods: user.paymentMethods,
         guestId: user.guestId,
       },
     });
+  } catch (err) { next(err); }
+});
+
+
+// ── POST /api/auth/wishlist ──────────────────────────────
+router.post('/wishlist', verifyCustomerToken, async (req, res, next) => {
+  try {
+    const { hotelId } = req.body;
+    if (!hotelId) return res.status(400).json({ success: false, message: 'Hotel ID is required.' });
+    const user = await User.findById(req.customer.id);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found.' });
+    let updatedWishlist = user.wishlist || [];
+    if (updatedWishlist.includes(hotelId)) {
+      updatedWishlist = updatedWishlist.filter(id => id !== hotelId);
+    } else {
+      updatedWishlist.push(hotelId);
+    }
+    user.wishlist = updatedWishlist;
+    await user.save();
+    res.json({ success: true, data: user.wishlist });
   } catch (err) { next(err); }
 });
 
@@ -1340,6 +1365,7 @@ router.patch("/profile", verifyCustomerToken, async (req, res, next) => {
         email: user.email,
         phone: user.phone,
         city: user.city,
+          wishlist: user.wishlist || [],
         profileImage: user.profileImage,
         coverImage: user.coverImage,
         paymentMethods: user.paymentMethods,
@@ -1630,6 +1656,7 @@ router.post("/verify-otp", otpRateLimiter, async (req, res, next) => {
         email: user.email,
         phone: user.phone,
         city: user.city,
+          wishlist: user.wishlist || [],
         profileImage: user.profileImage,
         coverImage: user.coverImage,
         paymentMethods: user.paymentMethods,
