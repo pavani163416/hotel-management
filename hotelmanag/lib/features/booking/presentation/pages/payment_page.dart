@@ -194,10 +194,10 @@ class _PaymentPageState extends State<PaymentPage> {
             
             var prefill = <String, String>{};
             if (provider.leadGuest['phone']?.isNotEmpty == true) {
-              prefill['contact'] = provider.leadGuest['phone']!;
+              prefill['contact'] = provider.leadGuest['phone']!.replaceAll(' ', '');
             }
             if (provider.leadGuest['email']?.isNotEmpty == true) {
-              prefill['email'] = provider.leadGuest['email']!;
+              prefill['email'] = provider.leadGuest['email']!.trim();
             }
             if (provider.leadGuest['name']?.isNotEmpty == true) {
               prefill['name'] = provider.leadGuest['name']!;

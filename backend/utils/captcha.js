@@ -45,18 +45,21 @@ import svgCaptcha from "svg-captcha";
 
 export const generateCaptcha = async () => {
   const captcha = svgCaptcha.create({
-    size: 6,
-    ignoreChars: '0o1i',
-    noise: 3,
+    size: 5,
+    ignoreChars: '0o1iIlL', // Omit confusing letters
+    noise: 4, // Enough noise to deter bots
     color: true,
-    background: '#f4f4f4'
+    background: '#f4f4f4',
+    width: 200,
+    height: 60,
+    fontSize: 55,
   });
 
   const captchaId = randomUUID();
   let challenge = captcha.data; // The SVG markup
   
   // flutter_svg on mobile cannot parse percentage widths inside SVGs.
-  challenge = challenge.replace(/width="100%"/g, 'width="150"').replace(/height="100%"/g, 'height="50"');
+  challenge = challenge.replace(/width="100%"/g, 'width="200"').replace(/height="100%"/g, 'height="60"');
   
   const answer = captcha.text;
 

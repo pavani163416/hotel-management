@@ -39,6 +39,7 @@ void main() async {
   }
   await PushNotificationService.initialize();
   await di.init();
+  await di.sl<AuthProvider>().loadCachedAuth();
   runApp(
     MultiProvider(
       providers: [

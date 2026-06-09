@@ -188,6 +188,22 @@ class AuthProvider extends ChangeNotifier {
     );
   }
 
+  Future<void> loadCachedAuth() async {
+    const storage = FlutterSecureStorage();
+    final token = await storage.read(key: AppConstants.tokenKey);
+    if (token == null || token.isEmpty) return;
+
+    final userDataString = await storage.read(key: 'user_data');
+    if (userDataString != null && userDataString.isNotEmpty) {
+      try {
+        final userData = jsonDecode(userDataString) as Map<String, dynamic>;
+        _user = UserModel.fromJson(userData);
+        // Do not call notifyListeners() here to prevent GoRouter conflicts before runApp
+      } catch (e) {
+      }
+    }
+  }
+
   Future<bool> tryAutoLogin() async {
     const storage = FlutterSecureStorage();
     final token = await storage.read(key: AppConstants.tokenKey);

@@ -253,7 +253,7 @@ class _LoginPageState extends State<LoginPage> {
                   height: 56,
                   child: ElevatedButton(
                     onPressed: (_isLoggingIn || _isGoogleLoggingIn)
-                        ? () {}
+                        ? null
                         : () async {
                             if (_captchaId == null || _captchaController.text.trim().isEmpty) {
                               ScaffoldMessenger.of(context).showSnackBar(

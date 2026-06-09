@@ -1227,7 +1227,7 @@ class _HomePageState extends State<HomePage> {
                   key: ValueKey('calendar_${selectingStart}_${tempStart}_${tempEnd}'),
                   initialDate: selectingStart ? tempStart : tempEnd,
                   firstDate: selectingStart 
-                    ? DateTime.now().subtract(const Duration(days: 30)) 
+                    ? DateTime.now()
                     : tempStart.add(const Duration(days: 1)),
                   lastDate: DateTime.now().add(const Duration(days: 365)),
                   onDateChanged: (date) {
