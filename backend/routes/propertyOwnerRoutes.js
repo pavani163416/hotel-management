@@ -21,6 +21,27 @@ const router = express.Router();
 const JWT_SECRET = () => process.env.JWT_SECRET;
 const OWNER_JWT_EXPIRES = "7d";
 
+// Helper for Cloudinary stream upload
+const uploadBufferToCloudinary = async (buffer, filename, mimetype) => {
+  const { v2: cloudinary } = await import("cloudinary");
+  return new Promise((resolve, reject) => {
+    const isPdf = mimetype === "application/pdf";
+    const uploadOptions = {
+      folder: "luxestay/kyc",
+      resource_type: isPdf ? "raw" : "auto", 
+      public_id: filename.split('.')[0] + "-" + Date.now(),
+    };
+    const uploadStream = cloudinary.uploader.upload_stream(
+      uploadOptions,
+      (error, result) => {
+        if (result) resolve(result);
+        else reject(error);
+      }
+    );
+    uploadStream.end(buffer);
+  });
+};
+
 // ── Middleware: verify owner JWT ─────────────────────────
 const verifyOwner = (req, res, next) => {
   const header = req.headers.authorization;
@@ -143,11 +164,22 @@ router.post("/kyc-documents", verifyOwner, uploadPublicSupport.array("documents"
     if (!files.length) {
       return res.status(400).json({ success: false, message: "No files uploaded." });
     }
-    const docs = files.map((f) => ({
-      type: docType || "document",
-      url: f.path || f.filename,
-      uploadedAt: new Date(),
-    }));
+    
+    const docs = [];
+    for (const file of files) {
+      try {
+        const result = await uploadBufferToCloudinary(file.buffer, file.originalname, file.mimetype);
+        docs.push({
+          type: docType || "document",
+          url: result.secure_url,
+          uploadedAt: new Date(),
+        });
+      } catch (err) {
+        logger.error("Cloudinary upload error for KYC:", err);
+        return res.status(500).json({ success: false, message: "Failed to upload document to cloud storage." });
+      }
+    }
+
     await PropertyOwner.findByIdAndUpdate(req.owner.id, {
       $push: { kycDocuments: { $each: docs } },
       kycStatus: "pending",
@@ -170,7 +202,7 @@ router.get("/dashboard", verifyOwner, async (req, res, next) => {
     return res.status(200).json({
       success: true,
       data: {
-        owner: { id: owner._id, name: owner.name, email: owner.email, status: owner.status, kycStatus: owner.kycStatus },
+        owner: { id: owner._id, name: owner.name, email: owner.email, status: owner.status, kycStatus: owner.kycStatus, kycDocuments: owner.kycDocuments },
         hotels: hotels.map((h) => ({ id: h._id, hotelId: h.hotelId, name: h.name, location: h.location, isActive: h.isActive })),
         stats: { totalHotels: hotels.length, totalBookings: bookings.length, totalRevenue: revenue },
         bookings: bookings.slice(0, 20),

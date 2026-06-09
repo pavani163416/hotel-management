@@ -72,6 +72,12 @@
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
   h1, h2, h3, h4 { @apply tracking-tight text-primary; }
+
+  /* Hide default Edge/IE password reveal and clear buttons to avoid double toggles */
+  input[type="password"]::-ms-reveal,
+  input[type="password"]::-ms-clear {
+    display: none;
+  }
 }
 
 @layer utilities {

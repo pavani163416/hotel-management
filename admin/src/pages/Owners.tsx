@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Building2, CheckCircle, XCircle, PauseCircle, Search, RefreshCw, User } from "lucide-react";
+import { Building2, CheckCircle, XCircle, PauseCircle, Search, RefreshCw, User, FileText, X, ExternalLink } from "lucide-react";
 import AdminLayout from "@/components/AdminLayout";
 import Topbar from "@/components/Topbar";
 import PageHeader from "@/components/PageHeader";
@@ -36,6 +36,7 @@ export default function Owners() {
   const [notes, setNotes] = useState("");
   const [actioning, setActioning] = useState(false);
   const [error, setError] = useState("");
+  const [viewingDocs, setViewingDocs] = useState<Owner | null>(null);
 
   const fetchOwners = useCallback(async () => {
     setLoading(true);
@@ -153,6 +154,12 @@ export default function Owners() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
+                    {o.kycDocuments?.length > 0 && (
+                      <button onClick={() => setViewingDocs(o)}
+                        className="flex items-center gap-1.5 text-xs font-semibold text-blue-400 bg-blue-400/10 hover:bg-blue-400/20 px-3 py-1.5 rounded-lg border border-blue-400/25 transition-colors">
+                        <FileText className="w-3.5 h-3.5" /> View Docs
+                      </button>
+                    )}
                     {o.status !== "approved" && (
                       <button onClick={() => { setActionTarget(o); setActionType("approve"); setNotes(""); }}
                         className="flex items-center gap-1.5 text-xs font-semibold text-green-400 bg-green-400/10 hover:bg-green-400/20 px-3 py-1.5 rounded-lg border border-green-400/25 transition-colors">
@@ -188,6 +195,11 @@ export default function Owners() {
               {actionType === "approve" ? "Approve" : actionType === "reject" ? "Reject" : "Suspend"}{" "}
               <strong className="text-bright">{actionTarget.name}</strong>?
             </p>
+            {actionType === "approve" && (!actionTarget.kycDocuments || actionTarget.kycDocuments.length === 0) && (
+              <p className="text-xs text-red-400 bg-red-400/10 border border-red-400/20 rounded-lg p-3">
+                <strong>Warning:</strong> This owner has not uploaded any KYC documents. Are you sure you want to approve them?
+              </p>
+            )}
             <textarea value={notes} onChange={(e) => setNotes(e.target.value)}
               placeholder={actionType === "approve" ? "Optional notes..." : "Reason (required for reject/suspend)"}
               rows={3}
@@ -207,6 +219,54 @@ export default function Owners() {
                 }`}>
                 {actioning ? "..." : `Confirm ${actionType}`}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Document Viewer Modal */}
+      {viewingDocs && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm grid place-items-center z-50 p-4">
+          <div className="rounded-2xl border flex flex-col w-full max-w-4xl max-h-[90vh]" style={{ background: "#0f1d30", borderColor: "rgba(255,255,255,0.12)" }}>
+            <div className="flex items-center justify-between p-5 border-b" style={{ borderColor: "rgba(255,255,255,0.12)" }}>
+              <div>
+                <h3 className="font-semibold text-bright text-lg">KYC Documents: {viewingDocs.name}</h3>
+                <p className="text-xs text-muted mt-1">{viewingDocs.email}</p>
+              </div>
+              <button onClick={() => setViewingDocs(null)} className="text-muted hover:text-bright transition-colors">
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <div className="p-5 overflow-y-auto space-y-6">
+              {viewingDocs.kycDocuments.map((doc, idx) => {
+                const isPdf = doc.url.toLowerCase().endsWith(".pdf") || doc.url.includes("/raw/");
+                return (
+                  <div key={idx} className="border rounded-xl overflow-hidden" style={{ borderColor: "rgba(255,255,255,0.12)" }}>
+                    <div className="bg-white/5 px-4 py-3 border-b flex items-center justify-between" style={{ borderColor: "rgba(255,255,255,0.12)" }}>
+                      <div>
+                        <p className="text-sm font-semibold text-bright uppercase">{doc.type.replace("_", " ")}</p>
+                        <p className="text-xs text-muted mt-0.5">Uploaded: {new Date(doc.uploadedAt).toLocaleString()}</p>
+                      </div>
+                      <a href={doc.url} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-xs text-blue-400 hover:text-blue-300">
+                        <ExternalLink className="w-3.5 h-3.5" /> Open
+                      </a>
+                    </div>
+                    <div className="bg-black/20 p-4 flex justify-center">
+                      {isPdf ? (
+                        <div className="text-center py-8">
+                          <FileText className="w-12 h-12 text-muted mx-auto mb-3" />
+                          <p className="text-sm text-bright font-medium">PDF Document</p>
+                          <a href={doc.url} target="_blank" rel="noreferrer" className="text-xs text-blue-400 hover:underline mt-2 inline-block">
+                            Click to view or download PDF
+                          </a>
+                        </div>
+                      ) : (
+                        <img src={doc.url} alt={`${doc.type} Document`} className="max-w-full max-h-[400px] object-contain rounded-lg border border-white/10" />
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>

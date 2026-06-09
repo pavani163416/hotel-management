@@ -250,6 +250,27 @@ const OwnerPortal = () => {
               </div>
             )}
 
+            {/* Display Uploaded Documents */}
+            {ownerData?.kycDocuments?.length > 0 && (
+              <div className="bg-card border border-border rounded-2xl p-6 mb-6">
+                <h2 className="font-display text-xl font-bold mb-4">Uploaded Documents</h2>
+                <div className="grid sm:grid-cols-2 gap-4">
+                  {ownerData.kycDocuments.map((doc: any, i: number) => (
+                    <div key={i} className="flex items-center justify-between p-3 border border-border rounded-xl bg-secondary/10">
+                      <div className="flex items-center gap-3">
+                        <FileText className="w-5 h-5 text-muted-foreground" />
+                        <div>
+                          <p className="text-sm font-semibold uppercase">{doc.type.replace("_", " ")}</p>
+                          <p className="text-[10px] text-muted-foreground">{new Date(doc.uploadedAt).toLocaleDateString()}</p>
+                        </div>
+                      </div>
+                      <a href={doc.url} target="_blank" rel="noreferrer" className="text-xs text-blue-500 hover:underline">View</a>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Hotels */}
             <div className="bg-card border border-border rounded-2xl p-6">
               <h2 className="font-display text-xl font-bold mb-4">My Hotels</h2>
