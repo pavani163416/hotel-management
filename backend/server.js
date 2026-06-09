@@ -291,6 +291,7 @@ app.use(helmet({
         "https://lumberjack.razorpay.com",
         "https://accounts.google.com",
         "https://oauth2.googleapis.com",
+        "https://countriesnow.space",
         "https://hotel-management-production-2225.up.railway.app",
         "wss://hotel-management-production-2225.up.railway.app",
         "ws://localhost:5000",

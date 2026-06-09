@@ -107,7 +107,7 @@ export function buildCspDirectives({ nonce, includeSwagger = false } = {}) {
     `font-src 'self' ${FONT_ORIGINS[1]} data:`,
     `img-src 'self' data: https: blob:`,
     `frame-src 'self' https://checkout.razorpay.com https://api.razorpay.com https://cdn.razorpay.com https://accounts.google.com https://maps.google.com https://www.google.com`,
-    `connect-src 'self' ${RAZORPAY_ORIGINS.join(" ")} ${GOOGLE_ORIGINS.join(" ")} https://hotel-management-production-2225.up.railway.app wss://hotel-management-production-2225.up.railway.app ws://localhost:5000 http://localhost:5000`,
+    `connect-src 'self' ${RAZORPAY_ORIGINS.join(" ")} ${GOOGLE_ORIGINS.join(" ")} https://countriesnow.space https://hotel-management-production-2225.up.railway.app wss://hotel-management-production-2225.up.railway.app ws://localhost:5000 http://localhost:5000`,
     `worker-src 'self' blob:`,
     `object-src 'none'`,
     `base-uri 'self'`,
