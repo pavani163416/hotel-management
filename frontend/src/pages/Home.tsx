@@ -40,6 +40,19 @@ const Home = () => {
     return all.filter((loc) => loc.toLowerCase().includes(query));
   }, [hotels, query]);
 
+  const getTodayStr = () => {
+    const tzoffset = new Date().getTimezoneOffset() * 60000;
+    return new Date(Date.now() - tzoffset).toISOString().slice(0, 10);
+  };
+
+  const getMinCheckOut = (checkInStr: string) => {
+    if (!checkInStr) return getTodayStr();
+    const d = new Date(checkInStr);
+    if (isNaN(d.getTime())) return getTodayStr();
+    d.setDate(d.getDate() + 1);
+    return d.toISOString().slice(0, 10);
+  };
+
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     setSearch(local);
@@ -126,11 +139,11 @@ const Home = () => {
             </div>
 
             <Field icon={<Calendar className="w-4 h-4" />} label="Check in">
-              <input type="date" value={local.checkIn} onChange={(e) => setLocal({ ...local, checkIn: e.target.value })}
+              <input type="date" min={getTodayStr()} value={local.checkIn} onChange={(e) => setLocal({ ...local, checkIn: e.target.value })}
                 className="w-full bg-transparent outline-none text-sm font-medium text-primary" />
             </Field>
             <Field icon={<Calendar className="w-4 h-4" />} label="Check out">
-              <input type="date" value={local.checkOut} onChange={(e) => setLocal({ ...local, checkOut: e.target.value })}
+              <input type="date" min={getMinCheckOut(local.checkIn)} value={local.checkOut} onChange={(e) => setLocal({ ...local, checkOut: e.target.value })}
                 className="w-full bg-transparent outline-none text-sm font-medium text-primary" />
             </Field>
             <Field icon={<Users className="w-4 h-4" />} label="Guests">
@@ -152,6 +165,41 @@ const Home = () => {
           <Trust icon={<ShieldCheck className="w-5 h-5" />} title="Best Price Guarantee" desc="Found a lower price? We'll match it." />
           <Trust icon={<Sparkles className="w-5 h-5" />} title="Curated Properties" desc="Only hand-picked premium stays." />
           <Trust icon={<Headphones className="w-5 h-5" />} title="24/7 Concierge" desc="Real human support, anytime." />
+        </div>
+      </section>
+
+      {/* Featured */}
+      <section className="container py-20">
+        <div className="flex items-end justify-between mb-10">
+          <div>
+            <p className="text-accent text-xs font-semibold uppercase tracking-widest mb-2">Curated Selection</p>
+            <h2 className="font-display text-3xl md:text-4xl font-bold">Featured Destinations</h2>
+          </div>
+          <button onClick={() => nav("/hotels")} className="hidden md:flex items-center gap-1 text-sm font-medium text-primary hover:text-accent transition-base">
+            View all <ArrowRight className="w-4 h-4" />
+          </button>
+        </div>
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[...hotels].sort((a, b) => (b.activeBookings || 0) - (a.activeBookings || 0)).slice(0, 6).map((h) => (
+            <button key={h.id} onClick={() => nav(`/hotel/${h.id}`)} className="group text-left animate-fade-in hover:-translate-y-1 transition-base">
+              <div className="relative aspect-[4/3] overflow-hidden rounded-2xl mb-3 shadow-elegant hover:shadow-luxe transition-base">
+                <img src={h.image} alt={h.name} loading="lazy"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-base duration-500" />
+                <div className="absolute top-3 left-3 bg-background/95 backdrop-blur px-2.5 py-1 rounded-md text-xs font-semibold flex items-center gap-1">
+                  <Star className="w-3 h-3 fill-accent text-accent" /> {h.rating}
+                </div>
+              </div>
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <h3 className="font-semibold text-primary group-hover:text-accent transition-base">{h.name}</h3>
+                  <p className="text-sm text-muted-foreground">{h.location}</p>
+                </div>
+                <p className="text-sm font-semibold text-primary whitespace-nowrap">
+                  From {format(h.pricePerNight)}<span className="text-muted-foreground font-normal">/night</span>
+                </p>
+              </div>
+            </button>
+          ))}
         </div>
       </section>
 
@@ -190,41 +238,6 @@ const Home = () => {
               ))}
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* Featured */}
-      <section className="container py-20">
-        <div className="flex items-end justify-between mb-10">
-          <div>
-            <p className="text-accent text-xs font-semibold uppercase tracking-widest mb-2">Curated Selection</p>
-            <h2 className="font-display text-3xl md:text-4xl font-bold">Featured Destinations</h2>
-          </div>
-          <button onClick={() => nav("/hotels")} className="hidden md:flex items-center gap-1 text-sm font-medium text-primary hover:text-accent transition-base">
-            View all <ArrowRight className="w-4 h-4" />
-          </button>
-        </div>
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[...hotels].sort((a, b) => (b.activeBookings || 0) - (a.activeBookings || 0)).slice(0, 6).map((h) => (
-            <button key={h.id} onClick={() => nav(`/hotel/${h.id}`)} className="group text-left animate-fade-in hover:-translate-y-1 transition-base">
-              <div className="relative aspect-[4/3] overflow-hidden rounded-2xl mb-3 shadow-elegant hover:shadow-luxe transition-base">
-                <img src={h.image} alt={h.name} loading="lazy"
-                  className="w-full h-full object-cover group-hover:scale-105 transition-base duration-500" />
-                <div className="absolute top-3 left-3 bg-background/95 backdrop-blur px-2.5 py-1 rounded-md text-xs font-semibold flex items-center gap-1">
-                  <Star className="w-3 h-3 fill-accent text-accent" /> {h.rating}
-                </div>
-              </div>
-              <div className="flex items-start justify-between gap-2">
-                <div>
-                  <h3 className="font-semibold text-primary group-hover:text-accent transition-base">{h.name}</h3>
-                  <p className="text-sm text-muted-foreground">{h.location}</p>
-                </div>
-                <p className="text-sm font-semibold text-primary whitespace-nowrap">
-                  From {format(h.pricePerNight)}<span className="text-muted-foreground font-normal">/night</span>
-                </p>
-              </div>
-            </button>
-          ))}
         </div>
       </section>
     </Layout>
