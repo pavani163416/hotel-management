@@ -1,5 +1,5 @@
 import { useNavigate, useParams } from "react-router-dom";
-import { MapPin, Star, Wifi, Coffee, Wind, Users, BedDouble, Check, LogIn, Waves, Trees, Dumbbell, Utensils, Car, ShieldCheck, Flame, Sunset, Snowflake, Bath, Tv, PocketKnife, Sailboat, Baby, PawPrint, Phone, AlertCircle, Loader2, Navigation, ExternalLink } from "lucide-react";
+import { MapPin, Star, Wifi, Coffee, Wind, Users, BedDouble, Check, LogIn, Waves, Trees, Dumbbell, Utensils, Car, ShieldCheck, Flame, Sunset, Snowflake, Bath, Tv, PocketKnife, Sailboat, Baby, PawPrint, Phone, AlertCircle, Loader2, Navigation, ExternalLink, Sparkles } from "lucide-react";
 import Layout from "@/components/Layout";
 import { useBooking } from "@/context/BookingContext";
 import { useCurrency } from "@/context/CurrencyContext";
@@ -66,7 +66,7 @@ const HotelDetails = () => {
   // When user signs in and there's a pending room → proceed to booking
   useEffect(() => {
     if (user && pendingRoomId && hotel) {
-      const room = hotel.rooms.find((r) => r.id === pendingRoomId);
+      const room = hotel.rooms?.find((r) => r.id === pendingRoomId);
       if (room && room.available > 0) {
         setPendingRoomId(null);
         setSelectedHotel(hotel);
@@ -86,7 +86,7 @@ const HotelDetails = () => {
 
   useEffect(() => {
     if (!hotel || !search.checkIn || !search.checkOut) return;
-    hotel.rooms.forEach(async (r) => {
+    (hotel.rooms || []).forEach(async (r) => {
       try {
         const params = new URLSearchParams({
           hotelStringId: hotel.id,
@@ -105,10 +105,10 @@ const HotelDetails = () => {
 
   if (!hotel) return <Layout><div className="container py-20 text-center">Hotel not found</div></Layout>;
 
-  const allReviews = hotel.reviews;
+  const allReviews = Array.isArray(hotel.reviews) ? hotel.reviews : [];
 
   const select = async (roomId: string) => {
-    const room = hotel.rooms.find((r) => r.id === roomId);
+    const room = (hotel.rooms || []).find((r) => r.id === roomId);
     if (!room || room.available === 0) return;
 
     if (!user) {
@@ -190,10 +190,10 @@ const HotelDetails = () => {
       {/* Gallery */}
       <div className="container pt-8">
         <div className="grid md:grid-cols-3 gap-3 rounded-2xl overflow-hidden md:h-[420px]">
-          <img src={hotel.gallery[0]} alt={hotel.name} className="md:col-span-2 w-full h-[250px] md:h-full object-cover" />
+          <img src={hotel.gallery?.[0] || hotel.image} alt={hotel.name} className="md:col-span-2 w-full h-[250px] md:h-full object-cover" />
           <div className="grid grid-rows-2 gap-3 h-[250px] md:h-full">
-            <img src={hotel.gallery[1]} alt="" className="w-full h-full object-cover" loading="lazy" />
-            <img src={hotel.gallery[2]} alt="" className="w-full h-full object-cover" loading="lazy" />
+            <img src={hotel.gallery?.[1] || hotel.image} alt="" className="w-full h-full object-cover" loading="lazy" />
+            <img src={hotel.gallery?.[2] || hotel.image} alt="" className="w-full h-full object-cover" loading="lazy" />
           </div>
         </div>
       </div>
@@ -279,15 +279,15 @@ const HotelDetails = () => {
                 </div>
               </div>
             </div>
-            {hotel.rooms.length === 0 ? (
+            {(hotel.rooms || []).length === 0 ? (
               <div className="rounded-2xl border border-border bg-card p-8 text-center text-muted-foreground">
                 No rooms are currently available for this hotel. Please check back later or select another property.
               </div>
             ) : (() => {
-              const displayRooms = hotel.rooms
+              const displayRooms = (hotel.rooms || [])
                 .filter((r) => r.capacity >= capacityFilter)
-                .filter((r) => bedFilter === "any" || r.bed?.toLowerCase().includes(bedFilter.toLowerCase()))
-                .filter((r) => !breakfastFilter || r.breakfastIncluded || (Array.isArray(r.features) && r.features.some((f) => f.toLowerCase().includes("breakfast"))))
+                .filter((r) => bedFilter === "any" || (r.bed && r.bed.toLowerCase().includes(bedFilter.toLowerCase())))
+                .filter((r) => !breakfastFilter || r.breakfastIncluded || (Array.isArray(r.features) && r.features.some((f) => f && f.toLowerCase().includes("breakfast"))))
                 .filter((r) => !cancellationFilter || r.freeCancellation)
                 .filter((r) => {
                   if (!availableOnlyFilter) return true;
