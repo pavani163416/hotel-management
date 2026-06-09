@@ -239,7 +239,7 @@ export default function Owners() {
             </div>
             <div className="p-5 overflow-y-auto space-y-6">
               {viewingDocs.kycDocuments.map((doc, idx) => {
-                const isPdf = doc.url.toLowerCase().endsWith(".pdf") || doc.url.includes("/raw/");
+                const isPdf = doc.url.toLowerCase().endsWith(".pdf") || doc.url.includes("/raw/") || doc.url.toLowerCase().includes("receipt");
                 return (
                   <div key={idx} className="border rounded-xl overflow-hidden" style={{ borderColor: "rgba(255,255,255,0.12)" }}>
                     <div className="bg-white/5 px-4 py-3 border-b flex items-center justify-between" style={{ borderColor: "rgba(255,255,255,0.12)" }}>
