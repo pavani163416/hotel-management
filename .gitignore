@@ -72,5 +72,4 @@ admin/.env
 # admin/.env.production is committed intentionally (contains only public API URL)
 
 # Node global
-package-lock.json
 .env
