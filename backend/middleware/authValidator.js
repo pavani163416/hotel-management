@@ -10,6 +10,17 @@ const validateStringInput = (value, maxLength, fieldName, req) => {
   return null;
 };
 
+const validateEmail = (value) => {
+  if (value === undefined || value === null) return "Email is required";
+  if (typeof value !== "string") return "Email must be a valid string";
+  if (value.length === 0) return "Email cannot be empty";
+  if (value.length > MAX_EMAIL_LENGTH) return "Email exceeds allowed size";
+  
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(value)) return "Please enter a valid email address";
+  return null;
+};
+
 const validatePassword = (value) => {
   if (value === undefined || value === null) return "Password is required";
   if (typeof value !== "string") return "Password must be a valid string";
@@ -24,7 +35,7 @@ const validatePassword = (value) => {
 export const validateLoginPayload = (req, res, next) => {
   const { email, password } = req.body;
 
-  const emailError = validateStringInput(email, MAX_EMAIL_LENGTH, "Email", req);
+  const emailError = validateEmail(email);
   if (emailError) return res.status(400).json({ success: false, message: emailError });
 
   const passwordError = validateStringInput(password, MAX_PASSWORD_LENGTH, "Password", req);
@@ -40,7 +51,7 @@ export const validateRegisterPayload = (req, res, next) => {
   const nameError = validateStringInput(name, MAX_NAME_LENGTH, "Name", req);
   if (nameError) return res.status(400).json({ success: false, message: nameError });
 
-  const emailError = validateStringInput(email, MAX_EMAIL_LENGTH, "Email", req);
+  const emailError = validateEmail(email);
   if (emailError) return res.status(400).json({ success: false, message: emailError });
 
   const passwordError = validatePassword(password);
@@ -53,7 +64,7 @@ export const validateRegisterPayload = (req, res, next) => {
 export const validateEmailPayload = (req, res, next) => {
   const { email } = req.body;
 
-  const emailError = validateStringInput(email, MAX_EMAIL_LENGTH, "Email", req);
+  const emailError = validateEmail(email);
   if (emailError) return res.status(400).json({ success: false, message: emailError });
 
   next();
@@ -63,7 +74,7 @@ export const validateEmailPayload = (req, res, next) => {
 export const validateResetPasswordPayload = (req, res, next) => {
   const { email, token, password } = req.body;
 
-  const emailError = validateStringInput(email, MAX_EMAIL_LENGTH, "Email", req);
+  const emailError = validateEmail(email);
   if (emailError) return res.status(400).json({ success: false, message: emailError });
 
   const tokenError = validateStringInput(token, 256, "Token", req);

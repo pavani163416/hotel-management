@@ -5,22 +5,25 @@ class AppConstants {
 
   // ── Environment-driven API Configuration ──────────────────────────
   static const String _productionApiUrl = 'https://hotel-management-production-2225.up.railway.app/api/';
+  static const String _stagingApiUrl = 'https://hotel-management-staging.up.railway.app/api/';
   
-  // To use local dev endpoints in debug mode, run flutter with:
-  // flutter run --dart-define=API_URL=http://localhost:5000/api/
   static const String _envApiUrl = String.fromEnvironment('API_URL');
+  static const String _envType = String.fromEnvironment('ENV', defaultValue: 'production');
 
   /// Returns the correct base URL for the current build/platform.
-  /// - Release builds always use the production Railway URL.
-  /// - Debug builds will use the API_URL environment variable if provided, else production.
+  /// - Release builds strictly use HTTPS production/staging URLs.
   static String get apiBaseUrl {
-    // Always enforce production in release mode
-    if (!kDebugMode) return _productionApiUrl;
+    // Enforce strict environment configuration in release mode
+    if (!kDebugMode) {
+      if (_envType == 'staging') {
+        return _stagingApiUrl;
+      }
+      return _productionApiUrl;
+    }
 
     // In debug mode, if a custom URL is provided via dart-define, use it
     if (_envApiUrl.isNotEmpty) return _envApiUrl;
 
-    // Default fallback is production so no http:// strings are hardcoded in the AST
     return _productionApiUrl;
   }
 

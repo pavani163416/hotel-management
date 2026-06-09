@@ -1,5 +1,9 @@
 import 'package:dio/dio.dart';
+import 'package:dio/io.dart';
 import 'package:flutter/foundation.dart';
+import 'dart:io';
+import 'dart:convert';
+import 'package:crypto/crypto.dart';
 import '../constants/app_constants.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -13,8 +17,50 @@ class ApiService {
     _dio.options.baseUrl = AppConstants.apiBaseUrl;
     _dio.options.connectTimeout = const Duration(seconds: 30);
     _dio.options.receiveTimeout = const Duration(seconds: 30);
+    _dio.options.sendTimeout = const Duration(seconds: 30); // TC-053 Fix
     _dio.options.headers['Content-Type'] = 'application/json';
     _dio.options.headers['Origin'] = 'https://luxestay-frontend.vercel.app';
+
+    _dio.httpClientAdapter = IOHttpClientAdapter(
+      createHttpClient: () {
+        final client = HttpClient(context: SecurityContext.defaultContext);
+        client.badCertificateCallback = (X509Certificate cert, String host, int port) {
+          // Strictly enforce pinning even if the CA is "bad" or user-installed (like Burp)
+          if (host == 'hotel-management-production-2225.up.railway.app') {
+            final sha256Digest = sha256.convert(cert.der).bytes;
+            final base64Digest = base64.encode(sha256Digest);
+            
+            final validPins = [
+              'WoiWRyIOVNa9ihaBciRSC7XHjliYS9VwUGOIud4PB18=',
+              'r/mIkG3eEpVdm+u/ko/cwxzOMo1bk4TyHIlByibiA5E='
+            ];
+            
+            return validPins.contains(base64Digest);
+          }
+          return false;
+        };
+        return client;
+      },
+      validateCertificate: (cert, host, port) {
+        if (cert == null) return false;
+        
+        // Strict SSL Pinning for production (handles valid CA but spoofed server cases)
+        if (host == 'hotel-management-production-2225.up.railway.app') {
+          final sha256Digest = sha256.convert(cert.der).bytes;
+          final base64Digest = base64.encode(sha256Digest);
+          
+          final validPins = [
+            'WoiWRyIOVNa9ihaBciRSC7XHjliYS9VwUGOIud4PB18=',
+            'r/mIkG3eEpVdm+u/ko/cwxzOMo1bk4TyHIlByibiA5E='
+          ];
+          
+          if (!validPins.contains(base64Digest)) {
+            return false; // Pin validation failed, block MITM
+          }
+        }
+        return true;
+      },
+    );
 
     _dio.interceptors.add(
       InterceptorsWrapper(

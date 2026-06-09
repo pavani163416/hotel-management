@@ -140,4 +140,10 @@ class PromoProvider extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  void reset() {
+    _coupons = [];
+    _error = null;
+    notifyListeners();
+  }
 }

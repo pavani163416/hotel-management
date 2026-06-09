@@ -128,6 +128,16 @@ const userSchema = new mongoose.Schema(
       default: null,
     },
 
+    failedLoginAttempts: {
+      type: Number,
+      default: 0,
+    },
+
+    lockUntil: {
+      type: Date,
+      default: null,
+    },
+
     // FCM push notification token (set by mobile app after login)
     fcmToken: {
       type:    String,

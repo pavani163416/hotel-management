@@ -16,14 +16,16 @@ import 'core/utils/injection_container.dart' as di;
 import 'core/providers/notification_provider.dart';
 import 'package:flutter/foundation.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
 import 'core/services/push_notifications.dart';
+import 'dart:io';
+import 'package:flutter/services.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   if (Firebase.apps.isEmpty) {
     if (kIsWeb) {
-      // Obfuscated to prevent MobSF false-positive secret scanning
-      final apiKey = 'AIzaSyBi6icwlduw' + 'BjJjue-uDXJ' + 'DiXm9icrV_Wo';
+      final apiKey = const String.fromEnvironment('FIREBASE_API_KEY');
       await Firebase.initializeApp(
         options: FirebaseOptions(
           apiKey: apiKey,
@@ -37,9 +39,64 @@ void main() async {
       await Firebase.initializeApp();
     }
   }
+
+  // TC-014, TC-016: Enable Firebase App Check for device attestation
+  try {
+    await FirebaseAppCheck.instance.activate(
+      androidProvider: AndroidProvider.playIntegrity,
+      appleProvider: AppleProvider.deviceCheck,
+    );
+  } catch (e) {
+    debugPrint('AppCheck init error: $e');
+  }
   await PushNotificationService.initialize();
   await di.init();
   await di.sl<AuthProvider>().loadCachedAuth();
+
+  // TC-020: Root and Frida Detection
+  if (!kIsWeb) {
+    try {
+      bool jailbroken = false;
+      bool hasFrida = false;
+      
+      if (Platform.isAndroid) {
+        final rootPaths = [
+          '/system/app/Superuser.apk',
+          '/sbin/su',
+          '/system/bin/su',
+          '/system/xbin/su',
+          '/data/local/xbin/su',
+          '/data/local/bin/su',
+          '/system/sd/xbin/su',
+          '/system/bin/failsafe/su',
+          '/data/local/su'
+        ];
+        
+        for (var path in rootPaths) {
+          if (File(path).existsSync()) {
+            jailbroken = true;
+            break;
+          }
+        }
+        
+        try {
+          final maps = File('/proc/self/maps').readAsStringSync();
+          if (maps.contains('frida') || maps.contains('libfrida')) {
+            hasFrida = true;
+          }
+        } catch (_) {}
+      }
+      
+      if (jailbroken || hasFrida) {
+        debugPrint('Security Violation: Rooted device or Frida detected. Exiting app.');
+        SystemNavigator.pop();
+        return; // Prevent app execution
+      }
+    } catch (e) {
+      debugPrint('Jailbreak detection error: $e');
+    }
+  }
+
   runApp(
     MultiProvider(
       providers: [

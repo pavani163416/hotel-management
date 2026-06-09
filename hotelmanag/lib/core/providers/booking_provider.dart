@@ -86,6 +86,19 @@ class BookingProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  void reset() {
+    _currentHotel = null;
+    _leadGuest = {
+      'name': '',
+      'email': '',
+      'phone': '',
+      'id': '',
+      'requests': '',
+    };
+    _bookings = [];
+    notifyListeners();
+  }
+
   void selectRoom(String type, double price) {
     _selectedRoomType = type;
     _selectedRoomPrice = price;

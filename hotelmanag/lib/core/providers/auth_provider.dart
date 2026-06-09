@@ -13,9 +13,14 @@ import '../../features/auth/data/models/user_model.dart';
 import '../constants/app_constants.dart';
 import '../../core/errors/failures.dart';
 import '../services/push_notifications.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import '../network/api_service.dart';
+import '../../core/utils/injection_container.dart';
+import '../../core/providers/booking_provider.dart';
+import '../../core/providers/promo_provider.dart';
+import '../../core/providers/favorites_provider.dart';
 
-class AuthProvider extends ChangeNotifier {
+class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
   final AuthRepository _authRepository;
   final ApiService? _apiService;
   UserEntity? _user;
@@ -23,7 +28,10 @@ class AuthProvider extends ChangeNotifier {
   String? _error;
   String? _unverifiedEmail;
 
+  DateTime? _pausedTime;
+
   AuthProvider(this._authRepository, [this._apiService]) {
+    WidgetsBinding.instance.addObserver(this);
     PushNotificationService.onTokenRefresh = (token) {
       if (isAuthenticated) {
         _registerFcmToken();
@@ -36,6 +44,27 @@ class AuthProvider extends ChangeNotifier {
   String? get error => _error;
   String? get unverifiedEmail => _unverifiedEmail;
   bool get isAuthenticated => _user != null;
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      _pausedTime = DateTime.now();
+    } else if (state == AppLifecycleState.resumed) {
+      if (_pausedTime != null) {
+        final diff = DateTime.now().difference(_pausedTime!);
+        if (diff.inMinutes >= 30) {
+          logout();
+        }
+      }
+      _pausedTime = null;
+    }
+  }
 
   Future<(String, String)?> fetchCaptcha() async {
     final result = await _authRepository.fetchCaptcha();
@@ -190,6 +219,13 @@ class AuthProvider extends ChangeNotifier {
 
   Future<void> loadCachedAuth() async {
     const storage = FlutterSecureStorage();
+    final prefs = await SharedPreferences.getInstance();
+    
+    // Clear legacy PII keys from SharedPreferences (TC-051 / TC-062 mitigation)
+    await prefs.remove('email_for_link');
+    await prefs.remove('pending_name');
+    await prefs.remove('pending_phone');
+
     final token = await storage.read(key: AppConstants.tokenKey);
     if (token == null || token.isEmpty) return;
 
@@ -198,7 +234,6 @@ class AuthProvider extends ChangeNotifier {
       try {
         final userData = jsonDecode(userDataString) as Map<String, dynamic>;
         _user = UserModel.fromJson(userData);
-        // Do not call notifyListeners() here to prevent GoRouter conflicts before runApp
       } catch (e) {
       }
     }
@@ -262,21 +297,48 @@ class AuthProvider extends ChangeNotifier {
     );
   }
 
-  // Native Google Sign-In helper. Using the Web Client ID matching the backend.
+  // Native Google Sign-In helper.
   final GoogleSignIn _googleSignIn = GoogleSignIn(
-    scopes: ['email', 'profile', 'openid'],
-    clientId: kIsWeb ? '70312411330-8givsb0ktr8f09u8ullo157vkppkoqqv.apps.googleusercontent.com' : null,
-    serverClientId: kIsWeb ? null : '70312411330-8givsb0ktr8f09u8ullo157vkppkoqqv.apps.googleusercontent.com',
+    scopes: ['email', 'openid'],
+    clientId: kIsWeb ? const String.fromEnvironment('GOOGLE_CLIENT_ID') : null,
+    serverClientId: kIsWeb ? null : const String.fromEnvironment('GOOGLE_SERVER_CLIENT_ID'),
   );
 
   void logout() async {
     const storage = FlutterSecureStorage();
     final prefs = await SharedPreferences.getInstance();
+    
+    try {
+      await _apiService?.post('auth/logout');
+    } catch (_) {}
+
     await storage.delete(key: AppConstants.tokenKey);
-    await prefs.remove('user_favorites');
+    
+    try {
+      await sl<FavoritesProvider>().clearFavorites();
+      sl<PromoProvider>().reset();
+    } catch (_) {}
+    
     await storage.delete(key: 'user_data');
     await _googleSignIn.signOut();
+    if (_user != null) {
+      _user = UserEntity(
+        id: '', name: '', email: '', phone: '', city: '',
+        profileImage: '', coverImage: '', paymentMethods: const [],
+      );
+    }
     _user = null;
+    
+    // Clear Provider States
+    try {
+      sl<BookingProvider>().reset();
+    } catch (_) {}
+    
+    // Clear Image Cache
+    try {
+      await DefaultCacheManager().emptyCache();
+    } catch (_) {}
+    
     notifyListeners();
   }
 
@@ -292,7 +354,7 @@ class AuthProvider extends ChangeNotifier {
 
       debugPrint('[GoogleSignIn] Triggering account chooser picker...');
       final GoogleSignInAccount? account = await _googleSignIn.signIn();
-      debugPrint('[GoogleSignIn] Account picker returned: ${account?.email ?? "null"}');
+      if (kDebugMode) debugPrint('[GoogleSignIn] Account picker returned: ${account?.email ?? "null"}');
 
       if (account == null) {
         debugPrint('[GoogleSignIn] User canceled account selection.');
@@ -328,7 +390,7 @@ class AuthProvider extends ChangeNotifier {
         },
         (data) async {
           final (user, token) = data;
-          debugPrint('[GoogleSignIn] Backend verification succeeded! Logged in as: ${user.email}');
+          if (kDebugMode) debugPrint('[GoogleSignIn] Backend verification succeeded! Logged in as: ${user.email}');
           _user = user;
           await _saveAuthData(user, token);
           _isLoading = false;
@@ -474,18 +536,7 @@ class AuthProvider extends ChangeNotifier {
         city: user.city,
         profileImage: user.profileImage,
         coverImage: user.coverImage,
-        paymentMethods: user.paymentMethods.map((pm) {
-          if (pm is PaymentMethodModel) return pm;
-          return PaymentMethodModel(
-            type: pm.type,
-            brand: pm.brand,
-            last4: pm.last4,
-            expiry: pm.expiry,
-            upiId: pm.upiId,
-            bankName: pm.bankName,
-            isDefault: pm.isDefault,
-          );
-        }).toList(),
+        paymentMethods: const [], // SECURITY (TC-047): Never cache payment methods in app state
       );
       final userJson = jsonEncode(userModel.toJson());
       await storage.write(key: 'user_data', value: userJson);
@@ -560,10 +611,11 @@ class AuthProvider extends ChangeNotifier {
         actionCodeSettings: acs,
       );
 
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('email_for_link', email);
-      await prefs.setString('pending_name', name);
-      await prefs.setString('pending_phone', phone);
+      const storage = FlutterSecureStorage();
+      await storage.write(key: 'email_for_link', value: email);
+      await storage.write(key: 'pending_name', value: name);
+      await storage.write(key: 'pending_phone', value: phone);
+      await storage.write(key: 'email_link_timestamp', value: DateTime.now().millisecondsSinceEpoch.toString());
 
       _isLoading = false;
       notifyListeners();
@@ -582,10 +634,24 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final email = prefs.getString('email_for_link') ?? '';
-      final name = prefs.getString('pending_name');
-      final phone = prefs.getString('pending_phone');
+      const storage = FlutterSecureStorage();
+      
+      final timestampStr = await storage.read(key: 'email_link_timestamp');
+      if (timestampStr != null) {
+        final timestamp = int.tryParse(timestampStr) ?? 0;
+        final elapsed = DateTime.now().millisecondsSinceEpoch - timestamp;
+        if (elapsed > 24 * 60 * 60 * 1000) { // 24 hours
+          await storage.delete(key: 'email_for_link');
+          await storage.delete(key: 'pending_name');
+          await storage.delete(key: 'pending_phone');
+          await storage.delete(key: 'email_link_timestamp');
+          throw Exception("Verification link has expired. Please request a new one.");
+        }
+      }
+
+      final email = await storage.read(key: 'email_for_link') ?? '';
+      final name = await storage.read(key: 'pending_name');
+      final phone = await storage.read(key: 'pending_phone');
 
       if (email.isEmpty) {
         throw Exception("No email found for verification link. Please sign up again.");
@@ -622,9 +688,10 @@ class AuthProvider extends ChangeNotifier {
             _unverifiedEmail = null;
             
             // Clean up cached registration details
-            await prefs.remove('email_for_link');
-            await prefs.remove('pending_name');
-            await prefs.remove('pending_phone');
+            await storage.delete(key: 'email_for_link');
+            await storage.delete(key: 'pending_name');
+            await storage.delete(key: 'pending_phone');
+            await storage.delete(key: 'email_link_timestamp');
 
             await _saveAuthData(user, token);
             _isLoading = false;

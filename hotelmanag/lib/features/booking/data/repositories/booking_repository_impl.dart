@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:hotelmanag/core/errors/failures.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:hotelmanag/features/booking/domain/entities/booking_entity.dart';
 import 'package:hotelmanag/features/booking/domain/repositories/booking_repository.dart';
 import 'package:hotelmanag/features/booking/data/datasources/booking_remote_data_source.dart';
@@ -18,12 +19,12 @@ class BookingRepositoryImpl implements BookingRepository {
 
   Future<void> _saveToCache(List<BookingEntity> bookings) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      const storage = FlutterSecureStorage();
       final json = jsonEncode(bookings.map((b) {
         if (b is BookingModel) return b.toJson();
         return (b as BookingModel).toJson();
       }).toList());
-      await prefs.setString(_kBookingCacheKey, json);
+      await storage.write(key: _kBookingCacheKey, value: json);
     } catch (e) {
       debugPrint('Booking cache write error: $e');
     }
@@ -31,8 +32,8 @@ class BookingRepositoryImpl implements BookingRepository {
 
   Future<List<BookingEntity>> _loadFromCache() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final raw = prefs.getString(_kBookingCacheKey);
+      const storage = FlutterSecureStorage();
+      final raw = await storage.read(key: _kBookingCacheKey);
       if (raw == null || raw.isEmpty) return [];
       final List decoded = jsonDecode(raw) as List;
       return decoded

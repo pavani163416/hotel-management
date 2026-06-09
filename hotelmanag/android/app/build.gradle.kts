@@ -19,7 +19,7 @@ val isReleaseBuild = gradle.startParameter.taskNames.any { it.contains("Release"
 
 android {
     namespace = "com.example.hotelmanag"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -55,7 +55,7 @@ android {
     defaultConfig {
         applicationId = "com.example.hotelmanag"
         minSdk = 29
-        targetSdk = flutter.targetSdkVersion
+        targetSdk = 35
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
@@ -66,6 +66,7 @@ android {
             signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = true
             isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
         getByName("debug") {
             // Use default debug signing config automatically

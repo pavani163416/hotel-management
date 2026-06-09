@@ -12,6 +12,8 @@ import '../../../../core/providers/notification_provider.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 import '../../../../core/network/api_service.dart';
 import '../../../../core/utils/injection_container.dart';
+import '../../../../core/utils/validators.dart';
+import '../../../../core/utils/biometric_helper.dart';
 
 class PaymentPage extends StatefulWidget {
   const PaymentPage({super.key});
@@ -140,6 +142,16 @@ class _PaymentPageState extends State<PaymentPage> {
         const SnackBar(content: Text('Please select your bank'), backgroundColor: Colors.redAccent),
       );
       return;
+    }
+
+    if (provider.total > 5000) {
+      final authenticated = await BiometricHelper.authenticate(reason: 'Confirm your identity for high-value payment');
+      if (!authenticated) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Authentication required to proceed with payment'), backgroundColor: Colors.redAccent),
+        );
+        return;
+      }
     }
 
     if (isIdValid && isPaymentValid) {
@@ -636,7 +648,7 @@ class _PaymentPageState extends State<PaymentPage> {
         children: [
           _buildLabel('CARD NUMBER *'),
           const SizedBox(height: 8),
-          _buildTextField('1234 5678 9012 3456', required: true, controller: _cardNumberController),
+          _buildTextField('1234 5678 9012 3456', required: true, controller: _cardNumberController, customValidator: AppValidators.validateCardNumber),
           const SizedBox(height: 24),
           _buildLabel('CARDHOLDER NAME *'),
           const SizedBox(height: 8),
@@ -644,9 +656,9 @@ class _PaymentPageState extends State<PaymentPage> {
           const SizedBox(height: 24),
           Row(
             children: [
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('EXPIRY *'), const SizedBox(height: 8), _buildTextField('MM/YY', required: true, controller: _expiryController)])),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('EXPIRY *'), const SizedBox(height: 8), _buildTextField('MM/YY', required: true, controller: _expiryController, customValidator: AppValidators.validateExpiry)])),
               const SizedBox(width: 16),
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('CVV *'), const SizedBox(height: 8), _buildTextField('123', required: true, controller: _cvvController)])),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('CVV *'), const SizedBox(height: 8), _buildTextField('123', required: true, controller: _cvvController, customValidator: AppValidators.validateCVV)])),
             ],
           ),
           const SizedBox(height: 32),
@@ -799,13 +811,16 @@ class _PaymentPageState extends State<PaymentPage> {
     return Text(text, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.primaryColor.withOpacity(0.5), letterSpacing: 0.5));
   }
 
-  Widget _buildTextField(String hint, {bool required = false, TextEditingController? controller}) {
+  Widget _buildTextField(String hint, {bool required = false, TextEditingController? controller, String? Function(String?)? customValidator}) {
     return TextFormField(
       key: ValueKey(hint), // Forces Flutter to preserve unique state per textfield hint
       controller: controller,
       validator: (value) {
-        if (required && (value == null || value.isEmpty)) {
+        if (required && (value == null || value.trim().isEmpty)) {
           return 'This field is required';
+        }
+        if (customValidator != null) {
+          return customValidator(value);
         }
         return null;
       },

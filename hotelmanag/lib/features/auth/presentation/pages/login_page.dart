@@ -8,6 +8,7 @@ import '../../../../core/widgets/custom_text_field.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/providers/booking_provider.dart';
 import '../widgets/phone_auth_bottom_sheet.dart';
+import '../../../../core/utils/validators.dart';
 import 'dart:math';
 
 class LoginPage extends StatefulWidget {
@@ -261,9 +262,16 @@ class _LoginPageState extends State<LoginPage> {
                               );
                               return;
                             }
+                            final email = _emailController.text.trim();
+                            final emailErr = AppValidators.validateEmail(email);
+                            if (emailErr != null) {
+                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(emailErr)));
+                              return;
+                            }
+                            
                             setState(() => _isLoggingIn = true);
                             await auth.login(
-                              _emailController.text,
+                              email,
                               _passwordController.text,
                               captchaId: _captchaId,
                               captchaAnswer: _captchaController.text.trim(),

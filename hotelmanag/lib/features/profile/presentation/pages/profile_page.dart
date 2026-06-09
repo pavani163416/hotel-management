@@ -14,6 +14,7 @@ import '../../../../core/utils/performance_utils.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:shimmer/shimmer.dart';
+import '../../../../core/utils/biometric_helper.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -620,7 +621,10 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  void _showPersonalInfo(BuildContext context) {
+  void _showPersonalInfo(BuildContext context) async {
+    final authenticated = await BiometricHelper.authenticate(reason: 'Confirm your identity to edit personal information');
+    if (!authenticated) return;
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -680,7 +684,10 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
 
-  void _showPaymentMethods(BuildContext context) {
+  void _showPaymentMethods(BuildContext context) async {
+    final authenticated = await BiometricHelper.authenticate(reason: 'Confirm your identity to view payment methods');
+    if (!authenticated) return;
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Theme.of(context).colorScheme.brightness == Brightness.dark ? const Color(0xFF253040) : Colors.white,
@@ -735,7 +742,10 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  void _showSecurity(BuildContext context) {
+  void _showSecurity(BuildContext context) async {
+    final authenticated = await BiometricHelper.authenticate(reason: 'Confirm your identity to view security settings');
+    if (!authenticated) return;
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Theme.of(context).colorScheme.brightness == Brightness.dark ? const Color(0xFF253040) : Colors.white,

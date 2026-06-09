@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/providers/booking_provider.dart';
+import '../../../../core/utils/validators.dart';
 import '../widgets/phone_auth_bottom_sheet.dart';
 import 'dart:math';
 
@@ -116,25 +117,17 @@ class _RegisterPageState extends State<RegisterPage> {
     final password = _passwordController.text;
     final city     = _cityController.text.trim();
 
-    // ── Validation (mirrors web) ────────────────────────────────
-    if (name.isEmpty || email.isEmpty || phone.isEmpty || password.isEmpty) {
-      _showSnack('Please fill all required fields.');
-      return;
-    }
+    // ── Validation (centralized) ────────────────────────────────
+    final nameErr = AppValidators.validateName(name);
+    if (nameErr != null) { _showSnack(nameErr); return; }
 
-    final emailRegex = RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$');
-    if (!emailRegex.hasMatch(email)) {
-      _showSnack('Please enter a valid email address.');
-      return;
-    }
+    final emailErr = AppValidators.validateEmail(email);
+    if (emailErr != null) { _showSnack(emailErr); return; }
 
-    if (password.length < 8) { _showSnack('Password must be at least 8 characters.'); return; }
-    if (password.length > 15) { _showSnack('Password must not exceed 15 characters.'); return; }
-    if (!RegExp(r'[A-Z]').hasMatch(password)) { _showSnack('Password must contain at least one capital letter.'); return; }
-    if (!RegExp(r'[0-9]').hasMatch(password)) { _showSnack('Password must contain at least one number.'); return; }
-    if (!RegExp(r'[^A-Za-z0-9]|_').hasMatch(password)) { _showSnack('Password must contain at least one special character (e.g. _ @ #).'); return; }
+    final passErr = AppValidators.validatePassword(password);
+    if (passErr != null) { _showSnack(passErr); return; }
 
-    final phoneErr = _validatePhone(phone, _countryCode);
+    final phoneErr = AppValidators.validatePhone(phone);
     if (phoneErr != null) { _showSnack(phoneErr); return; }
 
     if (_captchaId.isEmpty || _captchaController.text.trim().isEmpty) {

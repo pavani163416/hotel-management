@@ -706,6 +706,11 @@ router.post("/login", loginLimiter, validateLoginPayload, async (req, res, next)
     // Look up user with passwordHash explicitly included
     const user = await User.findOne({ email: normalEmail }).select("+passwordHash");
 
+    // Check if account is locked
+    if (user && user.lockUntil && user.lockUntil > new Date()) {
+      return res.status(403).json({ success: false, message: "Account is temporarily locked due to too many failed login attempts. Please try again later." });
+    }
+
     const DUMMY_HASH = "$2b$12$abcdefghijklmnopqrstuvwxyz12345678901234567890";
     if (!user || !user.passwordHash || !user.isActive) {
       await bcrypt.compare(password, DUMMY_HASH);
@@ -718,7 +723,19 @@ router.post("/login", loginLimiter, validateLoginPayload, async (req, res, next)
     const valid = await bcrypt.compare(password, user.passwordHash);
     if (!valid) {
       logger.warn("Failed customer login", { email: normalEmail, ip: req.ip });
+      user.failedLoginAttempts = (user.failedLoginAttempts || 0) + 1;
+      if (user.failedLoginAttempts >= 5) {
+        user.lockUntil = new Date(Date.now() + 15 * 60 * 1000); // Lock for 15 mins
+      }
+      await user.save();
       return res.status(401).json({ success: false, message: "Invalid credentials." });
+    }
+
+    // Reset failed attempts on successful login
+    if (user.failedLoginAttempts > 0) {
+      user.failedLoginAttempts = 0;
+      user.lockUntil = null;
+      await user.save();
     }
 
     if (!user.isVerified) {
@@ -1019,9 +1036,18 @@ router.post("/google", async (req, res, next) => {
 
     if (!isJWT) {
       // It's a Google Access Token (implicit flow on Web)
+      const tokenInfoRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?access_token=${idToken}`);
+      if (!tokenInfoRes.ok) {
+        throw new Error("Failed to verify Google access token validity");
+      }
+      const tokenInfo = await tokenInfoRes.json();
+      if (tokenInfo.aud !== process.env.GOOGLE_CLIENT_ID) {
+        throw new Error("Invalid access token audience. Token was not issued to this application.");
+      }
+
       const response = await fetch(`https://www.googleapis.com/oauth2/v3/userinfo?access_token=${idToken}`);
       if (!response.ok) {
-        throw new Error("Failed to verify Google access token");
+        throw new Error("Failed to fetch Google user profile");
       }
       const userInfo = await response.json();
       email = userInfo.email;
@@ -1034,12 +1060,6 @@ router.post("/google", async (req, res, next) => {
         idToken,
         audience: [
           process.env.GOOGLE_CLIENT_ID,
-          "70312411330-8givsb0ktr8f09u8ullo157vkppkoqqv.apps.googleusercontent.com", // Web client (website + mobile web flow)
-          "70312411330-mogk7t1e5rs7d3voc2p711e0l6a3221g.apps.googleusercontent.com", // New Android client
-          "239513848879-3d319eb0dp07rltmkhelp6qtqp4rhhpq.apps.googleusercontent.com", // Production signed Android
-          "239513848879-9f7e5ju597pgbl7p4isddckui4misecp.apps.googleusercontent.com", // Debug Android
-          "239513848879-7n631mq8o0due6v807tk58gbli9907mc.apps.googleusercontent.com", // Original Web Client (serverClientId)
-          "239513848879-b1inguas60lk6gi7lhmhoh3fo319k225.apps.googleusercontent.com", // Original Release APK Client
         ],
       });
       const payload = ticket.getPayload();
@@ -1938,6 +1958,9 @@ router.post("/logout-all", verifyCustomerToken, async (req, res, next) => {
       severity: "Medium"
     }).catch(err => logger.error("AuditLog error:", err));
 
+    // Clear FCM token on logout-all
+    await User.findByIdAndUpdate(userId, { fcmToken: null }).catch(() => {});
+
     // Clear cookie
     res.clearCookie("refreshToken", {
       httpOnly: true,
@@ -1954,13 +1977,35 @@ router.post("/logout-all", verifyCustomerToken, async (req, res, next) => {
 // Called by the mobile app after every login and when the token refreshes.
 router.post("/fcm-token", verifyCustomerToken, async (req, res, next) => {
   try {
-    const { fcmToken } = req.body;
-    if (!fcmToken || typeof fcmToken !== "string") {
-      return res.status(400).json({ success: false, message: "fcmToken is required." });
+    const { fcmToken, deviceFingerprint } = req.body;
+    
+    // Strict format validation: typical FCM tokens are alphanumeric with -, _, and :
+    const fcmRegex = /^[a-zA-Z0-9\-_:]+$/;
+
+    if (!fcmToken || typeof fcmToken !== "string" || !fcmRegex.test(fcmToken)) {
+      return res.status(400).json({ success: false, message: "Invalid or missing fcmToken." });
     }
 
+    if (fcmToken.length < 50 || fcmToken.length > 300) {
+      return res.status(400).json({ success: false, message: "Invalid fcmToken length." });
+    }
+
+    // In a real multi-device setup, we would associate tokens with a deviceFingerprint
+    // For now, we store it directly on the user object.
     await User.findByIdAndUpdate(req.customer.id, { fcmToken: fcmToken.trim() });
+    
     return res.status(200).json({ success: true, message: "FCM token registered." });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ── DELETE /api/auth/fcm-token ────────────────────────────
+// Removes the FCM token on logout.
+router.delete("/fcm-token", verifyCustomerToken, async (req, res, next) => {
+  try {
+    await User.findByIdAndUpdate(req.customer.id, { fcmToken: null });
+    return res.status(200).json({ success: true, message: "FCM token deregistered." });
   } catch (err) {
     next(err);
   }
