@@ -218,39 +218,50 @@ const HotelDetails = () => {
             {/* Room Filters */}
             <div className="flex items-center gap-3 flex-wrap mb-5">
               <h2 className="font-display text-2xl font-bold flex-1">Select Your Room</h2>
-              <div className="flex items-center gap-2 flex-wrap">
-                <select value={capacityFilter} onChange={(e) => setCapacityFilter(Number(e.target.value))}
-                  className="border border-border rounded-lg px-3 py-2 text-sm bg-background outline-none focus:border-accent">
-                  <option value={1}>Any Capacity</option>
-                  <option value={2}>2+ Guests</option>
-                  <option value={3}>3+ Guests</option>
-                  <option value={4}>4+ Guests</option>
-                </select>
-                <select value={bedFilter} onChange={(e) => setBedFilter(e.target.value)}
-                  className="border border-border rounded-lg px-3 py-2 text-sm bg-background outline-none focus:border-accent">
-                  <option value="any">Any Bed</option>
-                  <option value="king">King Bed</option>
-                  <option value="queen">Queen Bed</option>
-                  <option value="twin">Twin Beds</option>
-                </select>
-                <select value={roomSort} onChange={(e) => setRoomSort(e.target.value as any)}
-                  className="border border-border rounded-lg px-3 py-2 text-sm bg-background outline-none focus:border-accent">
-                  <option value="default">Default Order</option>
-                  <option value="price-asc">Price: Low → High</option>
-                  <option value="price-desc">Price: High → Low</option>
-                </select>
-                <label className="flex items-center gap-1.5 text-sm cursor-pointer select-none">
-                  <input type="checkbox" checked={breakfastFilter} onChange={(e) => setBreakfastFilter(e.target.checked)} className="accent-primary" />
-                  Breakfast
-                </label>
-                <label className="flex items-center gap-1.5 text-sm cursor-pointer select-none">
-                  <input type="checkbox" checked={cancellationFilter} onChange={(e) => setCancellationFilter(e.target.checked)} className="accent-primary" />
-                  Free Cancel
-                </label>
-                <label className="flex items-center gap-1.5 text-sm cursor-pointer select-none">
-                  <input type="checkbox" checked={availableOnlyFilter} onChange={(e) => setAvailableOnlyFilter(e.target.checked)} className="accent-primary" />
-                  Available only
-                </label>
+              <div className="flex items-center gap-3 flex-wrap bg-secondary/30 p-2.5 rounded-2xl border border-border">
+                <div className="relative">
+                  <select value={capacityFilter} onChange={(e) => setCapacityFilter(Number(e.target.value))}
+                    className="appearance-none border border-border rounded-xl pl-9 pr-8 py-2 text-sm font-medium bg-card outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-base cursor-pointer shadow-sm min-w-[130px]">
+                    <option value={1}>Any Capacity</option>
+                    <option value={2}>2+ Guests</option>
+                    <option value={3}>3+ Guests</option>
+                    <option value={4}>4+ Guests</option>
+                  </select>
+                  <Users className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+                </div>
+                <div className="relative">
+                  <select value={bedFilter} onChange={(e) => setBedFilter(e.target.value)}
+                    className="appearance-none border border-border rounded-xl pl-9 pr-8 py-2 text-sm font-medium bg-card outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-base cursor-pointer shadow-sm min-w-[120px]">
+                    <option value="any">Any Bed</option>
+                    <option value="king">King Bed</option>
+                    <option value="queen">Queen Bed</option>
+                    <option value="twin">Twin Beds</option>
+                  </select>
+                  <BedDouble className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+                </div>
+                <div className="relative">
+                  <select value={roomSort} onChange={(e) => setRoomSort(e.target.value as any)}
+                    className="appearance-none border border-border rounded-xl px-4 pr-8 py-2 text-sm font-medium bg-card outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-base cursor-pointer shadow-sm">
+                    <option value="default">Default Order</option>
+                    <option value="price-asc">Price: Low → High</option>
+                    <option value="price-desc">Price: High → Low</option>
+                  </select>
+                </div>
+                
+                <div className="flex items-center gap-2 lg:ml-auto">
+                  <label className={`flex items-center gap-1.5 text-sm cursor-pointer select-none px-3.5 py-2 rounded-xl border transition-base font-medium shadow-sm ${breakfastFilter ? "border-green-500 bg-green-50/50 text-green-700" : "border-border bg-card text-muted-foreground hover:bg-secondary"}`}>
+                    <input type="checkbox" checked={breakfastFilter} onChange={(e) => setBreakfastFilter(e.target.checked)} className="sr-only" />
+                    <Coffee className="w-3.5 h-3.5" /> Breakfast
+                  </label>
+                  <label className={`flex items-center gap-1.5 text-sm cursor-pointer select-none px-3.5 py-2 rounded-xl border transition-base font-medium shadow-sm ${cancellationFilter ? "border-blue-500 bg-blue-50/50 text-blue-700" : "border-border bg-card text-muted-foreground hover:bg-secondary"}`}>
+                    <input type="checkbox" checked={cancellationFilter} onChange={(e) => setCancellationFilter(e.target.checked)} className="sr-only" />
+                    <Check className="w-3.5 h-3.5" /> Free Cancel
+                  </label>
+                  <label className={`flex items-center gap-1.5 text-sm cursor-pointer select-none px-3.5 py-2 rounded-xl border transition-base font-medium shadow-sm ${availableOnlyFilter ? "border-accent bg-accent/10 text-accent" : "border-border bg-card text-muted-foreground hover:bg-secondary"}`}>
+                    <input type="checkbox" checked={availableOnlyFilter} onChange={(e) => setAvailableOnlyFilter(e.target.checked)} className="sr-only" />
+                    <Sparkles className="w-3.5 h-3.5" /> Available only
+                  </label>
+                </div>
               </div>
             </div>
             {hotel.rooms.length === 0 ? (

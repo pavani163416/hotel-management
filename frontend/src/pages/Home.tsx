@@ -205,21 +205,21 @@ const Home = () => {
 
       {/* Owner CTA Section */}
       <section className="container py-16">
-        <div className="bg-gradient-to-br from-primary to-primary/80 rounded-3xl p-10 md:p-14 text-primary-foreground relative overflow-hidden">
-          <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: "radial-gradient(circle at 80% 20%, hsl(37 26% 84%) 0%, transparent 60%)" }} />
+        <div className="bg-gradient-to-br from-[#1c1815] to-[#2c221a] rounded-3xl p-10 md:p-14 text-primary-foreground relative overflow-hidden shadow-2xl">
+          <div className="absolute inset-0 opacity-20 pointer-events-none" style={{ backgroundImage: "radial-gradient(circle at 80% 20%, #d4a373 0%, transparent 60%)" }} />
           <div className="relative grid md:grid-cols-2 gap-10 items-center">
             <div>
-              <span className="inline-block bg-primary-foreground/15 text-primary-foreground text-xs font-semibold uppercase tracking-widest px-3 py-1.5 rounded-full mb-4">
+              <span className="inline-block bg-white/10 text-[#f5ebd7] text-xs font-semibold uppercase tracking-widest px-3 py-1.5 rounded-full mb-4">
                 Partner with LuxeStay
               </span>
-              <h2 className="font-display text-3xl md:text-4xl font-bold mb-4 leading-tight">
+              <h2 className="font-display text-3xl md:text-4xl font-bold mb-4 leading-tight text-white">
                 Own a Hotel or Resort?
               </h2>
-              <p className="text-primary-foreground/80 text-lg mb-6">
+              <p className="text-white/80 text-lg mb-6">
                 Partner with LuxeStay and reach thousands of travelers. List your property and grow your revenue.
               </p>
               <Link to="/owner-portal"
-                className="inline-flex items-center gap-2 bg-primary-foreground text-primary font-semibold px-6 py-3.5 rounded-xl hover:bg-primary-foreground/90 transition-base text-sm">
+                className="inline-flex items-center gap-2 bg-[#d4a373] text-[#1c1815] font-semibold px-6 py-3.5 rounded-xl hover:bg-[#e6b685] transition-base text-sm shadow-md">
                 List Your Property →
               </Link>
             </div>
@@ -230,10 +230,10 @@ const Home = () => {
                 { emoji: "🔒", title: "Secure Onboarding", text: "Verified KYC process for trusted partners" },
                 { emoji: "🤝", title: "Dedicated Support", text: "Partner success team available 24/7" },
               ].map((b) => (
-                <div key={b.title} className="bg-primary-foreground/10 rounded-2xl p-4 backdrop-blur-sm">
+                <div key={b.title} className="bg-white/5 rounded-2xl p-4 backdrop-blur-sm border border-white/10">
                   <div className="text-2xl mb-2">{b.emoji}</div>
-                  <div className="font-semibold text-sm mb-1">{b.title}</div>
-                  <p className="text-primary-foreground/70 text-xs leading-relaxed">{b.text}</p>
+                  <div className="font-semibold text-sm mb-1 text-white">{b.title}</div>
+                  <p className="text-white/60 text-xs leading-relaxed">{b.text}</p>
                 </div>
               ))}
             </div>
