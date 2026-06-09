@@ -209,24 +209,30 @@ const SupportCentre = () => {
       {/* Quick contact strip */}
       <div className="bg-secondary/40 border-b border-border">
         <div className="container max-w-3xl mx-auto py-5 grid sm:grid-cols-2 gap-4">
-          {[
-            { icon: Mail, title: "Email Support", desc: "support@luxestay.com", action: "Send Email", href: "mailto:support@luxestay.com" },
-            { icon: Phone, title: "Phone Support", desc: "+1 (800) 123-4567", action: "Call Now", href: "tel:+18001234567" },
-          ].map((item) => (
-            <a
-              key={item.title}
-              href={item.href}
-              className="flex items-center gap-4 p-4 bg-card rounded-2xl border border-border hover:shadow-elegant transition-base group"
-            >
-              <div className="w-10 h-10 rounded-xl bg-primary/10 grid place-items-center shrink-0 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                <item.icon className="w-5 h-5 text-primary group-hover:text-primary-foreground transition-colors" />
-              </div>
-              <div>
-                <p className="font-semibold text-primary text-sm">{item.title}</p>
-                <p className="text-muted-foreground text-xs">{item.desc}</p>
-              </div>
-            </a>
-          ))}
+          <a
+            href="mailto:support@luxestay.com"
+            className="flex items-center gap-4 p-4 bg-card rounded-2xl border border-border hover:shadow-elegant transition-base group"
+          >
+            <div className="w-10 h-10 rounded-xl bg-primary/10 grid place-items-center shrink-0 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+              <Mail className="w-5 h-5 text-primary group-hover:text-primary-foreground transition-colors" />
+            </div>
+            <div>
+              <p className="font-semibold text-primary text-sm">Email Support</p>
+              <p className="text-muted-foreground text-xs">support@luxestay.com</p>
+            </div>
+          </a>
+
+          <div
+            className="flex items-center gap-4 p-4 bg-card rounded-2xl border border-border"
+          >
+            <div className="w-10 h-10 rounded-xl bg-primary/10 grid place-items-center shrink-0">
+              <Phone className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <p className="font-semibold text-primary text-sm">Phone Support</p>
+              <p className="text-muted-foreground text-xs">+1 (800) 123-4567</p>
+            </div>
+          </div>
         </div>
       </div>
 
