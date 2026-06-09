@@ -48,6 +48,8 @@ const OwnerPortal = () => {
   const [dashboardData, setDashboardData] = useState<any>(null);
   const [dashLoading, setDashLoading] = useState(false);
 
+  const [modal, setModal] = useState<"login" | "register" | "verify" | null>(null);
+
   const [form, setForm] = useState({ name: "", email: "", password: "", phone: "" });
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
@@ -88,7 +90,7 @@ const OwnerPortal = () => {
     try {
       await api.post("/owners/register", form);
       setSuccess("Registration successful! Check your email for a verification code.");
-      setView("verify");
+      setModal("verify");
     } catch (err: any) {
       setError(err.response?.data?.message || "Registration failed. Please try again.");
     } finally { setLoading(false); }
@@ -101,7 +103,7 @@ const OwnerPortal = () => {
     try {
       await api.post("/owners/verify-email", { email: form.email, otp });
       setSuccess("Email verified! You can now sign in.");
-      setView("login");
+      setModal("login");
     } catch (err: any) {
       setError(err.response?.data?.message || "Invalid or expired code.");
     } finally { setLoading(false); }
@@ -117,6 +119,7 @@ const OwnerPortal = () => {
       localStorage.setItem("luxe_owner_token", d.token);
       setToken(d.token);
       await loadDashboard(d.token);
+      setModal(null);
     } catch (err: any) {
       setError(err.response?.data?.message || "Login failed. Please check your credentials.");
     } finally { setLoading(false); }
@@ -273,109 +276,122 @@ const OwnerPortal = () => {
     );
   }
 
-  // ── Auth form card ───────────────────────────────────────
-  const AuthCard = (
-    <div className="bg-card border border-border rounded-2xl p-8 w-full max-w-md shadow-luxe">
-      <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 rounded-xl bg-primary/10 grid place-items-center">
-          <Building2 className="w-5 h-5 text-primary" />
-        </div>
-        <div>
-          <h2 className="font-display text-xl font-bold">
-            {view === "login" ? "Owner Sign In" : view === "register" ? "Create Owner Account" : "Verify Your Email"}
-          </h2>
-          <p className="text-muted-foreground text-xs">
-            {view === "login" ? "Access your partner dashboard" : view === "register" ? "Start listing your property" : "Enter the code we sent you"}
-          </p>
+  // ── Auth Modal Render ────────────────────────────────────
+  const renderAuthModal = () => {
+    if (!modal) return null;
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+        <div className="relative bg-card border border-border rounded-2xl p-8 w-full max-w-md shadow-2xl animate-in zoom-in-95 duration-200">
+          <button 
+            type="button"
+            onClick={() => { setModal(null); setError(""); setSuccess(""); }} 
+            className="absolute top-4 right-4 text-muted-foreground hover:text-primary transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 grid place-items-center">
+              <Building2 className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <h2 className="font-display text-xl font-bold">
+                {modal === "login" ? "Owner Sign In" : modal === "register" ? "Create Owner Account" : "Verify Your Email"}
+              </h2>
+              <p className="text-muted-foreground text-xs">
+                {modal === "login" ? "Access your partner dashboard" : modal === "register" ? "Start listing your property" : "Enter the code we sent you"}
+              </p>
+            </div>
+          </div>
+
+          {error && (
+            <div className="flex items-start gap-2 p-3 bg-destructive/10 border border-destructive/20 rounded-xl mb-4">
+              <AlertCircle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
+              <p className="text-destructive text-sm">{error}</p>
+            </div>
+          )}
+          {success && (
+            <div className="flex items-start gap-2 p-3 bg-green-50 border border-green-200 rounded-xl mb-4">
+              <CheckCircle2 className="w-4 h-4 text-green-600 shrink-0 mt-0.5" />
+              <p className="text-green-700 text-sm">{success}</p>
+            </div>
+          )}
+
+          {modal === "login" && (
+            <form onSubmit={doLogin} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1.5">Email Address</label>
+                <input type="email" value={form.email} onChange={(e) => handle("email", e.target.value)}
+                  className="w-full px-4 py-2.5 border border-border rounded-xl outline-none focus:ring-2 focus:ring-primary text-sm" required />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1.5">Password</label>
+                <input type="password" value={form.password} onChange={(e) => handle("password", e.target.value)}
+                  className="w-full px-4 py-2.5 border border-border rounded-xl outline-none focus:ring-2 focus:ring-primary text-sm" required />
+              </div>
+              <button type="submit" disabled={loading}
+                className="w-full bg-primary text-primary-foreground py-3 rounded-xl font-semibold flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors disabled:opacity-60">
+                {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Signing in...</> : <><LogIn className="w-4 h-4" /> Sign In</>}
+              </button>
+              <div className="flex items-center justify-between text-sm">
+                <button type="button" onClick={() => { setModal(null); setError(""); setSuccess(""); }}
+                  className="text-muted-foreground hover:text-primary transition-colors">Cancel</button>
+                <button type="button" onClick={() => { setModal("register"); setError(""); setSuccess(""); }}
+                  className="text-primary font-semibold hover:underline">New owner? Register</button>
+              </div>
+            </form>
+          )}
+
+          {modal === "register" && (
+            <form onSubmit={doRegister} className="space-y-4">
+              {[
+                { label: "Full Name *", key: "name", type: "text", placeholder: "John Smith" },
+                { label: "Email Address *", key: "email", type: "email", placeholder: "john@hotel.com" },
+                { label: "Phone Number *", key: "phone", type: "tel", placeholder: "+91 98765 43210" },
+                { label: "Password *", key: "password", type: "password", placeholder: "Min 8 characters" },
+              ].map(({ label, key, type, placeholder }) => (
+                <div key={key}>
+                  <label className="block text-sm font-medium mb-1.5">{label}</label>
+                  <input type={type} value={form[key as keyof typeof form]} onChange={(e) => handle(key, e.target.value)}
+                    placeholder={placeholder}
+                    className="w-full px-4 py-2.5 border border-border rounded-xl outline-none focus:ring-2 focus:ring-primary text-sm" required />
+                </div>
+              ))}
+              <button type="submit" disabled={loading}
+                className="w-full bg-primary text-primary-foreground py-3 rounded-xl font-semibold flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors disabled:opacity-60">
+                {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Creating account...</> : "Create Owner Account"}
+              </button>
+              <div className="flex items-center justify-between text-sm">
+                <button type="button" onClick={() => { setModal(null); setError(""); setSuccess(""); }}
+                  className="text-muted-foreground hover:text-primary transition-colors">Cancel</button>
+                <button type="button" onClick={() => { setModal("login"); setError(""); setSuccess(""); }}
+                  className="text-primary font-semibold hover:underline">Already registered? Sign in</button>
+              </div>
+            </form>
+          )}
+
+          {modal === "verify" && (
+            <form onSubmit={doVerifyEmail} className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Enter the 6-digit verification code sent to <strong className="text-primary">{form.email}</strong>
+              </p>
+              <input type="text" value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                placeholder="000000" maxLength={6} autoComplete="one-time-code"
+                className="w-full px-4 py-3 border border-border rounded-xl outline-none text-center text-3xl tracking-[0.6em] font-bold focus:ring-2 focus:ring-primary" required />
+              <button type="submit" disabled={loading || otp.length !== 6}
+                className="w-full bg-primary text-primary-foreground py-3 rounded-xl font-semibold flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors disabled:opacity-60">
+                {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Verifying...</> : <><CheckCircle2 className="w-4 h-4" /> Verify Email</>}
+              </button>
+              <button type="button" onClick={() => { setModal("login"); setError(""); setSuccess(""); }}
+                className="w-full text-sm text-muted-foreground hover:text-primary transition-colors">
+                Back to sign in
+              </button>
+            </form>
+          )}
         </div>
       </div>
-
-      {error && (
-        <div className="flex items-start gap-2 p-3 bg-destructive/10 border border-destructive/20 rounded-xl mb-4">
-          <AlertCircle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
-          <p className="text-destructive text-sm">{error}</p>
-        </div>
-      )}
-      {success && (
-        <div className="flex items-start gap-2 p-3 bg-green-50 border border-green-200 rounded-xl mb-4">
-          <CheckCircle2 className="w-4 h-4 text-green-600 shrink-0 mt-0.5" />
-          <p className="text-green-700 text-sm">{success}</p>
-        </div>
-      )}
-
-      {view === "login" && (
-        <form onSubmit={doLogin} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-1.5">Email Address</label>
-            <input type="email" value={form.email} onChange={(e) => handle("email", e.target.value)}
-              className="w-full px-4 py-2.5 border border-border rounded-xl outline-none focus:ring-2 focus:ring-primary text-sm" required />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1.5">Password</label>
-            <input type="password" value={form.password} onChange={(e) => handle("password", e.target.value)}
-              className="w-full px-4 py-2.5 border border-border rounded-xl outline-none focus:ring-2 focus:ring-primary text-sm" required />
-          </div>
-          <button type="submit" disabled={loading}
-            className="w-full bg-primary text-primary-foreground py-3 rounded-xl font-semibold flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors disabled:opacity-60">
-            {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Signing in...</> : <><LogIn className="w-4 h-4" /> Sign In</>}
-          </button>
-          <div className="flex items-center justify-between text-sm">
-            <button type="button" onClick={() => { setView("landing"); setError(""); setSuccess(""); }}
-              className="text-muted-foreground hover:text-primary transition-colors">← Back</button>
-            <button type="button" onClick={() => { setView("register"); setError(""); setSuccess(""); }}
-              className="text-primary font-semibold hover:underline">New owner? Register</button>
-          </div>
-        </form>
-      )}
-
-      {view === "register" && (
-        <form onSubmit={doRegister} className="space-y-4">
-          {[
-            { label: "Full Name *", key: "name", type: "text", placeholder: "John Smith" },
-            { label: "Email Address *", key: "email", type: "email", placeholder: "john@hotel.com" },
-            { label: "Phone Number *", key: "phone", type: "tel", placeholder: "+91 98765 43210" },
-            { label: "Password *", key: "password", type: "password", placeholder: "Min 8 characters" },
-          ].map(({ label, key, type, placeholder }) => (
-            <div key={key}>
-              <label className="block text-sm font-medium mb-1.5">{label}</label>
-              <input type={type} value={form[key as keyof typeof form]} onChange={(e) => handle(key, e.target.value)}
-                placeholder={placeholder}
-                className="w-full px-4 py-2.5 border border-border rounded-xl outline-none focus:ring-2 focus:ring-primary text-sm" required />
-            </div>
-          ))}
-          <button type="submit" disabled={loading}
-            className="w-full bg-primary text-primary-foreground py-3 rounded-xl font-semibold flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors disabled:opacity-60">
-            {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Creating account...</> : "Create Owner Account"}
-          </button>
-          <div className="flex items-center justify-between text-sm">
-            <button type="button" onClick={() => { setView("landing"); setError(""); setSuccess(""); }}
-              className="text-muted-foreground hover:text-primary transition-colors">← Back</button>
-            <button type="button" onClick={() => { setView("login"); setError(""); setSuccess(""); }}
-              className="text-primary font-semibold hover:underline">Already registered? Sign in</button>
-          </div>
-        </form>
-      )}
-
-      {view === "verify" && (
-        <form onSubmit={doVerifyEmail} className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            Enter the 6-digit verification code sent to <strong className="text-primary">{form.email}</strong>
-          </p>
-          <input type="text" value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
-            placeholder="000000" maxLength={6} autoComplete="one-time-code"
-            className="w-full px-4 py-3 border border-border rounded-xl outline-none text-center text-3xl tracking-[0.6em] font-bold focus:ring-2 focus:ring-primary" required />
-          <button type="submit" disabled={loading || otp.length !== 6}
-            className="w-full bg-primary text-primary-foreground py-3 rounded-xl font-semibold flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors disabled:opacity-60">
-            {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Verifying...</> : <><CheckCircle2 className="w-4 h-4" /> Verify Email</>}
-          </button>
-          <button type="button" onClick={() => { setView("login"); setError(""); setSuccess(""); }}
-            className="w-full text-sm text-muted-foreground hover:text-primary transition-colors">
-            Back to sign in
-          </button>
-        </form>
-      )}
-    </div>
-  );
+    );
+  };
 
   // ── Landing page ─────────────────────────────────────────
   return (
@@ -393,11 +409,11 @@ const OwnerPortal = () => {
             Partner with LuxeStay and reach thousands of travelers worldwide. List your property and grow your revenue with our luxury booking platform.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <button onClick={() => { setView("register"); setError(""); setSuccess(""); }}
+            <button onClick={() => { setModal("register"); setError(""); setSuccess(""); }}
               className="flex items-center gap-2 bg-primary-foreground text-primary font-semibold px-8 py-3.5 rounded-xl hover:bg-primary-foreground/90 transition-base text-sm">
               List Your Property <ArrowRight className="w-4 h-4" />
             </button>
-            <button onClick={() => { setView("login"); setError(""); setSuccess(""); }}
+            <button onClick={() => { setModal("login"); setError(""); setSuccess(""); }}
               className="flex items-center gap-2 border border-primary-foreground/30 text-primary-foreground font-semibold px-8 py-3.5 rounded-xl hover:bg-primary-foreground/10 transition-base text-sm">
               Partner Sign In
             </button>
@@ -493,9 +509,21 @@ const OwnerPortal = () => {
               </div>
             </div>
           </div>
-          {AuthCard}
+          
+          <div className="bg-card border border-border rounded-2xl p-8 flex flex-col items-center justify-center text-center shadow-luxe">
+            <Building2 className="w-12 h-12 text-accent mb-4" />
+            <h3 className="font-display text-xl font-bold mb-2">Become a Partner</h3>
+            <p className="text-muted-foreground text-sm mb-6 max-w-sm">
+              List your property, set your rates, and start welcoming guests from around the globe.
+            </p>
+            <button onClick={() => { setModal("register"); setError(""); setSuccess(""); }}
+              className="bg-primary text-primary-foreground font-semibold px-6 py-3 rounded-xl hover:bg-primary/90 transition-base text-sm w-full">
+              Get Started Now
+            </button>
+          </div>
         </div>
       </section>
+      {renderAuthModal()}
     </Layout>
   );
 };
