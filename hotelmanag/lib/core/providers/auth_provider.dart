@@ -256,6 +256,7 @@ class AuthProvider extends ChangeNotifier {
         await _saveAuthData(user, null);
         _isLoading = false;
         notifyListeners();
+        _registerFcmToken(); // non-blocking
         return true;
       },
     );

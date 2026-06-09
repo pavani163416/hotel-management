@@ -341,8 +341,8 @@ export const verifyCustomerToken = (req, res, next) => {
   }
   try {
     const decoded = jwt.verify(header.split(" ")[1], getSecret());
-    if (decoded.role !== "customer") {
-      return res.status(403).json({ success: false, message: "Access forbidden: customer role required." });
+    if (decoded.role !== "customer" && decoded.role !== "owner") {
+      return res.status(403).json({ success: false, message: "Access forbidden: customer or owner role required." });
     }
     req.customer = decoded;
     next();
@@ -809,7 +809,7 @@ router.post("/login", loginLimiter, validateLoginPayload, async (req, res, next)
         guestId: user.guestId?.toString() || user.guestId,
         email: user.email,
         name: user.name,
-        role: "customer",
+        role: user.role || "customer",
         jti,
         ip,
         deviceFingerprint
@@ -819,13 +819,13 @@ router.post("/login", loginLimiter, validateLoginPayload, async (req, res, next)
     );
 
     const refreshToken = jwt.sign(
-      { id: user._id, role: "customer" },
+      { id: user._id, role: user.role || "customer" },
       getSecret(),
       { expiresIn: "7d" }
     );
 
     // Save refresh token in Redis session store
-    await cacheSet(`refresh_token:${refreshToken}`, { userId: user._id.toString(), role: "customer" }, 7 * 24 * 3600);
+    await cacheSet(`refresh_token:${refreshToken}`, { userId: user._id.toString(), role: user.role || "customer" }, 7 * 24 * 3600);
 
     // Add to user's set of active refresh tokens (Redis or local fallback)
     if (isRedisReady()) {
@@ -972,7 +972,7 @@ router.post("/phone/verify", otpRateLimiter, async (req, res, next) => {
     }
 
     const token = jwt.sign(
-      { id: user._id, guestId: user.guestId, email: user.email, name: user.name, role: "customer" },
+      { id: user._id, guestId: user.guestId, email: user.email, name: user.name, role: user.role || "customer" },
       getSecret(),
       { expiresIn: JWT_EXPIRES }
     );
@@ -1074,7 +1074,7 @@ router.post("/google", async (req, res, next) => {
     }
 
     const token = jwt.sign(
-      { id: user._id, guestId: user.guestId, email: user.email, name: user.name, role: "customer" },
+      { id: user._id, guestId: user.guestId, email: user.email, name: user.name, role: user.role || "customer" },
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
@@ -1218,7 +1218,7 @@ router.post("/firebase", async (req, res, next) => {
     }
 
     const token = jwt.sign(
-      { id: user._id, guestId: user.guestId, email: user.email, name: user.name, role: "customer" },
+      { id: user._id, guestId: user.guestId, email: user.email, name: user.name, role: user.role || "customer" },
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );

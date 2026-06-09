@@ -7,9 +7,16 @@ import { useNavigate } from "react-router-dom";
 
 const Wishlist = () => {
   const { wishlist, toggleWishlist } = useWishlist();
-  const { hotels } = useBooking();
+  const { hotels, user } = useBooking();
   const { format } = useCurrency();
   const nav = useNavigate();
+
+  React.useEffect(() => {
+    const token = localStorage.getItem("luxe_customer_token");
+    if (!user && !token) {
+      nav("/", { state: { openAuth: true } });
+    }
+  }, [user, nav]);
 
   const wishlistedHotels = hotels.filter((h) => wishlist.includes(h.id));
 

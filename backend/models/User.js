@@ -109,7 +109,7 @@ const userSchema = new mongoose.Schema(
 
     role: {
       type:    String,
-      enum:    ["customer", "manager", "admin"],
+      enum:    ["customer", "owner", "manager", "admin"],
       default: "customer",
     },
 
@@ -133,6 +133,13 @@ const userSchema = new mongoose.Schema(
       type:    String,
       default: null,
     },
+
+    // Owner fields
+    hotelIds: [
+      {
+        type: String,
+      },
+    ],
   },
   {
     timestamps: true,

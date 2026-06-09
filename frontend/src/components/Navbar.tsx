@@ -59,13 +59,24 @@ const Navbar = () => {
   // Track whether the modal was open so we know when it just closed
   const wasAuthOpen = useRef(false);
 
-  // Auto-open sign-in when redirected from a protected route
+  // Auto-open sign-in when redirected from a protected route or via global event
   useEffect(() => {
     if ((location.state as any)?.openAuth && !user) {
       setAuthMode("signin");
       setAuthOpen(true);
     }
   }, [location.state, user]);
+
+  useEffect(() => {
+    const handleGlobalOpenAuth = () => {
+      if (!user) {
+        setAuthMode("signin");
+        setAuthOpen(true);
+      }
+    };
+    window.addEventListener("luxe_open_auth", handleGlobalOpenAuth);
+    return () => window.removeEventListener("luxe_open_auth", handleGlobalOpenAuth);
+  }, [user]);
 
   // When user logs in while modal was open → redirect to pending page
   useEffect(() => {
@@ -96,7 +107,12 @@ const Navbar = () => {
   };
 
   const handleLogout = () => {
+    localStorage.removeItem("luxe_customer_token");
+    localStorage.removeItem("luxe_user");
+    localStorage.removeItem("luxe_bookings");
+    localStorage.removeItem("luxestay_wishlist");
     setUser(null);
+    window.dispatchEvent(new Event("luxe_logout"));
     navigate("/");
   };
 

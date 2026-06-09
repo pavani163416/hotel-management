@@ -18,41 +18,51 @@ export const WishlistProvider = ({ children }: { children: React.ReactNode }) =>
   const [wishlist, setWishlist] = useState<string[]>([]);
   const { user } = useBooking();
 
-  // Load wishlist from user if logged in, otherwise from localStorage
+  // Load wishlist from user if logged in, otherwise empty array
   useEffect(() => {
     if (user && user.wishlist) {
       setWishlist(user.wishlist);
-    } else if (!user) {
-      const stored = localStorage.getItem("luxestay_wishlist");
-      if (stored) {
-        try { setWishlist(JSON.parse(stored)); } catch (e) {}
-      } else {
-        setWishlist([]);
-      }
+    } else {
+      setWishlist([]);
     }
   }, [user]);
 
+  // Reset state on global logout event
+  useEffect(() => {
+    const handleLogout = () => {
+      setWishlist([]);
+      localStorage.removeItem("luxestay_wishlist");
+    };
+    window.addEventListener("luxe_logout", handleLogout);
+    return () => window.removeEventListener("luxe_logout", handleLogout);
+  }, []);
+
   const toggleWishlist = async (hotelId: string) => {
+    if (!user) {
+      window.dispatchEvent(new Event("luxe_open_auth"));
+      return;
+    }
+
     // Optimistic update
     setWishlist((prev) => {
-      let next;
-      if (prev.includes(hotelId)) next = prev.filter((id) => id !== hotelId);
-      else next = [...prev, hotelId];
-      if (!user) localStorage.setItem("luxestay_wishlist", JSON.stringify(next));
-      return next;
+      if (prev.includes(hotelId)) {
+        return prev.filter((id) => id !== hotelId);
+      } else {
+        return [...prev, hotelId];
+      }
     });
 
-    if (user) {
-      try {
-        const res = await api.post("/auth/wishlist", { hotelId });
-        if (res.data.success) setWishlist(res.data.data);
-      } catch (err) {
-        console.error("Failed to sync wishlist", err);
+    try {
+      const res = await api.post("/auth/wishlist", { hotelId });
+      if (res.data.success) {
+        setWishlist(res.data.data);
       }
+    } catch (err) {
+      console.error("Failed to sync wishlist", err);
     }
   };
 
-  const isWishlisted = (hotelId: string) => wishlist.includes(hotelId);
+  const isWishlisted = (hotelId: string) => user ? wishlist.includes(hotelId) : false;
 
   return (
     <WishlistContext.Provider value={{ wishlist, toggleWishlist, isWishlisted }}>

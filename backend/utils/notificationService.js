@@ -55,8 +55,8 @@ export async function sendNotification({ userId = null, hotelId = null, role, me
     }
   }
 
-  // ── 2. FCM push (mobile app) — customers only ────────
-  if (payload.role === "customer") {
+  // ── 2. FCM push (mobile app) — customers and owners ────────
+  if (payload.role === "customer" || payload.role === "owner") {
     try {
       // Lazy import to avoid circular deps at module load time
       const User = (await import("../models/User.js")).default;
@@ -78,9 +78,9 @@ export async function sendNotification({ userId = null, hotelId = null, role, me
 
         if (user?.fcmToken) fcmTokens = [user.fcmToken];
       } else {
-        // Broadcast to ALL customers who have an FCM token
+        // Broadcast to ALL customers & owners who have an FCM token
         const users = await User.find({
-          role: "customer",
+          role: { $in: ["customer", "owner"] },
           fcmToken: { $ne: null, $exists: true },
           isActive: true,
         }).select("fcmToken");

@@ -6,24 +6,7 @@ import {
 } from "lucide-react";
 import Layout from "@/components/Layout";
 import api, { API } from "@/services/api";
-
-type OwnerView = "landing" | "login" | "register" | "verify" | "dashboard";
-
-const BENEFITS = [
-  { icon: Globe, title: "Global Reach", text: "Connect with travelers from 45+ countries browsing LuxeStay daily." },
-  { icon: TrendingUp, title: "Real-Time Revenue", text: "Track bookings and earnings live from your owner dashboard." },
-  { icon: ShieldCheck, title: "Secure KYC Onboarding", text: "Verified partner process ensures trust and safety for all." },
-  { icon: Headphones, title: "Dedicated Partner Support", text: "Our team is available 24/7 to help you succeed." },
-  { icon: Users, title: "Easy Booking Management", text: "Manage all reservations from one clean interface." },
-  { icon: DollarSign, title: "Competitive Commissions", text: "Industry-leading revenue split with no hidden fees." },
-];
-
-const STATS = [
-  { value: "500+", label: "Partner Properties" },
-  { value: "1M+", label: "Happy Guests" },
-  { value: "45+", label: "Countries" },
-  { value: "24/7", label: "Support" },
-];
+import { AuthModal } from "@/components/AuthModal";
 
 // ── File validation helpers ──────────────────────────────
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
@@ -42,122 +25,211 @@ function validateFiles(files: FileList): string | null {
 }
 
 const OwnerPortal = () => {
-  const [view, setView] = useState<OwnerView>("landing");
-  const [token, setToken] = useState<string | null>(() => localStorage.getItem("luxe_owner_token"));
-  const [ownerData, setOwnerData] = useState<any>(null);
+  const [token, setToken] = useState<string | null>(() => localStorage.getItem("luxe_customer_token"));
+  const [user, setUser] = useState<any>(() => {
+    try {
+      return JSON.parse(localStorage.getItem("luxe_user") || "null");
+    } catch {
+      return null;
+    }
+  });
+
+  const [appStatus, setAppStatus] = useState<string>("not_applied");
+  const [appDetails, setAppDetails] = useState<any>(null);
   const [dashboardData, setDashboardData] = useState<any>(null);
-  const [dashLoading, setDashLoading] = useState(false);
-
-  const [modal, setModal] = useState<"login" | "register" | "verify" | null>(null);
-  const [showPassword, setShowPassword] = useState(false);
-
-  const [form, setForm] = useState({ name: "", email: "", password: "", phone: "" });
-  const [otp, setOtp] = useState("");
+  
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [authOpen, setAuthOpen] = useState(false);
 
-  const handle = (k: string, v: string) => setForm((p) => ({ ...p, [k]: v }));
+  // Form fields
+  const [businessName, setBusinessName] = useState("");
+  const [hotelName, setHotelName] = useState("");
+  const [hotelAddress, setHotelAddress] = useState("");
+  const [gstNumber, setGstNumber] = useState("");
+  const [businessRegistrationNumber, setBusinessRegistrationNumber] = useState("");
+  const [docType, setDocType] = useState("aadhar");
+  const [files, setFiles] = useState<FileList | null>(null);
+  const [fileError, setFileError] = useState("");
 
-  // Auto-login if token exists
+  // Listen for login/logout changes
   useEffect(() => {
-    if (token) loadDashboard(token);
+    const handleStorageChange = () => {
+      setToken(localStorage.getItem("luxe_customer_token"));
+      try {
+        setUser(JSON.parse(localStorage.getItem("luxe_user") || "null"));
+      } catch {
+        setUser(null);
+      }
+    };
+    window.addEventListener("storage", handleStorageChange);
+    window.addEventListener("luxe_logout", handleStorageChange);
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("luxe_logout", handleStorageChange);
+    };
   }, []);
 
-  const loadDashboard = async (t: string) => {
-    setDashLoading(true);
+  // Fetch status if token changes
+  useEffect(() => {
+    if (token) {
+      fetchApplicationStatus();
+    } else {
+      setAppStatus("not_applied");
+      setAppDetails(null);
+      setDashboardData(null);
+    }
+  }, [token]);
+
+  const fetchApplicationStatus = async () => {
+    setLoading(true);
+    setError("");
     try {
-      const res: any = await api.get("/owners/dashboard", {
-        headers: { Authorization: `Bearer ${t}` },
-      } as any);
-      const d = res.data?.data;
-      setOwnerData(d?.owner);
-      setDashboardData(d);
-      setView("dashboard");
-    } catch {
-      localStorage.removeItem("luxe_owner_token");
-      setToken(null);
-      setView("landing");
-    } finally { setDashLoading(false); }
+      const res = await api.get("/owners/application-status");
+      const data = res.data;
+      setAppStatus(data.status || "not_applied");
+      setAppDetails(data.application || null);
+
+      // If approved, load dashboard
+      const currentUser = JSON.parse(localStorage.getItem("luxe_user") || "null");
+      if (currentUser?.role === "owner") {
+        await loadDashboard();
+      }
+    } catch (err: any) {
+      setError(err.message || "Failed to load application status.");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const doRegister = async (e: React.FormEvent) => {
+  const loadDashboard = async () => {
+    try {
+      const res = await api.get("/owners/dashboard");
+      setDashboardData(res.data?.data);
+    } catch (err: any) {
+      setError(err.message || "Failed to load dashboard data.");
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files;
+    if (!f?.length) return;
+    const err = validateFiles(f);
+    if (err) { setFileError(err); return; }
+    setFileError("");
+    setFiles(f);
+  };
+
+  const handleApply = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.name.trim()) { setError("Name is required."); return; }
-    if (!form.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) { setError("Valid email is required."); return; }
-    if (!form.phone.trim()) { setError("Phone number is required."); return; }
-    const passwordRegex = /^(?=.*[A-Z])(?=.*[!@#$%^&*(),.?":{}|<>]).{8,}$/;
-    if (!passwordRegex.test(form.password)) {
-      setError("Password must be at least 8 characters long and contain at least one uppercase letter and one special character.");
+    if (!businessName.trim() || !hotelName.trim() || !hotelAddress.trim()) {
+      setError("Please fill in all required fields.");
       return;
     }
-    setError(""); setLoading(true);
-    try {
-      await api.post("/owners/register", form);
-      setSuccess("Registration successful! Check your email for a verification code.");
-      setModal("verify");
-    } catch (err: any) {
-      setError(err.response?.data?.message || "Registration failed. Please try again.");
-    } finally { setLoading(false); }
-  };
-
-  const doVerifyEmail = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (otp.length !== 6) { setError("Please enter the 6-digit code."); return; }
-    setError(""); setLoading(true);
-    try {
-      await api.post("/owners/verify-email", { email: form.email, otp });
-      setSuccess("Email verified! You can now sign in.");
-      setModal("login");
-    } catch (err: any) {
-      setError(err.response?.data?.message || "Invalid or expired code.");
-    } finally { setLoading(false); }
-  };
-
-  const doLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!form.email || !form.password) { setError("Email and password are required."); return; }
-    setError(""); setLoading(true);
-    try {
-      const res: any = await api.post("/owners/login", { email: form.email, password: form.password });
-      const d = res.data?.data;
-      localStorage.setItem("luxe_owner_token", d.token);
-      setToken(d.token);
-      await loadDashboard(d.token);
-      setModal(null);
-    } catch (err: any) {
-      setError(err.response?.data?.message || "Login failed. Please check your credentials.");
-    } finally { setLoading(false); }
-  };
-
-  const doLogout = () => {
-    localStorage.removeItem("luxe_owner_token");
-    setToken(null); setOwnerData(null); setDashboardData(null);
-    setView("landing"); setError(""); setSuccess("");
-    setForm({ name: "", email: "", password: "", phone: "" });
-  };
-
-  // ── Dashboard view ───────────────────────────────────────
-  if (view === "dashboard") {
-    if (dashLoading) {
-      return (
-        <Layout>
-          <div className="flex items-center justify-center min-h-[60vh]">
-            <Loader2 className="w-8 h-8 animate-spin text-accent" />
-          </div>
-        </Layout>
-      );
+    if (!files || files.length === 0) {
+      setFileError("Please upload at least one KYC document.");
+      return;
     }
 
-    const status = ownerData?.status || "pending";
-    const statusConfig: Record<string, { color: string; bg: string; label: string }> = {
-      approved:  { color: "text-green-700", bg: "bg-green-50 border-green-200", label: "Approved" },
-      pending:   { color: "text-yellow-700", bg: "bg-yellow-50 border-yellow-200", label: "Pending Review" },
-      rejected:  { color: "text-red-700", bg: "bg-red-50 border-red-200", label: "Rejected" },
-      suspended: { color: "text-orange-700", bg: "bg-orange-50 border-orange-200", label: "Suspended" },
-    };
-    const sc = statusConfig[status] || statusConfig.pending;
+    setError("");
+    setLoading(true);
 
+    try {
+      const fd = new FormData();
+      fd.append("businessName", businessName);
+      fd.append("hotelName", hotelName);
+      fd.append("hotelAddress", hotelAddress);
+      fd.append("gstNumber", gstNumber);
+      fd.append("businessRegistrationNumber", businessRegistrationNumber);
+      fd.append("docType", docType);
+      Array.from(files).forEach((f) => fd.append("documents", f));
+
+      await api.post("/owners/apply", fd, {
+        headers: { "Content-Type": "multipart/form-data" }
+      });
+
+      setSuccess("Application submitted successfully!");
+      setFiles(null);
+      await fetchApplicationStatus();
+    } catch (err: any) {
+      setError(err.message || "Failed to submit application.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSignOut = () => {
+    localStorage.removeItem("luxe_customer_token");
+    localStorage.removeItem("luxe_user");
+    localStorage.removeItem("luxe_bookings");
+    window.dispatchEvent(new Event("luxe_logout"));
+    window.location.reload();
+  };
+
+  // Render loading state
+  if (loading && !dashboardData && appStatus === "not_applied") {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <Loader2 className="w-8 h-8 animate-spin text-accent" />
+        </div>
+      </Layout>
+    );
+  }
+
+  // ── 1. If not logged in: Show auth check / landing page ──
+  if (!token) {
+    return (
+      <Layout>
+        {/* Hero */}
+        <section className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground py-20 px-4">
+          <div className="container max-w-4xl mx-auto text-center">
+            <span className="inline-block bg-primary-foreground/15 text-primary-foreground text-xs font-semibold uppercase tracking-widest px-3 py-1.5 rounded-full mb-5">
+              Partner Programme
+            </span>
+            <h1 className="font-display text-4xl sm:text-5xl font-bold mb-5 leading-tight">
+              Own a Hotel or Resort?
+            </h1>
+            <p className="text-primary-foreground/80 text-xl max-w-2xl mx-auto mb-8">
+              Partner with LuxeStay and reach thousands of travelers worldwide. List your property and grow your revenue with our luxury booking platform.
+            </p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+              <button onClick={() => setAuthOpen(true)}
+                className="flex items-center gap-2 bg-primary-foreground text-primary font-semibold px-8 py-3.5 rounded-xl hover:bg-primary-foreground/90 transition-base text-sm">
+                Get Started / List Your Property <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </section>
+
+        {/* Benefits */}
+        <section className="container py-20">
+          <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6 mb-16">
+            {[
+              { icon: Globe, title: "Global Reach", text: "Connect with travelers from 45+ countries browsing LuxeStay daily." },
+              { icon: TrendingUp, title: "Real-Time Revenue", text: "Track bookings and earnings live from your owner dashboard." },
+              { icon: ShieldCheck, title: "Secure KYC Onboarding", text: "Verified partner process ensures trust and safety for all." },
+            ].map(({ icon: Icon, title, text }) => (
+              <div key={title} className="bg-card border border-border rounded-2xl p-6 hover:shadow-elegant hover:border-accent/30 transition-base">
+                <div className="w-11 h-11 rounded-xl bg-accent/10 grid place-items-center mb-4">
+                  <Icon className="w-5 h-5 text-accent" />
+                </div>
+                <h3 className="font-semibold text-primary mb-2">{title}</h3>
+                <p className="text-muted-foreground text-sm leading-relaxed">{text}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <AuthModal isOpen={authOpen} onClose={() => setAuthOpen(false)} defaultMode="signin" />
+      </Layout>
+    );
+  }
+
+  // ── 2. User role is Approved Owner: Show Owner Dashboard ──
+  if (user?.role === "owner" && dashboardData) {
+    const sc = { color: "text-green-700", bg: "bg-green-50 border-green-200", label: "Approved Partner" };
     return (
       <Layout>
         <div className="bg-gradient-to-br from-secondary via-background to-secondary/50 min-h-screen">
@@ -166,110 +238,36 @@ const OwnerPortal = () => {
             <div className="flex items-start justify-between flex-wrap gap-4 mb-8">
               <div>
                 <h1 className="font-display text-3xl font-bold">Owner Dashboard</h1>
-                <p className="text-muted-foreground mt-1">Welcome back, {ownerData?.name}</p>
+                <p className="text-muted-foreground mt-1">Welcome back, {user?.name}</p>
               </div>
               <div className="flex items-center gap-3">
                 <span className={`px-3 py-1.5 rounded-full text-xs font-semibold border ${sc.bg} ${sc.color}`}>
                   {sc.label}
                 </span>
-                <button onClick={doLogout} className="text-xs text-muted-foreground hover:text-destructive transition-colors">
+                <button onClick={handleSignOut} className="text-xs text-muted-foreground hover:text-destructive transition-colors">
                   Sign out
                 </button>
               </div>
             </div>
 
-            {/* Status banners */}
-            {status === "pending" && (
-              <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-5 mb-6 flex gap-3">
-                <AlertCircle className="w-5 h-5 text-yellow-600 shrink-0 mt-0.5" />
-                <div>
-                  <p className="font-semibold text-yellow-800">Application under review</p>
-                  <p className="text-yellow-700 text-sm mt-1">Our team is reviewing your application. You'll be notified by email once approved. This typically takes 1–2 business days.</p>
-                </div>
-              </div>
-            )}
-            {status === "rejected" && (
-              <div className="bg-red-50 border border-red-200 rounded-2xl p-5 mb-6 flex gap-3">
-                <X className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
-                <div>
-                  <p className="font-semibold text-red-800">Application not approved</p>
-                  <p className="text-red-700 text-sm mt-1">{ownerData?.adminNotes || "Your application was rejected. Please contact support for more details."}</p>
-                </div>
-              </div>
-            )}
-            {status === "suspended" && (
-              <div className="bg-orange-50 border border-orange-200 rounded-2xl p-5 mb-6 flex gap-3">
-                <AlertCircle className="w-5 h-5 text-orange-600 shrink-0 mt-0.5" />
-                <div>
-                  <p className="font-semibold text-orange-800">Account suspended</p>
-                  <p className="text-orange-700 text-sm mt-1">{ownerData?.adminNotes || "Your account has been suspended. Please contact support."}</p>
-                </div>
-              </div>
-            )}
-
             {/* Stats */}
-            {dashboardData?.stats && (
-              <div className="grid sm:grid-cols-3 gap-4 mb-6">
-                {[
-                  { label: "My Hotels", value: dashboardData.stats.totalHotels ?? 0, icon: Building2 },
-                  { label: "Total Bookings", value: dashboardData.stats.totalBookings ?? 0, icon: Users },
-                  { label: "Total Revenue", value: `$${(dashboardData.stats.totalRevenue ?? 0).toLocaleString()}`, icon: DollarSign },
-                ].map((s) => (
-                  <div key={s.label} className="bg-card border border-border rounded-2xl p-5 flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-accent/10 grid place-items-center shrink-0">
-                      <s.icon className="w-5 h-5 text-accent" />
-                    </div>
-                    <div>
-                      <p className="font-display text-2xl font-bold text-primary">{s.value}</p>
-                      <p className="text-muted-foreground text-xs mt-0.5">{s.label}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* KYC Upload */}
-            {ownerData?.kycStatus === "not_submitted" && (
-              <div className="bg-card border border-border rounded-2xl p-6 mb-6">
-                <div className="flex items-start gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-xl bg-primary/10 grid place-items-center shrink-0">
-                    <ShieldCheck className="w-5 h-5 text-primary" />
+            <div className="grid sm:grid-cols-3 gap-4 mb-6">
+              {[
+                { label: "My Hotels", value: dashboardData.stats.totalHotels ?? 0, icon: Building2 },
+                { label: "Total Bookings", value: dashboardData.stats.totalBookings ?? 0, icon: Users },
+                { label: "Total Revenue", value: `$${(dashboardData.stats.totalRevenue ?? 0).toLocaleString()}`, icon: DollarSign },
+              ].map((s) => (
+                <div key={s.label} className="bg-card border border-border rounded-2xl p-5 flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-accent/10 grid place-items-center shrink-0">
+                    <s.icon className="w-5 h-5 text-accent" />
                   </div>
                   <div>
-                    <h2 className="font-display text-xl font-bold">Complete KYC Verification</h2>
-                    <p className="text-muted-foreground text-sm mt-1">Upload your identity and business documents to get your account approved.</p>
+                    <p className="font-display text-2xl font-bold text-primary">{s.value}</p>
+                    <p className="text-muted-foreground text-xs mt-0.5">{s.label}</p>
                   </div>
                 </div>
-                <KYCUpload token={token!} onDone={() => setOwnerData({ ...ownerData, kycStatus: "pending" })} />
-              </div>
-            )}
-            {ownerData?.kycStatus === "pending" && status === "pending" && (
-              <div className="bg-card border border-border rounded-2xl p-5 mb-6 flex items-center gap-3">
-                <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0" />
-                <p className="text-sm font-medium">KYC documents submitted. Awaiting admin review.</p>
-              </div>
-            )}
-
-            {/* Display Uploaded Documents */}
-            {ownerData?.kycDocuments?.length > 0 && (
-              <div className="bg-card border border-border rounded-2xl p-6 mb-6">
-                <h2 className="font-display text-xl font-bold mb-4">Uploaded Documents</h2>
-                <div className="grid sm:grid-cols-2 gap-4">
-                  {ownerData.kycDocuments.map((doc: any, i: number) => (
-                    <div key={i} className="flex items-center justify-between p-3 border border-border rounded-xl bg-secondary/10">
-                      <div className="flex items-center gap-3">
-                        <FileText className="w-5 h-5 text-muted-foreground" />
-                        <div>
-                          <p className="text-sm font-semibold uppercase">{doc.type.replace("_", " ")}</p>
-                          <p className="text-[10px] text-muted-foreground">{new Date(doc.uploadedAt).toLocaleDateString()}</p>
-                        </div>
-                      </div>
-                      <a href={doc.url} target="_blank" rel="noreferrer" className="text-xs text-blue-500 hover:underline">View</a>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+              ))}
+            </div>
 
             {/* Hotels */}
             <div className="bg-card border border-border rounded-2xl p-6">
@@ -278,7 +276,7 @@ const OwnerPortal = () => {
                 <div className="text-center py-8">
                   <Building2 className="w-10 h-10 mx-auto mb-3 text-muted-foreground/40" />
                   <p className="text-muted-foreground text-sm">No hotels yet.</p>
-                  <p className="text-muted-foreground text-xs mt-1">Once approved, contact our partner team to list your property.</p>
+                  <p className="text-muted-foreground text-xs mt-1">Contact our admin team to map properties to your account.</p>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -302,358 +300,196 @@ const OwnerPortal = () => {
     );
   }
 
-  // ── Auth Modal Render ────────────────────────────────────
-  const renderAuthModal = () => {
-    if (!modal) return null;
+  // ── 3. Application is Pending Approval ──
+  if (appStatus === "pending") {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-        <div className="relative bg-card border border-border rounded-2xl p-8 w-full max-w-md shadow-2xl animate-in zoom-in-95 duration-200">
-          <button 
-            type="button"
-            onClick={() => { setModal(null); setError(""); setSuccess(""); }} 
-            className="absolute top-4 right-4 text-muted-foreground hover:text-primary transition-colors"
-          >
-            <X className="w-5 h-5" />
+      <Layout>
+        <div className="container py-20 max-w-xl text-center">
+          <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <AlertCircle className="w-8 h-8 text-yellow-600" />
+          </div>
+          <h1 className="font-display text-3xl font-bold mb-3">Application Under Review</h1>
+          <p className="text-muted-foreground mb-6">
+            Your owner application is pending approval. Our partner verification team will review your business information and KYC documents shortly.
+          </p>
+          <div className="bg-secondary/30 border border-border rounded-xl p-4 mb-6 text-left space-y-2 text-sm">
+            <p><strong>Business Name:</strong> {appDetails?.businessName}</p>
+            <p><strong>Proposed Hotel Name:</strong> {appDetails?.hotelName}</p>
+            <p><strong>Status:</strong> <span className="text-yellow-600 font-semibold uppercase">Pending</span></p>
+          </div>
+          <button onClick={handleSignOut} className="text-sm text-muted-foreground hover:text-primary underline">
+            Sign out
           </button>
+        </div>
+      </Layout>
+    );
+  }
 
+  // ── 4. Application is Rejected ──
+  if (appStatus === "rejected") {
+    return (
+      <Layout>
+        <div className="container py-20 max-w-xl text-center">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <X className="w-8 h-8 text-red-600" />
+          </div>
+          <h1 className="font-display text-3xl font-bold mb-3">Application Not Approved</h1>
+          <p className="text-muted-foreground mb-6">
+            Unfortunately, your owner application could not be approved at this time.
+          </p>
+          {appDetails?.adminNotes && (
+            <div className="bg-red-50 border border-red-200 text-red-800 rounded-xl p-4 mb-6 text-left text-sm">
+              <strong>Reason:</strong> {appDetails.adminNotes}
+            </div>
+          )}
+          <button onClick={() => setAppStatus("not_applied")}
+            className="bg-primary text-primary-foreground font-semibold px-6 py-2.5 rounded-xl hover:bg-primary/90 transition-colors text-sm w-full mb-3">
+            Re-submit Application
+          </button>
+          <button onClick={handleSignOut} className="text-sm text-muted-foreground hover:text-primary underline">
+            Sign out
+          </button>
+        </div>
+      </Layout>
+    );
+  }
+
+  // ── 5. Default/Not Applied: Render Owner Application Form ──
+  return (
+    <Layout>
+      <div className="bg-gradient-to-br from-secondary via-background to-secondary/30 min-h-screen py-12 px-4">
+        <div className="container max-w-2xl bg-card border border-border rounded-3xl p-8 shadow-luxe">
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 rounded-xl bg-primary/10 grid place-items-center">
-              <Building2 className="w-5 h-5 text-primary" />
+            <div className="w-12 h-12 rounded-xl bg-primary/10 grid place-items-center">
+              <Building2 className="w-6 h-6 text-primary" />
             </div>
             <div>
-              <h2 className="font-display text-xl font-bold">
-                {modal === "login" ? "Owner Sign In" : modal === "register" ? "Create Owner Account" : "Verify Your Email"}
-              </h2>
-              <p className="text-muted-foreground text-xs">
-                {modal === "login" ? "Access your partner dashboard" : modal === "register" ? "Start listing your property" : "Enter the code we sent you"}
-              </p>
+              <h1 className="font-display text-2xl font-bold">List Your Property</h1>
+              <p className="text-muted-foreground text-sm">Apply to become a verified LuxeStay property partner.</p>
             </div>
           </div>
 
           {error && (
-            <div className="flex items-start gap-2 p-3 bg-destructive/10 border border-destructive/20 rounded-xl mb-4">
-              <AlertCircle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
+            <div className="flex items-start gap-2 p-4 bg-destructive/10 border border-destructive/20 rounded-xl mb-6">
+              <AlertCircle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
               <p className="text-destructive text-sm">{error}</p>
             </div>
           )}
           {success && (
-            <div className="flex items-start gap-2 p-3 bg-green-50 border border-green-200 rounded-xl mb-4">
-              <CheckCircle2 className="w-4 h-4 text-green-600 shrink-0 mt-0.5" />
+            <div className="flex items-start gap-2 p-4 bg-green-50 border border-green-200 rounded-xl mb-6">
+              <CheckCircle2 className="w-5 h-5 text-green-600 shrink-0 mt-0.5" />
               <p className="text-green-700 text-sm">{success}</p>
             </div>
           )}
 
-          {modal === "login" && (
-            <form onSubmit={doLogin} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-1.5">Email Address</label>
-                <input type="email" value={form.email} onChange={(e) => handle("email", e.target.value)}
-                  className="w-full px-4 py-2.5 border border-border rounded-xl outline-none focus:ring-2 focus:ring-primary text-sm" required />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1.5">Password</label>
-                <div className="relative">
-                  <input type={showPassword ? "text" : "password"} value={form.password} onChange={(e) => handle("password", e.target.value)}
-                    className="w-full px-4 py-2.5 pr-11 border border-border rounded-xl outline-none focus:ring-2 focus:ring-primary text-sm" required />
-                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary">
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
+          <form onSubmit={handleApply} className="space-y-6">
+            {/* Prefilled and read-only customer info */}
+            <div className="bg-secondary/40 rounded-2xl p-5 border border-border space-y-4">
+              <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">Account Information</h3>
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-muted-foreground mb-1">Full Name</label>
+                  <input type="text" value={user?.name || ""} disabled
+                    className="w-full bg-secondary/80 border border-border rounded-xl px-4 py-2.5 text-sm text-muted-foreground cursor-not-allowed" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-muted-foreground mb-1">Email Address</label>
+                  <input type="email" value={user?.email || ""} disabled
+                    className="w-full bg-secondary/80 border border-border rounded-xl px-4 py-2.5 text-sm text-muted-foreground cursor-not-allowed" />
                 </div>
               </div>
-              <button type="submit" disabled={loading}
-                className="w-full bg-primary text-primary-foreground py-3 rounded-xl font-semibold flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors disabled:opacity-60">
-                {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Signing in...</> : <><LogIn className="w-4 h-4" /> Sign In</>}
-              </button>
-              <div className="flex items-center justify-between text-sm">
-                <button type="button" onClick={() => { setModal(null); setError(""); setSuccess(""); }}
-                  className="text-muted-foreground hover:text-primary transition-colors">Cancel</button>
-                <button type="button" onClick={() => { setModal("register"); setError(""); setSuccess(""); }}
-                  className="text-primary font-semibold hover:underline">New owner? Register</button>
+              <div>
+                <label className="block text-xs font-semibold text-muted-foreground mb-1">Phone Number</label>
+                <input type="text" value={user?.phone || ""} disabled
+                  className="w-full bg-secondary/80 border border-border rounded-xl px-4 py-2.5 text-sm text-muted-foreground cursor-not-allowed" />
               </div>
-            </form>
-          )}
+            </div>
 
-          {modal === "register" && (
-            <form onSubmit={doRegister} className="space-y-4">
-              {[
-                { label: "Full Name *", key: "name", type: "text", placeholder: "John Smith" },
-                { label: "Email Address *", key: "email", type: "email", placeholder: "john@hotel.com" },
-                { label: "Phone Number *", key: "phone", type: "tel", placeholder: "+91 98765 43210" },
-              ].map(({ label, key, type, placeholder }) => (
-                <div key={key}>
-                  <label className="block text-sm font-medium mb-1.5">{label}</label>
-                  <input type={type} value={form[key as keyof typeof form]} onChange={(e) => handle(key, e.target.value)}
-                    placeholder={placeholder}
-                    className="w-full px-4 py-2.5 border border-border rounded-xl outline-none focus:ring-2 focus:ring-primary text-sm" required />
-                </div>
-              ))}
+            {/* Owner specific information */}
+            <div className="space-y-4">
+              <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">Property & Business Details</h3>
+              
               <div>
-                <label className="block text-sm font-medium mb-1.5">Password *</label>
-                <div className="relative">
-                  <input type={showPassword ? "text" : "password"} value={form.password} onChange={(e) => handle("password", e.target.value)}
-                    placeholder="Min 8 chars, 1 uppercase, 1 special char"
-                    className="w-full px-4 py-2.5 pr-11 border border-border rounded-xl outline-none focus:ring-2 focus:ring-primary text-sm" required />
-                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary">
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
+                <label className="block text-sm font-medium mb-1.5">Business / Legal Name *</label>
+                <input type="text" value={businessName} onChange={(e) => setBusinessName(e.target.value)} required
+                  placeholder="e.g. Grand Hospitality Ltd"
+                  className="w-full border border-border bg-background rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary" />
+              </div>
+
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1.5">Hotel / Resort Name *</label>
+                  <input type="text" value={hotelName} onChange={(e) => setHotelName(e.target.value)} required
+                    placeholder="e.g. Luxe Garden Resort"
+                    className="w-full border border-border bg-background rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1.5">Hotel Address *</label>
+                  <input type="text" value={hotelAddress} onChange={(e) => setHotelAddress(e.target.value)} required
+                    placeholder="e.g. 123 Beach Rd, Goa"
+                    className="w-full border border-border bg-background rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary" />
                 </div>
               </div>
-              <button type="submit" disabled={loading}
-                className="w-full bg-primary text-primary-foreground py-3 rounded-xl font-semibold flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors disabled:opacity-60">
-                {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Creating account...</> : "Create Owner Account"}
-              </button>
-              <div className="flex items-center justify-between text-sm">
-                <button type="button" onClick={() => { setModal(null); setError(""); setSuccess(""); }}
-                  className="text-muted-foreground hover:text-primary transition-colors">Cancel</button>
-                <button type="button" onClick={() => { setModal("login"); setError(""); setSuccess(""); }}
-                  className="text-primary font-semibold hover:underline">Already registered? Sign in</button>
-              </div>
-            </form>
-          )}
 
-          {modal === "verify" && (
-            <form onSubmit={doVerifyEmail} className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                Enter the 6-digit verification code sent to <strong className="text-primary">{form.email}</strong>
-              </p>
-              <input type="text" value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                placeholder="000000" maxLength={6} autoComplete="one-time-code"
-                className="w-full px-4 py-3 border border-border rounded-xl outline-none text-center text-3xl tracking-[0.6em] font-bold focus:ring-2 focus:ring-primary" required />
-              <button type="submit" disabled={loading || otp.length !== 6}
-                className="w-full bg-primary text-primary-foreground py-3 rounded-xl font-semibold flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors disabled:opacity-60">
-                {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Verifying...</> : <><CheckCircle2 className="w-4 h-4" /> Verify Email</>}
-              </button>
-              <button type="button" onClick={() => { setModal("login"); setError(""); setSuccess(""); }}
-                className="w-full text-sm text-muted-foreground hover:text-primary transition-colors">
-                Back to sign in
-              </button>
-            </form>
-          )}
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1.5">GST Number (Optional)</label>
+                  <input type="text" value={gstNumber} onChange={(e) => setGstNumber(e.target.value)}
+                    placeholder="22AAAAA0000A1Z5"
+                    className="w-full border border-border bg-background rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1.5">Business Reg. No. (Optional)</label>
+                  <input type="text" value={businessRegistrationNumber} onChange={(e) => setBusinessRegistrationNumber(e.target.value)}
+                    placeholder="U12345GA2026PTC123"
+                    className="w-full border border-border bg-background rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary" />
+                </div>
+              </div>
+            </div>
+
+            {/* KYC Documents */}
+            <div className="space-y-4">
+              <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">KYC Verification Documents</h3>
+              
+              <div>
+                <label className="block text-sm font-medium mb-1.5">Document Type</label>
+                <select value={docType} onChange={(e) => setDocType(e.target.value)}
+                  className="w-full border border-border rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary bg-background">
+                  <option value="aadhar">Aadhar Card</option>
+                  <option value="pan">PAN Card</option>
+                  <option value="passport">Passport</option>
+                  <option value="business_reg">Business Registration Certificate</option>
+                  <option value="gst">GST Certificate</option>
+                </select>
+              </div>
+
+              <div className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors ${fileError ? "border-destructive bg-destructive/5" : "border-border hover:border-accent"}`}>
+                <FileText className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground mb-1">Drag files here or click to select</p>
+                <p className="text-xs text-muted-foreground mb-3">JPG, PNG, WEBP or PDF — max {MAX_SIZE_MB}MB</p>
+                <input type="file" accept="image/jpeg,image/png,image/webp,application/pdf"
+                  multiple onChange={handleFileChange}
+                  className="text-sm text-primary cursor-pointer mx-auto block" />
+                {files && files.length > 0 && (
+                  <p className="text-xs text-green-700 mt-2 font-medium">{files.length} file(s) selected</p>
+                )}
+              </div>
+              {fileError && (
+                <div className="flex items-start gap-2 p-3 bg-destructive/10 border border-destructive/20 rounded-xl">
+                  <AlertCircle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
+                  <p className="text-destructive text-xs">{fileError}</p>
+                </div>
+              )}
+            </div>
+
+            <button type="submit" disabled={loading}
+              className="w-full bg-primary text-primary-foreground py-3.5 rounded-xl font-semibold flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors disabled:opacity-50 text-sm shadow-md">
+              {loading ? <><Loader2 className="w-4.5 h-4.5 animate-spin" /> Submitting...</> : <><Upload className="w-4.5 h-4.5" /> Submit application</>}
+            </button>
+          </form>
         </div>
       </div>
-    );
-  };
-
-  // ── Landing page ─────────────────────────────────────────
-  return (
-    <Layout>
-      {/* Hero */}
-      <section className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground py-20 px-4">
-        <div className="container max-w-4xl mx-auto text-center">
-          <span className="inline-block bg-primary-foreground/15 text-primary-foreground text-xs font-semibold uppercase tracking-widest px-3 py-1.5 rounded-full mb-5">
-            Partner Programme
-          </span>
-          <h1 className="font-display text-4xl sm:text-5xl font-bold mb-5 leading-tight">
-            Own a Hotel or Resort?
-          </h1>
-          <p className="text-primary-foreground/80 text-xl max-w-2xl mx-auto mb-8">
-            Partner with LuxeStay and reach thousands of travelers worldwide. List your property and grow your revenue with our luxury booking platform.
-          </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <button onClick={() => { setModal("register"); setError(""); setSuccess(""); }}
-              className="flex items-center gap-2 bg-primary-foreground text-primary font-semibold px-8 py-3.5 rounded-xl hover:bg-primary-foreground/90 transition-base text-sm">
-              List Your Property <ArrowRight className="w-4 h-4" />
-            </button>
-            <button onClick={() => { setModal("login"); setError(""); setSuccess(""); }}
-              className="flex items-center gap-2 border border-primary-foreground/30 text-primary-foreground font-semibold px-8 py-3.5 rounded-xl hover:bg-primary-foreground/10 transition-base text-sm">
-              Partner Sign In
-            </button>
-          </div>
-        </div>
-      </section>
-
-      {/* Stats */}
-      <section className="bg-secondary/40 py-8">
-        <div className="container">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-            {STATS.map((s) => (
-              <div key={s.label}>
-                <p className="font-display text-3xl font-bold text-primary">{s.value}</p>
-                <p className="text-muted-foreground text-sm mt-1">{s.label}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Benefits */}
-      <section className="container py-20">
-        <div className="text-center mb-12">
-          <h2 className="font-display text-3xl md:text-4xl font-bold mb-3">Why Partner with LuxeStay?</h2>
-          <p className="text-muted-foreground max-w-xl mx-auto">Everything you need to grow your hospitality business.</p>
-        </div>
-        <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6 mb-16">
-          {BENEFITS.map(({ icon: Icon, title, text }) => (
-            <div key={title} className="bg-card border border-border rounded-2xl p-6 hover:shadow-elegant hover:border-accent/30 transition-base">
-              <div className="w-11 h-11 rounded-xl bg-accent/10 grid place-items-center mb-4">
-                <Icon className="w-5 h-5 text-accent" />
-              </div>
-              <h3 className="font-semibold text-primary mb-2">{title}</h3>
-              <p className="text-muted-foreground text-sm leading-relaxed">{text}</p>
-            </div>
-          ))}
-        </div>
-
-        {/* How it works */}
-        <div className="bg-secondary/40 rounded-3xl p-8 md:p-12 mb-16">
-          <h2 className="font-display text-2xl font-bold text-center mb-8">How It Works</h2>
-          <div className="grid md:grid-cols-4 gap-6">
-            {[
-              { step: "1", title: "Register", text: "Create your owner account with name, email and phone." },
-              { step: "2", title: "Verify", text: "Confirm your email address with the 6-digit code." },
-              { step: "3", title: "Submit KYC", text: "Upload your identity and business documents for verification." },
-              { step: "4", title: "Go Live", text: "Once approved, your properties appear on LuxeStay." },
-            ].map((s) => (
-              <div key={s.step} className="text-center">
-                <div className="w-12 h-12 rounded-full bg-primary text-primary-foreground font-display text-xl font-bold grid place-items-center mx-auto mb-3">
-                  {s.step}
-                </div>
-                <h3 className="font-semibold text-primary mb-1">{s.title}</h3>
-                <p className="text-muted-foreground text-sm">{s.text}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* CTA with auth form side by side */}
-        <div className="grid md:grid-cols-2 gap-12 items-start">
-          <div>
-            <h2 className="font-display text-3xl font-bold mb-4">Ready to Get Started?</h2>
-            <p className="text-muted-foreground mb-6 leading-relaxed">
-              Join hundreds of hotel partners already growing with LuxeStay. The registration process takes less than 5 minutes.
-            </p>
-            <ul className="space-y-3 mb-8">
-              {[
-                "No upfront costs to list",
-                "Approval within 1–2 business days",
-                "Full dashboard access after approval",
-                "Dedicated onboarding support",
-              ].map((item) => (
-                <li key={item} className="flex items-center gap-3 text-sm">
-                  <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />
-                  <span className="text-primary">{item}</span>
-                </li>
-              ))}
-            </ul>
-            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-              <div className="flex -space-x-2">
-                {[...Array(4)].map((_, i) => (
-                  <div key={i} className="w-8 h-8 rounded-full bg-accent/20 border-2 border-background grid place-items-center text-[10px] font-bold text-accent">
-                    {String.fromCharCode(65 + i)}
-                  </div>
-                ))}
-              </div>
-              <span>500+ partners already on board</span>
-              <div className="flex items-center gap-1">
-                <Star className="w-3.5 h-3.5 fill-accent text-accent" />
-                <span>4.9 partner satisfaction</span>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-card border border-border rounded-2xl p-8 flex flex-col items-center justify-center text-center shadow-luxe">
-            <Building2 className="w-12 h-12 text-accent mb-4" />
-            <h3 className="font-display text-xl font-bold mb-2">Become a Partner</h3>
-            <p className="text-muted-foreground text-sm mb-6 max-w-sm">
-              List your property, set your rates, and start welcoming guests from around the globe.
-            </p>
-            <button onClick={() => { setModal("register"); setError(""); setSuccess(""); }}
-              className="bg-primary text-primary-foreground font-semibold px-6 py-3 rounded-xl hover:bg-primary/90 transition-base text-sm w-full">
-              Get Started Now
-            </button>
-          </div>
-        </div>
-      </section>
-      {renderAuthModal()}
     </Layout>
-  );
-};
-
-// ── KYC Upload with validation ───────────────────────────
-const KYCUpload = ({ token, onDone }: { token: string; onDone: () => void }) => {
-  const [files, setFiles] = useState<FileList | null>(null);
-  const [docType, setDocType] = useState("aadhar");
-  const [uploading, setUploading] = useState(false);
-  const [done, setDone] = useState(false);
-  const [fileError, setFileError] = useState("");
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files;
-    if (!f?.length) return;
-    const err = validateFiles(f);
-    if (err) { setFileError(err); return; }
-    setFileError("");
-    setFiles(f);
-  };
-
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!files?.length) { setFileError("Please select at least one document."); return; }
-    const err = validateFiles(files);
-    if (err) { setFileError(err); return; }
-    setUploading(true);
-    try {
-      const fd = new FormData();
-      fd.append("docType", docType);
-      Array.from(files).forEach((f) => fd.append("documents", f));
-      const res = await fetch(`${API}/owners/kyc-documents`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-        body: fd,
-      });
-      if (!res.ok) throw new Error("Upload failed");
-      setDone(true);
-      onDone();
-    } catch { setFileError("Upload failed. Please try again."); }
-    finally { setUploading(false); }
-  };
-
-  if (done) {
-    return (
-      <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-xl">
-        <CheckCircle2 className="w-5 h-5 text-green-600 shrink-0" />
-        <div>
-          <p className="text-sm font-semibold text-green-800">Documents submitted successfully!</p>
-          <p className="text-xs text-green-700 mt-0.5">Our team will review your KYC within 1–2 business days.</p>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <form onSubmit={submit} className="space-y-4">
-      <div>
-        <label className="block text-sm font-medium mb-1.5">Document Type</label>
-        <select value={docType} onChange={(e) => setDocType(e.target.value)}
-          className="w-full border border-border rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary bg-background">
-          <option value="aadhar">Aadhar Card</option>
-          <option value="pan">PAN Card</option>
-          <option value="passport">Passport</option>
-          <option value="business_reg">Business Registration Certificate</option>
-          <option value="gst">GST Certificate</option>
-        </select>
-      </div>
-      <div className={`border-2 border-dashed rounded-xl p-5 text-center cursor-pointer transition-colors ${fileError ? "border-destructive bg-destructive/5" : "border-border hover:border-accent"}`}>
-        <FileText className="w-7 h-7 mx-auto mb-2 text-muted-foreground" />
-        <p className="text-sm text-muted-foreground mb-1">JPG, PNG, WEBP or PDF — max {MAX_SIZE_MB}MB per file</p>
-        <input type="file" accept="image/jpeg,image/png,image/webp,application/pdf"
-          multiple onChange={handleFileChange}
-          className="text-sm text-primary cursor-pointer" />
-        {files && files.length > 0 && (
-          <p className="text-xs text-green-700 mt-2 font-medium">{files.length} file(s) selected</p>
-        )}
-      </div>
-      {fileError && (
-        <div className="flex items-start gap-2 p-3 bg-destructive/10 border border-destructive/20 rounded-xl">
-          <AlertCircle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
-          <p className="text-destructive text-xs">{fileError}</p>
-        </div>
-      )}
-      <button type="submit" disabled={uploading || !files?.length}
-        className="w-full bg-primary text-primary-foreground py-3 rounded-xl text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors">
-        {uploading ? <><Loader2 className="w-4 h-4 animate-spin" /> Uploading...</> : <><Upload className="w-4 h-4" /> Submit KYC Documents</>}
-      </button>
-    </form>
   );
 };
 
