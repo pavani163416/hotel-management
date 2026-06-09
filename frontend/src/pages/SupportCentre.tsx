@@ -1,6 +1,7 @@
 import Layout from "@/components/Layout";
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { useBooking } from "@/context/BookingContext";
 import {
   Search, ChevronDown, ChevronUp, Mail, Phone,
   MessageCircle, BookOpen, CreditCard, User,
@@ -140,6 +141,7 @@ const FAQItem = ({ q, a }: { q: string; a: string }) => {
 const SupportCentre = () => {
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState("All");
+  const { user } = useBooking();
 
   const [form, setForm] = useState({ name: "", email: "", category: "", subject: "", message: "" });
   const [loading, setLoading] = useState(false);
@@ -161,9 +163,9 @@ const SupportCentre = () => {
     setError(""); setLoading(true);
     try {
       await api.post("/public/support/create", {
-        guestName: form.name.trim(),
-        guestEmail: form.email.trim(),
-        category: form.category || "Other",
+        fullName: form.name.trim(),
+        email: form.email.trim(),
+        issueType: form.category || "Other",
         subject: form.subject.trim() || "Support Request",
         message: form.message.trim(),
       });
@@ -296,7 +298,19 @@ const SupportCentre = () => {
             </div>
           </div>
 
-          {success ? (
+          {!user ? (
+            <div className="text-center py-12 bg-secondary/40 rounded-2xl border border-border">
+              <User className="w-12 h-12 mx-auto mb-4 text-muted-foreground/40" />
+              <h3 className="font-display text-xl font-bold text-primary mb-2">Sign in Required</h3>
+              <p className="text-muted-foreground mb-6">You must be signed in to submit a support ticket.</p>
+              <Link
+                to="/login"
+                className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-6 py-2.5 rounded-xl font-semibold hover:bg-primary/90 transition-colors"
+              >
+                Sign In to Continue
+              </Link>
+            </div>
+          ) : success ? (
             <div className="bg-green-50 border border-green-200 rounded-2xl p-8 text-center">
               <CheckCircle2 className="w-12 h-12 text-green-500 mx-auto mb-4" />
               <h3 className="font-display text-xl font-bold text-green-800 mb-2">Ticket Submitted!</h3>
