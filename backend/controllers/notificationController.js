@@ -16,8 +16,8 @@ export const getNotifications = async (req, res, next) => {
     const filter = {};
     const role = user.role?.toLowerCase();
 
-    if (role === "customer") {
-      // Customer: only their own notifications — keyed by email or userId in token
+    if (role === "customer" || role === "owner") {
+      // Customer/Owner: only their own notifications — keyed by email or userId in token
       const orConditions = [];
       if (user.email) orConditions.push({ userId: user.email.toLowerCase() });
       if (user.id)    orConditions.push({ userId: user.id.toString() });
@@ -25,7 +25,7 @@ export const getNotifications = async (req, res, next) => {
         return res.status(200).json({ success: true, count: 0, data: [] });
       }
       filter.$or = orConditions;
-      filter.role = "customer";
+      filter.role = { $in: ["customer", "owner"] };
 
     } else if (role === "manager") {
       // Manager: only notifications for their assigned hotel
