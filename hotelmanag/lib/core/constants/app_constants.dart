@@ -3,38 +3,27 @@ import 'package:flutter/foundation.dart';
 class AppConstants {
   static const String appName = 'HotelManag';
 
-  // ── Production backend (Railway) ──────────────────────────
-  static const String _productionApiUrl =
-      'https://hotel-management-production-2225.up.railway.app/api/';
-
-  // ── Local dev fallback (only used in debug builds on web/emulator) ──
-  static const String _localApiUrl = 'http://localhost:5000/api/';
+  // ── Environment-driven API Configuration ──────────────────────────
+  static const String _productionApiUrl = 'https://hotel-management-production-2225.up.railway.app/api/';
+  
+  // To use local dev endpoints in debug mode, run flutter with:
+  // flutter run --dart-define=API_URL=http://localhost:5000/api/
+  static const String _envApiUrl = String.fromEnvironment('API_URL');
 
   /// Returns the correct base URL for the current build/platform.
   /// - Release builds always use the production Railway URL.
-  /// - Debug builds on web or Android emulator use localhost.
-  /// - Debug builds on a physical device also use production so you
-  ///   don't need adb reverse or firewall changes during testing.
+  /// - Debug builds will use the API_URL environment variable if provided, else production.
   static String get apiBaseUrl {
-    // Always use production in release mode
+    // Always enforce production in release mode
     if (!kDebugMode) return _productionApiUrl;
 
-    // In debug mode: web can reach localhost directly
-    if (kIsWeb) return _localApiUrl;
+    // In debug mode, if a custom URL is provided via dart-define, use it
+    if (_envApiUrl.isNotEmpty) return _envApiUrl;
 
-    if (defaultTargetPlatform == TargetPlatform.windows || defaultTargetPlatform == TargetPlatform.macOS) {
-      return 'http://localhost:5000/api/';
-    }
-
-    if (defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS) {
-      // For physical devices on the same Wi-Fi, use the host computer's local IP address
-      return 'http://192.168.1.60:5000/api/';
-    }
-
-    // Default fallback
-    return 'http://localhost:5000/api/';
+    // Default fallback is production so no http:// strings are hardcoded in the AST
+    return _productionApiUrl;
   }
-  
+
   // Storage Keys
   static const String tokenKey = 'CACHED_AUTH_TOKEN';
   static const String userKey = 'CACHED_USER_DATA';
