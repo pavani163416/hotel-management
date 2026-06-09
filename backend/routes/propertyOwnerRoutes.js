@@ -24,9 +24,11 @@ const uploadBufferToCloudinary = async (buffer, filename, mimetype) => {
     api_secret: process.env.CLOUDINARY_API_SECRET,
   });
   return new Promise((resolve, reject) => {
+    const isPdf = mimetype === "application/pdf" || (filename && filename.toLowerCase().endsWith(".pdf"));
     const uploadOptions = {
       folder: "luxestay/kyc",
-      resource_type: "auto", 
+      resource_type: isPdf ? "image" : "auto", 
+      format: isPdf ? "pdf" : undefined,
       public_id: filename.split('.')[0] + "-" + Date.now(),
     };
     const uploadStream = cloudinary.uploader.upload_stream(
