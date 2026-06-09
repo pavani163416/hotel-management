@@ -58,20 +58,29 @@ const verifyUser = (req, res, next) => {
 };
 
 // Middleware: verify owner role
-const verifyOwner = (req, res, next) => {
+const verifyOwner = async (req, res, next) => {
   const header = req.headers.authorization;
   if (!header?.startsWith("Bearer ")) {
     return res.status(401).json({ success: false, message: "Authentication required." });
   }
   try {
     const decoded = jwt.verify(header.split(" ")[1], process.env.JWT_SECRET);
-    if (decoded.role !== "owner") {
+    
+    let userRole = decoded.role;
+    if (userRole !== "owner") {
+      const user = await User.findById(decoded.id);
+      if (user) {
+        userRole = user.role;
+      }
+    }
+
+    if (userRole !== "owner") {
       return res.status(403).json({ success: false, message: "Access forbidden: owner role required." });
     }
     req.owner = decoded;
     req.user = decoded;
     next();
-  } catch {
+  } catch (err) {
     return res.status(401).json({ success: false, message: "Invalid or expired token." });
   }
 };

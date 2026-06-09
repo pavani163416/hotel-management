@@ -263,6 +263,24 @@ export const BookingProvider = ({ children }: { children: ReactNode }) => {
     return () => window.removeEventListener("luxe_logout", handleLuxeLogout);
   }, []);
 
+  // Fetch latest user profile details on mount to sync database role updates
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        const token = localStorage.getItem("luxe_customer_token");
+        if (token) {
+          const res = await api.get("/auth/me");
+          if (res.data?.success && res.data.data) {
+            _setUser(res.data.data);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch user profile:", err);
+      }
+    };
+    fetchUserProfile();
+  }, []);
+
   // ── Global real-time notification listener ───────────────
   useEffect(() => {
     if (!user?.email) return;
