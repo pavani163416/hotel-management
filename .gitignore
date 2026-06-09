@@ -73,3 +73,11 @@ admin/.env
 
 # Node global
 .env
+
+# Keystore and Keys
+android/key.properties
+*.keystore
+*.jks
+*.pem
+*.p12
+*.key

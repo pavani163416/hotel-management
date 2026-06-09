@@ -15,6 +15,8 @@ if (keyPropertiesFile.exists()) {
     keyProperties.load(keyPropertiesFile.inputStream())
 }
 
+val isReleaseBuild = gradle.startParameter.taskNames.any { it.contains("Release", ignoreCase = true) }
+
 android {
     namespace = "com.example.hotelmanag"
     compileSdk = flutter.compileSdkVersion
@@ -32,11 +34,21 @@ android {
 
     signingConfigs {
         create("release") {
-            keyAlias = (keyProperties["keyAlias"] as? String) ?: System.getenv("KEY_ALIAS") ?: ""
-            keyPassword = (keyProperties["keyPassword"] as? String) ?: System.getenv("KEY_PASSWORD") ?: ""
+            val keyAliasStr = (keyProperties["keyAlias"] as? String) ?: System.getenv("KEY_ALIAS")
+            val keyPasswordStr = (keyProperties["keyPassword"] as? String) ?: System.getenv("KEY_PASSWORD")
             val storeFilePath = (keyProperties["storeFile"] as? String) ?: System.getenv("STORE_FILE")
-            storeFile = if (storeFilePath != null) file(storeFilePath) else file("release.keystore")
-            storePassword = (keyProperties["storePassword"] as? String) ?: System.getenv("STORE_PASSWORD") ?: ""
+            val storePasswordStr = (keyProperties["storePassword"] as? String) ?: System.getenv("STORE_PASSWORD")
+
+            if (isReleaseBuild && (keyAliasStr.isNullOrBlank() || keyPasswordStr.isNullOrBlank() || storeFilePath.isNullOrBlank() || storePasswordStr.isNullOrBlank())) {
+                throw GradleException("Unauthorized APK Signing Vulnerability: Release keystore configuration is missing or incomplete. Ensure keyAlias, keyPassword, storeFile, and storePassword are provided via key.properties or environment variables.")
+            }
+
+            if (!keyAliasStr.isNullOrBlank() && !keyPasswordStr.isNullOrBlank() && !storeFilePath.isNullOrBlank() && !storePasswordStr.isNullOrBlank()) {
+                keyAlias = keyAliasStr
+                keyPassword = keyPasswordStr
+                storeFile = file(storeFilePath)
+                storePassword = storePasswordStr
+            }
         }
     }
 
@@ -56,7 +68,7 @@ android {
             isShrinkResources = true
         }
         getByName("debug") {
-            signingConfig = signingConfigs.getByName("release")
+            // Use default debug signing config automatically
         }
     }
 }

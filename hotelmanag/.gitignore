@@ -44,8 +44,7 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
-/android/key.properties
-/android/app/release.keystore
+/android/app/release
 
 # Node & Frontend / Admin Projects
 node_modules/
@@ -63,3 +62,11 @@ admin/.env
 Thumbs.db
 package-lock.json
 .env
+
+# Keystore and Keys
+android/key.properties
+*.keystore
+*.jks
+*.pem
+*.p12
+*.key
