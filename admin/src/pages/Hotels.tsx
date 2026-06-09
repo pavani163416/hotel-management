@@ -28,7 +28,7 @@ export default function Hotels() {
       lastQParam.current = q;
       setSearch(q);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
   const [addOpen, setAddOpen] = useState(false);
   const [addRoomTypeOpen, setAddRoomTypeOpen] = useState(false);
@@ -46,7 +46,7 @@ export default function Hotels() {
     "Fireplace Lounge", "Sunset Terrace", "Rooftop",
     "AC", "Smart TV", "Pet Friendly", "Family Friendly",
   ]);
-  
+
   const [form, setForm] = useState({
     name: "", subtitle: "", location: "", country: "",
     pricePerNight: "500", status: "Active" as Hotel["status"],
@@ -59,6 +59,99 @@ export default function Hotels() {
       penthouse: { total: 2, price: 20000 },
     } as Record<string, { total: number; price: number }>,
   });
+
+  const [selectedState, setSelectedState] = useState("");
+  const [selectedCity, setSelectedCity] = useState("");
+
+  const [countriesList, setCountriesList] = useState<string[]>([]);
+  const [statesList, setStatesList] = useState<string[]>([]);
+  const [citiesList, setCitiesList] = useState<string[]>([]);
+
+  const [loadingCountries, setLoadingCountries] = useState(false);
+  const [loadingStates, setLoadingStates] = useState(false);
+  const [loadingCities, setLoadingCities] = useState(false);
+
+  // Fetch countries list on mount
+  useEffect(() => {
+    const fetchCountries = async () => {
+      setLoadingCountries(true);
+      try {
+        const res = await fetch("https://countriesnow.space/api/v0.1/countries/iso");
+        const json = await res.json();
+        if (!json.error) {
+          const names = json.data.map((c: any) => c.name).sort();
+          setCountriesList(names);
+        }
+      } catch (e) {
+        console.error("Failed to load countries", e);
+      } finally {
+        setLoadingCountries(false);
+      }
+    };
+    fetchCountries();
+  }, []);
+
+  // Fetch states when country changes
+  useEffect(() => {
+    if (!form.country) {
+      setStatesList([]);
+      return;
+    }
+    const fetchStates = async () => {
+      setLoadingStates(true);
+      try {
+        const res = await fetch("https://countriesnow.space/api/v0.1/countries/states", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ country: form.country })
+        });
+        const json = await res.json();
+        if (!json.error && json.data?.states) {
+          const names = json.data.states.map((s: any) => s.name).sort();
+          setStatesList(names);
+        } else {
+          setStatesList([]);
+        }
+      } catch (e) {
+        console.error("Failed to load states", e);
+        setStatesList([]);
+      } finally {
+        setLoadingStates(false);
+      }
+    };
+    fetchStates();
+  }, [form.country]);
+
+  // Fetch cities when state changes
+  useEffect(() => {
+    if (!form.country || !selectedState) {
+      setCitiesList([]);
+      return;
+    }
+    const fetchCities = async () => {
+      setLoadingCities(true);
+      try {
+        const res = await fetch("https://countriesnow.space/api/v0.1/countries/state/cities", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ country: form.country, state: selectedState })
+        });
+        const json = await res.json();
+        if (!json.error && json.data) {
+          const names = json.data.sort();
+          setCitiesList(names);
+        } else {
+          setCitiesList([]);
+        }
+      } catch (e) {
+        console.error("Failed to load cities", e);
+        setCitiesList([]);
+      } finally {
+        setLoadingCities(false);
+      }
+    };
+    fetchCities();
+  }, [form.country, selectedState]);
 
   const toggleAmenity = (a: string) => {
     setForm((prev) => ({
@@ -90,6 +183,8 @@ export default function Hotels() {
         penthouse: { total: 2, price: 20000 },
       }
     });
+    setSelectedState("");
+    setSelectedCity("");
     setUploadedImage("");
     setUploadedImage2("");
     setUploadedImage3("");
@@ -100,6 +195,10 @@ export default function Hotels() {
 
   const openEdit = (h: Hotel) => {
     setEditTarget(h);
+    const parts = h.location ? h.location.split(",") : [];
+    const cityPart = parts[0]?.trim() || "";
+    const statePart = parts[1]?.trim() || "";
+
     setForm({
       name: h.name, subtitle: h.subtitle, location: h.location, country: h.country, pricePerNight: "500", status: h.status,
       mapUrl: h.mapUrl || "",
@@ -111,6 +210,8 @@ export default function Hotels() {
         penthouse: { total: 2, price: 20000 },
       }
     });
+    setSelectedState(statePart);
+    setSelectedCity(cityPart);
     setUploadedImage(h.img || "");
     setUploadedImage2("");
     setUploadedImage3("");
@@ -187,7 +288,7 @@ export default function Hotels() {
           });
           const data = await res.json();
           if (data.success) setUploadedImage2(data.url);
-        } catch {}
+        } catch { }
         setUploading2(false);
       };
       reader.readAsDataURL(file);
@@ -212,7 +313,7 @@ export default function Hotels() {
           });
           const data = await res.json();
           if (data.success) setUploadedImage3(data.url);
-        } catch {}
+        } catch { }
         setUploading3(false);
       };
       reader.readAsDataURL(file);
@@ -278,21 +379,21 @@ export default function Hotels() {
     // For PATCH (edit), don't send rooms/reviews — they're managed separately and would overwrite existing data
     const basePayload = {
       hotelId,
-      name:          form.name,
-      location:      form.location,
-      city:          form.location.split(",")[0]?.trim() || form.location,
-      description:   form.subtitle || `${form.name} — a premium property in ${form.location}.`,
-      image:         imageUrl,
+      name: form.name,
+      location: form.location,
+      city: form.location.split(",")[0]?.trim() || form.location,
+      description: form.subtitle || `${form.name} — a premium property in ${form.location}.`,
+      image: imageUrl,
       gallery,
-      rating:        4.5,
-      reviewCount:   0,
+      rating: 4.5,
+      reviewCount: 0,
       pricePerNight: price,
-      type:          "Hotel",
-      coords:        [0, 0],
-      mapUrl:        form.mapUrl,
-      amenities:     form.amenities,
-      isActive:      form.status === "Active",
-      country:       form.country.toUpperCase(),
+      type: "Hotel",
+      coords: [0, 0],
+      mapUrl: form.mapUrl,
+      amenities: form.amenities,
+      isActive: form.status === "Active",
+      country: form.country.toUpperCase(),
       roomInventory: form.roomInventory,
       totalRooms,
     };
@@ -324,7 +425,7 @@ export default function Hotels() {
 
       // ── Auto-generate manager credentials for new hotels ──
       if (!editTarget) {
-         const slug = form.name
+        const slug = form.name
           .toLowerCase()
           .replace(/[^a-z0-9\s]/g, "")
           .split(/\s+/)
@@ -340,12 +441,12 @@ export default function Hotels() {
             method: "POST",
             headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
             body: JSON.stringify({
-              name:              `${form.name} Manager`,
+              name: `${form.name} Manager`,
               email,
               password,
               hotelId,
-              hotelName:         form.name,
-              isActive:          true,
+              hotelName: form.name,
+              isActive: true,
             }),
           });
         } catch { /* non-blocking — show creds anyway */ }
@@ -409,9 +510,8 @@ export default function Hotels() {
         <div className="flex gap-1 border-b border-border mb-6">
           {(["Hotels"] as const).map(t => (
             <button key={t} onClick={() => setActiveTab(t)}
-              className={`px-4 py-2 text-sm font-semibold transition-colors border-b-2 ${
-                activeTab === t ? "border-primary text-primary" : "border-transparent text-muted hover:text-text-primary"
-              }`}>
+              className={`px-4 py-2 text-sm font-semibold transition-colors border-b-2 ${activeTab === t ? "border-primary text-primary" : "border-transparent text-muted hover:text-text-primary"
+                }`}>
               {t}
             </button>
           ))}
@@ -420,86 +520,86 @@ export default function Hotels() {
         {activeTab !== "Hotels" ? null : (
           <>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <StatsCard title="Total Managed" value={hotels.length} change="+2 New" trend="up"
-            icon={<HotelIcon className="w-5 h-5 text-primary" />} iconBg="bg-primary-light" />
-          <StatsCard title="Active" value={active} change="Operational" trend="up"
-            icon={<TrendingUp className="w-5 h-5 text-success" />} iconBg="bg-success-light" />
-          <StatsCard title="Portfolio YTD" value={`${(hotels.reduce((s, h) => s + h.ytdRevenue, 0) / 1000000).toFixed(1)}M`} change="On Track" trend="neutral"
-            icon={<Building2 className="w-5 h-5 text-warning" />} iconBg="bg-warning-light" />
-          <StatsCard title="Maintenance" value={maintenance} change="Needs attention" trend="down"
-            icon={<AlertTriangle className="w-5 h-5 text-danger" />} iconBg="bg-danger-light" />
-        </div>
-
-        <div className="bg-white rounded-xl border border-border shadow-card">
-          <div className="flex items-center gap-3 px-5 py-4 border-b border-border flex-wrap">
-            <div className="flex items-center gap-2 bg-surface-3 rounded-lg px-3 py-2 flex-1 min-w-[200px]">
-              <Search className="w-3.5 h-3.5 text-muted" />
-              <input value={search} onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search by name or city..."
-                className="bg-transparent text-sm outline-none text-text-primary placeholder:text-muted w-full" />
-              {search && <button onClick={() => setSearch("")}><X className="w-3.5 h-3.5 text-muted" /></button>}
+              <StatsCard title="Total Managed" value={hotels.length} change="+2 New" trend="up"
+                icon={<HotelIcon className="w-5 h-5 text-primary" />} iconBg="bg-primary-light" />
+              <StatsCard title="Active" value={active} change="Operational" trend="up"
+                icon={<TrendingUp className="w-5 h-5 text-success" />} iconBg="bg-success-light" />
+              <StatsCard title="Portfolio YTD" value={`${(hotels.reduce((s, h) => s + h.ytdRevenue, 0) / 1000000).toFixed(1)}M`} change="On Track" trend="neutral"
+                icon={<Building2 className="w-5 h-5 text-warning" />} iconBg="bg-warning-light" />
+              <StatsCard title="Maintenance" value={maintenance} change="Needs attention" trend="down"
+                icon={<AlertTriangle className="w-5 h-5 text-danger" />} iconBg="bg-danger-light" />
             </div>
-            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
-              className="text-sm border border-border rounded-lg px-3 py-2 outline-none text-text-secondary">
-              <option>Any Status</option><option>Active</option><option>Maintenance</option>
-            </select>
-            <button onClick={handleExport}
-              className="w-8 h-8 grid place-items-center border border-border rounded-lg hover:bg-surface-3 transition-colors" title="Export CSV">
-              <Download className="w-4 h-4 text-muted" />
-            </button>
-          </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-border">
-                  {["Hotel Name", "Location", "Rooms", "Active Bookings", "YTD Revenue", "Status", "Actions"].map((col) => (
-                    <th key={col} className="text-left text-xs font-semibold text-muted uppercase tracking-wider px-5 py-3">{col}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.length === 0 ? (
-                  <tr><td colSpan={7} className="px-5 py-12 text-center text-muted text-sm">No hotels found.</td></tr>
-                ) : filtered.map((h) => (
-                  <tr key={h.id}
-                    onClick={() => openEdit(h)}
-                    className="border-b border-border last:border-0 hover:bg-surface-2 transition-colors cursor-pointer">
-                    <td className="px-5 py-4">
-                      <div className="flex items-center gap-3">
-                        <img src={h.img} alt={h.name} className="w-10 h-10 rounded-lg object-cover" />
-                        <div>
-                          <p className="text-sm font-semibold text-text-primary">{h.name}</p>
-                          <p className="text-xs text-muted">{h.subtitle}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-5 py-4">
-                      <p className="text-sm text-text-primary">{h.location}</p>
-                      <p className="text-xs text-muted font-semibold tracking-wider">{h.country}</p>
-                    </td>
-                    <td className="px-5 py-4 text-sm text-text-secondary">{h.rooms}</td>
-                    <td className="px-5 py-4 text-sm text-text-secondary">{h.activeBookings}</td>
-                    <td className="px-5 py-4 text-sm font-semibold text-text-primary">${(h.ytdRevenue / 1000000).toFixed(2)}M</td>
-                    <td className="px-5 py-4"><StatusBadge status={h.status} /></td>
-                    <td className="px-5 py-4" onClick={(e) => e.stopPropagation()}>
-                      <button onClick={() => setActionTarget(h)}
-                        className="text-muted hover:text-text-primary transition-colors p-1 rounded hover:bg-surface-3">
-                        <MoreVertical className="w-4 h-4" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+            <div className="bg-white rounded-xl border border-border shadow-card">
+              <div className="flex items-center gap-3 px-5 py-4 border-b border-border flex-wrap">
+                <div className="flex items-center gap-2 bg-surface-3 rounded-lg px-3 py-2 flex-1 min-w-[200px]">
+                  <Search className="w-3.5 h-3.5 text-muted" />
+                  <input value={search} onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Search by name or city..."
+                    className="bg-transparent text-sm outline-none text-text-primary placeholder:text-muted w-full" />
+                  {search && <button onClick={() => setSearch("")}><X className="w-3.5 h-3.5 text-muted" /></button>}
+                </div>
+                <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
+                  className="text-sm border border-border rounded-lg px-3 py-2 outline-none text-text-secondary">
+                  <option>Any Status</option><option>Active</option><option>Maintenance</option>
+                </select>
+                <button onClick={handleExport}
+                  className="w-8 h-8 grid place-items-center border border-border rounded-lg hover:bg-surface-3 transition-colors" title="Export CSV">
+                  <Download className="w-4 h-4 text-muted" />
+                </button>
+              </div>
 
-          <div className="flex items-center justify-between px-5 py-3 border-t border-border">
-            <p className="text-xs text-muted">Showing {filtered.length} of {hotels.length} properties</p>
-          </div>
-        </div>
-        </>
-      )}
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-border">
+                      {["Hotel Name", "Location", "Rooms", "Active Bookings", "YTD Revenue", "Status", "Actions"].map((col) => (
+                        <th key={col} className="text-left text-xs font-semibold text-muted uppercase tracking-wider px-5 py-3">{col}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filtered.length === 0 ? (
+                      <tr><td colSpan={7} className="px-5 py-12 text-center text-muted text-sm">No hotels found.</td></tr>
+                    ) : filtered.map((h) => (
+                      <tr key={h.id}
+                        onClick={() => openEdit(h)}
+                        className="border-b border-border last:border-0 hover:bg-surface-2 transition-colors cursor-pointer">
+                        <td className="px-5 py-4">
+                          <div className="flex items-center gap-3">
+                            <img src={h.img} alt={h.name} className="w-10 h-10 rounded-lg object-cover" />
+                            <div>
+                              <p className="text-sm font-semibold text-text-primary">{h.name}</p>
+                              <p className="text-xs text-muted">{h.subtitle}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-5 py-4">
+                          <p className="text-sm text-text-primary">{h.location}</p>
+                          <p className="text-xs text-muted font-semibold tracking-wider">{h.country}</p>
+                        </td>
+                        <td className="px-5 py-4 text-sm text-text-secondary">{h.rooms}</td>
+                        <td className="px-5 py-4 text-sm text-text-secondary">{h.activeBookings}</td>
+                        <td className="px-5 py-4 text-sm font-semibold text-text-primary">${(h.ytdRevenue / 1000000).toFixed(2)}M</td>
+                        <td className="px-5 py-4"><StatusBadge status={h.status} /></td>
+                        <td className="px-5 py-4" onClick={(e) => e.stopPropagation()}>
+                          <button onClick={() => setActionTarget(h)}
+                            className="text-muted hover:text-text-primary transition-colors p-1 rounded hover:bg-surface-3">
+                            <MoreVertical className="w-4 h-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="flex items-center justify-between px-5 py-3 border-t border-border">
+                <p className="text-xs text-muted">Showing {filtered.length} of {hotels.length} properties</p>
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Add / Edit Modal */}
@@ -556,7 +656,7 @@ export default function Hotels() {
                       await navigator.clipboard.writeText(text);
                       setCopiedCreds(true);
                       window.setTimeout(() => setCopiedCreds(false), 1800);
-                    } catch {}
+                    } catch { }
                   }}
                   className="w-full py-2 rounded-xl text-xs font-semibold transition-all btn-ghost flex items-center justify-center gap-2"
                 >
@@ -684,15 +784,131 @@ export default function Hotels() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">City *</label>
-                <input required value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} placeholder="Paris"
-                  className="w-full px-3 py-2.5 border border-border rounded-lg text-sm outline-none focus:border-primary" />
+                <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">
+                  Country * {loadingCountries && <span className="text-[10px] text-primary animate-pulse">(loading...)</span>}
+                </label>
+                <select
+                  value={form.country}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setForm({ ...form, country: val, location: "" });
+                    setSelectedState("");
+                    setSelectedCity("");
+                  }}
+                  className="w-full px-3 py-2.5 border border-border rounded-lg text-sm bg-transparent outline-none focus:border-primary text-text-primary"
+                >
+                  <option value="">Select Country</option>
+                  {countriesList.map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                  <option value="OTHER">Other / Custom</option>
+                </select>
+                {(form.country === "OTHER" || (form.country && !countriesList.includes(form.country))) && (
+                  <input
+                    required
+                    value={form.country}
+                    onChange={(e) => setForm({ ...form, country: e.target.value })}
+                    placeholder="Enter Custom Country"
+                    className="w-full mt-2 px-3 py-2.5 border border-border rounded-lg text-sm outline-none focus:border-primary text-text-primary"
+                  />
+                )}
               </div>
+
               <div>
-                <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">Country *</label>
-                <input required value={form.country} onChange={(e) => setForm({ ...form, country: e.target.value })} placeholder="FRANCE"
-                  className="w-full px-3 py-2.5 border border-border rounded-lg text-sm outline-none focus:border-primary" />
+                <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">
+                  State / Region * {loadingStates && <span className="text-[10px] text-primary animate-pulse">(loading...)</span>}
+                </label>
+                {statesList.length > 0 ? (
+                  <select
+                    value={selectedState}
+                    onChange={(e) => {
+                      const state = e.target.value;
+                      setSelectedState(state);
+                      setSelectedCity("");
+                      setForm({ ...form, location: state });
+                    }}
+                    className="w-full px-3 py-2.5 border border-border rounded-lg text-sm bg-transparent outline-none focus:border-primary text-text-primary"
+                  >
+                    <option value="">Select State</option>
+                    {statesList.map((s) => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                    <option value="OTHER">Other / Custom State</option>
+                  </select>
+                ) : (
+                  <input
+                    required
+                    value={selectedState}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setSelectedState(val);
+                      setForm({ ...form, location: selectedCity ? `${selectedCity}, ${val}` : val });
+                    }}
+                    placeholder="Enter State"
+                    className="w-full px-3 py-2.5 border border-border rounded-lg text-sm outline-none focus:border-primary text-text-primary"
+                  />
+                )}
+                {selectedState === "OTHER" && (
+                  <input
+                    required
+                    placeholder="Enter Custom State"
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setForm({ ...form, location: selectedCity && selectedCity !== "OTHER" ? `${selectedCity}, ${val}` : val });
+                    }}
+                    className="w-full mt-2 px-3 py-2.5 border border-border rounded-lg text-sm outline-none focus:border-primary text-text-primary"
+                  />
+                )}
               </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">
+                City / Location * {loadingCities && <span className="text-[10px] text-primary animate-pulse">(loading...)</span>}
+              </label>
+              {citiesList.length > 0 ? (
+                <select
+                  value={selectedCity}
+                  onChange={(e) => {
+                    const city = e.target.value;
+                    setSelectedCity(city);
+                    const stateVal = selectedState && selectedState !== "OTHER" ? selectedState : "";
+                    setForm({ ...form, location: stateVal ? `${city}, ${stateVal}` : city });
+                  }}
+                  className="w-full px-3 py-2.5 border border-border rounded-lg text-sm bg-transparent outline-none focus:border-primary text-text-primary"
+                >
+                  <option value="">Select City</option>
+                  {citiesList.map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                  <option value="OTHER">Other / Custom City</option>
+                </select>
+              ) : (
+                <input
+                  required
+                  value={selectedCity}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setSelectedCity(val);
+                    const stateVal = selectedState && selectedState !== "OTHER" ? selectedState : "";
+                    setForm({ ...form, location: stateVal ? `${val}, ${stateVal}` : val });
+                  }}
+                  placeholder="Enter City"
+                  className="w-full px-3 py-2.5 border border-border rounded-lg text-sm outline-none focus:border-primary text-text-primary"
+                />
+              )}
+              {selectedCity === "OTHER" && (
+                <input
+                  required
+                  placeholder="Enter Custom City"
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    const stateVal = selectedState && selectedState !== "OTHER" ? selectedState : "";
+                    setForm({ ...form, location: stateVal ? `${val}, ${stateVal}` : val });
+                  }}
+                  className="w-full mt-2 px-3 py-2.5 border border-border rounded-lg text-sm outline-none focus:border-primary text-text-primary"
+                />
+              )}
             </div>
             <div>
               <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">Google Maps URL</label>
@@ -787,11 +1003,10 @@ export default function Hotels() {
                     key={a} type="button"
                     aria-pressed={form.amenities.includes(a)}
                     onClick={() => toggleAmenity(a)}
-                    className={`inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border transition-colors ${
-                      form.amenities.includes(a)
-                        ? "bg-white text-primary border-white shadow-sm"
-                        : "bg-surface-3 text-text-secondary border-border hover:border-primary hover:text-white"
-                    }`}
+                    className={`inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border transition-colors ${form.amenities.includes(a)
+                      ? "bg-white text-primary border-white shadow-sm"
+                      : "bg-surface-3 text-text-secondary border-border hover:border-primary hover:text-white"
+                      }`}
                   >
                     {form.amenities.includes(a) && <Check className="w-3 h-3" />}
                     {a}
