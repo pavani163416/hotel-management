@@ -287,6 +287,11 @@ const Navbar = () => {
                   <DropdownMenuItem asChild>
                     <Link to="/profile" className="w-full cursor-pointer">Profile</Link>
                   </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/owner-portal" className="w-full cursor-pointer flex items-center gap-1.5 text-accent">
+                      <Building2 className="w-3.5 h-3.5" /> List Your Property
+                    </Link>
+                  </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={async () => {
                       if (!hasActiveStay) return;
