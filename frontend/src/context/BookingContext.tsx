@@ -134,7 +134,9 @@ function getCachedHotels(): Hotel[] {
 
     // Clear stale demo/local hotel cache to avoid showing outdated dummy data
     const isDemoCache = parsed.some((hotel: any) =>
-      Array.isArray(hotel.rooms) && hotel.rooms.some((room: any) => /^r\d+$/.test(String(room.id)))
+      Array.isArray(hotel.rooms) && hotel.rooms.some((room: any) => 
+        /^r\d+$/.test(String(room.id)) || typeof room.features === 'string'
+      )
     );
     if (isDemoCache) {
       localStorage.removeItem(HOTEL_CACHE_KEY);
