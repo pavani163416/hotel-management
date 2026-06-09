@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import Layout from "@/components/Layout";
 import { useWishlist } from "@/context/WishlistContext";
 import { useBooking } from "@/context/BookingContext";
@@ -11,7 +12,7 @@ const Wishlist = () => {
   const { format } = useCurrency();
   const nav = useNavigate();
 
-  React.useEffect(() => {
+  useEffect(() => {
     const token = localStorage.getItem("luxe_customer_token");
     if (!user && !token) {
       nav("/", { state: { openAuth: true } });

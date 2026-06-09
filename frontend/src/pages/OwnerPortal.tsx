@@ -33,7 +33,7 @@ const OwnerPortal = () => {
   const [appDetails, setAppDetails] = useState<any>(null);
   const [dashboardData, setDashboardData] = useState<any>(null);
   
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(() => !!localStorage.getItem("luxe_customer_token"));
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [authOpen, setAuthOpen] = useState(false);

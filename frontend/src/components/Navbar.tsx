@@ -220,7 +220,15 @@ const Navbar = () => {
       markNotificationRead(n._id).catch(() => {});
     }
     setShowNotifications(false);
-    navigate(n.type === "booking" ? "/history" : "/profile");
+    
+    const msg = n.message.toLowerCase();
+    if (n.type === "booking") {
+      navigate("/history");
+    } else if (msg.includes("owner") || msg.includes("application") || msg.includes("approved") || msg.includes("partner")) {
+      navigate("/owner-portal");
+    } else {
+      navigate("/profile");
+    }
   };
 
   return (
