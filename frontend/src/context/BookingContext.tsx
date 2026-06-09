@@ -197,6 +197,7 @@ export type UserProfile = {
   phone: string;
   city: string;
   wishlist?: string[];
+  role?: string;
 };
 
 type Ctx = {

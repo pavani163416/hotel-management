@@ -7,6 +7,7 @@ import {
 import Layout from "@/components/Layout";
 import api, { API } from "@/services/api";
 import { AuthModal } from "@/components/AuthModal";
+import { useBooking } from "@/context/BookingContext";
 
 // ── File validation helpers ──────────────────────────────
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
@@ -235,9 +236,9 @@ const OwnerPortal = () => {
             {/* Stats */}
             <div className="grid sm:grid-cols-3 gap-4 mb-6">
               {[
-                { label: "My Hotels", value: dashboardData.stats.totalHotels ?? 0, icon: Building2 },
-                { label: "Total Bookings", value: dashboardData.stats.totalBookings ?? 0, icon: Users },
-                { label: "Total Revenue", value: `$${(dashboardData.stats.totalRevenue ?? 0).toLocaleString()}`, icon: DollarSign },
+                { label: "My Hotels", value: dashboardData?.stats?.totalHotels ?? 0, icon: Building2 },
+                { label: "Total Bookings", value: dashboardData?.stats?.totalBookings ?? 0, icon: Users },
+                { label: "Total Revenue", value: `$${(dashboardData?.stats?.totalRevenue ?? 0).toLocaleString()}`, icon: DollarSign },
               ].map((s) => (
                 <div key={s.label} className="bg-card border border-border rounded-2xl p-5 flex items-center gap-4">
                   <div className="w-12 h-12 rounded-xl bg-accent/10 grid place-items-center shrink-0">
