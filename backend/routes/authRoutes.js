@@ -1030,24 +1030,47 @@ router.post("/google", async (req, res, next) => {
     const { idToken } = req.body;
     if (!idToken) return res.status(400).json({ success: false, message: "ID Token is required" });
 
-    const clientID = process.env.GOOGLE_CLIENT_ID || "70312411330-8givsb0ktr8f09u8ullo157vkppkoqqv.apps.googleusercontent.com";
+    const clientID = process.env.GOOGLE_CLIENT_ID || "70312411330-jbppehv6ds52au1n7r62r6qji7j8cs9n.apps.googleusercontent.com";
     let email, name, picture, googleId;
 
     const isJWT = idToken.split('.').length === 3;
+
+    console.log("[Google OAuth DEBUG] Backend received token of length:", idToken.length);
+    console.log("[Google OAuth DEBUG] Is JWT:", isJWT);
+    console.log("[Google OAuth DEBUG] Backend configured clientID:", clientID);
 
     if (!isJWT) {
       // It's a Google Access Token (implicit flow on Web)
       const tokenInfoRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?access_token=${idToken}`);
       if (!tokenInfoRes.ok) {
+        const errorText = await tokenInfoRes.text();
+        console.error("[Google OAuth DEBUG] Failed to verify Google access token:", errorText);
         throw new Error("Failed to verify Google access token validity");
       }
       const tokenInfo = await tokenInfoRes.json();
+      console.log("[Google OAuth DEBUG] tokenInfo payload:", JSON.stringify(tokenInfo, null, 2));
+      console.log("[Google OAuth DEBUG] Comparing tokenInfo.aud:", tokenInfo.aud, "vs clientID:", clientID);
+      console.log("[Google OAuth DEBUG] Comparing tokenInfo.azp:", tokenInfo.azp, "vs clientID:", clientID);
+      console.log("[Google OAuth DEBUG] Comparing tokenInfo.issued_to:", tokenInfo.issued_to, "vs clientID:", clientID);
+      console.log("[Google OAuth DEBUG] Comparing tokenInfo.client_id:", tokenInfo.client_id, "vs clientID:", clientID);
+
+      const fallbackID = "70312411330-jbppehv6ds52au1n7r62r6qji7j8cs9n.apps.googleusercontent.com";
+      const androidClientID = "70312411330-fud2l0ec1r7o0p5shgvon0nus00rpjcf.apps.googleusercontent.com";
       const match = (tokenInfo.aud === clientID) || 
                     (tokenInfo.azp === clientID) || 
                     (tokenInfo.issued_to === clientID) ||
-                    (tokenInfo.client_id === clientID);
+                    (tokenInfo.client_id === clientID) ||
+                    (tokenInfo.aud === fallbackID) || 
+                    (tokenInfo.azp === fallbackID) || 
+                    (tokenInfo.issued_to === fallbackID) ||
+                    (tokenInfo.client_id === fallbackID) ||
+                    (tokenInfo.aud === androidClientID) ||
+                    (tokenInfo.azp === androidClientID) ||
+                    (tokenInfo.issued_to === androidClientID) ||
+                    (tokenInfo.client_id === androidClientID);
       if (!match) {
-        logger.warn("Google Access Token audience mismatch", { tokenInfo, clientID });
+        logger.warn("Google Access Token audience mismatch", { tokenInfo, clientID, fallbackID, androidClientID });
+        console.error("[Google OAuth DEBUG] Audience check failed. None of the tokenInfo fields matched clientID, fallbackID, or androidClientID.");
         throw new Error("Invalid access token audience. Token was not issued to this application.");
       }
 
@@ -1062,10 +1085,14 @@ router.post("/google", async (req, res, next) => {
       googleId = userInfo.sub;
     } else {
       // It's an ID Token (JWT) (used on mobile devices)
+      const fallbackID = "70312411330-jbppehv6ds52au1n7r62r6qji7j8cs9n.apps.googleusercontent.com";
+      const androidClientID = "70312411330-fud2l0ec1r7o0p5shgvon0nus00rpjcf.apps.googleusercontent.com";
       const ticket = await googleClient.verifyIdToken({
         idToken,
         audience: [
           clientID,
+          fallbackID,
+          androidClientID
         ],
       });
       const payload = ticket.getPayload();

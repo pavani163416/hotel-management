@@ -7,7 +7,7 @@ import api from "@/services/api";
 import { ContactAdminModal } from "./auth/ContactAdminModal";
 import { GoogleOAuthProvider, useGoogleLogin } from "@react-oauth/google";
 
-const GOOGLE_CLIENT_ID_FALLBACK = "70312411330-8givsb0ktr8f09u8ullo157vkppkoqqv.apps.googleusercontent.com";
+const GOOGLE_CLIENT_ID_FALLBACK = "70312411330-jbppehv6ds52au1n7r62r6qji7j8cs9n.apps.googleusercontent.com";
 
 const COUNTRY_CODES = [
   { code: "+1", name: "USA/Canada" },
@@ -51,16 +51,23 @@ function AuthModalInner({ isOpen, onClose, defaultMode, mode, setMode, loading, 
       setError("");
       setLoading(true);
       try {
+        const targetClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID_FALLBACK;
+        console.log("[Google OAuth DEBUG] Frontend client_id used:", targetClientId);
+        console.log("[Google OAuth DEBUG] Token type received: Access Token");
+        console.log("[Google OAuth DEBUG] Access Token length:", tokenResponse.access_token ? tokenResponse.access_token.length : 0);
+        
         // The backend expects `idToken` but supports receiving Google's access token directly.
         const res: any = await api.post("/auth/google", { idToken: tokenResponse.access_token });
         finishAuth(res.data?.data ?? res.data);
       } catch (err: any) {
+        console.error("[Google OAuth DEBUG] Sign-in error:", err);
         setError(err.response?.data?.message || err.message || "Google sign-in failed.");
       } finally {
         setLoading(false);
       }
     },
     onError: () => {
+      console.error("[Google OAuth DEBUG] Google sign-in was unsuccessful.");
       setError("Google sign-in was unsuccessful.");
     }
   });
