@@ -161,7 +161,7 @@ router.get("/dashboard", verifyOwner, async (req, res, next) => {
     const user = await User.findById(req.owner.id);
     if (!user) return res.status(404).json({ success: false, message: "User not found." });
 
-    const hotels = await Hotel.find({ hotelId: { $in: user.hotelIds || [] } });
+    const hotels = await Hotel.find({ ownerId: user._id });
     const hotelObjectIds = hotels.map((h) => h._id);
     const bookings = await Booking.find({ hotel: { $in: hotelObjectIds } });
     const revenue = bookings.filter((b) => b.paymentStatus === "PAID").reduce((s, b) => s + (b.totalAmount || 0), 0);
@@ -200,6 +200,7 @@ router.get("/admin/list", protect, authorizeRoles("Super Admin", "admin"), async
       const u = app.userId || {};
       return {
         _id: app._id,
+        userId: u._id || null,
         name: u.name || "Unknown",
         email: u.email || "",
         phone: u.phone || "",

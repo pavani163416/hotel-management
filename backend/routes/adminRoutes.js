@@ -274,6 +274,8 @@ import Guest              from "../models/Guest.js";
 import PriceRequest       from "../models/PriceRequest.js";
 import CancellationRefund from "../models/CancellationRefund.js";
 import Coupon             from "../models/Coupon.js";
+import User               from "../models/User.js";
+import OwnerApplication   from "../models/OwnerApplication.js";
 import { sendNotification } from "../utils/notificationService.js";
 import logger from "../utils/logger.js";
 import fs from "fs";
@@ -1299,6 +1301,141 @@ router.put("/bookings/:id/reassign", protect, requireObjectId(), async (req, res
       .populate("guest", "name email phone");
 
     res.json({ success: true, message: `Booking moved to room ${newRoom.roomNumber}`, data: populated });
+  } catch (e) { next(e); }
+});
+
+// ── GET /api/admin/hotels/all-unassigned ─────────────────
+// Get all hotels that are currently not assigned to any property owner
+router.get("/hotels/all-unassigned", protect, async (req, res, next) => {
+  try {
+    const hotels = await Hotel.find({ 
+      $or: [
+        { ownerId: null },
+        { ownerId: { $exists: false } }
+      ]
+    }).sort({ name: 1 });
+    res.json({ success: true, data: hotels });
+  } catch (e) { next(e); }
+});
+
+// ── GET /api/admin/property-owners/:ownerId/hotels ────────
+router.get("/property-owners/:ownerId/hotels", protect, async (req, res, next) => {
+  try {
+    const { ownerId } = req.params;
+    const hotels = await Hotel.find({ ownerId }).sort({ name: 1 });
+    res.json({ success: true, data: hotels });
+  } catch (e) { next(e); }
+});
+
+// ── POST /api/admin/property-owners/:ownerId/assign-hotel ─
+router.post("/property-owners/:ownerId/assign-hotel", protect, async (req, res, next) => {
+  try {
+    const { ownerId } = req.params;
+    const { hotelIds } = req.body; // Can be array of MongoDB _id or hotelId strings
+
+    if (!hotelIds || !Array.isArray(hotelIds) || hotelIds.length === 0) {
+      return res.status(400).json({ success: false, message: "Valid hotelIds array is required." });
+    }
+
+    const user = await User.findById(ownerId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "Property owner account not found." });
+    }
+    if (user.role !== "owner") {
+      return res.status(400).json({ success: false, message: "This user is not an approved property owner. Only approved owners can receive hotels." });
+    }
+
+    // Process each hotel
+    const assignedHotels = [];
+    for (const hId of hotelIds) {
+      const hotel = await Hotel.findOne({
+        $or: [
+          { _id: mongoose.isValidObjectId(hId) ? hId : null },
+          { hotelId: hId }
+        ].filter(cond => cond !== null)
+      });
+
+      if (!hotel) {
+        return res.status(404).json({ success: false, message: `Hotel with identifier '${hId}' not found.` });
+      }
+
+      // Check if already assigned to a different owner
+      if (hotel.ownerId && String(hotel.ownerId) !== String(ownerId)) {
+        return res.status(400).json({ 
+          success: false, 
+          message: `Hotel '${hotel.name}' is already assigned to another owner.` 
+        });
+      }
+
+      hotel.ownerId = ownerId;
+      await hotel.save();
+
+      // Maintain user.hotelIds list as well
+      if (!user.hotelIds.includes(hotel.hotelId)) {
+        user.hotelIds.push(hotel.hotelId);
+      }
+
+      assignedHotels.push(hotel);
+
+      // Audit Log
+      await logAudit({
+        req,
+        userId: req.admin?.email || "admin",
+        role: req.admin?.role || "Admin",
+        action: "HOTEL_ASSIGNED",
+        details: { hotelId: hotel.hotelId, hotelName: hotel.name, ownerId, ownerEmail: user.email }
+      });
+    }
+
+    await user.save();
+
+    res.json({ 
+      success: true, 
+      message: `Successfully assigned ${assignedHotels.length} hotel(s) to ${user.name}.`,
+      data: assignedHotels
+    });
+  } catch (e) { next(e); }
+});
+
+// ── DELETE /api/admin/property-owners/:ownerId/hotels/:hotelId ─
+router.delete("/property-owners/:ownerId/hotels/:hotelId", protect, async (req, res, next) => {
+  try {
+    const { ownerId, hotelId } = req.params;
+
+    const user = await User.findById(ownerId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "Property owner account not found." });
+    }
+
+    const hotel = await Hotel.findOne({
+      $or: [
+        { _id: mongoose.isValidObjectId(hotelId) ? hotelId : null },
+        { hotelId: hotelId }
+      ].filter(cond => cond !== null)
+    });
+
+    if (!hotel) {
+      return res.status(404).json({ success: false, message: "Hotel not found." });
+    }
+
+    // Set ownerId to null
+    hotel.ownerId = null;
+    await hotel.save();
+
+    // Remove from user's hotelIds array
+    user.hotelIds = user.hotelIds.filter(id => id !== hotel.hotelId);
+    await user.save();
+
+    // Audit Log
+    await logAudit({
+      req,
+      userId: req.admin?.email || "admin",
+      role: req.admin?.role || "Admin",
+      action: "HOTEL_UNASSIGNED",
+      details: { hotelId: hotel.hotelId, hotelName: hotel.name, ownerId, ownerEmail: user.email }
+    });
+
+    res.json({ success: true, message: `Successfully unassigned '${hotel.name}' from ${user.name}.` });
   } catch (e) { next(e); }
 });
 

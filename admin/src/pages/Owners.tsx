@@ -11,6 +11,7 @@ import { API } from "@/services/api";
 
 interface Owner {
   _id: string;
+  userId?: string;
   name: string;
   email: string;
   phone: string;
@@ -48,6 +49,112 @@ export default function Owners() {
   const [error, setError] = useState("");
   const [viewingDocs, setViewingDocs] = useState<Owner | null>(null);
   const [viewingDetails, setViewingDetails] = useState<Owner | null>(null);
+
+  // Hotel Assignment states
+  const [assigningOwner, setAssigningOwner] = useState<Owner | null>(null);
+  const [viewingAssignedOwner, setViewingAssignedOwner] = useState<Owner | null>(null);
+  const [availableHotels, setAvailableHotels] = useState<any[]>([]);
+  const [assignedHotels, setAssignedHotels] = useState<any[]>([]);
+  const [selectedHotelIds, setSelectedHotelIds] = useState<string[]>([]);
+  const [hotelLoading, setHotelLoading] = useState(false);
+  const [hotelActioning, setHotelActioning] = useState(false);
+
+  const fetchAvailableHotels = useCallback(async () => {
+    setHotelLoading(true);
+    try {
+      const token = localStorage.getItem("luxe_admin_token");
+      const res = await fetch(`${API}/admin/hotels/all-unassigned`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      setAvailableHotels(data.data || []);
+    } catch {
+      setError("Failed to load available hotels.");
+    } finally {
+      setHotelLoading(false);
+    }
+  }, []);
+
+  const fetchAssignedHotels = useCallback(async (owner: Owner) => {
+    if (!owner.userId) return;
+    setHotelLoading(true);
+    try {
+      const token = localStorage.getItem("luxe_admin_token");
+      const res = await fetch(`${API}/admin/property-owners/${owner.userId}/hotels`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      setAssignedHotels(data.data || []);
+    } catch {
+      setError("Failed to load assigned hotels.");
+    } finally {
+      setHotelLoading(false);
+    }
+  }, []);
+
+  const handleAssignHotels = async () => {
+    if (!assigningOwner || !assigningOwner.userId || selectedHotelIds.length === 0) return;
+    setHotelActioning(true);
+    setError("");
+    try {
+      const token = localStorage.getItem("luxe_admin_token");
+      const res = await fetch(`${API}/admin/property-owners/${assigningOwner.userId}/assign-hotel`, {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}` 
+        },
+        body: JSON.stringify({ hotelIds: selectedHotelIds }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message || "Assignment failed.");
+      }
+      setAssigningOwner(null);
+      setSelectedHotelIds([]);
+      fetchOwners();
+    } catch (err: any) {
+      setError(err.message || "Failed to assign hotels.");
+    } finally {
+      setHotelActioning(false);
+    }
+  };
+
+  const handleRemoveHotelAssignment = async (hotelId: string) => {
+    if (!viewingAssignedOwner || !viewingAssignedOwner.userId) return;
+    setHotelActioning(true);
+    setError("");
+    try {
+      const token = localStorage.getItem("luxe_admin_token");
+      const res = await fetch(`${API}/admin/property-owners/${viewingAssignedOwner.userId}/hotels/${hotelId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message || "Removal failed.");
+      }
+      fetchAssignedHotels(viewingAssignedOwner);
+      fetchOwners();
+    } catch (err: any) {
+      setError(err.message || "Failed to remove hotel assignment.");
+    } finally {
+      setHotelActioning(false);
+    }
+  };
+
+  useEffect(() => {
+    if (assigningOwner) {
+      fetchAvailableHotels();
+      setSelectedHotelIds([]);
+    }
+  }, [assigningOwner, fetchAvailableHotels]);
+
+  useEffect(() => {
+    if (viewingAssignedOwner) {
+      fetchAssignedHotels(viewingAssignedOwner);
+    }
+  }, [viewingAssignedOwner, fetchAssignedHotels]);
 
   const fetchOwners = useCallback(async () => {
     setLoading(true);
@@ -177,6 +284,18 @@ export default function Owners() {
                       className="flex items-center gap-1.5 text-xs font-semibold text-purple-400 bg-purple-400/10 hover:bg-purple-400/20 px-3 py-1.5 rounded-lg border border-purple-400/25 transition-colors">
                       <ClipboardList className="w-3.5 h-3.5" /> View Details
                     </button>
+                    {o.status === "approved" && (
+                      <>
+                        <button onClick={() => setAssigningOwner(o)}
+                          className="flex items-center gap-1.5 text-xs font-semibold text-teal-400 bg-teal-400/10 hover:bg-teal-400/20 px-3 py-1.5 rounded-lg border border-teal-400/25 transition-colors">
+                          <Building2 className="w-3.5 h-3.5" /> Assign Hotel
+                        </button>
+                        <button onClick={() => setViewingAssignedOwner(o)}
+                          className="flex items-center gap-1.5 text-xs font-semibold text-indigo-400 bg-indigo-400/10 hover:bg-indigo-400/20 px-3 py-1.5 rounded-lg border border-indigo-400/25 transition-colors">
+                          <Building2 className="w-3.5 h-3.5" /> View Assigned
+                        </button>
+                      </>
+                    )}
                     {o.kycDocuments?.length > 0 && (
                       <button onClick={() => setViewingDocs(o)}
                         className="flex items-center gap-1.5 text-xs font-semibold text-blue-400 bg-blue-400/10 hover:bg-blue-400/20 px-3 py-1.5 rounded-lg border border-blue-400/25 transition-colors">
@@ -470,6 +589,118 @@ export default function Owners() {
                   </div>
                 );
               })}
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Assign Hotel Modal */}
+      {assigningOwner && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm grid place-items-center z-50 p-4">
+          <div className="rounded-2xl border flex flex-col w-full max-w-md max-h-[80vh]" style={{ background: "#0f1d30", borderColor: "rgba(255,255,255,0.12)" }}>
+            <div className="flex items-center justify-between p-5 border-b" style={{ borderColor: "rgba(255,255,255,0.12)" }}>
+              <div>
+                <h3 className="font-semibold text-bright text-lg">Assign Hotels</h3>
+                <p className="text-xs text-muted mt-1">To: {assigningOwner.name}</p>
+              </div>
+              <button onClick={() => setAssigningOwner(null)} className="text-muted hover:text-bright transition-colors">
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            
+            <div className="p-5 overflow-y-auto space-y-4">
+              {hotelLoading ? (
+                <div className="py-8 text-center text-sm text-muted">Loading available hotels...</div>
+              ) : availableHotels.length === 0 ? (
+                <div className="py-8 text-center text-sm text-muted italic">All hotels are currently assigned to owners.</div>
+              ) : (
+                <div className="space-y-2">
+                  <p className="text-xs text-muted font-medium uppercase tracking-wider mb-2">Available Hotels</p>
+                  {availableHotels.map((hotel) => (
+                    <label key={hotel._id} className="flex items-center gap-3 p-3 rounded-lg border cursor-pointer hover:bg-white/5 transition-colors" style={{ background: "rgba(255,255,255,0.02)", borderColor: "rgba(255,255,255,0.06)" }}>
+                      <input 
+                        type="checkbox"
+                        checked={selectedHotelIds.includes(hotel.hotelId)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedHotelIds([...selectedHotelIds, hotel.hotelId]);
+                          } else {
+                            setSelectedHotelIds(selectedHotelIds.filter(id => id !== hotel.hotelId));
+                          }
+                        }}
+                        className="rounded border-gray-300 text-teal-600 focus:ring-teal-500 bg-transparent"
+                      />
+                      <div>
+                        <p className="text-sm font-semibold text-bright">{hotel.name}</p>
+                        <p className="text-xs text-muted">{hotel.city}, {hotel.location}</p>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-3 p-5 border-t" style={{ borderColor: "rgba(255,255,255,0.12)" }}>
+              <button onClick={() => setAssigningOwner(null)}
+                className="flex-1 py-2 border border-border rounded-lg text-sm text-muted hover:bg-white/5 transition-colors"
+                style={{ borderColor: "rgba(255,255,255,0.12)" }}>
+                Cancel
+              </button>
+              <button 
+                onClick={handleAssignHotels} 
+                disabled={hotelActioning || selectedHotelIds.length === 0}
+                className="flex-1 py-2 rounded-lg text-sm font-semibold text-white bg-teal-600 hover:bg-teal-700 transition-colors disabled:opacity-50">
+                {hotelActioning ? "Assigning..." : `Assign (${selectedHotelIds.length})`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* View Assigned Hotels Modal */}
+      {viewingAssignedOwner && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm grid place-items-center z-50 p-4">
+          <div className="rounded-2xl border flex flex-col w-full max-w-md max-h-[80vh]" style={{ background: "#0f1d30", borderColor: "rgba(255,255,255,0.12)" }}>
+            <div className="flex items-center justify-between p-5 border-b" style={{ borderColor: "rgba(255,255,255,0.12)" }}>
+              <div>
+                <h3 className="font-semibold text-bright text-lg">Assigned Hotels</h3>
+                <p className="text-xs text-muted mt-1">Owner: {viewingAssignedOwner.name}</p>
+              </div>
+              <button onClick={() => setViewingAssignedOwner(null)} className="text-muted hover:text-bright transition-colors">
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="p-5 overflow-y-auto space-y-4">
+              {hotelLoading ? (
+                <div className="py-8 text-center text-sm text-muted">Loading assigned hotels...</div>
+              ) : assignedHotels.length === 0 ? (
+                <div className="py-8 text-center text-sm text-muted italic">No hotels assigned to this owner yet.</div>
+              ) : (
+                <div className="space-y-2">
+                  {assignedHotels.map((hotel) => (
+                    <div key={hotel._id} className="flex items-center justify-between p-3 rounded-lg border" style={{ background: "rgba(255,255,255,0.02)", borderColor: "rgba(255,255,255,0.06)" }}>
+                      <div>
+                        <p className="text-sm font-semibold text-bright">{hotel.name}</p>
+                        <p className="text-xs text-muted">{hotel.city}, {hotel.location}</p>
+                      </div>
+                      <button 
+                        onClick={() => handleRemoveHotelAssignment(hotel._id)}
+                        disabled={hotelActioning}
+                        className="text-xs font-semibold text-red-400 bg-red-400/10 hover:bg-red-400/20 px-2.5 py-1.5 rounded-lg border border-red-400/20 transition-colors">
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-3 p-5 border-t" style={{ borderColor: "rgba(255,255,255,0.12)" }}>
+              <button onClick={() => setViewingAssignedOwner(null)}
+                className="w-full py-2 border border-border rounded-lg text-sm text-muted hover:bg-white/5 transition-colors"
+                style={{ borderColor: "rgba(255,255,255,0.12)" }}>
+                Close
+              </button>
             </div>
           </div>
         </div>
