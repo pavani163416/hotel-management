@@ -65,7 +65,6 @@ dependencies:
   latlong2: ^0.9.1
   local_auth: ^3.0.1
   firebase_app_check: ^0.4.4+2
-  razorpay_web: ^2.0.2
 
 
 dev_dependencies:

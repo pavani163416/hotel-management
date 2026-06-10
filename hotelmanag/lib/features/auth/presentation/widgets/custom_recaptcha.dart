@@ -47,6 +47,19 @@ class _CustomRecaptchaState extends State<CustomRecaptcha> with SingleTickerProv
     super.dispose();
   }
 
+  @override
+  void didUpdateWidget(CustomRecaptcha oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.captchaChallenge != oldWidget.captchaChallenge) {
+      setState(() {
+        _isChecked = false;
+        _isVerified = false;
+        _isChallengeVisible = false;
+        _answerController.clear();
+      });
+    }
+  }
+
   void _handleCheckboxTap() async {
     if (_isVerified) return;
 

@@ -360,7 +360,7 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
         ? const String.fromEnvironment('GOOGLE_CLIENT_ID',
             defaultValue: '70312411330-jbppehv6ds52au1n7r62r6qji7j8cs9n.apps.googleusercontent.com')
         : null,
-    serverClientId: const String.fromEnvironment('GOOGLE_CLIENT_ID',
+    serverClientId: kIsWeb ? null : const String.fromEnvironment('GOOGLE_CLIENT_ID',
         defaultValue: '70312411330-jbppehv6ds52au1n7r62r6qji7j8cs9n.apps.googleusercontent.com'),
   );
 

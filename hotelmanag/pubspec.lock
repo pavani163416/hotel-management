@@ -784,14 +784,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.1"
-  js:
-    dependency: transitive
-    description:
-      name: js
-      sha256: f2c445dce49627136094980615a031419f7f3eb393237e4ecd97ac15dea343f3
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.6.7"
   latlong2:
     dependency: "direct main"
     description:
@@ -1128,14 +1120,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.4.5"
-  razorpay_web:
-    dependency: "direct main"
-    description:
-      name: razorpay_web
-      sha256: d6616a5c91ea18e7012e44914264970863797062d10fd8260c2fce1c20a6f557
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.0.2"
   record_use:
     dependency: transitive
     description:
