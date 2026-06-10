@@ -21,11 +21,31 @@ class ApiService {
     _dio.options.headers['Content-Type'] = 'application/json';
     _dio.options.headers['Origin'] = 'https://luxestay-frontend.vercel.app';
 
-    _dio.httpClientAdapter = IOHttpClientAdapter(
-      createHttpClient: () {
-        final client = HttpClient(context: SecurityContext.defaultContext);
-        client.badCertificateCallback = (X509Certificate cert, String host, int port) {
-          // Strictly enforce pinning even if the CA is "bad" or user-installed (like Burp)
+    if (!kIsWeb) {
+      _dio.httpClientAdapter = IOHttpClientAdapter(
+        createHttpClient: () {
+          final client = HttpClient(context: SecurityContext.defaultContext);
+          client.badCertificateCallback = (X509Certificate cert, String host, int port) {
+            // Strictly enforce pinning even if the CA is "bad" or user-installed (like Burp)
+            if (host == 'hotel-management-production-2225.up.railway.app') {
+              final sha256Digest = sha256.convert(cert.der).bytes;
+              final base64Digest = base64.encode(sha256Digest);
+              
+              final validPins = [
+                'WoiWRyIOVNa9ihaBciRSC7XHjliYS9VwUGOIud4PB18=',
+                'r/mIkG3eEpVdm+u/ko/cwxzOMo1bk4TyHIlByibiA5E='
+              ];
+              
+              return validPins.contains(base64Digest);
+            }
+            return false;
+          };
+          return client;
+        },
+        validateCertificate: (cert, host, port) {
+          if (cert == null) return false;
+          
+          // Strict SSL Pinning for production (handles valid CA but spoofed server cases)
           if (host == 'hotel-management-production-2225.up.railway.app') {
             final sha256Digest = sha256.convert(cert.der).bytes;
             final base64Digest = base64.encode(sha256Digest);
@@ -35,32 +55,14 @@ class ApiService {
               'r/mIkG3eEpVdm+u/ko/cwxzOMo1bk4TyHIlByibiA5E='
             ];
             
-            return validPins.contains(base64Digest);
+            if (!validPins.contains(base64Digest)) {
+              return false; // Pin validation failed, block MITM
+            }
           }
-          return false;
-        };
-        return client;
-      },
-      validateCertificate: (cert, host, port) {
-        if (cert == null) return false;
-        
-        // Strict SSL Pinning for production (handles valid CA but spoofed server cases)
-        if (host == 'hotel-management-production-2225.up.railway.app') {
-          final sha256Digest = sha256.convert(cert.der).bytes;
-          final base64Digest = base64.encode(sha256Digest);
-          
-          final validPins = [
-            'WoiWRyIOVNa9ihaBciRSC7XHjliYS9VwUGOIud4PB18=',
-            'r/mIkG3eEpVdm+u/ko/cwxzOMo1bk4TyHIlByibiA5E='
-          ];
-          
-          if (!validPins.contains(base64Digest)) {
-            return false; // Pin validation failed, block MITM
-          }
-        }
-        return true;
-      },
-    );
+          return true;
+        },
+      );
+    }
 
     _dio.interceptors.add(
       InterceptorsWrapper(
@@ -80,7 +82,9 @@ class ApiService {
               if (sl.isRegistered<AuthProvider>()) {
                 sl<AuthProvider>().logout();
               }
-            } catch (_) {}
+            } catch (err, stack) {
+              debugPrint('[ApiService] Error during 401 unauthorized logout: $err\n$stack');
+            }
           }
           // Convert network/timeout errors into a friendlier DioException
           if (e.type == DioExceptionType.connectionError ||

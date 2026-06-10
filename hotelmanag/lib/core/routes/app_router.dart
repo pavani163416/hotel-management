@@ -43,29 +43,32 @@ class AppRouter {
   static const String firebaseAuth = '/firebase-auth';
   static const String promoCodes = '/promo-codes';
 
-  static final GoRouter router = GoRouter(
-    initialLocation: splash,
-    refreshListenable: di.sl<AuthProvider>(),
-    redirect: (context, state) {
-      final auth = di.sl<AuthProvider>();
+  static GoRouter createRouter(AuthProvider authProvider) {
+    return GoRouter(
+      initialLocation: splash,
+      refreshListenable: authProvider,
+      redirect: (context, state) {
+        final path = state.matchedLocation;
 
-      final bool isLoggingIn = state.matchedLocation == login || 
-                               state.matchedLocation == register || 
-                               state.matchedLocation == welcome || 
-                               state.matchedLocation == onboarding ||
-                               state.matchedLocation == splash ||
-                               state.matchedLocation == otp ||
-                               state.matchedLocation == firebaseAuth;
+      // Pages that don't require authentication
+      final bool isPublicPage = path == login    ||
+                                path == register  ||
+                                path == welcome   ||
+                                path == onboarding ||
+                                path == splash    ||
+                                path == otp       ||
+                                path == firebaseAuth;
 
-      // If user is NOT authenticated
-      if (!auth.isAuthenticated) {
-        // Only allow access to public pages (splash, welcome, onboarding, login, register, otp)
-        return isLoggingIn ? null : login;
+      // 1. Force unauthenticated users to /login (allow through splash so it
+      //    can run its own auth check before navigating)
+      if (!authProvider.isAuthenticated && !isPublicPage) {
+        return login;
       }
 
-      // If user IS authenticated
-      // Redirect them to home if they attempt to access public authentication/splash pages
-      if (auth.isAuthenticated && isLoggingIn && state.matchedLocation != splash) {
+      // 2. TC-FE-033: Prevent redundant logins — redirect authenticated users
+      //    away from every public/auth page EXCEPT splash (splash handles its
+      //    own redirect after loading cached auth).
+      if (authProvider.isAuthenticated && isPublicPage && path != splash) {
         return root;
       }
 
@@ -158,5 +161,6 @@ class AppRouter {
         builder: (context, state) => const FavoritesPage(),
       ),
     ],
-  );
+    );
+  }
 }

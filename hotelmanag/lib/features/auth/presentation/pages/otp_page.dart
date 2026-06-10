@@ -31,9 +31,19 @@ class _OtpPageState extends State<OtpPage> {
 
   void _verifyOtp() async {
     final code = _otpCode;
+
+    // TC-FE-028: Guard 1 — field must not be empty
+    if (code.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('OTP is required')),
+      );
+      return;
+    }
+
+    // TC-FE-028: Guard 2 — enforce exactly 6 digits before any API call
     if (code.length < 6) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter all 6 digits.')),
+        const SnackBar(content: Text('OTP must be 6 digits')),
       );
       return;
     }
@@ -42,9 +52,8 @@ class _OtpPageState extends State<OtpPage> {
     final success = await auth.verifyOtp(widget.email, code);
 
     if (success && mounted) {
-      Future.microtask(() {
-        if (mounted) context.go('/');
-      });
+      // TC-FE-022: Relies on GoRouter refreshListenable redirect.
+      // Removed imperative context.go('/') hack.
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(auth.error ?? 'Invalid verification code.')),

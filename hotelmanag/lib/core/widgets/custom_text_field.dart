@@ -11,7 +11,7 @@ class CustomTextField extends StatelessWidget {
   final String? Function(String?)? validator;
   final Iterable<String>? autofillHints;
   final int? maxLength;
-  final Widget? suffixIcon;
+  final String? errorText;
 
   const CustomTextField({
     super.key,
@@ -25,6 +25,7 @@ class CustomTextField extends StatelessWidget {
     this.autofillHints,
     this.maxLength,
     this.suffixIcon,
+    this.errorText,
   });
 
   @override
@@ -50,6 +51,7 @@ class CustomTextField extends StatelessWidget {
         labelStyle: TextStyle(color: isDark ? Colors.white70 : AppTheme.primaryColor),
         hintText: hint,
         hintStyle: TextStyle(color: hintColor),
+        errorText: errorText,
         prefixIcon: prefixIcon != null ? Icon(prefixIcon, size: 20, color: iconColor) : null,
         suffixIcon: suffixIcon,
         counterText: maxLength != null ? '' : null,

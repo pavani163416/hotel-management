@@ -90,13 +90,9 @@ class _RegisterPageState extends State<RegisterPage> {
         _captchaLoading = false;
       });
     } else {
-      // Local fallback
-      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-      final random = Random();
-      final challenge = String.fromCharCodes(Iterable.generate(6, (_) => chars.codeUnitAt(random.nextInt(chars.length))));
       setState(() {
-        _captchaChallenge = challenge;
-        _captchaId = 'local_$challenge';
+        _captchaChallenge = 'ERROR_NETWORK_DISCONNECTED';
+        _captchaId = '';
         _captchaLoading = false;
       });
     }
@@ -353,45 +349,51 @@ class _RegisterPageState extends State<RegisterPage> {
 
               // ── CAPTCHA ───────────────────────────────
               if (_captchaChallenge.isNotEmpty) ...[
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const Text('Security Check',
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.primaryColor)),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Container(
-                        height: 54,
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [Colors.grey.shade200, Colors.grey.shade300],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.grey.shade400, width: 1.5),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
-                              blurRadius: 4,
-                              offset: const Offset(0, 2),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('Security Check',
+                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.primaryColor)),
+                        InkWell(
+                          onTap: _captchaLoading ? null : _fetchCaptcha,
+                          borderRadius: BorderRadius.circular(4),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                            child: Row(
+                              children: [
+                                _captchaLoading
+                                  ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primaryColor))
+                                  : Icon(Icons.refresh, size: 14, color: AppTheme.primaryColor.withOpacity(0.8)),
+                                const SizedBox(width: 4),
+                                Text('New challenge', style: TextStyle(fontSize: 12, color: AppTheme.primaryColor.withOpacity(0.8), fontWeight: FontWeight.w500)),
+                              ],
                             ),
-                          ],
+                          ),
                         ),
-                        alignment: Alignment.center,
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      height: 64,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF0EBE1), // Match web beige bg-secondary/60 approx
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppTheme.mutedColor),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Center(
                           child: _captchaChallenge.trim().startsWith('<svg') 
-                            ? SvgPicture.string(_captchaChallenge, fit: BoxFit.fill)
+                            ? SvgPicture.string(_captchaChallenge)
                             : Text(_captchaChallenge,
                                 style: const TextStyle(
                                   fontFamily: 'monospace',
-                                  fontSize: 22,
-                                  letterSpacing: 6,
+                                  fontSize: 24,
+                                  letterSpacing: 8,
                                   fontWeight: FontWeight.w800,
                                   color: AppTheme.primaryColor,
                                 ),
@@ -399,31 +401,30 @@ class _RegisterPageState extends State<RegisterPage> {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Container(
-                      height: 54,
-                      width: 54,
-                      decoration: BoxDecoration(
-                        color: AppTheme.primaryColor.withOpacity(0.05),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppTheme.primaryColor.withOpacity(0.2)),
-                      ),
-                      child: IconButton(
-                        icon: _captchaLoading
-                            ? const SizedBox(width: 16, height: 16,
-                                child: CircularProgressIndicator(strokeWidth: 2))
-                            : const Icon(Icons.refresh, color: AppTheme.primaryColor),
-                        tooltip: 'New challenge',
-                        onPressed: _captchaLoading ? null : _fetchCaptcha,
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: _captchaController,
+                      keyboardType: TextInputType.text,
+                      style: const TextStyle(fontSize: 14, color: AppTheme.primaryColor),
+                      decoration: InputDecoration(
+                        hintText: 'Your answer',
+                        hintStyle: TextStyle(color: AppTheme.primaryColor.withOpacity(0.4), fontSize: 14),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: AppTheme.mutedColor),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: AppTheme.mutedColor),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: AppTheme.primaryColor),
+                        ),
                       ),
                     ),
                   ],
-                ),
-                const SizedBox(height: 8),
-                _textField(
-                  controller: _captchaController,
-                  hint: 'Your answer',
-                  keyboardType: TextInputType.text,
                 ),
                 const SizedBox(height: 16),
               ],

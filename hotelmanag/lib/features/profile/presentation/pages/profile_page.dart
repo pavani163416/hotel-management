@@ -1161,7 +1161,14 @@ class _ProfilePageState extends State<ProfilePage> {
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           ),
           child: auth.isLoading
-              ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+              ? SizedBox(
+                  height: 20, 
+                  width: 20, 
+                  child: Semantics(
+                    label: 'Loading profile...',
+                    child: const CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                  ),
+                )
               : const Text('Save Changes', style: TextStyle(fontWeight: FontWeight.bold)),
         ),
       ),

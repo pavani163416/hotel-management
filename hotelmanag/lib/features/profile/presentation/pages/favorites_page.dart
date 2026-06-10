@@ -33,43 +33,22 @@ class FavoritesPage extends StatelessWidget {
             ),
             const SizedBox(height: 32),
             if (favorites.isEmpty)
-              _buildEmptyState(context)
+              const EmptyFavoritesWidget()
             else
-              Column(
-                children: favorites.map((hotel) => Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  child: _buildFavoriteCard(context, hotel),
-                )).toList(),
+              ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: favorites.length,
+                itemBuilder: (context, index) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: _buildFavoriteCard(context, favorites[index]),
+                  );
+                },
               ),
             const SizedBox(height: 100),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildEmptyState(BuildContext context) {
-    return Center(
-      child: Column(
-        children: [
-          const SizedBox(height: 60),
-          Icon(LucideIcons.heart, size: 64, color: AppTheme.mutedColor),
-          const SizedBox(height: 16),
-          Text('No favorites yet', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.primaryColor.withOpacity(0.5))),
-          const SizedBox(height: 8),
-          Text('Start exploring and save your favorite hotels.', style: TextStyle(color: AppTheme.primaryColor.withOpacity(0.4))),
-          const SizedBox(height: 24),
-          ElevatedButton(
-            onPressed: () => context.go('/hotels'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.primaryColor,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            child: const Text('Explore Hotels'),
-          ),
-        ],
       ),
     );
   }
@@ -172,6 +151,36 @@ class FavoritesPage extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class EmptyFavoritesWidget extends StatelessWidget {
+  const EmptyFavoritesWidget({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const SizedBox(height: 60),
+          const Icon(Icons.favorite_border, size: 64, color: AppTheme.mutedColor),
+          const SizedBox(height: 16),
+          Text('No favorites yet', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.primaryColor.withOpacity(0.5))),
+          const SizedBox(height: 24),
+          ElevatedButton(
+            onPressed: () => context.go('/hotels'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primaryColor,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: const Text('Browse hotels to add favorites'),
+          ),
+        ],
       ),
     );
   }

@@ -43,6 +43,14 @@ class _PaymentPageState extends State<PaymentPage> {
   String? _currentBookingId;
   String? _currentOrderId;
 
+  // TC-FE-034: Guard flag — true from the moment Pay Now is tapped until
+  // the Razorpay callback resolves (success or failure).
+  bool _isProcessingPayment = false;
+
+  // TC-FE-045: Inline error state — surfaces API booking failures directly
+  // in the UI so the user is never left with a silent spinner.
+  String? _errorMessage;
+
   @override
   void initState() {
     super.initState();
@@ -80,6 +88,7 @@ class _PaymentPageState extends State<PaymentPage> {
         'razorpay_signature': response.signature,
       });
       if (mounted) {
+        setState(() => _isProcessingPayment = false);
         try {
           context.read<NotificationProvider>().addNotification(
             'Booking Confirmed! 🎉',
@@ -91,6 +100,7 @@ class _PaymentPageState extends State<PaymentPage> {
       }
     } catch (e) {
       if (mounted) {
+        setState(() => _isProcessingPayment = false);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Payment verification failed'), backgroundColor: Colors.redAccent),
         );
@@ -99,6 +109,7 @@ class _PaymentPageState extends State<PaymentPage> {
   }
 
   void _handlePaymentError(PaymentFailureResponse response) async {
+    if (mounted) setState(() => _isProcessingPayment = false);
     try {
       if (_currentOrderId != null || _currentBookingId != null) {
         final api = sl<ApiService>();
@@ -120,7 +131,11 @@ class _PaymentPageState extends State<PaymentPage> {
   }
 
   Future<void> _processPayment(BookingProvider provider) async {
-    if (provider.isLoading) return;
+    if (provider.isLoading || _isProcessingPayment) return;
+    setState(() {
+      _isProcessingPayment = true;
+      _errorMessage = null; // TC-FE-045: Clear previous error on new attempt
+    });
     
     String selectedGuestId = '';
     if (_selectedGuest == 'lead') {
@@ -138,6 +153,7 @@ class _PaymentPageState extends State<PaymentPage> {
 
     if (_selectedMethod == 'bank' && _selectedBank == null) {
       isPaymentValid = false;
+      setState(() => _isProcessingPayment = false);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select your bank'), backgroundColor: Colors.redAccent),
       );
@@ -147,6 +163,7 @@ class _PaymentPageState extends State<PaymentPage> {
     if (provider.total > 5000) {
       final authenticated = await BiometricHelper.authenticate(reason: 'Confirm your identity for high-value payment');
       if (!authenticated) {
+        if (mounted) setState(() => _isProcessingPayment = false);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Authentication required to proceed with payment'), backgroundColor: Colors.redAccent),
         );
@@ -178,9 +195,10 @@ class _PaymentPageState extends State<PaymentPage> {
       final cardNumber = _cardNumberController.text.trim();
       // Handle simulated payment failure tip
       if (_selectedMethod == 'card' && cardNumber.endsWith('0000')) {
+        if (mounted) setState(() => _isProcessingPayment = false);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Payment Declined: Simulated transaction failure.'), 
+            content: Text('Payment Declined: Simulated transaction failure.'),
             backgroundColor: Colors.redAccent
           ),
         );
@@ -188,8 +206,86 @@ class _PaymentPageState extends State<PaymentPage> {
       }
       
       final booking = await provider.completeBooking(_selectedMethod);
-      
-      // Security: Clear sensitive card data from memory immediately after booking creation
+
+      // If booking creation failed, surface the error and unblock navigation
+      if (booking == null) {
+        if (mounted) {
+          setState(() {
+            _isProcessingPayment = false;
+            _errorMessage = provider.error ?? 'Booking failed. Please check your details and try again.';
+          });
+          final errorMsg = provider.error ?? 'Booking failed';
+          if (errorMsg.toLowerCase().contains('booked') ||
+              errorMsg.toLowerCase().contains('occupied') ||
+              errorMsg.toLowerCase().contains('dates')) {
+            showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder: (context) => AlertDialog(
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                backgroundColor: Colors.white,
+                title: const Row(
+                  children: [
+                    Icon(Icons.calendar_today_outlined, color: Colors.redAccent, size: 24),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Dates Already Booked',
+                        style: TextStyle(
+                          fontFamily: 'Serif',
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.primaryColor,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                content: Text(
+                  '$errorMsg\n\nWould you like to change your booking dates or select a different room type?',
+                  style: const TextStyle(fontSize: 14, color: AppTheme.primaryColor),
+                ),
+                actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                actions: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.primaryColor,
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
+                        onPressed: () {
+                          Navigator.pop(context);
+                          context.go('/booking');
+                        },
+                        child: const Text('Change Dates', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                      ),
+                      const SizedBox(height: 8),
+                      OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppTheme.primaryColor,
+                          side: const BorderSide(color: AppTheme.primaryColor),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
+                        onPressed: () {
+                          Navigator.pop(context);
+                          context.go('/hotels');
+                        },
+                        child: const Text('Select Different Room', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            );
+          }
+        }
+        return;
+      }
       _cardNumberController.clear();
       _cvvController.clear();
       _expiryController.clear();
@@ -332,19 +428,42 @@ class _PaymentPageState extends State<PaymentPage> {
       return const MainLayout(child: Center(child: Text('No hotel selected')));
     }
 
+    // TC-FE-034: Block back navigation while payment is in progress.
     return PopScope(
-      canPop: !provider.isLoading,
+      canPop: !_isProcessingPayment && !provider.isLoading,
       onPopInvoked: (didPop) async {
         if (didPop) return;
-        if (provider.isLoading) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Please do not close the app while payment is processing.'),
-              backgroundColor: Colors.redAccent,
-              duration: Duration(seconds: 2),
+        // Show warning dialog instead of silently blocking
+        if (!mounted) return;
+        await showDialog<void>(
+          context: context,
+          barrierDismissible: false,
+          builder: (ctx) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            backgroundColor: Colors.white,
+            title: const Row(
+              children: [
+                Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 28),
+                SizedBox(width: 10),
+                Text('Payment In Progress',
+                    style: TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+              ],
             ),
-          );
-        }
+            content: const Text(
+              'A payment is currently being processed.\n\n'
+              'Leaving this screen now may result in you being charged without seeing a confirmation. '
+              'Please wait for the payment to complete.',
+              style: TextStyle(fontSize: 14, color: AppTheme.primaryColor, height: 1.5),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: const Text('Stay on Page',
+                    style: TextStyle(color: AppTheme.primaryColor, fontWeight: FontWeight.bold)),
+              ),
+            ],
+          ),
+        );
       },
       child: Stack(
         children: [
@@ -371,6 +490,31 @@ class _PaymentPageState extends State<PaymentPage> {
               ),
               const SizedBox(height: 32),
               
+              if (_errorMessage != null)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  margin: const EdgeInsets.only(bottom: 24),
+                  decoration: BoxDecoration(
+                    color: Colors.redAccent.withOpacity(0.1),
+                    border: Border.all(color: Colors.redAccent),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.error_outline, color: Colors.redAccent),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          _errorMessage!,
+                          style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+
               LayoutBuilder(
                 builder: (context, constraints) {
                   final isWide = constraints.maxWidth > 800;

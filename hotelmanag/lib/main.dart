@@ -23,33 +23,36 @@ import 'package:flutter/services.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  if (Firebase.apps.isEmpty) {
-    if (kIsWeb) {
-      final apiKey = const String.fromEnvironment('FIREBASE_API_KEY');
-      await Firebase.initializeApp(
-        options: FirebaseOptions(
-          apiKey: apiKey,
-          appId: '1:239513848879:web:5eeec57c5abcbfc6f30ada',
-          messagingSenderId: '239513848879',
-          projectId: 'hotel-mgnt-8ffff',
-          storageBucket: 'hotel-mgnt-8ffff.firebasestorage.app',
-        ),
-      );
-    } else {
-      await Firebase.initializeApp();
-    }
-  }
-
-  // TC-014, TC-016: Enable Firebase App Check for device attestation
+  
   try {
-    await FirebaseAppCheck.instance.activate(
-      androidProvider: AndroidProvider.playIntegrity,
-      appleProvider: AppleProvider.deviceCheck,
-    );
+    if (Firebase.apps.isEmpty) {
+      if (kIsWeb) {
+        final apiKey = const String.fromEnvironment('FIREBASE_API_KEY');
+        await Firebase.initializeApp(
+          options: FirebaseOptions(
+            apiKey: apiKey.isEmpty ? 'dummy_key_to_prevent_web_crash' : apiKey,
+            appId: '1:239513848879:web:5eeec57c5abcbfc6f30ada',
+            messagingSenderId: '239513848879',
+            projectId: 'hotel-mgnt-8ffff',
+            storageBucket: 'hotel-mgnt-8ffff.firebasestorage.app',
+          ),
+        );
+      } else {
+        await Firebase.initializeApp();
+      }
+    }
+
+    // TC-014, TC-016: Enable Firebase App Check for device attestation
+    if (!kIsWeb) {
+      await FirebaseAppCheck.instance.activate(
+        androidProvider: AndroidProvider.playIntegrity,
+        appleProvider: AppleProvider.deviceCheck,
+      );
+    }
+    await PushNotificationService.initialize();
   } catch (e) {
-    debugPrint('AppCheck init error: $e');
+    debugPrint('Firebase Initialization Error: $e');
   }
-  await PushNotificationService.initialize();
   await di.init();
   await di.sl<AuthProvider>().loadCachedAuth();
 
@@ -134,7 +137,7 @@ class MyApp extends StatelessWidget {
       scrollBehavior: MyScrollBehavior(),
       theme: AppTheme.lightTheme,
       themeMode: ThemeMode.light,
-      routerConfig: AppRouter.router,
+      routerConfig: AppRouter.createRouter(di.sl<AuthProvider>()),
       builder: (context, child) => IdleDetector(
         child: NotificationPopupOverlay(
           key: notificationPopupKey,

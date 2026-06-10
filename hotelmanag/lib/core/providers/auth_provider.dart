@@ -217,6 +217,62 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
     );
   }
 
+  /// Sends a phone OTP — same as website's POST /auth/phone/send
+  Future<Map<String, dynamic>?> sendPhoneOtp(String fullPhone) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+    try {
+      final response = await _apiService!.post('auth/phone/send', data: {'phone': fullPhone});
+      _isLoading = false;
+      notifyListeners();
+      final d = response.data is Map ? response.data : (response.data?['data'] ?? {});
+      return d as Map<String, dynamic>?;
+    } catch (e) {
+      _error = e.toString().contains('message')
+          ? e.toString()
+          : 'Unable to send OTP. Please check the number and try again.';
+      _isLoading = false;
+      notifyListeners();
+      return null;
+    }
+  }
+
+  /// Verifies the phone OTP — same as website's POST /auth/phone/verify
+  Future<bool> verifyPhoneOtp(String fullPhone, String code) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+    try {
+      final response = await _apiService!.post('auth/phone/verify', data: {
+        'phone': fullPhone,
+        'code': code.trim(),
+      });
+      final raw = response.data is Map ? response.data : {};
+      final d = (raw['data'] ?? raw) as Map<String, dynamic>;
+      final token = d['token'] as String?;
+      if (token == null || token.isEmpty) {
+        _error = 'Verification failed — no token received.';
+        _isLoading = false;
+        notifyListeners();
+        return false;
+      }
+      final user = UserModel.fromJson(d);
+      _user = user;
+      _unverifiedEmail = null;
+      await _saveAuthData(user, token);
+      _isLoading = false;
+      notifyListeners();
+      _registerFcmToken();
+      return true;
+    } catch (e) {
+      _error = 'OTP verification failed. Please try again.';
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
   Future<void> loadCachedAuth() async {
     const storage = FlutterSecureStorage();
     final prefs = await SharedPreferences.getInstance();
@@ -259,87 +315,96 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
     _isLoading = true;
     notifyListeners();
 
-    final result = await _authRepository.getMe();
-    
-    return result.fold(
-      (failure) async {
-        // If it's an explicit auth failure (Unauthorized/Expired), clear the session.
-        // Otherwise, keep the cached session so they are not logged out when offline/poor connection.
-        final errorMsg = failure.message.toLowerCase();
-        final isAuthFailure = errorMsg.contains('unauthorized') || 
-                              errorMsg.contains('token') ||
-                              errorMsg.contains('invalid') ||
-                              errorMsg.contains('expired');
-        
-        if (isAuthFailure) {
-          await storage.delete(key: AppConstants.tokenKey);
-          await storage.delete(key: 'user_data');
-          _user = null;
-          _isLoading = false;
-          notifyListeners();
-          return false;
-        } else {
-          // Network issue / server unreachable — allow them to continue with cached session
-          _isLoading = false;
-          notifyListeners();
-          return _user != null;
-        }
-      },
-      (user) async {
-        _user = user;
-        // Update local cache
-        await _saveAuthData(user, null);
+    try {
+      final result = await _authRepository.getMe();
+      
+      return await result.fold(
+        (failure) async {
+          // If it's an explicit auth failure (Unauthorized/Expired), clear the session.
+          // Otherwise, keep the cached session so they are not logged out when offline/poor connection.
+          final errorMsg = failure.message.toLowerCase();
+          final isAuthFailure = errorMsg.contains('unauthorized') || 
+                                errorMsg.contains('token') ||
+                                errorMsg.contains('invalid') ||
+                                errorMsg.contains('expired');
+          
+          if (isAuthFailure) {
+            await storage.delete(key: AppConstants.tokenKey);
+            await storage.delete(key: 'user_data');
+            _user = null;
+            return false;
+          } else {
+            // Network issue / server unreachable — allow them to continue with cached session
+            return _user != null;
+          }
+        },
+        (user) async {
+          _user = user;
+          // Update local cache
+          await _saveAuthData(user, null);
+          _registerFcmToken(); // non-blocking
+          return true;
+        },
+      );
+    } finally {
+      if (_isLoading) {
         _isLoading = false;
         notifyListeners();
-        _registerFcmToken(); // non-blocking
-        return true;
-      },
-    );
+      }
+    }
   }
 
-  // Native Google Sign-In helper.
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     scopes: ['email', 'openid'],
-    clientId: kIsWeb ? const String.fromEnvironment('GOOGLE_CLIENT_ID') : null,
-    serverClientId: kIsWeb ? null : const String.fromEnvironment('GOOGLE_SERVER_CLIENT_ID'),
+    clientId: kIsWeb
+        ? const String.fromEnvironment('GOOGLE_CLIENT_ID',
+            defaultValue: '70312411330-8givsb0ktr8f09u8ullo157vkppkoqqv.apps.googleusercontent.com')
+        : null,
+    serverClientId: const String.fromEnvironment('GOOGLE_CLIENT_ID',
+        defaultValue: '70312411330-8givsb0ktr8f09u8ullo157vkppkoqqv.apps.googleusercontent.com'),
   );
 
   void logout() async {
-    const storage = FlutterSecureStorage();
-    final prefs = await SharedPreferences.getInstance();
-    
     try {
-      await _apiService?.post('auth/logout');
-    } catch (_) {}
+      try {
+        await _apiService?.post('auth/logout');
+      } catch (_) {}
 
-    await storage.delete(key: AppConstants.tokenKey);
-    
-    try {
-      await sl<FavoritesProvider>().clearFavorites();
-      sl<PromoProvider>().reset();
-    } catch (_) {}
-    
-    await storage.delete(key: 'user_data');
-    await _googleSignIn.signOut();
-    if (_user != null) {
-      _user = UserEntity(
-        id: '', name: '', email: '', phone: '', city: '',
-        profileImage: '', coverImage: '', paymentMethods: const [],
-      );
+      const storage = FlutterSecureStorage();
+      await storage.delete(key: AppConstants.tokenKey);
+      await storage.delete(key: 'user_data');
+      
+      try {
+        await sl<FavoritesProvider>().clearFavorites();
+        sl<PromoProvider>().reset();
+      } catch (_) {}
+      
+      try {
+        await _googleSignIn.signOut();
+      } catch (_) {}
+
+      if (_user != null) {
+        _user = UserEntity(
+          id: '', name: '', email: '', phone: '', city: '',
+          profileImage: '', coverImage: '', paymentMethods: const [],
+        );
+      }
+      _user = null;
+      
+      try {
+        sl<BookingProvider>().reset();
+      } catch (_) {}
+      
+      try {
+        await DefaultCacheManager().emptyCache();
+      } catch (_) {}
+    } catch (e, stack) {
+      debugPrint('[AuthProvider] Error during logout: $e\n$stack');
+    } finally {
+      // GUARANTEE state clears and router redirects even if an exception occurs
+      _user = null;
+      notifyListeners();
     }
-    _user = null;
-    
-    // Clear Provider States
-    try {
-      sl<BookingProvider>().reset();
-    } catch (_) {}
-    
-    // Clear Image Cache
-    try {
-      await DefaultCacheManager().emptyCache();
-    } catch (_) {}
-    
-    notifyListeners();
   }
 
   Future<bool> signInWithGoogle() async {
@@ -419,29 +484,35 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
     _error = null;
     notifyListeners();
 
-    final result = await _authRepository.updateProfile(
-      name: name,
-      phone: phone,
-      city: city,
-      profileImage: profileImage,
-      coverImage: coverImage,
-    );
+    try {
+      final result = await _authRepository.updateProfile(
+        name: name,
+        phone: phone,
+        city: city,
+        profileImage: profileImage,
+        coverImage: coverImage,
+      );
 
-    return result.fold(
-      (failure) {
-        _error = failure.message;
+      return await result.fold(
+        (failure) {
+          _error = failure.message;
+          return false;
+        },
+        (user) async {
+          _user = user;
+          await _saveAuthData(user, null);
+          return true;
+        },
+      );
+    } catch (e) {
+      _error = e.toString();
+      return false;
+    } finally {
+      if (_isLoading) {
         _isLoading = false;
         notifyListeners();
-        return false;
-      },
-      (user) async {
-        _user = user;
-        await _saveAuthData(user, null);
-        _isLoading = false;
-        notifyListeners();
-        return true;
-      },
-    );
+      }
+    }
   }
 
   Future<String?> uploadImage(String base64Image) async {
@@ -449,21 +520,27 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
     _error = null;
     notifyListeners();
 
-    final result = await _authRepository.uploadImage(base64Image);
+    try {
+      final result = await _authRepository.uploadImage(base64Image);
 
-    return result.fold(
-      (failure) {
-        _error = failure.message;
+      return result.fold(
+        (failure) {
+          _error = failure.message;
+          return null;
+        },
+        (url) {
+          return url;
+        },
+      );
+    } catch (e) {
+      _error = e.toString();
+      return null;
+    } finally {
+      if (_isLoading) {
         _isLoading = false;
         notifyListeners();
-        return null;
-      },
-      (url) {
-        _isLoading = false;
-        notifyListeners();
-        return url;
-      },
-    );
+      }
+    }
   }
 
   Future<bool> addPaymentMethod({

@@ -51,6 +51,43 @@ class _BookingPageState extends State<BookingPage> {
     }
   }
 
+  /// TC-FE-043: Validates chronological date order before navigating to guest
+  /// details. Blocks the API call if checkout is on or before checkin.
+  void _confirmDates(BookingProvider provider) {
+    final checkIn  = provider.checkIn;
+    final checkOut = provider.checkOut;
+
+    // Guard 1: checkout must not be before checkin
+    if (checkOut.isBefore(checkIn)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Check-out must be after check-in'),
+          backgroundColor: Colors.redAccent,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    // Guard 2: same-day checkout is not allowed (minimum 1 night stay)
+    final isSameDay = checkOut.year  == checkIn.year  &&
+                      checkOut.month == checkIn.month &&
+                      checkOut.day   == checkIn.day;
+    if (isSameDay) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Check-out cannot be the same day as check-in'),
+          backgroundColor: Colors.redAccent,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    // Validation passed — proceed to guest details
+    context.push('/guest-details');
+  }
+
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<BookingProvider>();
@@ -217,7 +254,7 @@ class _BookingPageState extends State<BookingPage> {
                       ),
                     ),
                     ElevatedButton(
-                      onPressed: () => context.push('/guest-details'),
+                      onPressed: () => _confirmDates(provider),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppTheme.primaryColor,
                         foregroundColor: Colors.white,

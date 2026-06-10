@@ -550,10 +550,7 @@ class _HotelsPageState extends State<HotelsPage> {
     }
     final hotels = provider.hotels;
     if (hotels.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 48),
-        child: Center(child: Text('No hotels found for the selected filters.')),
-      );
+      return const EmptyHotelsWidget();
     }
     // Use ListView.builder for virtualized rendering — only visible cards are built
     return ListView.builder(
@@ -887,6 +884,49 @@ class _HotelsPageState extends State<HotelsPage> {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class EmptyHotelsWidget extends StatelessWidget {
+  const EmptyHotelsWidget({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).colorScheme.brightness == Brightness.dark;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 64, horizontal: 24),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(LucideIcons.searchX, size: 64, color: isDark ? Colors.white24 : AppTheme.mutedColor),
+          const SizedBox(height: 24),
+          Text(
+            'No hotels found',
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'We couldn\'t find any properties matching your current filters. Try adjusting your search criteria.',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 14, color: isDark ? Colors.grey[400] : Colors.grey[600]),
+          ),
+          const SizedBox(height: 32),
+          ElevatedButton.icon(
+            onPressed: () {
+              context.read<HotelProvider>().clearFilters();
+            },
+            icon: const Icon(LucideIcons.refreshCcw, size: 16),
+            label: const Text('Clear Filters', style: TextStyle(fontWeight: FontWeight.bold)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              foregroundColor: Theme.of(context).colorScheme.onPrimary,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            ),
+          ),
+        ],
       ),
     );
   }

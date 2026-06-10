@@ -25,10 +25,12 @@ class _LoginPageState extends State<LoginPage> {
   bool _obscurePassword = true;
   bool _isLoggingIn = false;
   bool _isGoogleLoggingIn = false;
+  String? _passwordError;
 
   String _captchaChallenge = '';
   String? _captchaId;
   final _captchaController = TextEditingController();
+  bool _captchaLoading = false;
 
   @override
   void initState() {
@@ -37,6 +39,7 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void _fetchCaptcha() async {
+    setState(() => _captchaLoading = true);
     final auth = Provider.of<AuthProvider>(context, listen: false);
     final result = await auth.fetchCaptcha();
     if (result != null) {
@@ -44,15 +47,14 @@ class _LoginPageState extends State<LoginPage> {
         _captchaId = result.$1;
         _captchaChallenge = result.$2;
         _captchaController.clear();
+        _captchaLoading = false;
       });
     } else {
-      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-      final random = Random();
-      final challenge = String.fromCharCodes(Iterable.generate(6, (_) => chars.codeUnitAt(random.nextInt(chars.length))));
       setState(() {
-        _captchaChallenge = challenge;
-        _captchaId = 'local_$challenge';
+        _captchaChallenge = 'ERROR_NETWORK_DISCONNECTED';
+        _captchaId = '';
         _captchaController.clear();
+        _captchaLoading = false;
       });
     }
   }
@@ -63,6 +65,70 @@ class _LoginPageState extends State<LoginPage> {
     _passwordController.dispose();
     _captchaController.dispose();
     super.dispose();
+  }
+
+  Future<void> _handleLogin() async {
+    if (_isLoggingIn) return;
+
+    if (_captchaId == null || _captchaController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please complete the security check.')),
+      );
+      return;
+    }
+    final email = _emailController.text.trim();
+    final emailErr = AppValidators.validateEmail(email);
+
+    setState(() {
+      _passwordError = null;
+    });
+
+    if (emailErr != null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(emailErr)));
+      return;
+    }
+
+    final password = _passwordController.text;
+    if (password.isEmpty) {
+      setState(() {
+        _passwordError = 'Password is required';
+      });
+      return;
+    }
+
+    setState(() => _isLoggingIn = true);
+    
+    try {
+      final auth = Provider.of<AuthProvider>(context, listen: false);
+      await auth.login(
+        email,
+        password,
+        captchaId: _captchaId,
+        captchaAnswer: _captchaController.text.trim(),
+      );
+
+      if (auth.isAuthenticated) {
+        if (mounted) {
+          context.read<BookingProvider>().fetchMyBookings();
+          context.go('/');
+        }
+      } else if (auth.unverifiedEmail != null) {
+        if (mounted) {
+          context.push('/otp', extra: auth.unverifiedEmail);
+        }
+      } else if (auth.error != null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(auth.error!)),
+          );
+          _fetchCaptcha();
+        }
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoggingIn = false);
+      }
+    }
   }
 
   @override
@@ -82,7 +148,7 @@ class _LoginPageState extends State<LoginPage> {
               border: Border.all(color: AppTheme.mutedColor),
             ),
             child: IconButton(
-              icon: const Icon(LucideIcons.chevronLeft, color: AppTheme.primaryColor, size: 20),
+              icon: Icon(LucideIcons.chevronLeft, color: AppTheme.primaryColor, size: 20),
               onPressed: () => context.go('/welcome'),
             ),
           ),
@@ -114,6 +180,7 @@ class _LoginPageState extends State<LoginPage> {
                 obscureText: _obscurePassword,
                 controller: _passwordController,
                 autofillHints: const [AutofillHints.password],
+                errorText: _passwordError,
                 suffixIcon: IconButton(
                   icon: Icon(_obscurePassword ? LucideIcons.eyeOff : LucideIcons.eye, color: AppTheme.primaryColor.withOpacity(0.5)),
                   onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
@@ -122,72 +189,82 @@ class _LoginPageState extends State<LoginPage> {
               const SizedBox(height: 16),
 
               // ── CAPTCHA ───────────────────────────────
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Text(
-                    'Security Check',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: AppTheme.primaryColor,
-                    ),
-                  ),
-                  GestureDetector(
-                    onTap: _fetchCaptcha,
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.refresh,
-                          size: 14,
-                          color: AppTheme.primaryColor,
-                        ),
-                        SizedBox(width: 4),
-                        Text(
-                          'New challenge',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: AppTheme.primaryColor,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Security Check',
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.primaryColor)),
+                      InkWell(
+                        onTap: _fetchCaptcha,
+                        borderRadius: BorderRadius.circular(4),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                          child: Row(
+                            children: [
+                              _captchaLoading
+                                ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primaryColor))
+                                : Icon(Icons.refresh, size: 14, color: AppTheme.primaryColor.withOpacity(0.8)),
+                              const SizedBox(width: 4),
+                              Text('New challenge', style: TextStyle(fontSize: 12, color: AppTheme.primaryColor.withOpacity(0.8), fontWeight: FontWeight.w500)),
+                            ],
                           ),
                         ),
-                      ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    height: 64,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF0EBE1), // Match web beige bg-secondary/60 approx
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppTheme.mutedColor),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: _captchaChallenge.trim().startsWith('<svg') 
+                        ? SvgPicture.string(_captchaChallenge, fit: BoxFit.contain)
+                        : Center(
+                            child: Text(_captchaChallenge,
+                              style: const TextStyle(
+                                fontFamily: 'monospace',
+                                fontSize: 24,
+                                letterSpacing: 8,
+                                fontWeight: FontWeight.w800,
+                                color: AppTheme.primaryColor,
+                              ),
+                            ),
+                          ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: _captchaController,
+                    keyboardType: TextInputType.text,
+                    style: const TextStyle(fontSize: 14, color: AppTheme.primaryColor),
+                    decoration: InputDecoration(
+                      hintText: 'Your answer',
+                      hintStyle: TextStyle(color: AppTheme.primaryColor.withOpacity(0.4), fontSize: 14),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: AppTheme.mutedColor),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: AppTheme.mutedColor),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: AppTheme.primaryColor),
+                      ),
                     ),
                   ),
                 ],
-              ),
-              const SizedBox(height: 6),
-              Container(
-                height: 54,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF4F4F0),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey.shade300, width: 1.0),
-                ),
-                alignment: Alignment.center,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: _captchaChallenge.trim().startsWith('<svg')
-                      ? SvgPicture.string(_captchaChallenge, fit: BoxFit.fill)
-                      : Text(
-                          _captchaChallenge,
-                          style: const TextStyle(
-                            fontFamily: 'monospace',
-                            fontSize: 22,
-                            letterSpacing: 6,
-                            fontWeight: FontWeight.w800,
-                            color: AppTheme.primaryColor,
-                          ),
-                        ),
-                ),
-              ),
-              const SizedBox(height: 8),
-              CustomTextField(
-                label: '',
-                hint: 'Your answer',
-                controller: _captchaController,
               ),
               const SizedBox(height: 16),
 
@@ -251,54 +328,7 @@ class _LoginPageState extends State<LoginPage> {
                   width: double.infinity,
                   height: 56,
                   child: ElevatedButton(
-                    onPressed: (_isLoggingIn || _isGoogleLoggingIn)
-                        ? null
-                        : () async {
-                            if (_captchaId == null || _captchaController.text.trim().isEmpty) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Please complete the security check.')),
-                              );
-                              return;
-                            }
-                            final email = _emailController.text.trim();
-                            final emailErr = AppValidators.validateEmail(email);
-                            if (emailErr != null) {
-                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(emailErr)));
-                              return;
-                            }
-                            
-                            setState(() => _isLoggingIn = true);
-                            await auth.login(
-                              email,
-                              _passwordController.text,
-                              captchaId: _captchaId,
-                              captchaAnswer: _captchaController.text.trim(),
-                            );
-                            if (mounted) {
-                              setState(() => _isLoggingIn = false);
-                            }
-                            if (auth.isAuthenticated) {
-                              if (context.mounted) {
-                                context.read<BookingProvider>().fetchMyBookings();
-                                Future.microtask(() {
-                                  if (mounted) context.go('/');
-                                });
-                              }
-                            } else if (auth.unverifiedEmail != null) {
-                              if (context.mounted) {
-                                Future.microtask(() {
-                                  if (mounted) context.push('/otp', extra: auth.unverifiedEmail);
-                                });
-                              }
-                            } else if (auth.error != null) {
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text(auth.error!)),
-                                );
-                                _fetchCaptcha(); // Refresh captcha because the old one is consumed and deleted
-                              }
-                            }
-                          },
+                    onPressed: (_isLoggingIn || _isGoogleLoggingIn) ? null : _handleLogin,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppTheme.primaryColor,
                       foregroundColor: Colors.white,

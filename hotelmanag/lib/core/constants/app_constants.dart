@@ -24,7 +24,14 @@ class AppConstants {
     // In debug mode, if a custom URL is provided via dart-define, use it
     if (_envApiUrl.isNotEmpty) return _envApiUrl;
 
-    return _productionApiUrl;
+    // Use the local backend over adb reverse to avoid Windows Firewall drops!
+    if (kIsWeb) {
+      return 'http://127.0.0.1:5000/api/';
+    } else if (defaultTargetPlatform == TargetPlatform.android) {
+      return 'http://127.0.0.1:5000/api/';
+    } else {
+      return 'http://127.0.0.1:5000/api/';
+    }
   }
 
   // Storage Keys

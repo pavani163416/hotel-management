@@ -86,16 +86,32 @@ class BookingProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// TC-FE-041: Securely wipe ALL user-specific booking state on logout so no
+  /// PII or booking data leaks to the next authenticated user on this device.
   void reset() {
-    _currentHotel = null;
-    _leadGuest = {
-      'name': '',
-      'email': '',
-      'phone': '',
-      'id': '',
-      'requests': '',
-    };
+    _currentHotel         = null;
+    _selectedRoomType     = 'Deluxe King Room';
+    _selectedRoomPrice    = 0.0;
+    _checkIn  = DateTime.now().add(const Duration(days: 7));
+    _checkOut = DateTime.now().add(const Duration(days: 10));
+    _guests = 2;
+
+    // Clear all PII
+    _leadGuest = {'name': '', 'email': '', 'phone': '', 'id': '', 'requests': ''};
+    _additionalAdults = [];
+    _children = [];
+
+    // Clear promo / financial data
+    _appliedPromoCode = null;
+    _discountAmount   = 0.0;
+    _promoDescription = null;
+    _promoType        = 'percentage';
+    _promoValue       = 0.0;
+
+    // Clear booking history and error state
     _bookings = [];
+    _error = null;
+
     notifyListeners();
   }
 

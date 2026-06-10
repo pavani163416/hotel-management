@@ -45,14 +45,14 @@ import svgCaptcha from "svg-captcha";
 
 export const generateCaptcha = async () => {
   const captcha = svgCaptcha.create({
-    size: 5,
+    size: 6,
     ignoreChars: '0o1iIlL', // Omit confusing letters
-    noise: 4, // Enough noise to deter bots
+    noise: 5, // Enhanced noise lines to deter bots
     color: true,
-    background: '#f4f4f4',
+    background: '#f8f9fa',
     width: 200,
     height: 60,
-    fontSize: 55,
+    fontSize: 50,
   });
 
   const captchaId = randomUUID();

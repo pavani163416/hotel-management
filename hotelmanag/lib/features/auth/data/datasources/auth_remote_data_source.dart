@@ -56,6 +56,9 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         // flutter_svg does not support percentage width/height in rect tags.
         challenge = challenge.replaceAll('width="100%"', 'width="150"');
         challenge = challenge.replaceAll('height="100%"', 'height="50"');
+        // flutter_svg crashes on comma-separated viewBox values
+        challenge = challenge.replaceAll('viewBox="0,0,200,60"', 'viewBox="0 0 200 60"');
+        challenge = challenge.replaceAll('viewBox="0,0,150,50"', 'viewBox="0 0 150 50"');
         return (d['captchaId']?.toString() ?? '', challenge);
       }
     }
