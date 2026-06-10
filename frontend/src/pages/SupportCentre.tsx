@@ -1,6 +1,7 @@
 import Layout from "@/components/Layout";
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { AuthModal } from "@/components/AuthModal";
 import { useBooking } from "@/context/BookingContext";
 import {
   Search, ChevronDown, ChevronUp, Mail, Phone,
@@ -142,6 +143,9 @@ const SupportCentre = () => {
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState("All");
   const { user } = useBooking();
+  
+  const [authOpen, setAuthOpen] = useState(false);
+  const [authMode, setAuthMode] = useState<"signin" | "signup">("signin");
 
   const [form, setForm] = useState({ name: "", email: "", category: "", subject: "", message: "" });
   const [loading, setLoading] = useState(false);
@@ -303,12 +307,13 @@ const SupportCentre = () => {
               <User className="w-12 h-12 mx-auto mb-4 text-muted-foreground/40" />
               <h3 className="font-display text-xl font-bold text-primary mb-2">Sign in Required</h3>
               <p className="text-muted-foreground mb-6">You must be signed in to submit a support ticket.</p>
-              <Link
-                to="/login"
+              <button
+                type="button"
+                onClick={() => { setAuthMode("signin"); setAuthOpen(true); }}
                 className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-6 py-2.5 rounded-xl font-semibold hover:bg-primary/90 transition-colors"
               >
                 Sign In to Continue
-              </Link>
+              </button>
             </div>
           ) : success ? (
             <div className="bg-green-50 border border-green-200 rounded-2xl p-8 text-center">
@@ -389,6 +394,12 @@ const SupportCentre = () => {
           )}
         </div>
       </div>
+      {/* Auth popup */}
+      <AuthModal
+        isOpen={authOpen}
+        onClose={() => setAuthOpen(false)}
+        defaultMode={authMode}
+      />
     </Layout>
   );
 };
