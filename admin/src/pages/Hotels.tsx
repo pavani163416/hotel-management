@@ -63,6 +63,65 @@ export default function Hotels() {
   const [selectedState, setSelectedState] = useState("");
   const [selectedCity, setSelectedCity] = useState("");
 
+  const [countriesList, setCountriesList] = useState<string[]>([]);
+  const [statesList, setStatesList] = useState<string[]>([]);
+
+  const [loadingCountries, setLoadingCountries] = useState(false);
+  const [loadingStates, setLoadingStates] = useState(false);
+
+  // Fetch countries list on mount
+  useEffect(() => {
+    const fetchCountries = async () => {
+      setLoadingCountries(true);
+      try {
+        const res = await fetch("https://countriesnow.space/api/v0.1/countries/iso");
+        const json = await res.json();
+        if (!json.error) {
+          const names = json.data.map((c: any) => c.name).sort();
+          setCountriesList(names);
+        }
+      } catch (e) {
+        console.error("Failed to load countries", e);
+      } finally {
+        setLoadingCountries(false);
+      }
+    };
+    fetchCountries();
+  }, []);
+
+  // Fetch states when country changes
+  useEffect(() => {
+    if (!form.country) {
+      setStatesList([]);
+      return;
+    }
+    const fetchStates = async () => {
+      setLoadingStates(true);
+      try {
+        const res = await fetch("https://countriesnow.space/api/v0.1/countries/states", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ country: form.country })
+        });
+        const json = await res.json();
+        if (!json.error && json.data?.states) {
+          const names = json.data.states.map((s: any) => s.name).sort();
+          setStatesList(names);
+        } else {
+          setStatesList([]);
+        }
+      } catch (e) {
+        console.error("Failed to load states", e);
+        setStatesList([]);
+      } finally {
+        setLoadingStates(false);
+      }
+    };
+    fetchStates();
+  }, [form.country]);
+
+  // Fetch states when country changes
+
   const toggleAmenity = (a: string) => {
     setForm((prev) => ({
       ...prev,
@@ -695,31 +754,80 @@ export default function Hotels() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">
-                  Country *
+                  Country * {loadingCountries && <span className="text-[10px] text-primary animate-pulse">(loading...)</span>}
                 </label>
-                <input
-                  required
+                <select
                   value={form.country}
-                  onChange={(e) => setForm({ ...form, country: e.target.value })}
-                  placeholder="e.g. France"
-                  className="w-full px-3 py-2.5 border border-border rounded-lg text-sm outline-none focus:border-primary text-text-primary bg-transparent"
-                />
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setForm({ ...form, country: val, location: "" });
+                    setSelectedState("");
+                    setSelectedCity("");
+                  }}
+                  className="w-full px-3 py-2.5 border border-border rounded-lg text-sm bg-transparent outline-none focus:border-primary text-text-primary"
+                >
+                  <option value="">Select Country</option>
+                  {countriesList.map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                  <option value="OTHER">Other / Custom</option>
+                </select>
+                {(form.country === "OTHER" || (form.country && !countriesList.includes(form.country))) && (
+                  <input
+                    required
+                    value={form.country}
+                    onChange={(e) => setForm({ ...form, country: e.target.value })}
+                    placeholder="Enter Custom Country"
+                    className="w-full mt-2 px-3 py-2.5 border border-border rounded-lg text-sm outline-none focus:border-primary text-text-primary"
+                  />
+                )}
               </div>
 
               <div>
                 <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">
-                  State / Region
+                  State / Region * {loadingStates && <span className="text-[10px] text-primary animate-pulse">(loading...)</span>}
                 </label>
-                <input
-                  value={selectedState}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setSelectedState(val);
-                    setForm({ ...form, location: selectedCity ? `${selectedCity}, ${val}` : val });
-                  }}
-                  placeholder="e.g. Île-de-France"
-                  className="w-full px-3 py-2.5 border border-border rounded-lg text-sm outline-none focus:border-primary text-text-primary bg-transparent"
-                />
+                {statesList.length > 0 ? (
+                  <select
+                    value={selectedState}
+                    onChange={(e) => {
+                      const state = e.target.value;
+                      setSelectedState(state);
+                      setSelectedCity("");
+                      setForm({ ...form, location: state });
+                    }}
+                    className="w-full px-3 py-2.5 border border-border rounded-lg text-sm bg-transparent outline-none focus:border-primary text-text-primary"
+                  >
+                    <option value="">Select State</option>
+                    {statesList.map((s) => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                    <option value="OTHER">Other / Custom State</option>
+                  </select>
+                ) : (
+                  <input
+                    required
+                    value={selectedState}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setSelectedState(val);
+                      setForm({ ...form, location: selectedCity ? `${selectedCity}, ${val}` : val });
+                    }}
+                    placeholder="Enter State"
+                    className="w-full px-3 py-2.5 border border-border rounded-lg text-sm outline-none focus:border-primary text-text-primary"
+                  />
+                )}
+                {selectedState === "OTHER" && (
+                  <input
+                    required
+                    placeholder="Enter Custom State"
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setForm({ ...form, location: selectedCity && selectedCity !== "OTHER" ? `${selectedCity}, ${val}` : val });
+                    }}
+                    className="w-full mt-2 px-3 py-2.5 border border-border rounded-lg text-sm outline-none focus:border-primary text-text-primary"
+                  />
+                )}
               </div>
             </div>
 
@@ -733,10 +841,11 @@ export default function Hotels() {
                 onChange={(e) => {
                   const val = e.target.value;
                   setSelectedCity(val);
-                  setForm({ ...form, location: selectedState ? `${val}, ${selectedState}` : val });
+                  const stateVal = selectedState && selectedState !== "OTHER" ? selectedState : "";
+                  setForm({ ...form, location: stateVal ? `${val}, ${stateVal}` : val });
                 }}
-                placeholder="e.g. Paris"
-                className="w-full px-3 py-2.5 border border-border rounded-lg text-sm outline-none focus:border-primary text-text-primary bg-transparent"
+                placeholder="Enter City"
+                className="w-full px-3 py-2.5 border border-border rounded-lg text-sm outline-none focus:border-primary text-text-primary"
               />
             </div>
             <div>
