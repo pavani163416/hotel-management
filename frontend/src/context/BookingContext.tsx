@@ -32,6 +32,7 @@ function mapHotel(h: any): Hotel {
     isDeal: h.isDeal || false,
     type: (h.type as Hotel["type"]) || "Hotel",
     coords: resolveCoords(h),
+    mapUrl: h.mapUrl || "",
     amenities: h.amenities || ["Free WiFi"],
     rooms: (h.rooms || []).length > 0
       ? (h.rooms || []).map((r: any) => ({
