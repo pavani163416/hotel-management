@@ -468,7 +468,7 @@ const HotelDetails = () => {
                   style={{ border: 0, pointerEvents: "none" }}
                   loading="lazy"
                   referrerPolicy="no-referrer-when-downgrade"
-                  src={hotel.mapUrl.includes("embed") ? hotel.mapUrl : `https://maps.google.com/maps?q=${encodeURIComponent(hotel.name + " " + hotel.location)}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
+                  src={hotel.mapUrl.includes("embed") ? hotel.mapUrl : `https://maps.google.com/maps?q=${encodeURIComponent(hotel.mapUrl)}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
                 />
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-200 flex items-center justify-center">
                   <span className="bg-background/90 text-primary px-4 py-2 rounded-xl text-xs font-semibold shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center gap-1.5 border border-border">
