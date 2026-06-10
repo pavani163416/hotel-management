@@ -260,6 +260,7 @@
  */
 import express  from "express";
 import bcrypt   from "bcryptjs";
+import mongoose from "mongoose";
 import { adminLogin, getAdminStats, getAdminAnalytics } from "../controllers/adminController.js";
 import { verifyAdminToken, requireAdmin } from "../middleware/adminAuth.js";
 import { authLimiter } from "../middleware/rateLimiter.js";
