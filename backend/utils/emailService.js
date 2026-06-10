@@ -569,3 +569,57 @@ export const sendOwnerRejectionEmail = async ({ to, name, reason }) => {
     console.error("📧 [Email] Exception sending owner rejection email:", err.message);
   }
 };
+
+// ─────────────────────────────────────────────────────────
+// sendGeneralEmail
+// Called when admin broadcasts a general message/newsletter
+// ─────────────────────────────────────────────────────────
+export const sendGeneralEmail = async ({ to, subject, bodyHtml }) => {
+  if (!process.env.RESEND_API_KEY && (!process.env.SMTP_USER || !process.env.SMTP_PASS)) {
+    console.log("📧 [Email] No email service configured — skipping general email.");
+    return;
+  }
+
+  const html = `
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"/></head>
+<body style="margin:0;padding:0;background:#f4f4f0;font-family:'Helvetica Neue',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f0;padding:40px 0;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+        <tr>
+          <td style="background:#1a1f2e;padding:32px 40px;text-align:center;">
+            <h1 style="color:#ffffff;margin:0;font-size:26px;font-weight:700;">LuxeStay</h1>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:40px;text-align:left;color:#374151;">
+            <p style="margin:0 0 20px;font-size:15px;color:#374151;line-height:1.7;">
+              ${bodyHtml}
+            </p>
+          </td>
+        </tr>
+        <tr>
+          <td style="background:#f9fafb;border-top:1px solid #e5e7eb;padding:20px 40px;text-align:center;">
+            <p style="margin:0;color:#9ca3af;font-size:12px;">© 2026 LuxeStay Hospitality. All rights reserved.</p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>
+  `;
+
+  try {
+    const { data, error } = await sendMailInternal({ to, subject, html });
+    if (error) {
+      console.error("📧 [Email] General email send error:", error);
+    } else {
+      console.log(`📧 [Email] General email sent → ${to} | ID: ${data?.id}`);
+    }
+  } catch (err) {
+    console.error("📧 [Email] Exception sending general email:", err.message);
+  }
+};

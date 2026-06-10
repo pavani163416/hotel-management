@@ -98,5 +98,50 @@ export async function sendNotification({ userId = null, hotelId = null, role, me
     }
   }
 
+  // ── 3. Email broadcast (for newsletter subscribers / customer notifications) ──
+  if (payload.role === "customer") {
+    try {
+      const { sendGeneralEmail } = await import("./emailService.js");
+      const NewsletterSubscriber = (await import("../models/NewsletterSubscriber.js")).default;
+
+      if (payload.userId) {
+        let recipientEmail = null;
+        if (payload.userId.includes("@")) {
+          recipientEmail = payload.userId.toLowerCase();
+        } else {
+          const User = (await import("../models/User.js")).default;
+          // Try fetching by ID
+          if (payload.userId.match(/^[a-f\d]{24}$/i)) {
+            const userObj = await User.findById(payload.userId).select("email");
+            if (userObj?.email) {
+              recipientEmail = userObj.email.toLowerCase();
+            }
+          }
+        }
+
+        if (recipientEmail) {
+          await sendGeneralEmail({
+            to: recipientEmail,
+            subject: "LuxeStay Update",
+            bodyHtml: message,
+          });
+        }
+      } else {
+        const subscribers = await NewsletterSubscriber.find().select("email");
+        for (const sub of subscribers) {
+          if (sub.email) {
+            await sendGeneralEmail({
+              to: sub.email,
+              subject: "LuxeStay Update",
+              bodyHtml: message,
+            });
+          }
+        }
+      }
+    } catch (emailErr) {
+      logger.warn("General/Newsletter email broadcast failed (non-blocking)", { error: emailErr.message });
+    }
+  }
+
   return notification;
 }

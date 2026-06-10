@@ -222,12 +222,16 @@ const Navbar = () => {
     setShowNotifications(false);
     
     const msg = n.message.toLowerCase();
-    if (n.type === "booking") {
+    if (n.type === "booking" || msg.includes("booking") || msg.includes("confirm") || msg.includes("cancel")) {
       navigate("/history");
-    } else if (msg.includes("owner") || msg.includes("application") || msg.includes("approved") || msg.includes("partner")) {
+    } else if (
+      msg.includes("owner") || 
+      msg.includes("application") || 
+      msg.includes("approved") || 
+      msg.includes("rejected") || 
+      msg.includes("partner")
+    ) {
       navigate("/owner-portal");
-    } else {
-      navigate("/profile");
     }
   };
 

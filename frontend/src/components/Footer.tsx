@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { useState } from "react";
 import { Mail, Phone, MapPin, Loader2, CheckCircle2 } from "lucide-react";
+import { API } from "@/services/api";
 
 const isValidEmail = (email: string) =>
   /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
@@ -24,13 +25,23 @@ const NewsletterForm = () => {
     }
     setStatus("loading");
     setErrorMsg("");
-    // Simulate newsletter subscription (no dedicated endpoint — use a brief delay)
+    
     try {
-      await new Promise((res) => setTimeout(res, 800));
+      const response = await fetch(`${API}/newsletter/subscribe`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email }),
+      });
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || "Failed to subscribe.");
+      }
       setStatus("success");
       setEmail("");
-    } catch {
-      setErrorMsg("Something went wrong. Please try again.");
+    } catch (err: any) {
+      setErrorMsg(err.message || "Something went wrong. Please try again.");
       setStatus("error");
     }
   };
@@ -86,7 +97,6 @@ const Footer = () => (
           <div className="flex items-center gap-2"><Mail className="w-4 h-4" /><span>hello@luxestay.com</span></div>
           <div className="flex items-center gap-2"><Phone className="w-4 h-4" /><span>+1 (800) 123-4567</span></div>
           <div className="flex items-center gap-2"><MapPin className="w-4 h-4" /><span>123 Luxury Ave, New York</span></div>
-        </div>
         </div>
       </div>
 

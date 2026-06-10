@@ -40,6 +40,7 @@ import maintenanceRoutes from "./routes/maintenanceRoutes.js";
 import publicSupportRoutes from "./routes/publicSupportRoutes.js";
 import propertyOwnerRoutes from "./routes/propertyOwnerRoutes.js";
 import sitemapRoutes    from "./routes/sitemapRoutes.js";
+import newsletterRoutes from "./routes/newsletterRoutes.js";
 import errorHandler     from "./middleware/errorHandler.js";
 import csrfProtection  from "./middleware/csrfProtection.js";
 import { swaggerCspMiddleware } from "./middleware/csp.js";
@@ -590,6 +591,7 @@ app.use("/api/notifications", notificationRoutes);
 app.use("/api/maintenance",   maintenanceRoutes);
 app.use("/api",               publicSupportRoutes);
 app.use("/api/owners",        propertyOwnerRoutes);
+app.use("/api/newsletter",    newsletterRoutes);
 
 // ── CSP Violation Report endpoint ────────────────────────
 // Browsers send JSON violation reports here when CSP blocks something.
