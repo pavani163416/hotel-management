@@ -356,7 +356,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         const Text('Security Check',
-                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.primaryColor)),
+                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.black87)),
                         InkWell(
                           onTap: _captchaLoading ? null : _fetchCaptcha,
                           borderRadius: BorderRadius.circular(4),
@@ -365,10 +365,10 @@ class _RegisterPageState extends State<RegisterPage> {
                             child: Row(
                               children: [
                                 _captchaLoading
-                                  ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primaryColor))
-                                  : Icon(Icons.refresh, size: 14, color: AppTheme.primaryColor.withOpacity(0.8)),
+                                  ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black54))
+                                  : const Icon(Icons.refresh, size: 14, color: Colors.black54),
                                 const SizedBox(width: 4),
-                                Text('New challenge', style: TextStyle(fontSize: 12, color: AppTheme.primaryColor.withOpacity(0.8), fontWeight: FontWeight.w500)),
+                                const Text('New challenge', style: TextStyle(fontSize: 12, color: Colors.black54, fontWeight: FontWeight.w500)),
                               ],
                             ),
                           ),
@@ -380,22 +380,22 @@ class _RegisterPageState extends State<RegisterPage> {
                       height: 64,
                       width: double.infinity,
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF0EBE1), // Match web beige bg-secondary/60 approx
+                        color: Colors.black.withOpacity(0.05), // match bg-black/5
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppTheme.mutedColor),
+                        border: Border.all(color: Colors.black.withOpacity(0.1)), // match border-black/10
                       ),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(12),
                         child: Center(
                           child: _captchaChallenge.trim().startsWith('<svg') 
-                            ? SvgPicture.string(_captchaChallenge)
+                            ? SvgPicture.string(_captchaChallenge, fit: BoxFit.contain)
                             : Text(_captchaChallenge,
                                 style: const TextStyle(
                                   fontFamily: 'monospace',
                                   fontSize: 24,
                                   letterSpacing: 8,
                                   fontWeight: FontWeight.w800,
-                                  color: AppTheme.primaryColor,
+                                  color: Colors.black87,
                                 ),
                               ),
                         ),
@@ -405,22 +405,24 @@ class _RegisterPageState extends State<RegisterPage> {
                     TextFormField(
                       controller: _captchaController,
                       keyboardType: TextInputType.text,
-                      style: const TextStyle(fontSize: 14, color: AppTheme.primaryColor),
+                      style: const TextStyle(fontSize: 14, color: Colors.black87),
                       decoration: InputDecoration(
-                        hintText: 'Your answer',
-                        hintStyle: TextStyle(color: AppTheme.primaryColor.withOpacity(0.4), fontSize: 14),
+                        hintText: 'Type the characters above',
+                        hintStyle: TextStyle(color: Colors.black.withOpacity(0.4), fontSize: 14),
                         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        fillColor: Colors.white.withOpacity(0.5), // match bg-white/50
+                        filled: true,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: AppTheme.mutedColor),
+                          borderSide: BorderSide(color: Colors.black.withOpacity(0.1)),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: AppTheme.mutedColor),
+                          borderSide: BorderSide(color: Colors.black.withOpacity(0.1)),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: AppTheme.primaryColor),
+                          borderSide: const BorderSide(color: Colors.black), // match focus:border-black
                         ),
                       ),
                     ),
