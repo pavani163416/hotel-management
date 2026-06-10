@@ -7,12 +7,20 @@ import { useBooking } from "@/context/BookingContext";
 import { useWishlist } from "@/context/WishlistContext";
 import { useCurrency } from "@/context/CurrencyContext";
 import { ALL_AMENITIES } from "@/data/hotels";
+import { useSEO } from "@/hooks/useSEO";
 
 const PROPERTY_TYPES = ["Hotel", "Resort", "Villa", "Suite"] as const;
 
 const Hotels = () => {
-  const nav = useNavigate();
   const { hotels, search } = useBooking();
+
+  useSEO({
+    title: search.location ? `Stays in ${search.location}` : "Premium Luxury Stays",
+    description: "Browse hand-picked hotels and private residences available for booking. Best price guarantee and 24/7 concierge support.",
+    canonical: `https://hotel-mgnt.vercel.app/hotels`
+  });
+
+  const nav = useNavigate();
   const { wishlist, toggleWishlist, isWishlisted } = useWishlist();
   const { format } = useCurrency();
   const [searchParams, setSearchParams] = useSearchParams();

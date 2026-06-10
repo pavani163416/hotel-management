@@ -38,6 +38,7 @@ import Wishlist from "./pages/Wishlist";
 import About from "./pages/About";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
+import CookiePolicy from "./pages/CookiePolicy";
 import Contact from "./pages/Contact";
 import OwnerPortal from "./pages/OwnerPortal";
 import SupportCentre from "./pages/SupportCentre";
@@ -66,6 +67,7 @@ const App = () => (
             <Route path="/about" element={<About />} />
             <Route path="/terms" element={<Terms />} />
             <Route path="/privacy" element={<Privacy />} />
+            <Route path="/cookie-policy" element={<CookiePolicy />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/owner-portal" element={<OwnerPortal />} />
             <Route path="/support-centre" element={<SupportCentre />} />

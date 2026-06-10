@@ -134,3 +134,59 @@ export const verifyCaptcha = async (captchaId, providedAnswer) => {
   
   return isValid;
 };
+
+/**
+ * Verifies either a Cloudflare Turnstile / Google reCAPTCHA token,
+ * or falls back to verifying an SVG math-based CAPTCHA.
+ *
+ * @param {object} body - Request body containing captchaId/captchaAnswer or captchaToken
+ * @returns {Promise<boolean>}
+ */
+export const verifyCaptchaOrToken = async (body) => {
+  if (!body) return false;
+
+  const { captchaId, captchaAnswer, captchaToken } = body;
+
+  // 1. Verify Cloudflare Turnstile or Google reCAPTCHA if token is provided
+  if (captchaToken) {
+    // Cloudflare Turnstile
+    if (process.env.TURNSTILE_SECRET_KEY) {
+      try {
+        const response = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: `secret=${encodeURIComponent(process.env.TURNSTILE_SECRET_KEY)}&response=${encodeURIComponent(captchaToken)}`,
+        });
+        const data = await response.json();
+        if (data?.success) return true;
+        logger.warn("Turnstile verification failed", { error: data["error-codes"] });
+      } catch (err) {
+        logger.error("Turnstile verification error", { error: err.message });
+      }
+    }
+
+    // Google reCAPTCHA
+    if (process.env.RECAPTCHA_SECRET_KEY) {
+      try {
+        const response = await fetch("https://www.google.com/recaptcha/api/siteverify", {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: `secret=${encodeURIComponent(process.env.RECAPTCHA_SECRET_KEY)}&response=${encodeURIComponent(captchaToken)}`,
+        });
+        const data = await response.json();
+        if (data?.success) return true;
+        logger.warn("reCAPTCHA verification failed", { error: data["error-codes"] });
+      } catch (err) {
+        logger.error("reCAPTCHA verification error", { error: err.message });
+      }
+    }
+  }
+
+  // 2. Fallback to math SVG CAPTCHA (keeps mobile/Flutter compatibility intact)
+  if (captchaId && captchaAnswer) {
+    return await verifyCaptcha(captchaId, captchaAnswer);
+  }
+
+  return false;
+};
+

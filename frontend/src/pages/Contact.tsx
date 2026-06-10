@@ -1,5 +1,5 @@
 import Layout from "@/components/Layout";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Phone, Mail, Clock, Send, Loader2, CheckCircle2 } from "lucide-react";
 import api from "@/services/api";
 
@@ -10,6 +10,30 @@ const Contact = () => {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
+
+  const [captchaId, setCaptchaId] = useState("");
+  const [captchaChallenge, setCaptchaChallenge] = useState("");
+  const [captchaAnswer, setCaptchaAnswer] = useState("");
+  const [captchaLoading, setCaptchaLoading] = useState(false);
+
+  const fetchCaptcha = async () => {
+    setCaptchaLoading(true);
+    setCaptchaAnswer("");
+    try {
+      const res: any = await api.get("/auth/captcha");
+      const d = res.data?.data || res.data || {};
+      setCaptchaId(d.captchaId || "");
+      setCaptchaChallenge(d.challenge || "");
+    } catch {
+      setCaptchaChallenge(""); setCaptchaId("");
+    } finally {
+      setCaptchaLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCaptcha();
+  }, []);
 
   const handle = (k: string, v: string) => setForm((p) => ({ ...p, [k]: v }));
 
@@ -28,6 +52,10 @@ const Contact = () => {
       setError("Please enter a message.");
       return;
     }
+    if (captchaChallenge && !captchaAnswer.trim()) {
+      setError("Please complete the security check.");
+      return;
+    }
 
     setError("");
     setLoading(true);
@@ -38,6 +66,8 @@ const Contact = () => {
         subject: form.subject.trim() || "Contact Form Inquiry",
         message: form.message.trim(),
         category: "Other",
+        captchaId,
+        captchaAnswer: captchaAnswer.trim(),
       });
       setSuccess(true);
     } catch (err: any) {
@@ -46,6 +76,7 @@ const Contact = () => {
         err.message ||
         "Failed to send. Please try again."
       );
+      fetchCaptcha();
     } finally {
       setLoading(false);
     }
@@ -110,7 +141,7 @@ const Contact = () => {
                   Thank you for reaching out. We'll get back to you within 24 hours.
                 </p>
                 <button
-                  onClick={() => { setSuccess(false); setForm({ name: "", email: "", subject: "", message: "" }); }}
+                  onClick={() => { setSuccess(false); setForm({ name: "", email: "", subject: "", message: "" }); fetchCaptcha(); }}
                   className="mt-6 text-sm text-green-700 hover:underline font-semibold"
                 >
                   Send another message
@@ -181,6 +212,26 @@ const Contact = () => {
                     className="w-full px-4 py-2.5 border border-border rounded-xl outline-none focus:ring-2 focus:ring-primary text-sm resize-none"
                   />
                 </div>
+
+                {captchaChallenge && (
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label htmlFor="captcha-input" className="block text-sm font-medium text-foreground">Security Check</label>
+                      <button type="button" onClick={fetchCaptcha} disabled={captchaLoading}
+                        className="text-xs text-primary hover:underline flex items-center gap-1">
+                        {captchaLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : "↻"} New challenge
+                      </button>
+                    </div>
+                    <div className="bg-secondary/60 border border-border rounded-xl px-4 py-2 text-sm font-mono font-semibold text-foreground flex justify-center items-center">
+                      {captchaChallenge.trim().startsWith('<svg') 
+                        ? <div dangerouslySetInnerHTML={{ __html: captchaChallenge }} />
+                        : captchaChallenge}
+                    </div>
+                    <input id="captcha-input" type="text" value={captchaAnswer} onChange={e => setCaptchaAnswer(e.target.value)}
+                      className="w-full px-4 py-2.5 border border-border rounded-xl outline-none focus:ring-2 focus:ring-primary text-sm"
+                      placeholder="Your answer" autoComplete="off" />
+                  </div>
+                )}
 
                 {error && (
                   <p role="alert" className="text-destructive text-sm font-medium">

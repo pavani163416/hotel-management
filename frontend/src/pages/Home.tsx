@@ -4,8 +4,9 @@ import { useBooking } from "@/context/BookingContext";
 import { useWishlist } from "@/context/WishlistContext";
 import { useCurrency } from "@/context/CurrencyContext";
 import Layout from "@/components/Layout";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import hero3d from "@/assets/hero-3d.png";
+import { useSEO } from "@/hooks/useSEO";
 
 const HERO_IMG = hero3d;
 
@@ -23,6 +24,12 @@ const TOP_DESTINATIONS = [
 ];
 
 const Home = () => {
+  useSEO({
+    title: "Discover Extraordinary Hotel Stays",
+    description: "Book luxury hotels and private residences worldwide with LuxeStay's seamless concierge-driven booking experience. Curated stays, best price guarantee, 24/7 concierge.",
+    canonical: "https://hotel-mgnt.vercel.app/"
+  });
+
   const nav = useNavigate();
   const { search, setSearch, hotels } = useBooking();
   const { wishlist, toggleWishlist, isWishlisted } = useWishlist();
