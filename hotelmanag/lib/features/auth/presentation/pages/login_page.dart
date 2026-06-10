@@ -125,70 +125,68 @@ class _LoginPageState extends State<LoginPage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Security Check',
-                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.primaryColor)),
+                  const Text(
+                    'Security Check',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: AppTheme.primaryColor,
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: _fetchCaptcha,
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.refresh,
+                          size: 14,
+                          color: AppTheme.primaryColor,
+                        ),
+                        SizedBox(width: 4),
+                        Text(
+                          'New challenge',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: AppTheme.primaryColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
               const SizedBox(height: 6),
-              Row(
-                children: [
-                  Expanded(
-                    child: Container(
-                      height: 54,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [Colors.grey.shade200, Colors.grey.shade300],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey.shade400, width: 1.5),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
+              Container(
+                height: 54,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF4F4F0),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey.shade300, width: 1.0),
+                ),
+                alignment: Alignment.center,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: _captchaChallenge.trim().startsWith('<svg')
+                      ? SvgPicture.string(_captchaChallenge, fit: BoxFit.fill)
+                      : Text(
+                          _captchaChallenge,
+                          style: const TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 22,
+                            letterSpacing: 6,
+                            fontWeight: FontWeight.w800,
+                            color: AppTheme.primaryColor,
                           ),
-                        ],
-                      ),
-                      alignment: Alignment.center,
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: _captchaChallenge.trim().startsWith('<svg') 
-                          ? SvgPicture.string(_captchaChallenge, fit: BoxFit.fill)
-                          : Text(_captchaChallenge,
-                              style: const TextStyle(
-                                fontFamily: 'monospace',
-                                fontSize: 22,
-                                letterSpacing: 6,
-                                fontWeight: FontWeight.w800,
-                                color: AppTheme.primaryColor,
-                              ),
-                            ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Container(
-                    height: 54,
-                    width: 54,
-                    decoration: BoxDecoration(
-                      color: AppTheme.primaryColor.withOpacity(0.05),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppTheme.primaryColor.withOpacity(0.2)),
-                    ),
-                    child: IconButton(
-                      icon: const Icon(Icons.refresh, color: AppTheme.primaryColor),
-                      tooltip: 'New challenge',
-                      onPressed: _fetchCaptcha,
-                    ),
-                  ),
-                ],
+                        ),
+                ),
               ),
               const SizedBox(height: 8),
               CustomTextField(
-                label: 'Enter the security check *',
-                hint: 'Type the letters and numbers',
+                label: '',
+                hint: 'Your answer',
                 controller: _captchaController,
               ),
               const SizedBox(height: 16),
