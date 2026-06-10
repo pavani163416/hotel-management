@@ -442,12 +442,26 @@ export default function Owners() {
                     </div>
                     <div className="bg-black/20 p-4 flex justify-center">
                       {isPdf ? (
-                        <div className="text-center py-8">
-                          <FileText className="w-12 h-12 text-muted mx-auto mb-3" />
-                          <p className="text-sm text-bright font-medium">PDF Document</p>
-                          <a href={doc.url} target="_blank" rel="noreferrer" className="text-xs text-blue-400 hover:underline mt-2 inline-block">
-                            Click to view or download PDF
-                          </a>
+                        <div className="flex flex-col items-center gap-4 w-full">
+                          {doc.url.includes("/image/upload/") && (
+                            <div className="w-full flex justify-center bg-white/5 p-2 rounded-lg border border-white/10 max-w-2xl">
+                              <img 
+                                src={doc.url.replace(/\.pdf$/i, ".png")} 
+                                alt={`${doc.type} PDF Preview`} 
+                                className="max-w-full max-h-[500px] object-contain rounded-lg"
+                                onError={(e) => {
+                                  e.currentTarget.style.display = 'none';
+                                }}
+                              />
+                            </div>
+                          )}
+                          <div className="text-center py-2">
+                            <FileText className="w-10 h-10 text-muted mx-auto mb-2" />
+                            <p className="text-sm text-bright font-medium">PDF Document</p>
+                            <a href={doc.url} target="_blank" rel="noreferrer" className="text-xs text-blue-400 hover:underline mt-1 inline-block">
+                              Click to view or download PDF
+                            </a>
+                          </div>
                         </div>
                       ) : (
                         <img src={doc.url} alt={`${doc.type} Document`} className="max-w-full max-h-[400px] object-contain rounded-lg border border-white/10" />
