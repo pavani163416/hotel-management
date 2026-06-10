@@ -26,39 +26,13 @@ class ApiService {
         createHttpClient: () {
           final client = HttpClient(context: SecurityContext.defaultContext);
           client.badCertificateCallback = (X509Certificate cert, String host, int port) {
-            // Strictly enforce pinning even if the CA is "bad" or user-installed (like Burp)
-            if (host == 'hotel-management-production-2225.up.railway.app') {
-              final sha256Digest = sha256.convert(cert.der).bytes;
-              final base64Digest = base64.encode(sha256Digest);
-              
-              final validPins = [
-                'WoiWRyIOVNa9ihaBciRSC7XHjliYS9VwUGOIud4PB18=',
-                'r/mIkG3eEpVdm+u/ko/cwxzOMo1bk4TyHIlByibiA5E='
-              ];
-              
-              return validPins.contains(base64Digest);
-            }
+            // Do not allow bad certificates in production.
             return false;
           };
           return client;
         },
         validateCertificate: (cert, host, port) {
-          if (cert == null) return false;
-          
-          // Strict SSL Pinning for production (handles valid CA but spoofed server cases)
-          if (host == 'hotel-management-production-2225.up.railway.app') {
-            final sha256Digest = sha256.convert(cert.der).bytes;
-            final base64Digest = base64.encode(sha256Digest);
-            
-            final validPins = [
-              'WoiWRyIOVNa9ihaBciRSC7XHjliYS9VwUGOIud4PB18=',
-              'r/mIkG3eEpVdm+u/ko/cwxzOMo1bk4TyHIlByibiA5E='
-            ];
-            
-            if (!validPins.contains(base64Digest)) {
-              return false; // Pin validation failed, block MITM
-            }
-          }
+          // Allow standard Android CA validation to succeed
           return true;
         },
       );
