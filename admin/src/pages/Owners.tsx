@@ -243,7 +243,7 @@ export default function Owners() {
         {error && <p className="text-sm text-red-400">{error}</p>}
 
         {/* Table */}
-        <div className="rounded-xl border overflow-hidden" style={{ background: "rgba(255,255,255,0.02)", borderColor: "rgba(255,255,255,0.08)" }}>
+        <div className="rounded-xl border overflow-visible" style={{ background: "rgba(255,255,255,0.02)", borderColor: "rgba(255,255,255,0.08)" }}>
           {loading ? (
             <div className="p-12 text-center text-muted text-sm">Loading owners...</div>
           ) : filtered.length === 0 ? (

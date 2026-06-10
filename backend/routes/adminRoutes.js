@@ -1351,7 +1351,7 @@ router.post("/property-owners/:ownerId/assign-hotel", protect, async (req, res, 
     for (const hId of hotelIds) {
       const hotel = await Hotel.findOne({
         $or: [
-          { _id: mongoose.isValidObjectId(hId) ? hId : null },
+          { _id: mongoose.Types.ObjectId.isValid(hId) ? hId : null },
           { hotelId: hId }
         ].filter(cond => cond !== null)
       });
@@ -1410,7 +1410,7 @@ router.delete("/property-owners/:ownerId/hotels/:hotelId", protect, async (req, 
 
     const hotel = await Hotel.findOne({
       $or: [
-        { _id: mongoose.isValidObjectId(hotelId) ? hotelId : null },
+        { _id: mongoose.Types.ObjectId.isValid(hotelId) ? hotelId : null },
         { hotelId: hotelId }
       ].filter(cond => cond !== null)
     });
