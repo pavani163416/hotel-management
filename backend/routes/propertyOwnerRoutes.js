@@ -20,16 +20,16 @@ const uploadBufferToCloudinary = async (buffer, filename, mimetype) => {
   const { v2: cloudinary } = await import("cloudinary");
   cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key:    process.env.CLOUDINARY_API_KEY,
+    api_key: process.env.CLOUDINARY_API_KEY,
     api_secret: process.env.CLOUDINARY_API_SECRET,
   });
   return new Promise((resolve, reject) => {
     const isPdf = mimetype === "application/pdf" || (filename && filename.toLowerCase().endsWith(".pdf"));
     const cleanFilename = filename.includes(".") ? filename.split('.').slice(0, -1).join('.') : filename;
-    
+
     const uploadOptions = {
       folder: "luxestay/kyc",
-      resource_type: isPdf ? "image" : "auto", 
+      resource_type: isPdf ? "image" : "auto",
       format: isPdf ? "pdf" : undefined,
       public_id: `${cleanFilename}-${Date.now()}`,
     };
@@ -67,7 +67,7 @@ const verifyOwner = async (req, res, next) => {
   }
   try {
     const decoded = jwt.verify(header.split(" ")[1], process.env.JWT_SECRET);
-    
+
     let userRole = decoded.role;
     if (userRole !== "owner") {
       const user = await User.findById(decoded.id);
@@ -238,7 +238,7 @@ router.patch("/admin/:id/approve", protect, authorizeRoles("Super Admin", "admin
     if (user) {
       user.role = "owner";
       await user.save();
-      
+
       // Trigger approval email notification
       await sendOwnerApprovalEmail({ to: user.email, name: user.name }).catch((err) => {
         logger.error("Error sending owner approval email:", err);
@@ -253,7 +253,7 @@ router.patch("/admin/:id/approve", protect, authorizeRoles("Super Admin", "admin
         type: "system",
         message: `🎉 Your property owner application has been approved! You can now list your hotels on LuxeStay.`,
       });
-    } catch {}
+    } catch { }
 
     return res.status(200).json({ success: true, message: "Owner approved.", data: app });
   } catch (err) { next(err); }
@@ -289,7 +289,7 @@ router.patch("/admin/:id/reject", protect, authorizeRoles("Super Admin", "admin"
         type: "system",
         message: `Your property owner application was not approved. Reason: ${req.body.reason || "Please contact support for details."}`,
       });
-    } catch {}
+    } catch { }
 
     return res.status(200).json({ success: true, message: "Owner rejected.", data: app });
   } catch (err) { next(err); }
@@ -319,7 +319,7 @@ router.patch("/admin/:id/suspend", protect, authorizeRoles("Super Admin", "admin
         type: "system",
         message: `Your LuxeStay owner account has been suspended. Reason: ${req.body.reason || "Contact support for details."}`,
       });
-    } catch {}
+    } catch { }
 
     return res.status(200).json({ success: true, message: "Owner suspended.", data: app });
   } catch (err) { next(err); }

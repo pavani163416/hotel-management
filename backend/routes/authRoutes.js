@@ -1041,7 +1041,13 @@ router.post("/google", async (req, res, next) => {
         throw new Error("Failed to verify Google access token validity");
       }
       const tokenInfo = await tokenInfoRes.json();
-      if (tokenInfo.aud !== process.env.GOOGLE_CLIENT_ID) {
+      const clientID = process.env.GOOGLE_CLIENT_ID;
+      const match = (tokenInfo.aud === clientID) || 
+                    (tokenInfo.azp === clientID) || 
+                    (tokenInfo.issued_to === clientID) ||
+                    (tokenInfo.client_id === clientID);
+      if (!match) {
+        logger.warn("Google Access Token audience mismatch", { tokenInfo, clientID });
         throw new Error("Invalid access token audience. Token was not issued to this application.");
       }
 

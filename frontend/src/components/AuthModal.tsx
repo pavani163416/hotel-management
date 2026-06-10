@@ -470,7 +470,7 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
       const res: any = await api.post("/auth/login", payload);
       const d = res.data?.data ?? res.data;
       localStorage.setItem("luxe_customer_token", d.token);
-      setUser({ name: d.name, email: d.email, phone: d.phone || "", city: d.city || "" });
+      setUser({ name: d.name, email: d.email, phone: d.phone || "", city: d.city || "", role: d.role || "customer" });
       onClose(); resetForm();
     } catch (err: any) {
       const respData = err.response?.data;

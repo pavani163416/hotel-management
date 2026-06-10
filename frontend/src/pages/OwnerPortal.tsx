@@ -26,52 +26,51 @@ function validateFiles(files: FileList): string | null {
   return null;
 }
 
-// ── Application Process Steps ────────────────────────────
 const PROCESS_STEPS = [
   {
     step: "01",
     icon: UserCheck,
     title: "Create an Account",
     desc: "Sign up or log in with your LuxeStay customer account. All applications require a verified account.",
-    color: "from-blue-500/20 to-blue-600/10",
-    border: "border-blue-500/30",
-    iconColor: "text-blue-400",
+    color: "bg-secondary/30",
+    border: "border-border",
+    iconColor: "text-muted-foreground",
   },
   {
     step: "02",
     icon: ClipboardList,
     title: "Fill Business Details",
     desc: "Provide your business/legal name, hotel or resort name, full address, and optional GST / registration numbers.",
-    color: "from-purple-500/20 to-purple-600/10",
-    border: "border-purple-500/30",
-    iconColor: "text-purple-400",
+    color: "bg-secondary/30",
+    border: "border-border",
+    iconColor: "text-muted-foreground",
   },
   {
     step: "03",
     icon: FileText,
     title: "Upload KYC Documents",
     desc: "Upload identity proof such as Aadhar Card, PAN Card, Passport, or Business Registration Certificate (JPG/PNG/PDF, max 5 MB).",
-    color: "from-amber-500/20 to-amber-600/10",
-    border: "border-amber-500/30",
-    iconColor: "text-amber-400",
+    color: "bg-secondary/30",
+    border: "border-border",
+    iconColor: "text-muted-foreground",
   },
   {
     step: "04",
     icon: Clock3,
     title: "Application Under Review",
     desc: "Our partner verification team reviews your submission within 24–48 hours. You will receive an email update on progress.",
-    color: "from-orange-500/20 to-orange-600/10",
-    border: "border-orange-500/30",
-    iconColor: "text-orange-400",
+    color: "bg-secondary/30",
+    border: "border-border",
+    iconColor: "text-muted-foreground",
   },
   {
     step: "05",
     icon: BadgeCheck,
     title: "Get Approved & Go Live",
     desc: "Once approved, your property will be mapped to your account. Start receiving bookings and track revenue from your owner dashboard.",
-    color: "from-green-500/20 to-green-600/10",
-    border: "border-green-500/30",
-    iconColor: "text-green-400",
+    color: "bg-secondary/30",
+    border: "border-border",
+    iconColor: "text-muted-foreground",
   },
 ];
 
@@ -267,16 +266,16 @@ const OwnerPortal = () => {
 
           <div className="relative">
             {/* Connector line (desktop) */}
-            <div className="hidden md:block absolute top-10 left-[10%] right-[10%] h-0.5 bg-gradient-to-r from-blue-500/30 via-purple-500/30 via-amber-500/30 via-orange-500/30 to-green-500/30 z-0" />
+            <div className="hidden md:block absolute top-10 left-[10%] right-[10%] h-0.5 bg-border z-0" />
 
             <div className="grid sm:grid-cols-2 md:grid-cols-5 gap-5 relative z-10">
               {PROCESS_STEPS.map(({ step, icon: Icon, title, desc, color, border, iconColor }) => (
                 <div key={step}
-                  className={`bg-gradient-to-b ${color} border ${border} rounded-2xl p-5 flex flex-col items-center text-center hover:scale-105 transition-transform duration-200`}>
+                  className={`${color} border ${border} rounded-2xl p-5 flex flex-col items-center text-center hover:scale-105 transition-transform duration-200`}>
                   <div className={`w-12 h-12 rounded-full bg-card border ${border} grid place-items-center mb-3 shadow-sm`}>
                     <Icon className={`w-5 h-5 ${iconColor}`} />
                   </div>
-                  <span className={`text-xs font-bold ${iconColor} mb-1 tracking-widest`}>STEP {step}</span>
+                  <span className="text-xs font-bold text-accent mb-1 tracking-widest">STEP {step}</span>
                   <h4 className="font-semibold text-primary text-sm mb-2 leading-snug">{title}</h4>
                   <p className="text-muted-foreground text-xs leading-relaxed">{desc}</p>
                 </div>
@@ -433,14 +432,14 @@ const OwnerPortal = () => {
                 const isCompleted = idx < 3;
                 const isActive = idx === 3;
                 return (
-                  <div key={step} className={`flex items-center gap-3 p-3 rounded-xl border ${isActive ? `${border} bg-orange-500/5` : isCompleted ? "border-green-500/30 bg-green-500/5" : "border-border"}`}>
-                    <div className={`w-8 h-8 rounded-full grid place-items-center shrink-0 ${isCompleted ? "bg-green-100" : isActive ? "bg-orange-100" : "bg-secondary"}`}>
-                      {isCompleted ? <CheckCircle2 className="w-4 h-4 text-green-600" /> : <Icon className={`w-4 h-4 ${iconColor}`} />}
+                  <div key={step} className={`flex items-center gap-3 p-3 rounded-xl border ${isActive ? "border-amber-500/20 bg-amber-500/5" : isCompleted ? "border-green-500/20 bg-green-500/5" : "border-border bg-card/50"}`}>
+                    <div className={`w-8 h-8 rounded-full grid place-items-center shrink-0 ${isCompleted ? "bg-green-100/80" : isActive ? "bg-amber-100/80" : "bg-secondary"}`}>
+                      {isCompleted ? <CheckCircle2 className="w-4 h-4 text-green-600" /> : <Icon className={`w-4 h-4 ${isActive ? "text-amber-500" : "text-muted-foreground"}`} />}
                     </div>
                     <div className="flex-1">
-                      <p className={`text-sm font-semibold ${isActive ? "text-orange-600" : isCompleted ? "text-green-700" : "text-muted-foreground"}`}>{title}</p>
+                      <p className={`text-sm font-semibold ${isActive ? "text-amber-600" : isCompleted ? "text-green-700" : "text-muted-foreground"}`}>{title}</p>
                     </div>
-                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${isCompleted ? "bg-green-100 text-green-700" : isActive ? "bg-orange-100 text-orange-700" : "bg-secondary text-muted-foreground"}`}>
+                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${isCompleted ? "bg-green-100 text-green-700" : isActive ? "bg-amber-100 text-amber-700" : "bg-secondary text-muted-foreground"}`}>
                       {isCompleted ? "Done" : isActive ? "In Progress" : "Pending"}
                     </span>
                   </div>
@@ -500,12 +499,12 @@ const OwnerPortal = () => {
               {PROCESS_STEPS.map(({ step, icon: Icon, title, iconColor, border, color }, idx) => {
                 const isActive = idx === 1 || idx === 2; // Steps 2 & 3 are active in the form
                 return (
-                  <div key={step} className={`flex flex-col items-center text-center p-3 rounded-xl border ${isActive ? `${border} bg-gradient-to-b ${color}` : "border-border"}`}>
-                    <div className={`w-8 h-8 rounded-full grid place-items-center mb-1.5 ${isActive ? "bg-card border " + border : "bg-secondary"}`}>
-                      {idx === 0 ? <CheckCircle2 className="w-4 h-4 text-green-600" /> : <Icon className={`w-4 h-4 ${isActive ? iconColor : "text-muted-foreground"}`} />}
+                  <div key={step} className={`flex flex-col items-center text-center p-3 rounded-xl border ${isActive ? "border-primary/30 bg-secondary/60" : "border-border bg-card/50"}`}>
+                    <div className={`w-8 h-8 rounded-full grid place-items-center mb-1.5 ${isActive ? "bg-card border border-primary/20" : "bg-secondary"}`}>
+                      {idx === 0 ? <CheckCircle2 className="w-4 h-4 text-green-600" /> : <Icon className={`w-4 h-4 ${isActive ? "text-accent" : "text-muted-foreground"}`} />}
                     </div>
-                    <span className={`text-[10px] font-bold tracking-widest ${isActive ? iconColor : "text-muted-foreground"}`}>STEP {step}</span>
-                    <p className={`text-xs font-medium mt-0.5 ${isActive ? "text-primary" : "text-muted-foreground"}`}>{title}</p>
+                    <span className={`text-[10px] font-bold tracking-widest ${isActive ? "text-accent" : "text-muted-foreground"}`}>STEP {step}</span>
+                    <p className={`text-xs font-medium mt-0.5 ${isActive ? "text-primary font-semibold" : "text-muted-foreground"}`}>{title}</p>
                   </div>
                 );
               })}
