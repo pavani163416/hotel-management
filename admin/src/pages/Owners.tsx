@@ -1,5 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
-import { Building2, CheckCircle, XCircle, PauseCircle, Search, RefreshCw, User, FileText, X, ExternalLink } from "lucide-react";
+import {
+  Building2, CheckCircle, XCircle, PauseCircle, Search, RefreshCw,
+  User, FileText, X, ExternalLink, MapPin, Hash, Phone, Mail,
+  Calendar, ClipboardList, ChevronRight
+} from "lucide-react";
 import AdminLayout from "@/components/AdminLayout";
 import Topbar from "@/components/Topbar";
 import PageHeader from "@/components/PageHeader";
@@ -17,6 +21,12 @@ interface Owner {
   hotelIds: string[];
   createdAt: string;
   adminNotes?: string;
+  // Business / application fields returned from backend
+  businessName?: string;
+  hotelName?: string;
+  hotelAddress?: string;
+  gstNumber?: string;
+  businessRegistrationNumber?: string;
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -37,6 +47,7 @@ export default function Owners() {
   const [actioning, setActioning] = useState(false);
   const [error, setError] = useState("");
   const [viewingDocs, setViewingDocs] = useState<Owner | null>(null);
+  const [viewingDetails, setViewingDetails] = useState<Owner | null>(null);
 
   const fetchOwners = useCallback(async () => {
     setLoading(true);
@@ -151,9 +162,21 @@ export default function Owners() {
                           <span className="text-[10px] text-blue-400">{o.kycDocuments.length} doc(s)</span>
                         )}
                       </div>
+                      {/* Business summary inline */}
+                      {o.businessName && (
+                        <p className="text-[10px] text-soft mt-1">
+                          <span className="text-muted">Business:</span> {o.businessName}
+                          {o.hotelName && <> &nbsp;·&nbsp; <span className="text-muted">Hotel:</span> {o.hotelName}</>}
+                        </p>
+                      )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex items-center gap-2 shrink-0 flex-wrap">
+                    {/* View Full Details button */}
+                    <button onClick={() => setViewingDetails(o)}
+                      className="flex items-center gap-1.5 text-xs font-semibold text-purple-400 bg-purple-400/10 hover:bg-purple-400/20 px-3 py-1.5 rounded-lg border border-purple-400/25 transition-colors">
+                      <ClipboardList className="w-3.5 h-3.5" /> View Details
+                    </button>
                     {o.kycDocuments?.length > 0 && (
                       <button onClick={() => setViewingDocs(o)}
                         className="flex items-center gap-1.5 text-xs font-semibold text-blue-400 bg-blue-400/10 hover:bg-blue-400/20 px-3 py-1.5 rounded-lg border border-blue-400/25 transition-colors">
@@ -185,6 +208,172 @@ export default function Owners() {
           )}
         </div>
       </div>
+
+      {/* ── Full Application Details Modal ── */}
+      {viewingDetails && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm grid place-items-center z-50 p-4">
+          <div className="rounded-2xl border flex flex-col w-full max-w-2xl max-h-[90vh]" style={{ background: "#0f1d30", borderColor: "rgba(255,255,255,0.12)" }}>
+            {/* Header */}
+            <div className="flex items-center justify-between p-5 border-b" style={{ borderColor: "rgba(255,255,255,0.12)" }}>
+              <div>
+                <h3 className="font-semibold text-bright text-lg">Application Details</h3>
+                <p className="text-xs text-muted mt-1">Full information submitted by the property owner</p>
+              </div>
+              <button onClick={() => setViewingDetails(null)} className="text-muted hover:text-bright transition-colors">
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="p-5 overflow-y-auto space-y-5">
+              {/* Applicant Info */}
+              <div className="rounded-xl border p-4 space-y-3" style={{ background: "rgba(255,255,255,0.03)", borderColor: "rgba(255,255,255,0.08)" }}>
+                <h4 className="text-xs font-semibold text-muted uppercase tracking-wider mb-3 flex items-center gap-2">
+                  <User className="w-3.5 h-3.5" /> Applicant Information
+                </h4>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <p className="text-[10px] text-muted uppercase tracking-wide">Full Name</p>
+                    <p className="text-sm font-semibold text-bright mt-0.5">{viewingDetails.name || "—"}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-muted uppercase tracking-wide">Status</p>
+                    <span className={`inline-block text-xs font-semibold px-2.5 py-1 rounded-full border capitalize mt-0.5 ${STATUS_COLORS[viewingDetails.status] || STATUS_COLORS.pending}`}>
+                      {viewingDetails.status}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Mail className="w-3.5 h-3.5 text-muted shrink-0" />
+                    <div>
+                      <p className="text-[10px] text-muted uppercase tracking-wide">Email</p>
+                      <p className="text-sm text-bright">{viewingDetails.email || "—"}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Phone className="w-3.5 h-3.5 text-muted shrink-0" />
+                    <div>
+                      <p className="text-[10px] text-muted uppercase tracking-wide">Phone</p>
+                      <p className="text-sm text-bright">{viewingDetails.phone || "—"}</p>
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-muted uppercase tracking-wide">Email Verified</p>
+                    <p className={`text-sm font-semibold mt-0.5 ${viewingDetails.isEmailVerified ? "text-green-400" : "text-red-400"}`}>
+                      {viewingDetails.isEmailVerified ? "✓ Verified" : "✗ Not Verified"}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-3.5 h-3.5 text-muted shrink-0" />
+                    <div>
+                      <p className="text-[10px] text-muted uppercase tracking-wide">Applied On</p>
+                      <p className="text-sm text-bright">
+                        {viewingDetails.createdAt ? new Date(viewingDetails.createdAt).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Property & Business Details */}
+              <div className="rounded-xl border p-4 space-y-3" style={{ background: "rgba(255,255,255,0.03)", borderColor: "rgba(255,255,255,0.08)" }}>
+                <h4 className="text-xs font-semibold text-muted uppercase tracking-wider mb-3 flex items-center gap-2">
+                  <Building2 className="w-3.5 h-3.5" /> Property & Business Details
+                </h4>
+                <div className="grid grid-cols-1 gap-3">
+                  <div>
+                    <p className="text-[10px] text-muted uppercase tracking-wide">Business / Legal Name</p>
+                    <p className="text-sm font-semibold text-bright mt-0.5">{viewingDetails.businessName || <span className="text-muted italic">Not provided</span>}</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <p className="text-[10px] text-muted uppercase tracking-wide">Hotel / Resort Name</p>
+                      <p className="text-sm text-bright mt-0.5">{viewingDetails.hotelName || <span className="text-muted italic">Not provided</span>}</p>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <MapPin className="w-3.5 h-3.5 text-muted shrink-0 mt-1" />
+                      <div>
+                        <p className="text-[10px] text-muted uppercase tracking-wide">Hotel Address</p>
+                        <p className="text-sm text-bright mt-0.5">{viewingDetails.hotelAddress || <span className="text-muted italic">Not provided</span>}</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="flex items-start gap-2">
+                      <Hash className="w-3.5 h-3.5 text-muted shrink-0 mt-1" />
+                      <div>
+                        <p className="text-[10px] text-muted uppercase tracking-wide">GST Number</p>
+                        <p className="text-sm text-bright mt-0.5">{viewingDetails.gstNumber || <span className="text-muted italic">Not provided</span>}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <Hash className="w-3.5 h-3.5 text-muted shrink-0 mt-1" />
+                      <div>
+                        <p className="text-[10px] text-muted uppercase tracking-wide">Business Reg. No.</p>
+                        <p className="text-sm text-bright mt-0.5">{viewingDetails.businessRegistrationNumber || <span className="text-muted italic">Not provided</span>}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* KYC Documents Summary */}
+              <div className="rounded-xl border p-4" style={{ background: "rgba(255,255,255,0.03)", borderColor: "rgba(255,255,255,0.08)" }}>
+                <h4 className="text-xs font-semibold text-muted uppercase tracking-wider mb-3 flex items-center gap-2">
+                  <FileText className="w-3.5 h-3.5" /> KYC Documents
+                </h4>
+                {viewingDetails.kycDocuments?.length > 0 ? (
+                  <div className="space-y-2">
+                    {viewingDetails.kycDocuments.map((doc, idx) => (
+                      <div key={idx} className="flex items-center justify-between p-3 rounded-lg" style={{ background: "rgba(255,255,255,0.04)" }}>
+                        <div>
+                          <p className="text-sm font-semibold text-bright capitalize">{doc.type?.replace("_", " ") || "Document"}</p>
+                          <p className="text-xs text-muted">Uploaded: {new Date(doc.uploadedAt).toLocaleDateString()}</p>
+                        </div>
+                        <a href={doc.url} target="_blank" rel="noreferrer"
+                          className="flex items-center gap-1.5 text-xs text-blue-400 hover:text-blue-300 bg-blue-400/10 px-3 py-1.5 rounded-lg border border-blue-400/20 transition-colors">
+                          <ExternalLink className="w-3.5 h-3.5" /> View
+                        </a>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted italic">No documents uploaded.</p>
+                )}
+              </div>
+
+              {/* Admin Notes */}
+              {viewingDetails.adminNotes && (
+                <div className="rounded-xl border p-4" style={{ background: "rgba(255,100,50,0.05)", borderColor: "rgba(255,100,50,0.2)" }}>
+                  <h4 className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">Admin Notes</h4>
+                  <p className="text-sm text-bright">{viewingDetails.adminNotes}</p>
+                </div>
+              )}
+            </div>
+
+            {/* Footer Actions */}
+            <div className="flex items-center gap-3 p-5 border-t" style={{ borderColor: "rgba(255,255,255,0.12)" }}>
+              {viewingDetails.status !== "approved" && (
+                <button
+                  onClick={() => { setActionTarget(viewingDetails); setActionType("approve"); setNotes(""); setViewingDetails(null); }}
+                  className="flex-1 py-2 rounded-lg text-sm font-semibold text-white bg-green-600 hover:bg-green-700 transition-colors">
+                  Approve
+                </button>
+              )}
+              {viewingDetails.status !== "rejected" && (
+                <button
+                  onClick={() => { setActionTarget(viewingDetails); setActionType("reject"); setNotes(""); setViewingDetails(null); }}
+                  className="flex-1 py-2 rounded-lg text-sm font-semibold text-white bg-red-600 hover:bg-red-700 transition-colors">
+                  Reject
+                </button>
+              )}
+              <button onClick={() => setViewingDetails(null)}
+                className="flex-1 py-2 border border-border rounded-lg text-sm text-muted hover:bg-white/5 transition-colors"
+                style={{ borderColor: "rgba(255,255,255,0.12)" }}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Action Modal */}
       {actionTarget && actionType && (

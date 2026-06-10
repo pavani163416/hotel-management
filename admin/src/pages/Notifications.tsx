@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import {
   Search, X, Bell, Clock, CheckCircle, Eye,
   MessageSquare, DollarSign, CalendarCheck, ShieldAlert,
-  Send, Smartphone, UserCheck, Users
+  Send, Smartphone, UserCheck, Users, Building2
 } from "lucide-react";
 import AdminLayout from "@/components/AdminLayout";
 import Topbar from "@/components/Topbar";
@@ -143,7 +143,9 @@ export default function Notifications() {
       return false;
     }
     // Type filter
-    if (typeFilter !== "all" && n.type !== typeFilter) {
+    if (typeFilter === "owner_application") {
+      if (!(n.type === "system" && n.message?.toLowerCase().includes("property owner application"))) return false;
+    } else if (typeFilter !== "all" && n.type !== typeFilter) {
       return false;
     }
     return true;
@@ -154,8 +156,13 @@ export default function Notifications() {
   const unreadCount = notifications.filter(n => !n.isRead).length;
   const assistanceCount = notifications.filter(n => n.type === "assistance").length;
   const priceCount = notifications.filter(n => n.type === "price" || n.type === "price-request").length;
+  const ownerAppCount = notifications.filter(n => n.type === "system" && n.message?.toLowerCase().includes("property owner application")).length;
 
-  const getIcon = (type: string) => {
+  const getIcon = (type: string, message?: string) => {
+    // Detect property owner application notifications by message content
+    if (type === "system" && message?.toLowerCase().includes("property owner application")) {
+      return <Building2 className="w-5 h-5 text-purple-400" />;
+    }
     switch (type) {
       case "assistance":
         return <ShieldAlert className="w-5 h-5 text-warning" />;
@@ -169,7 +176,10 @@ export default function Notifications() {
     }
   };
 
-  const getIconBg = (type: string) => {
+  const getIconBg = (type: string, message?: string) => {
+    if (type === "system" && message?.toLowerCase().includes("property owner application")) {
+      return "rgba(168,85,247,0.15)";
+    }
     switch (type) {
       case "assistance":
         return "rgba(212,168,67,0.15)";
@@ -189,6 +199,9 @@ export default function Notifications() {
     }
     if (n.type === "booking") {
       return { label: "View Bookings", path: "/bookings" };
+    }
+    if (n.type === "system" && n.message?.toLowerCase().includes("property owner application")) {
+      return { label: "Review Application", path: "/owners" };
     }
     return null;
   };
@@ -466,6 +479,7 @@ export default function Notifications() {
                 <option value="booking" className="bg-[#0f1d30]">Bookings</option>
                 <option value="assistance" className="bg-[#0f1d30]">Assistance</option>
                 <option value="price" className="bg-[#0f1d30]">Price Requests</option>
+                <option value="owner_application" className="bg-[#0f1d30]">Property Applications</option>
               </select>
             </div>
           </div>
@@ -502,11 +516,11 @@ export default function Notifications() {
                       {/* Icon */}
                       <div className="w-10 h-10 rounded-xl grid place-items-center shrink-0 mt-0.5"
                         style={{
-                          background: getIconBg(notif.type),
+                          background: getIconBg(notif.type, notif.message),
                           border: "1px solid rgba(255,255,255,0.05)"
                         }}
                       >
-                        {getIcon(notif.type)}
+                        {getIcon(notif.type, notif.message)}
                       </div>
                       
                       {/* Message and Metadata */}

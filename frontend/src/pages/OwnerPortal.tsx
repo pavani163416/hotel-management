@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import {
   Building2, Upload, CheckCircle2, AlertCircle, Loader2, LogIn,
   FileText, TrendingUp, Globe, ShieldCheck, Headphones, ArrowRight,
-  Star, Users, DollarSign, X, Eye, EyeOff
+  Star, Users, DollarSign, X, Eye, EyeOff, ClipboardList,
+  UserCheck, BadgeCheck, Clock3
 } from "lucide-react";
 import Layout from "@/components/Layout";
 import api, { API } from "@/services/api";
@@ -24,6 +25,55 @@ function validateFiles(files: FileList): string | null {
   }
   return null;
 }
+
+// ── Application Process Steps ────────────────────────────
+const PROCESS_STEPS = [
+  {
+    step: "01",
+    icon: UserCheck,
+    title: "Create an Account",
+    desc: "Sign up or log in with your LuxeStay customer account. All applications require a verified account.",
+    color: "from-blue-500/20 to-blue-600/10",
+    border: "border-blue-500/30",
+    iconColor: "text-blue-400",
+  },
+  {
+    step: "02",
+    icon: ClipboardList,
+    title: "Fill Business Details",
+    desc: "Provide your business/legal name, hotel or resort name, full address, and optional GST / registration numbers.",
+    color: "from-purple-500/20 to-purple-600/10",
+    border: "border-purple-500/30",
+    iconColor: "text-purple-400",
+  },
+  {
+    step: "03",
+    icon: FileText,
+    title: "Upload KYC Documents",
+    desc: "Upload identity proof such as Aadhar Card, PAN Card, Passport, or Business Registration Certificate (JPG/PNG/PDF, max 5 MB).",
+    color: "from-amber-500/20 to-amber-600/10",
+    border: "border-amber-500/30",
+    iconColor: "text-amber-400",
+  },
+  {
+    step: "04",
+    icon: Clock3,
+    title: "Application Under Review",
+    desc: "Our partner verification team reviews your submission within 24–48 hours. You will receive an email update on progress.",
+    color: "from-orange-500/20 to-orange-600/10",
+    border: "border-orange-500/30",
+    iconColor: "text-orange-400",
+  },
+  {
+    step: "05",
+    icon: BadgeCheck,
+    title: "Get Approved & Go Live",
+    desc: "Once approved, your property will be mapped to your account. Start receiving bookings and track revenue from your owner dashboard.",
+    color: "from-green-500/20 to-green-600/10",
+    border: "border-green-500/30",
+    iconColor: "text-green-400",
+  },
+];
 
 const OwnerPortal = () => {
   const { user } = useBooking();
@@ -187,7 +237,7 @@ const OwnerPortal = () => {
         </section>
 
         {/* Benefits */}
-        <section className="container py-20">
+        <section className="container py-16">
           <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6 mb-16">
             {[
               { icon: Globe, title: "Global Reach", text: "Connect with travelers from 45+ countries browsing LuxeStay daily." },
@@ -202,6 +252,43 @@ const OwnerPortal = () => {
                 <p className="text-muted-foreground text-sm leading-relaxed">{text}</p>
               </div>
             ))}
+          </div>
+
+          {/* How It Works / Process Steps */}
+          <div className="mb-4 text-center">
+            <span className="inline-block bg-accent/10 text-accent text-xs font-semibold uppercase tracking-widest px-3 py-1.5 rounded-full mb-3">
+              How It Works
+            </span>
+            <h2 className="font-display text-3xl font-bold text-primary mb-2">Application Process</h2>
+            <p className="text-muted-foreground text-sm max-w-xl mx-auto mb-10">
+              Becoming a LuxeStay property partner is simple. Follow these 5 steps to get your hotel listed and start earning.
+            </p>
+          </div>
+
+          <div className="relative">
+            {/* Connector line (desktop) */}
+            <div className="hidden md:block absolute top-10 left-[10%] right-[10%] h-0.5 bg-gradient-to-r from-blue-500/30 via-purple-500/30 via-amber-500/30 via-orange-500/30 to-green-500/30 z-0" />
+
+            <div className="grid sm:grid-cols-2 md:grid-cols-5 gap-5 relative z-10">
+              {PROCESS_STEPS.map(({ step, icon: Icon, title, desc, color, border, iconColor }) => (
+                <div key={step}
+                  className={`bg-gradient-to-b ${color} border ${border} rounded-2xl p-5 flex flex-col items-center text-center hover:scale-105 transition-transform duration-200`}>
+                  <div className={`w-12 h-12 rounded-full bg-card border ${border} grid place-items-center mb-3 shadow-sm`}>
+                    <Icon className={`w-5 h-5 ${iconColor}`} />
+                  </div>
+                  <span className={`text-xs font-bold ${iconColor} mb-1 tracking-widest`}>STEP {step}</span>
+                  <h4 className="font-semibold text-primary text-sm mb-2 leading-snug">{title}</h4>
+                  <p className="text-muted-foreground text-xs leading-relaxed">{desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-10 text-center">
+            <button onClick={() => setAuthOpen(true)}
+              className="inline-flex items-center gap-2 bg-primary text-primary-foreground font-semibold px-8 py-3.5 rounded-xl hover:bg-primary/90 transition-colors text-sm shadow-md">
+              Start Your Application <ArrowRight className="w-4 h-4" />
+            </button>
           </div>
         </section>
 
@@ -287,20 +374,82 @@ const OwnerPortal = () => {
   if (appStatus === "pending") {
     return (
       <Layout>
-        <div className="container py-20 max-w-xl text-center">
-          <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <AlertCircle className="w-8 h-8 text-yellow-600" />
+        <div className="container py-16 max-w-2xl">
+          {/* Status Banner */}
+          <div className="text-center mb-10">
+            <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <AlertCircle className="w-8 h-8 text-yellow-600" />
+            </div>
+            <h1 className="font-display text-3xl font-bold mb-3">Application Under Review</h1>
+            <p className="text-muted-foreground mb-6">
+              Your owner application is pending approval. Our partner verification team will review your business information and KYC documents shortly. You will receive an email notification once your application has been processed by the admin.
+            </p>
           </div>
-          <h1 className="font-display text-3xl font-bold mb-3">Application Under Review</h1>
-          <p className="text-muted-foreground mb-6">
-            Your owner application is pending approval. Our partner verification team will review your business information and KYC documents shortly. You will receive an email notification once your application has been processed by the admin.
-          </p>
-          <div className="bg-secondary/30 border border-border rounded-xl p-4 mb-6 text-left space-y-2 text-sm">
-            <p><strong>Business Name:</strong> {appDetails?.businessName}</p>
-            <p><strong>Proposed Hotel Name:</strong> {appDetails?.hotelName}</p>
-            <p><strong>Status:</strong> <span className="text-yellow-600 font-semibold uppercase">Pending</span></p>
+
+          {/* Application Details Summary */}
+          <div className="bg-secondary/30 border border-border rounded-2xl p-5 mb-6 space-y-3 text-sm">
+            <h3 className="font-semibold text-primary text-base mb-3 flex items-center gap-2">
+              <ClipboardList className="w-4 h-4 text-accent" /> Your Submitted Details
+            </h3>
+            <div className="grid sm:grid-cols-2 gap-3">
+              <div>
+                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-0.5">Business Name</p>
+                <p className="font-medium text-primary">{appDetails?.businessName || "—"}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-0.5">Hotel / Resort Name</p>
+                <p className="font-medium text-primary">{appDetails?.hotelName || "—"}</p>
+              </div>
+              <div className="sm:col-span-2">
+                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-0.5">Hotel Address</p>
+                <p className="font-medium text-primary">{appDetails?.hotelAddress || "—"}</p>
+              </div>
+              {appDetails?.gstNumber && (
+                <div>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide mb-0.5">GST Number</p>
+                  <p className="font-medium text-primary">{appDetails.gstNumber}</p>
+                </div>
+              )}
+              {appDetails?.businessRegistrationNumber && (
+                <div>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide mb-0.5">Business Reg. No.</p>
+                  <p className="font-medium text-primary">{appDetails.businessRegistrationNumber}</p>
+                </div>
+              )}
+            </div>
+            <div className="pt-2 border-t border-border">
+              <p><strong>Status:</strong> <span className="text-yellow-600 font-semibold uppercase">Pending Review</span></p>
+              {appDetails?.kycDocuments?.length > 0 && (
+                <p className="mt-1"><strong>KYC Documents:</strong> <span className="text-green-600">{appDetails.kycDocuments.length} document(s) uploaded</span></p>
+              )}
+            </div>
           </div>
-          <button onClick={handleSignOut} className="text-sm text-muted-foreground hover:text-primary underline">
+
+          {/* Process Steps (where they are) */}
+          <div className="bg-card border border-border rounded-2xl p-5 mb-6">
+            <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider mb-4">Where Are You In The Process?</h3>
+            <div className="space-y-3">
+              {PROCESS_STEPS.map(({ step, icon: Icon, title, iconColor, border }, idx) => {
+                const isCompleted = idx < 3;
+                const isActive = idx === 3;
+                return (
+                  <div key={step} className={`flex items-center gap-3 p-3 rounded-xl border ${isActive ? `${border} bg-orange-500/5` : isCompleted ? "border-green-500/30 bg-green-500/5" : "border-border"}`}>
+                    <div className={`w-8 h-8 rounded-full grid place-items-center shrink-0 ${isCompleted ? "bg-green-100" : isActive ? "bg-orange-100" : "bg-secondary"}`}>
+                      {isCompleted ? <CheckCircle2 className="w-4 h-4 text-green-600" /> : <Icon className={`w-4 h-4 ${iconColor}`} />}
+                    </div>
+                    <div className="flex-1">
+                      <p className={`text-sm font-semibold ${isActive ? "text-orange-600" : isCompleted ? "text-green-700" : "text-muted-foreground"}`}>{title}</p>
+                    </div>
+                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${isCompleted ? "bg-green-100 text-green-700" : isActive ? "bg-orange-100 text-orange-700" : "bg-secondary text-muted-foreground"}`}>
+                      {isCompleted ? "Done" : isActive ? "In Progress" : "Pending"}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <button onClick={handleSignOut} className="text-sm text-muted-foreground hover:text-primary underline w-full text-center">
             Sign out
           </button>
         </div>
@@ -341,6 +490,29 @@ const OwnerPortal = () => {
   return (
     <Layout>
       <div className="bg-gradient-to-br from-secondary via-background to-secondary/30 min-h-screen py-12 px-4">
+        {/* Process Steps bar above form */}
+        <div className="container max-w-4xl mb-8">
+          <div className="bg-card border border-border rounded-2xl p-5">
+            <h2 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider mb-4 flex items-center gap-2">
+              <ClipboardList className="w-4 h-4 text-accent" /> Application Process Overview
+            </h2>
+            <div className="grid sm:grid-cols-5 gap-3">
+              {PROCESS_STEPS.map(({ step, icon: Icon, title, iconColor, border, color }, idx) => {
+                const isActive = idx === 1 || idx === 2; // Steps 2 & 3 are active in the form
+                return (
+                  <div key={step} className={`flex flex-col items-center text-center p-3 rounded-xl border ${isActive ? `${border} bg-gradient-to-b ${color}` : "border-border"}`}>
+                    <div className={`w-8 h-8 rounded-full grid place-items-center mb-1.5 ${isActive ? "bg-card border " + border : "bg-secondary"}`}>
+                      {idx === 0 ? <CheckCircle2 className="w-4 h-4 text-green-600" /> : <Icon className={`w-4 h-4 ${isActive ? iconColor : "text-muted-foreground"}`} />}
+                    </div>
+                    <span className={`text-[10px] font-bold tracking-widest ${isActive ? iconColor : "text-muted-foreground"}`}>STEP {step}</span>
+                    <p className={`text-xs font-medium mt-0.5 ${isActive ? "text-primary" : "text-muted-foreground"}`}>{title}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
         <div className="container max-w-2xl bg-card border border-border rounded-3xl p-8 shadow-luxe">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-12 h-12 rounded-xl bg-primary/10 grid place-items-center">

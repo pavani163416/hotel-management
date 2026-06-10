@@ -136,6 +136,19 @@ router.post("/apply", verifyUser, uploadPublicSupport.array("documents", 5), asy
       { new: true, upsert: true }
     );
 
+    // Notify admin panel about the new property application
+    try {
+      const { sendNotification } = await import("../utils/notificationService.js");
+      const user = await User.findById(req.user.id);
+      await sendNotification({
+        role: "admin",
+        type: "system",
+        message: `📋 New property owner application received from ${user?.name || req.user.email} (${businessName} — ${hotelName}). Please review in Property Owners section.`,
+      });
+    } catch (notifErr) {
+      logger.warn("Failed to send admin notification for new property application:", notifErr);
+    }
+
     return res.status(200).json({ success: true, message: "Application submitted successfully.", data: app });
   } catch (err) { next(err); }
 });
@@ -195,6 +208,12 @@ router.get("/admin/list", protect, authorizeRoles("Super Admin", "admin"), async
         hotelIds: u.hotelIds || [],
         createdAt: app.createdAt,
         adminNotes: app.adminNotes || "",
+        // Property & Business details from the application
+        businessName: app.businessName || "",
+        hotelName: app.hotelName || "",
+        hotelAddress: app.hotelAddress || "",
+        gstNumber: app.gstNumber || "",
+        businessRegistrationNumber: app.businessRegistrationNumber || "",
       };
     });
 
