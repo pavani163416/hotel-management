@@ -430,24 +430,38 @@ const HotelDetails = () => {
                 </div>
               ))}
             </div>
-            <form onSubmit={handleSubmitReview} className="bg-card border border-border rounded-2xl p-6 h-fit space-y-4">
-              <h3 className="font-display text-lg font-bold">Write a Review</h3>
-              <input value={reviewName} onChange={(e) => setReviewName(e.target.value)} placeholder="Your name"
-                className="w-full px-4 py-2.5 border border-border rounded-lg outline-none focus:border-accent text-sm" />
-              <div className="flex items-center gap-1.5">
-                {[1, 2, 3, 4, 5].map((n) => (
-                  <button type="button" key={n} onClick={() => setReviewRating(n)} className="focus:outline-none">
-                    <Star className={`w-6 h-6 transition-base ${n <= reviewRating ? "fill-accent text-accent" : "text-muted-foreground/30 fill-none"}`} />
-                  </button>
-                ))}
+            {user ? (
+              <form onSubmit={handleSubmitReview} className="bg-card border border-border rounded-2xl p-6 h-fit space-y-4">
+                <h3 className="font-display text-lg font-bold">Write a Review</h3>
+                <input value={reviewName} onChange={(e) => setReviewName(e.target.value)} placeholder="Your name"
+                  className="w-full px-4 py-2.5 border border-border rounded-lg outline-none focus:border-accent text-sm" />
+                <div className="flex items-center gap-1.5">
+                  {[1, 2, 3, 4, 5].map((n) => (
+                    <button type="button" key={n} onClick={() => setReviewRating(n)} className="focus:outline-none">
+                      <Star className={`w-6 h-6 transition-base ${n <= reviewRating ? "fill-accent text-accent" : "text-muted-foreground/30 fill-none"}`} />
+                    </button>
+                  ))}
+                </div>
+                <textarea value={reviewText} onChange={(e) => setReviewText(e.target.value)} placeholder="Share your experience..." rows={4}
+                  className="w-full px-4 py-2.5 border border-border rounded-lg outline-none focus:ring-2 focus:ring-primary focus:border-primary text-sm resize-none" />
+                {err && <p className="text-destructive text-xs">{err}</p>}
+                <button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-2.5 rounded-lg font-semibold text-sm transition-base">
+                  Submit Review
+                </button>
+              </form>
+            ) : (
+              <div className="bg-card border border-border rounded-2xl p-6 h-fit text-center space-y-4">
+                <h3 className="font-display text-lg font-bold">Write a Review</h3>
+                <p className="text-muted-foreground text-sm">You must be signed in to submit a review for this property.</p>
+                <button
+                  type="button"
+                  onClick={() => { setAuthMode("signin"); setAuthOpen(true); }}
+                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-2.5 rounded-lg font-semibold text-sm transition-base"
+                >
+                  Sign In / Sign Up
+                </button>
               </div>
-              <textarea value={reviewText} onChange={(e) => setReviewText(e.target.value)} placeholder="Share your experience..." rows={4}
-                className="w-full px-4 py-2.5 border border-border rounded-lg outline-none focus:ring-2 focus:ring-primary focus:border-primary text-sm resize-none" />
-              {err && <p className="text-destructive text-xs">{err}</p>}
-              <button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-2.5 rounded-lg font-semibold text-sm transition-base">
-                Submit Review
-              </button>
-            </form>
+            )}
           </div>
         )}
 
