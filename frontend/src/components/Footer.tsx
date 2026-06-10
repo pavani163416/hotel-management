@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useState } from "react";
-import { Mail, Phone, MapPin, Facebook, Twitter, Instagram, Linkedin, Loader2, CheckCircle2 } from "lucide-react";
+import { Mail, Phone, MapPin, Loader2, CheckCircle2 } from "lucide-react";
 
 const isValidEmail = (email: string) =>
   /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
@@ -87,18 +87,6 @@ const Footer = () => (
           <div className="flex items-center gap-2"><Phone className="w-4 h-4" /><span>+1 (800) 123-4567</span></div>
           <div className="flex items-center gap-2"><MapPin className="w-4 h-4" /><span>123 Luxury Ave, New York</span></div>
         </div>
-        <div className="flex gap-3 mt-5">
-          {[
-            { icon: Facebook, label: "Facebook", href: "https://facebook.com" },
-            { icon: Twitter, label: "Twitter", href: "https://twitter.com" },
-            { icon: Instagram, label: "Instagram", href: "https://instagram.com" },
-            { icon: Linkedin, label: "LinkedIn", href: "https://linkedin.com" },
-          ].map(({ icon: Icon, label, href }) => (
-            <a key={label} href={href} target="_blank" rel="noopener noreferrer" aria-label={label}
-              className="w-8 h-8 rounded-full bg-primary-foreground/10 hover:bg-primary-foreground/20 flex items-center justify-center transition-colors">
-              <Icon className="w-4 h-4" />
-            </a>
-          ))}
         </div>
       </div>
 
