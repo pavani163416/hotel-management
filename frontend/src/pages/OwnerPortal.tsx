@@ -194,6 +194,9 @@ const OwnerPortal = () => {
   };
 
   const handleSignOut = () => {
+    localStorage.removeItem("luxe_customer_token");
+    localStorage.removeItem("luxe_user");
+    localStorage.removeItem("luxe_bookings");
     localStorage.removeItem("luxestay_wishlist");
     setUser(null);
     window.dispatchEvent(new Event("luxe_logout"));
