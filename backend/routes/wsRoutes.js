@@ -5,6 +5,7 @@
  */
 import { WebSocketServer } from "ws";
 import Visitor from "../models/Visitor.js";
+import { cleanOldVisitors } from "../controllers/visitorController.js";
 
 // Track connected admin clients
 const adminClients = new Set();
@@ -81,6 +82,8 @@ export const initWebSocket = () => {
               status:      "Active",
               sessionId:   msg.sessionId   || null,
             });
+            
+            await cleanOldVisitors();
 
             // Send back the visitor ID so user panel can update duration later
             if (ws.readyState === 1) {

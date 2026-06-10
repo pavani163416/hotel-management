@@ -54,20 +54,27 @@ export const trackVisitor = async (req, res, next) => {
       status: status || "Active",
       sessionId: sessionId || null,
     });
+    
+    await cleanOldVisitors();
 
-    // Cleanup: Keep only the most recent 50 visitors
+    res.status(201).json({ success: true, id: visitor._id });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const cleanOldVisitors = async () => {
+  try {
     const count = await Visitor.countDocuments();
-    if (count > 50) {
-      const oldestVisitors = await Visitor.find().sort({ createdAt: 1 }).limit(count - 50).select("_id");
+    if (count > 200) {
+      const oldestVisitors = await Visitor.find().sort({ createdAt: 1 }).limit(count - 200).select("_id");
       const idsToDelete = oldestVisitors.map(v => v._id);
       if (idsToDelete.length > 0) {
         await Visitor.deleteMany({ _id: { $in: idsToDelete } });
       }
     }
-
-    res.status(201).json({ success: true, id: visitor._id });
-  } catch (error) {
-    next(error);
+  } catch (err) {
+    // ignore
   }
 };
 
@@ -140,11 +147,7 @@ export const getVisitors = async (req, res, next) => {
       ];
     }
 
-    // Limit query range so we never exceed 100 documents
-    let fetchLimit = limit;
-    if (skip + limit > 100) {
-      fetchLimit = Math.max(0, 100 - skip);
-    }
+    const fetchLimit = limit;
 
     const [visitors, total, statsAgg] = await Promise.all([
       fetchLimit > 0
@@ -159,7 +162,20 @@ export const getVisitors = async (req, res, next) => {
         {
           $group: {
             _id: null,
-            active: { $sum: { $cond: [{ $eq: ["$status", "Active"] }, 1, 0] } },
+            active: {
+              $sum: {
+                $cond: [
+                  {
+                    $and: [
+                      { $eq: ["$status", "Active"] },
+                      { $gte: ["$updatedAt", new Date(Date.now() - 5 * 60 * 1000)] }
+                    ]
+                  },
+                  1,
+                  0
+                ]
+              }
+            },
             converted: { $sum: { $cond: [{ $eq: ["$status", "Converted"] }, 1, 0] } },
             bounced: { $sum: { $cond: [{ $eq: ["$status", "Bounced"] }, 1, 0] } },
             totalDuration: { $sum: "$duration" },
@@ -172,7 +188,7 @@ export const getVisitors = async (req, res, next) => {
     const stats = statsAgg[0] || { active: 0, converted: 0, bounced: 0, totalDuration: 0, count: 0 };
     const avgDuration = stats.count > 0 ? Math.round(stats.totalDuration / stats.count) : 0;
 
-    const cappedTotal = Math.min(total, 100);
+    const cappedTotal = total;
 
     res.status(200).json({
       success: true,

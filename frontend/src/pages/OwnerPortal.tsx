@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Building2, Upload, CheckCircle2, AlertCircle, Loader2, LogIn,
   FileText, TrendingUp, Globe, ShieldCheck, Headphones, ArrowRight,
@@ -75,7 +76,8 @@ const PROCESS_STEPS = [
 ];
 
 const OwnerPortal = () => {
-  const { user } = useBooking();
+  const { user, setUser } = useBooking();
+  const navigate = useNavigate();
   const token = localStorage.getItem("luxe_customer_token");
 
   const [appStatus, setAppStatus] = useState<string>("not_applied");
@@ -192,11 +194,10 @@ const OwnerPortal = () => {
   };
 
   const handleSignOut = () => {
-    localStorage.removeItem("luxe_customer_token");
-    localStorage.removeItem("luxe_user");
-    localStorage.removeItem("luxe_bookings");
+    localStorage.removeItem("luxestay_wishlist");
+    setUser(null);
     window.dispatchEvent(new Event("luxe_logout"));
-    window.location.reload();
+    navigate("/");
   };
 
   // Render loading state

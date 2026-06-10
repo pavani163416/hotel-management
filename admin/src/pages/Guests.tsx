@@ -109,7 +109,7 @@ export default function Guests() {
         const preferredHotel =
           latestBooking?.hotelName ||
           resolvePreferredHotel(roomNum) ||
-          "LuxeStay";
+          "—";
         return {
           id: g._id,
           name: g.name,

@@ -1030,6 +1030,7 @@ router.post("/google", async (req, res, next) => {
     const { idToken } = req.body;
     if (!idToken) return res.status(400).json({ success: false, message: "ID Token is required" });
 
+    const clientID = process.env.GOOGLE_CLIENT_ID || "70312411330-8givsb0ktr8f09u8ullo157vkppkoqqv.apps.googleusercontent.com";
     let email, name, picture, googleId;
 
     const isJWT = idToken.split('.').length === 3;
@@ -1041,7 +1042,6 @@ router.post("/google", async (req, res, next) => {
         throw new Error("Failed to verify Google access token validity");
       }
       const tokenInfo = await tokenInfoRes.json();
-      const clientID = process.env.GOOGLE_CLIENT_ID;
       const match = (tokenInfo.aud === clientID) || 
                     (tokenInfo.azp === clientID) || 
                     (tokenInfo.issued_to === clientID) ||
@@ -1065,7 +1065,7 @@ router.post("/google", async (req, res, next) => {
       const ticket = await googleClient.verifyIdToken({
         idToken,
         audience: [
-          process.env.GOOGLE_CLIENT_ID,
+          clientID,
         ],
       });
       const payload = ticket.getPayload();
