@@ -1054,8 +1054,10 @@ router.post("/google", async (req, res, next) => {
       console.log("[Google OAuth DEBUG] Comparing tokenInfo.issued_to:", tokenInfo.issued_to, "vs clientID:", clientID);
       console.log("[Google OAuth DEBUG] Comparing tokenInfo.client_id:", tokenInfo.client_id, "vs clientID:", clientID);
 
-      const fallbackID = "70312411330-jbppehv6ds52au1n7r62r6qji7j8cs9n.apps.googleusercontent.com";
-      const androidClientID = "70312411330-fud2l0ec1r7o0p5shgvon0nus00rpjcf.apps.googleusercontent.com";
+      const fallbackID = "239513848879-7n631mq8o0due6v807tk58gbli9907mc.apps.googleusercontent.com";
+      const androidClientID = "239513848879-3d319eb0dp07rltmkhelp6qtqp4rhhpq.apps.googleusercontent.com";
+      const androidClientID2 = "239513848879-9f7e5ju597pgbl7p4isddckui4misecp.apps.googleusercontent.com";
+      const androidClientID3 = "239513848879-b1inguas60lk6gi7lhmhoh3fo319k225.apps.googleusercontent.com";
       const match = (tokenInfo.aud === clientID) || 
                     (tokenInfo.azp === clientID) || 
                     (tokenInfo.issued_to === clientID) ||
@@ -1067,7 +1069,9 @@ router.post("/google", async (req, res, next) => {
                     (tokenInfo.aud === androidClientID) ||
                     (tokenInfo.azp === androidClientID) ||
                     (tokenInfo.issued_to === androidClientID) ||
-                    (tokenInfo.client_id === androidClientID);
+                    (tokenInfo.client_id === androidClientID) ||
+                    (tokenInfo.aud === androidClientID2) ||
+                    (tokenInfo.aud === androidClientID3);
       if (!match) {
         logger.warn("Google Access Token audience mismatch", { tokenInfo, clientID, fallbackID, androidClientID });
         console.error("[Google OAuth DEBUG] Audience check failed. None of the tokenInfo fields matched clientID, fallbackID, or androidClientID.");
@@ -1085,14 +1089,18 @@ router.post("/google", async (req, res, next) => {
       googleId = userInfo.sub;
     } else {
       // It's an ID Token (JWT) (used on mobile devices)
-      const fallbackID = "70312411330-jbppehv6ds52au1n7r62r6qji7j8cs9n.apps.googleusercontent.com";
-      const androidClientID = "70312411330-fud2l0ec1r7o0p5shgvon0nus00rpjcf.apps.googleusercontent.com";
+      const fallbackID = "239513848879-7n631mq8o0due6v807tk58gbli9907mc.apps.googleusercontent.com";
+      const androidClientID = "239513848879-3d319eb0dp07rltmkhelp6qtqp4rhhpq.apps.googleusercontent.com";
+      const androidClientID2 = "239513848879-9f7e5ju597pgbl7p4isddckui4misecp.apps.googleusercontent.com";
+      const androidClientID3 = "239513848879-b1inguas60lk6gi7lhmhoh3fo319k225.apps.googleusercontent.com";
       const ticket = await googleClient.verifyIdToken({
         idToken,
         audience: [
           clientID,
           fallbackID,
-          androidClientID
+          androidClientID,
+          androidClientID2,
+          androidClientID3
         ],
       });
       const payload = ticket.getPayload();

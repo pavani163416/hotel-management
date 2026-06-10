@@ -358,10 +358,10 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
     scopes: ['email', 'openid'],
     clientId: kIsWeb
         ? const String.fromEnvironment('GOOGLE_CLIENT_ID',
-            defaultValue: '70312411330-jbppehv6ds52au1n7r62r6qji7j8cs9n.apps.googleusercontent.com')
+            defaultValue: '239513848879-7n631mq8o0due6v807tk58gbli9907mc.apps.googleusercontent.com')
         : null,
     serverClientId: kIsWeb ? null : const String.fromEnvironment('GOOGLE_CLIENT_ID',
-        defaultValue: '70312411330-jbppehv6ds52au1n7r62r6qji7j8cs9n.apps.googleusercontent.com'),
+        defaultValue: '239513848879-7n631mq8o0due6v807tk58gbli9907mc.apps.googleusercontent.com'),
   );
 
   void logout() async {
