@@ -194,12 +194,6 @@ const OwnerPortal = () => {
   };
 
   const handleSignOut = () => {
-    localStorage.removeItem("luxe_customer_token");
-    localStorage.removeItem("luxe_user");
-    localStorage.removeItem("luxe_bookings");
-    localStorage.removeItem("luxestay_wishlist");
-    setUser(null);
-    window.dispatchEvent(new Event("luxe_logout"));
     navigate("/");
   };
 
@@ -318,7 +312,7 @@ const OwnerPortal = () => {
                   {sc.label}
                 </span>
                 <button onClick={handleSignOut} className="text-xs text-muted-foreground hover:text-destructive transition-colors">
-                  Sign out
+                  Exit Owner Portal
                 </button>
               </div>
             </div>
@@ -453,7 +447,7 @@ const OwnerPortal = () => {
           </div>
 
           <button onClick={handleSignOut} className="text-sm text-muted-foreground hover:text-primary underline w-full text-center">
-            Sign out
+            Exit Owner Portal
           </button>
         </div>
       </Layout>
@@ -482,7 +476,7 @@ const OwnerPortal = () => {
             Re-submit Application
           </button>
           <button onClick={handleSignOut} className="text-sm text-muted-foreground hover:text-primary underline">
-            Sign out
+            Exit Owner Portal
           </button>
         </div>
       </Layout>
