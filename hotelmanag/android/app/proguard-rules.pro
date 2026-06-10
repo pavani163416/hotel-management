@@ -12,3 +12,6 @@
 
 # Jailbreak Detection
 -keep class com.anish.flutter_jailbreak_detection.** { *; }
+
+# Google Play Core (SplitCompat / SplitInstall) missing classes
+-dontwarn com.google.android.play.core.**

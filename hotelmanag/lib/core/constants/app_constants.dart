@@ -24,11 +24,13 @@ class AppConstants {
     // In debug mode, if a custom URL is provided via dart-define, use it
     if (_envApiUrl.isNotEmpty) return _envApiUrl;
 
-    // Use the local backend over adb reverse to avoid Windows Firewall drops!
+    // Use the local backend
     if (kIsWeb) {
       return 'http://127.0.0.1:5000/api/';
     } else if (defaultTargetPlatform == TargetPlatform.android) {
-      return 'http://127.0.0.1:5000/api/';
+      // 192.168.1.60 is the host LAN IP for the physical device to connect.
+      // Use 10.0.2.2 if running on an Android Emulator instead.
+      return 'http://192.168.1.60:5000/api/';
     } else {
       return 'http://127.0.0.1:5000/api/';
     }
