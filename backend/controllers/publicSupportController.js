@@ -6,11 +6,15 @@ import { Resend } from "resend";
 const uploadBufferToCloudinary = async (buffer, filename, mimetype) => {
   const { v2: cloudinary } = await import("cloudinary");
   return new Promise((resolve, reject) => {
-    const isPdf = mimetype === "application/pdf";
+    const isPdf = mimetype === "application/pdf" || (filename && filename.toLowerCase().endsWith(".pdf"));
+    const cleanFilename = filename.includes(".") ? filename.split('.').slice(0, -1).join('.') : filename;
+    const extension = filename.includes(".") ? filename.split('.').pop() : (isPdf ? "pdf" : "");
     const uploadOptions = {
       folder: "luxestay/support",
       resource_type: isPdf ? "raw" : "auto", // PDF requires 'raw' or 'image' if pages. We use raw for attachments.
-      public_id: filename.split('.')[0] + "-" + Date.now(),
+      public_id: isPdf 
+        ? `${cleanFilename}-${Date.now()}.${extension}`
+        : `${cleanFilename}-${Date.now()}`,
     };
     
     const uploadStream = cloudinary.uploader.upload_stream(
