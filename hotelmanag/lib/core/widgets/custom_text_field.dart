@@ -12,6 +12,7 @@ class CustomTextField extends StatelessWidget {
   final Iterable<String>? autofillHints;
   final int? maxLength;
   final String? errorText;
+  final Widget? suffixIcon;
 
   const CustomTextField({
     super.key,
