@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import {
   Building2, CheckCircle, XCircle, PauseCircle, Search, RefreshCw,
   User, FileText, X, ExternalLink, MapPin, Hash, Phone, Mail,
-  Calendar, ClipboardList, ChevronRight
+  Calendar, ClipboardList, ChevronRight, ChevronDown
 } from "lucide-react";
 import AdminLayout from "@/components/AdminLayout";
 import Topbar from "@/components/Topbar";
@@ -49,6 +49,7 @@ export default function Owners() {
   const [error, setError] = useState("");
   const [viewingDocs, setViewingDocs] = useState<Owner | null>(null);
   const [viewingDetails, setViewingDetails] = useState<Owner | null>(null);
+  const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null);
 
   // Hotel Assignment states
   const [assigningOwner, setAssigningOwner] = useState<Owner | null>(null);
@@ -278,47 +279,86 @@ export default function Owners() {
                       )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0 flex-wrap">
-                    {/* View Full Details button */}
-                    <button onClick={() => setViewingDetails(o)}
-                      className="flex items-center gap-1.5 text-xs font-semibold text-purple-400 bg-purple-400/10 hover:bg-purple-400/20 px-3 py-1.5 rounded-lg border border-purple-400/25 transition-colors">
-                      <ClipboardList className="w-3.5 h-3.5" /> View Details
+                  <div className="relative shrink-0">
+                    <button 
+                      onClick={() => setActiveDropdownId(activeDropdownId === o._id ? null : o._id)}
+                      className="flex items-center gap-1.5 text-xs font-semibold text-bright bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-lg border border-white/10 transition-colors"
+                      style={{ borderColor: "rgba(255,255,255,0.08)" }}
+                    >
+                      Actions <ChevronDown className="w-3.5 h-3.5" />
                     </button>
-                    {o.status === "approved" && (
+
+                    {activeDropdownId === o._id && (
                       <>
-                        <button onClick={() => setAssigningOwner(o)}
-                          className="flex items-center gap-1.5 text-xs font-semibold text-teal-400 bg-teal-400/10 hover:bg-teal-400/20 px-3 py-1.5 rounded-lg border border-teal-400/25 transition-colors">
-                          <Building2 className="w-3.5 h-3.5" /> Assign Hotel
-                        </button>
-                        <button onClick={() => setViewingAssignedOwner(o)}
-                          className="flex items-center gap-1.5 text-xs font-semibold text-indigo-400 bg-indigo-400/10 hover:bg-indigo-400/20 px-3 py-1.5 rounded-lg border border-indigo-400/25 transition-colors">
-                          <Building2 className="w-3.5 h-3.5" /> View Assigned
-                        </button>
+                        <div 
+                          className="fixed inset-0 z-10" 
+                          onClick={() => setActiveDropdownId(null)}
+                        />
+                        <div 
+                          className="absolute right-0 mt-1.5 w-48 rounded-xl border border-white/8 bg-[#0f1d30] shadow-xl z-20 py-1.5 overflow-hidden flex flex-col animate-in fade-in slide-in-from-top-1 duration-100"
+                          style={{ borderColor: "rgba(255,255,255,0.12)", background: "#0f1d30" }}
+                        >
+                          <button 
+                            onClick={() => { setViewingDetails(o); setActiveDropdownId(null); }}
+                            className="w-full text-left px-4 py-2 text-xs font-medium text-bright hover:bg-white/5 transition-colors flex items-center gap-2"
+                          >
+                            <ClipboardList className="w-3.5 h-3.5 text-purple-400" /> View Details
+                          </button>
+                          
+                          {o.kycDocuments?.length > 0 && (
+                            <button 
+                              onClick={() => { setViewingDocs(o); setActiveDropdownId(null); }}
+                              className="w-full text-left px-4 py-2 text-xs font-medium text-bright hover:bg-white/5 transition-colors flex items-center gap-2"
+                            >
+                              <FileText className="w-3.5 h-3.5 text-blue-400" /> View Docs
+                            </button>
+                          )}
+
+                          {o.status === "approved" && (
+                            <>
+                              <button 
+                                onClick={() => { setAssigningOwner(o); setActiveDropdownId(null); }}
+                                className="w-full text-left px-4 py-2 text-xs font-medium text-bright hover:bg-white/5 transition-colors flex items-center gap-2"
+                              >
+                                <Building2 className="w-3.5 h-3.5 text-teal-400" /> Assign Hotel
+                              </button>
+                              <button 
+                                onClick={() => { setViewingAssignedOwner(o); setActiveDropdownId(null); }}
+                                className="w-full text-left px-4 py-2 text-xs font-medium text-bright hover:bg-white/5 transition-colors flex items-center gap-2"
+                              >
+                                <Building2 className="w-3.5 h-3.5 text-indigo-400" /> View Assigned
+                              </button>
+                            </>
+                          )}
+
+                          {o.status !== "approved" && (
+                            <button 
+                              onClick={() => { setActionTarget(o); setActionType("approve"); setNotes(""); setActiveDropdownId(null); }}
+                              className="w-full text-left px-4 py-2 text-xs font-medium text-bright hover:bg-white/5 transition-colors flex items-center gap-2"
+                            >
+                              <CheckCircle className="w-3.5 h-3.5 text-green-400" /> Approve Owner
+                            </button>
+                          )}
+
+                          {o.status !== "rejected" && (
+                            <button 
+                              onClick={() => { setActionTarget(o); setActionType("reject"); setNotes(""); setActiveDropdownId(null); }}
+                              className="w-full text-left px-4 py-2 text-xs font-medium text-bright hover:bg-white/5 transition-colors flex items-center gap-2"
+                            >
+                              <XCircle className="w-3.5 h-3.5 text-red-400" /> Reject Application
+                            </button>
+                          )}
+
+                          {o.status !== "suspended" && o.status === "approved" && (
+                            <button 
+                              onClick={() => { setActionTarget(o); setActionType("suspend"); setNotes(""); setActiveDropdownId(null); }}
+                              className="w-full text-left px-4 py-2 text-xs font-medium text-bright hover:bg-white/5 transition-colors flex items-center gap-2"
+                            >
+                              <PauseCircle className="w-3.5 h-3.5 text-orange-400" /> Suspend Owner
+                            </button>
+                          )}
+                        </div>
                       </>
-                    )}
-                    {o.kycDocuments?.length > 0 && (
-                      <button onClick={() => setViewingDocs(o)}
-                        className="flex items-center gap-1.5 text-xs font-semibold text-blue-400 bg-blue-400/10 hover:bg-blue-400/20 px-3 py-1.5 rounded-lg border border-blue-400/25 transition-colors">
-                        <FileText className="w-3.5 h-3.5" /> View Docs
-                      </button>
-                    )}
-                    {o.status !== "approved" && (
-                      <button onClick={() => { setActionTarget(o); setActionType("approve"); setNotes(""); }}
-                        className="flex items-center gap-1.5 text-xs font-semibold text-green-400 bg-green-400/10 hover:bg-green-400/20 px-3 py-1.5 rounded-lg border border-green-400/25 transition-colors">
-                        <CheckCircle className="w-3.5 h-3.5" /> Approve
-                      </button>
-                    )}
-                    {o.status !== "rejected" && (
-                      <button onClick={() => { setActionTarget(o); setActionType("reject"); setNotes(""); }}
-                        className="flex items-center gap-1.5 text-xs font-semibold text-red-400 bg-red-400/10 hover:bg-red-400/20 px-3 py-1.5 rounded-lg border border-red-400/25 transition-colors">
-                        <XCircle className="w-3.5 h-3.5" /> Reject
-                      </button>
-                    )}
-                    {o.status !== "suspended" && o.status === "approved" && (
-                      <button onClick={() => { setActionTarget(o); setActionType("suspend"); setNotes(""); }}
-                        className="flex items-center gap-1.5 text-xs font-semibold text-orange-400 bg-orange-400/10 hover:bg-orange-400/20 px-3 py-1.5 rounded-lg border border-orange-400/25 transition-colors">
-                        <PauseCircle className="w-3.5 h-3.5" /> Suspend
-                      </button>
                     )}
                   </div>
                 </div>
