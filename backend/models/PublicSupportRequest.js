@@ -36,14 +36,6 @@ const publicSupportRequestSchema = new mongoose.Schema(
     },
     issueType: {
       type: String,
-      enum: [
-        "Login Problem",
-        "Forgot Password",
-        "Technical Issue",
-        "Billing Problem",
-        "Hotel Setup Issue",
-        "Other"
-      ],
       required: true
     },
     priority: {
