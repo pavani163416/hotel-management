@@ -3,18 +3,7 @@
 
 <head>
   <meta charset="UTF-8" />
-  <script>
-    (function() {
-      const stored = localStorage.getItem("luxe_admin_theme");
-      if (stored === "light" || stored === "dark") {
-        document.documentElement.classList.add(stored);
-        return;
-      }
-      const match = document.cookie.match(/(?:^|; )luxe_theme=([^;]*)/);
-      const theme = match && (match[1] === "light" || match[1] === "dark") ? match[1] : "dark";
-      document.documentElement.classList.add(theme);
-    })();
-  </script>
+  <script src="/theme.js"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>LuxeStay Admin</title>
   <link rel="icon" type="image/svg+xml"
@@ -24,7 +13,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   
   <!-- Content Security Policy (CSP) for enhanced protection against XSS and injection attacks -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://accounts.google.com https://checkout.razorpay.com https://cdn.razorpay.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://checkout.razorpay.com https://cdn.razorpay.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: https: blob:; connect-src 'self' https://hotel-management-production-2225.up.railway.app wss://hotel-management-production-2225.up.railway.app https://api.razorpay.com https://lumberjack.razorpay.com https://checkout.razorpay.com https://cdn.razorpay.com https://countriesnow.space https://ipapi.co https://freeipapi.com ws://localhost:* http://localhost:*; frame-src 'self' https://accounts.google.com https://checkout.razorpay.com https://cdn.razorpay.com https://api.razorpay.com https://maps.google.com https://www.google.com;" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://accounts.google.com https://checkout.razorpay.com https://cdn.razorpay.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://checkout.razorpay.com https://cdn.razorpay.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: https: blob:; connect-src 'self' https://hotel-management-production-2225.up.railway.app wss://hotel-management-production-2225.up.railway.app https://api.razorpay.com https://lumberjack.razorpay.com https://checkout.razorpay.com https://cdn.razorpay.com https://countriesnow.space https://ipapi.co https://freeipapi.com ws://localhost:* http://localhost:*; frame-src 'self' https://accounts.google.com https://checkout.razorpay.com https://cdn.razorpay.com https://api.razorpay.com https://maps.google.com https://www.google.com;" />
 </head>
 
 <body>
