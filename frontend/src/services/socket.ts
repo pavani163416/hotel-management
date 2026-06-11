@@ -17,10 +17,7 @@ const socket = io(BACKEND_URL, {
   autoConnect: true,
   forceNew: false,
   multiplex: true,
-  auth: (cb) => {
-    const token = localStorage.getItem("luxe_customer_token");
-    cb({ token });
-  },
+  withCredentials: true, // send HttpOnly cookie in handshake — no localStorage token needed
 });
 
 socket.on("connect", () => {

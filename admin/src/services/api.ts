@@ -19,7 +19,7 @@ export const getApiUrl = () => {
 export const API_URL = getApiUrl();
 export const API = API_URL;
 
-const api = axios.create({ baseURL: API_URL, timeout: 15000 });
+const api = axios.create({ baseURL: API_URL, timeout: 15000, withCredentials: true });
 
 // ── Attach JWT to every request ───────────────────────────
 api.interceptors.request.use((config) => {

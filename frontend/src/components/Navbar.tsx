@@ -117,8 +117,8 @@ const Navbar = () => {
     // If user DID sign in, the useEffect above handles the redirect
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("luxe_customer_token");
+  const handleLogout = async () => {
+    try { await api.post("/auth/logout"); } catch { /* best-effort */ }
     localStorage.removeItem("luxe_user");
     localStorage.removeItem("luxe_bookings");
     localStorage.removeItem("luxestay_wishlist");
@@ -346,12 +346,8 @@ const Navbar = () => {
                       // Pre-fetch room number and floor from active booking
                       if (user?.email) {
                         try {
-                          const token = localStorage.getItem("luxe_customer_token");
-                          const headers: Record<string, string> = { "Content-Type": "application/json" };
-                          if (token) headers["Authorization"] = `Bearer ${token}`;
-                          const bRes = await fetch(`${API}/bookings?guestEmail=${encodeURIComponent(user.email)}&limit=5`, { headers });
-                          const bJson = await bRes.json();
-                          const apiBookings: any[] = bJson?.data || [];
+                          const bRes = await api.get(`/bookings?guestEmail=${encodeURIComponent(user.email)}&limit=5`);
+                          const apiBookings: any[] = bRes.data?.data || [];
                           const confirmed = apiBookings.find((b: any) => b.status === "Confirmed") || apiBookings[0];
                           if (confirmed?.room?.roomNumber) {
                             setActiveRoomNo(confirmed.room.roomNumber);

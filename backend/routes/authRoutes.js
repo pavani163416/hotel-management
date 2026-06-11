@@ -229,6 +229,25 @@ const getSecret = () => {
 };
 const JWT_EXPIRES = process.env.JWT_EXPIRES || "7d";
 
+// ── Cookie helper: set/clear the HttpOnly access-token cookie ─────────────────
+const ACCESS_COOKIE = "luxe_access_token";
+const COOKIE_OPTS = (expiresIn) => ({
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
+  maxAge: (() => {
+    // parse simple "7d" / "15m" / "1h" notations to ms
+    const m = String(expiresIn).match(/^(\d+)([smhd])$/);
+    if (!m) return 7 * 24 * 60 * 60 * 1000;
+    const n = parseInt(m[1], 10);
+    return { s: 1000, m: 60000, h: 3600000, d: 86400000 }[m[2]] * n;
+  })(),
+});
+const setAccessCookie = (res, token, expiresIn = JWT_EXPIRES) =>
+  res.cookie(ACCESS_COOKIE, token, COOKIE_OPTS(expiresIn));
+const clearAccessCookie = (res) =>
+  res.clearCookie(ACCESS_COOKIE, { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax" });
+
 const twilioAuthHeaders = () => {
   const sid = process.env.TWILIO_ACCOUNT_SID;
   const token = process.env.TWILIO_AUTH_TOKEN;
@@ -335,12 +354,17 @@ const sendTwilioSMS = async (normalizedPhone, otpCode) => {
 
 // ── Middleware: verify customer JWT ──────────────────────
 export const verifyCustomerToken = (req, res, next) => {
+  // 1. Prefer HttpOnly cookie (web) — XSS-safe
+  // 2. Fall back to Authorization: Bearer header (mobile / Flutter / API clients)
+  const cookieToken = req.cookies?.[ACCESS_COOKIE];
   const header = req.headers.authorization;
-  if (!header?.startsWith("Bearer ")) {
+  const rawToken = cookieToken || (header?.startsWith("Bearer ") ? header.split(" ")[1] : null);
+
+  if (!rawToken) {
     return res.status(401).json({ success: false, message: "Authentication required." });
   }
   try {
-    const decoded = jwt.verify(header.split(" ")[1], getSecret());
+    const decoded = jwt.verify(rawToken, getSecret());
     if (decoded.role !== "customer" && decoded.role !== "owner") {
       return res.status(403).json({ success: false, message: "Access forbidden: customer or owner role required." });
     }
@@ -874,9 +898,12 @@ router.post("/login", loginLimiter, validateLoginPayload, async (req, res, next)
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
       maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
     });
+
+    // Set access token in secure HttpOnly cookie (neutralises XSS token-theft)
+    setAccessCookie(res, accessToken);
 
     logger.info("Customer login successful", { email: normalEmail });
 
@@ -894,7 +921,7 @@ router.post("/login", loginLimiter, validateLoginPayload, async (req, res, next)
         coverImage: user.coverImage,
         paymentMethods: user.paymentMethods,
         role: user.role || "customer",
-        token: accessToken,
+        token: accessToken,  // kept for mobile / Flutter clients
         refreshToken
       },
     });
@@ -1002,6 +1029,9 @@ router.post("/phone/verify", otpRateLimiter, async (req, res, next) => {
       { expiresIn: JWT_EXPIRES }
     );
 
+    // Set access token in HttpOnly cookie (web security hardening)
+    setAccessCookie(res, token);
+
     return res.status(200).json({
       success: true,
       message: "Phone verification successful.",
@@ -1016,7 +1046,7 @@ router.post("/phone/verify", otpRateLimiter, async (req, res, next) => {
         coverImage: user.coverImage,
         paymentMethods: user.paymentMethods,
         role: user.role || "customer",
-        token,
+        token, // kept for mobile / Flutter clients
       },
     });
   } catch (err) {
@@ -1155,6 +1185,9 @@ router.post("/google", async (req, res, next) => {
       { expiresIn: "7d" }
     );
 
+    // Set access token in HttpOnly cookie (web security hardening)
+    setAccessCookie(res, token, "7d");
+
     res.json({
       success: true,
       data: {
@@ -1168,7 +1201,7 @@ router.post("/google", async (req, res, next) => {
         coverImage: user.coverImage,
         paymentMethods: user.paymentMethods,
         role: user.role || "customer",
-        token,
+        token, // kept for mobile / Flutter clients
       },
     });
   } catch (err) {
@@ -1300,6 +1333,9 @@ router.post("/firebase", async (req, res, next) => {
       { expiresIn: "7d" }
     );
 
+    // Set access token in HttpOnly cookie (web security hardening)
+    setAccessCookie(res, token, "7d");
+
     res.json({
       success: true,
       data: {
@@ -1313,7 +1349,7 @@ router.post("/firebase", async (req, res, next) => {
         coverImage: user.coverImage,
         paymentMethods: user.paymentMethods,
         role: user.role || "customer",
-        token,
+        token, // kept for mobile / Flutter clients
       },
     });
   } catch (err) {
@@ -1864,14 +1900,17 @@ router.post("/refresh-token", async (req, res, next) => {
     res.cookie("refreshToken", newRefreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
       maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
     });
+
+    // Rotate access token cookie too
+    setAccessCookie(res, newAccessToken, "15m");
 
     return res.status(200).json({
       success: true,
       data: {
-        token: newAccessToken,
+        token: newAccessToken,   // kept for mobile / Flutter clients
         refreshToken: newRefreshToken
       }
     });
@@ -1934,12 +1973,13 @@ router.post("/logout", async (req, res, next) => {
       } catch (e) { }
     }
 
-    // Clear cookie
+    // Clear both cookies on logout
     res.clearCookie("refreshToken", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict"
+      sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
     });
+    clearAccessCookie(res);
 
     // Write audit log
     AuditLog.create({

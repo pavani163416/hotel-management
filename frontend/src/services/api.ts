@@ -29,20 +29,16 @@ const api = axios.create({
   baseURL: API_URL,
   headers: { "Content-Type": "application/json" },
   timeout: 30000,
+  withCredentials: true, // send HttpOnly cookies automatically on every request
 });
 
-// ── Request interceptor: attach token ────────────────────
+// ── Request interceptor ───────────────────────────────────
+// HttpOnly cookies are sent automatically by the browser — no manual token
+// attachment needed for web clients.
+// Mobile / Flutter clients that still pass an Authorization: Bearer header
+// will work unchanged because verifyCustomerToken accepts both.
 api.interceptors.request.use(
-  (config) => {
-    // Only attach customer token if an Authorization header isn't already explicitly provided
-    if (!config.headers.Authorization) {
-      const token = localStorage.getItem("luxe_customer_token");
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
-    }
-    return config;
-  },
+  (config) => config,
   (error) => Promise.reject(error)
 );
 
@@ -52,7 +48,7 @@ api.interceptors.response.use(
   (error) => {
     // Intercept 401 Unauthorized errors to automatically clean up expired/invalid sessions
     if (error.response?.status === 401) {
-      localStorage.removeItem("luxe_customer_token");
+      // No localStorage token to remove — cookie is cleared server-side via /logout
       localStorage.removeItem("luxe_user");
       localStorage.removeItem("luxe_bookings");
       window.dispatchEvent(new Event("luxe_logout"));
@@ -157,13 +153,9 @@ export const updateRoomStatus = async (
   return data;
 };
 
-/** GET /api/auth/bookings — fetch bookings for the logged-in user via JWT */
+/** GET /api/auth/bookings — fetch bookings for the logged-in user via HttpOnly cookie */
 export const getMyBookings = async (params?: { page?: number; limit?: number }) => {
-  const token = localStorage.getItem("luxe_customer_token");
-  const { data } = await api.get("/auth/bookings", {
-    params,
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
-  });
+  const { data } = await api.get("/auth/bookings", { params });
   return data;
 };
 
@@ -184,11 +176,9 @@ export const markNotificationRead = async (id: string) => {
 };
 
 export const changePassword = async (oldPassword: string, newPassword: string) => {
-  const token = localStorage.getItem("luxe_customer_token");
   const { data } = await api.post(
     "/auth/change-password",
-    { oldPassword, newPassword },
-    { headers: token ? { Authorization: `Bearer ${token}` } : {} }
+    { oldPassword, newPassword }
   );
   return data;
 };

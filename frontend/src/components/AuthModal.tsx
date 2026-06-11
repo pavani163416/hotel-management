@@ -477,7 +477,7 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
       }
       const res: any = await api.post("/auth/login", payload);
       const d = res.data?.data ?? res.data;
-      localStorage.setItem("luxe_customer_token", d.token);
+      // Token is now an HttpOnly cookie set by the backend — no localStorage write needed
       setUser({ name: d.name, email: d.email, phone: d.phone || "", city: d.city || "", role: d.role || "customer" });
       onClose(); resetForm();
     } catch (err: any) {
@@ -540,7 +540,7 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
         setOtpMessage(res.data?.message || "Registration successful! A verification code has been sent to your email.");
         setResendCooldown(60);
       } else {
-        localStorage.setItem("luxe_customer_token", d.token);
+        // Token is now an HttpOnly cookie set by the backend — no localStorage write needed
         setUser({ name: d.name, email: d.email, phone: d.phone || "", city: d.city || "", role: d.role || "customer" });
         onClose(); resetForm();
       }
@@ -554,7 +554,7 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
 
   const finishAuth = (d: any) => {
     localStorage.removeItem("luxe_pending_email");
-    localStorage.setItem("luxe_customer_token", d.token);
+    // Token is now an HttpOnly cookie set by the backend — no localStorage write needed
     setUser({ name: d.name, email: d.email, phone: d.phone || "", city: d.city || "", role: d.role || "customer" });
     onClose(); resetForm();
   };

@@ -268,15 +268,13 @@ export const BookingProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const fetchUserProfile = async () => {
       try {
-        const token = localStorage.getItem("luxe_customer_token");
-        if (token) {
-          const res = await api.get("/auth/me");
-          if (res.data?.success && res.data.data) {
-            _setUser(res.data.data);
-          }
+        // Cookie is sent automatically — no localStorage token check needed
+        const res = await api.get("/auth/me");
+        if (res.data?.success && res.data.data) {
+          _setUser(res.data.data);
         }
-      } catch (err) {
-        console.error("Failed to fetch user profile:", err);
+      } catch {
+        // Not logged in or cookie expired — silently ignore
       }
     };
     fetchUserProfile();
@@ -450,11 +448,9 @@ export const BookingProvider = ({ children }: { children: ReactNode }) => {
     if (!u) {
       setBookings([]);
       localStorage.removeItem("luxe_bookings");
-      localStorage.removeItem("luxe_customer_token");
-      socket.auth = { token: null };
+      // HttpOnly cookie cleared server-side by /api/auth/logout
       socket.disconnect().connect();
     } else {
-      socket.auth = { token: localStorage.getItem("luxe_customer_token") };
       socket.disconnect().connect();
     }
   };
