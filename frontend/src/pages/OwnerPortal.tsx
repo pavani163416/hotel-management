@@ -129,6 +129,9 @@ const OwnerPortal = () => {
 
       if (user?.role === "owner" || data.status === "approved") {
         await loadDashboard();
+        if (user && user.role !== "owner") {
+          setUser({ ...user, role: "owner" });
+        }
       }
     } catch (err: any) {
       setError(err.message || "Failed to load application status.");
@@ -295,7 +298,7 @@ const OwnerPortal = () => {
   }
 
   // ── 2. User role is Approved Owner: Show Owner Dashboard ──
-  if (user?.role === "owner" && dashboardData) {
+  if ((user?.role === "owner" || appStatus === "approved") && dashboardData) {
     const sc = { color: "text-green-700", bg: "bg-green-50 border-green-200", label: "Approved Partner" };
     return (
       <Layout>
