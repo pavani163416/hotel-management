@@ -1,6 +1,7 @@
 import { ReactNode } from "react";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
+import CookieConsent from "./CookieConsent";
 import { useVisitorTracker } from "@/hooks/use-visitor-tracker";
 
 const Layout = ({ children }: { children: ReactNode }) => {
@@ -10,6 +11,7 @@ const Layout = ({ children }: { children: ReactNode }) => {
       <Navbar />
       <main className="flex-1">{children}</main>
       <Footer />
+      <CookieConsent />
     </div>
   );
 };

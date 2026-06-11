@@ -164,6 +164,12 @@ import("./models/Hotel.js").then(async ({ default: Hotel }) => {
 const app = express();
 app.disable("x-powered-by");
 
+// Set X-Robots-Tag globally on all API and backend responses
+app.use((req, res, next) => {
+  res.setHeader("X-Robots-Tag", "noindex, nofollow");
+  next();
+});
+
 app.use(cookieParser());
 app.use(createSessionMiddleware());
 
@@ -211,8 +217,11 @@ const isTrustedVercelDomain = (origin) => {
 const isValidOrigin = (origin) => {
   if (!origin || origin === "null" || origin === "undefined") return false;
   if (allowedOrigins.includes(origin)) return true;
-  if (origin.startsWith("http://localhost:") || origin.startsWith("http://127.0.0.1:")) return true;
-  if (isTrustedVercelDomain(origin)) return true;
+  // Local host and dynamic Vercel subdomains are only allowed in non-production environments
+  if (!isProd) {
+    if (origin.startsWith("http://localhost:") || origin.startsWith("http://127.0.0.1:")) return true;
+    if (isTrustedVercelDomain(origin)) return true;
+  }
   return false;
 };
 

@@ -124,6 +124,7 @@ const Footer = () => (
           {[
             { label: "Terms of Service", to: "/terms" },
             { label: "Privacy Policy",   to: "/privacy" },
+            { label: "Cookie Policy",    to: "/cookie-policy" },
           ].map(({ label, to }) => (
             <li key={to}>
               <Link to={to} className="hover:text-primary-foreground transition-colors">{label}</Link>
@@ -146,6 +147,8 @@ const Footer = () => (
       <Link to="/terms" className="hover:text-primary-foreground/70 transition-colors">Terms</Link>
       {" · "}
       <Link to="/privacy" className="hover:text-primary-foreground/70 transition-colors">Privacy</Link>
+      {" · "}
+      <Link to="/cookie-policy" className="hover:text-primary-foreground/70 transition-colors">Cookies</Link>
     </div>
   </footer>
 );

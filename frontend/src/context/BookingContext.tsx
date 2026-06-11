@@ -218,7 +218,7 @@ type Ctx = {
   cancelBooking: (id: string) => void;
   user: UserProfile | null;
   setUser: (u: UserProfile | null) => void;
-  submitReview: (hotelId: string, review: { author: string; rating: number; comment: string }) => Promise<void>;
+  submitReview: (hotelId: string, review: { author: string; rating: number; comment: string; captchaId?: string; captchaAnswer?: string; captchaToken?: string }) => Promise<void>;
 };
 
 const BookingCtx = createContext<Ctx | null>(null);
@@ -465,7 +465,7 @@ export const BookingProvider = ({ children }: { children: ReactNode }) => {
 
   const submitReview = async (
     hotelId: string,
-    review: { author: string; rating: number; comment: string }
+    review: { author: string; rating: number; comment: string; captchaId?: string; captchaAnswer?: string; captchaToken?: string }
   ) => {
     try {
       const response = await api.post(`/hotels/${hotelId}/reviews`, review);

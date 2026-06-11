@@ -110,9 +110,44 @@ export const getHotelById = async (req, res, next) => {
 // POST /api/hotels/:id/reviews
 export const addReviewToHotel = async (req, res, next) => {
   try {
-    const { rating, comment } = req.body;
+    const { rating, comment, captchaId, captchaAnswer, captchaToken } = req.body;
     if (!rating || !comment) {
       return res.status(422).json({ success: false, message: "Rating and review text are required." });
+    }
+
+    // Spam prevention link check
+    const containsSpam = (text) => {
+      const spamPatterns = [
+        /https?:\/\/[^\s]+/i, // URLs
+        /www\.[^\s]+/i,      // www links
+        /\[url=([^\]]+)\]/i,  // BBCode url
+        /<a\s+href=/i        // HTML links
+      ];
+      return spamPatterns.some(pattern => pattern.test(text));
+    };
+
+    if (containsSpam(comment)) {
+      return res.status(400).json({
+        success: false,
+        message: "External links and spam content are not permitted in reviews."
+      });
+    }
+
+    // CAPTCHA verification
+    if (!captchaToken && (!captchaId || !captchaAnswer)) {
+      return res.status(400).json({
+        success: false,
+        message: "Security check is required. Please complete the CAPTCHA challenge."
+      });
+    }
+
+    const { verifyCaptchaOrToken } = await import("../utils/captcha.js");
+    const captchaValid = await verifyCaptchaOrToken({ captchaId, captchaAnswer, captchaToken });
+    if (!captchaValid) {
+      return res.status(400).json({
+        success: false,
+        message: "Incorrect security check answer. Please try again."
+      });
     }
 
     // Require a completed stay before accepting a review.

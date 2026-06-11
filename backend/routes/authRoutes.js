@@ -203,7 +203,7 @@ import { cacheGet, cacheSet, cacheDel } from "../cache/redisCache.js";
 import { getRedisClient, isRedisReady } from "../config/redis.js";
 import { enqueueEmailJob } from "../queues/emailQueue.js";
 import AuditLog from "../models/AuditLog.js";
-import { generateCaptcha, verifyCaptcha } from "../utils/captcha.js";
+import { generateCaptcha, verifyCaptcha, verifyCaptchaOrToken } from "../utils/captcha.js";
 import {
   validateLoginPayload,
   validateRegisterPayload,
@@ -413,13 +413,14 @@ router.post("/register", authLimiter, validateRegisterPayload, async (req, res, 
     }
 
     // ── CAPTCHA verification (mandatory for registration) ─────
-    const { captchaId, captchaAnswer } = req.body;
+    const { captchaId, captchaAnswer, captchaToken } = req.body;
     
     // CAPTCHA is now mandatory - must be provided and valid
-    if (!captchaId || !captchaAnswer) {
+    if (!captchaToken && (!captchaId || !captchaAnswer)) {
       logger.warn("Registration attempt with missing CAPTCHA", {
         email: normalEmail,
         ip: req.ip,
+        hasCaptchaToken: !!captchaToken,
         hasCaptchaId: !!captchaId,
         hasCaptchaAnswer: !!captchaAnswer,
       });
@@ -430,7 +431,7 @@ router.post("/register", authLimiter, validateRegisterPayload, async (req, res, 
       });
     }
     
-    const captchaValid = await verifyCaptcha(captchaId, captchaAnswer);
+    const captchaValid = await verifyCaptchaOrToken(req.body);
     if (!captchaValid) {
       logger.warn("Registration attempt with invalid CAPTCHA", {
         email: normalEmail,
@@ -672,13 +673,14 @@ router.post("/login", loginLimiter, validateLoginPayload, async (req, res, next)
     }
 
     // ── CAPTCHA verification (mandatory for login) ─────
-    const { captchaId: loginCaptchaId, captchaAnswer: loginCaptchaAnswer } = req.body;
+    const { captchaId: loginCaptchaId, captchaAnswer: loginCaptchaAnswer, captchaToken: loginCaptchaToken } = req.body;
     
     // CAPTCHA is now mandatory - must be provided and valid
-    if (!loginCaptchaId || !loginCaptchaAnswer) {
+    if (!loginCaptchaToken && (!loginCaptchaId || !loginCaptchaAnswer)) {
       logger.warn("Login attempt with missing CAPTCHA", {
         email: normalEmail,
         ip: req.ip,
+        hasCaptchaToken: !!loginCaptchaToken,
         hasCaptchaId: !!loginCaptchaId,
         hasCaptchaAnswer: !!loginCaptchaAnswer,
       });
@@ -689,7 +691,12 @@ router.post("/login", loginLimiter, validateLoginPayload, async (req, res, next)
       });
     }
     
-    const loginCaptchaValid = await verifyCaptcha(loginCaptchaId, loginCaptchaAnswer);
+    // Adapt payload format for verifyCaptchaOrToken
+    const loginCaptchaValid = await verifyCaptchaOrToken({
+      captchaId: loginCaptchaId,
+      captchaAnswer: loginCaptchaAnswer,
+      captchaToken: loginCaptchaToken
+    });
     if (!loginCaptchaValid) {
       logger.warn("Login attempt with invalid CAPTCHA", {
         email: normalEmail,

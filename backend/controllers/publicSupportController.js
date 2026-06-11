@@ -31,10 +31,33 @@ const uploadBufferToCloudinary = async (buffer, filename, mimetype) => {
 
 export const createPublicTicket = async (req, res) => {
   try {
-    const { fullName, hotelName, email, phoneNumber, issueType, priority, message } = req.body;
+    const { fullName, hotelName, email, phoneNumber, issueType, priority, message, captchaId, captchaAnswer, captchaToken } = req.body;
+
+    // CAPTCHA verification
+    if (!captchaToken && (!captchaId || !captchaAnswer)) {
+      return res.status(400).json({
+        success: false,
+        message: "Security check is required. Please complete the CAPTCHA challenge."
+      });
+    }
+
+    const { verifyCaptchaOrToken } = await import("../utils/captcha.js");
+    const captchaValid = await verifyCaptchaOrToken({ captchaId, captchaAnswer, captchaToken });
+    if (!captchaValid) {
+      return res.status(400).json({
+        success: false,
+        message: "Incorrect security check answer. Please try again."
+      });
+    }
+
+    // Resolve names to support both frontend naming variants safely
+    const finalName = String(fullName || req.body.guestName || "").trim();
+    const finalEmail = String(email || req.body.guestEmail || "").trim();
+    const finalIssue = String(issueType || req.body.category || "Other").trim();
+    const finalMessage = String(message || "").trim();
 
     // Validation
-    if (!fullName || !email || !issueType || !message) {
+    if (!finalName || !finalEmail || !finalIssue || !finalMessage) {
       return res.status(400).json({ success: false, message: "Missing required fields" });
     }
 
@@ -69,13 +92,13 @@ export const createPublicTicket = async (req, res) => {
 
     const newTicket = await PublicSupportRequest.create({
       ticketId,
-      fullName,
-      hotelName,
-      email,
-      phoneNumber,
-      issueType,
+      fullName: finalName,
+      hotelName: hotelName || "",
+      email: finalEmail,
+      phoneNumber: phoneNumber || "",
+      issueType: finalIssue,
       priority: priority || "Medium",
-      message,
+      message: finalMessage,
       attachments,
       ipAddress: req.ip || req.socket.remoteAddress
     });
