@@ -261,7 +261,6 @@ app.use(helmet({
       // Razorpay checkout + risk-detection bundle + Google OAuth
       scriptSrc:     [
         "'self'",
-        "'unsafe-inline'",  // Required for Razorpay inline handlers
         "https://checkout.razorpay.com",
         "https://cdn.razorpay.com",
         "https://accounts.google.com",
