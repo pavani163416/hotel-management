@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import DOMPurify from "dompurify";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useBooking } from "@/context/BookingContext";
 import { Loader2, Smartphone } from "lucide-react";
@@ -139,7 +140,7 @@ function AuthModalInner({ isOpen, onClose, defaultMode, mode, setMode, loading, 
               </div>
               <div className="bg-secondary/60 border border-border rounded-lg px-4 py-2 text-sm font-mono font-semibold text-foreground flex justify-center items-center">
                 {captchaChallenge.trim().startsWith('<svg') 
-                  ? <div dangerouslySetInnerHTML={{ __html: captchaChallenge }} />
+                  ? <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(captchaChallenge) }} />
                   : captchaChallenge}
               </div>
               <input type="text" value={captchaAnswer} onChange={e => setCaptchaAnswer(e.target.value)}
@@ -239,7 +240,7 @@ function AuthModalInner({ isOpen, onClose, defaultMode, mode, setMode, loading, 
               </div>
               <div className="bg-secondary/60 border border-border rounded-lg px-4 py-2 text-sm font-mono font-semibold text-foreground flex justify-center items-center">
                 {captchaChallenge.trim().startsWith('<svg') 
-                  ? <div dangerouslySetInnerHTML={{ __html: captchaChallenge }} />
+                  ? <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(captchaChallenge) }} />
                   : captchaChallenge}
               </div>
               <input type="text" value={captchaAnswer} onChange={e => setCaptchaAnswer(e.target.value)}

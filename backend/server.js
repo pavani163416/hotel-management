@@ -179,20 +179,18 @@ if (isProd) {
 }
 
 // ── CORS ─────────────────────────────────────────────────
-const rawOrigins = (process.env.CLIENT_ORIGIN || "").split(",").map((o) => o.trim()).filter(Boolean);
+const rawOrigins = [
+  ...(process.env.CLIENT_ORIGIN || "").split(","),
+  ...(process.env.FRONTEND_URL || "").split(","),
+  ...(process.env.ADMIN_URL || "").split(","),
+].map((o) => o.trim()).filter(Boolean);
 
 // Always-allowed origins (Vercel deployments + local dev)
 const allowedOrigins = [
-  "https://hotel-mgnt.vercel.app",
-  "https://luxestay-frontend.vercel.app",
-  "https://luxestay-admin.vercel.app",
-  "http://localhost:5173", "http://127.0.0.1:5173",
-  "http://localhost:5174", "http://127.0.0.1:5174",
-  "http://localhost:3000", "http://127.0.0.1:3000",
-  "http://localhost:8080", "http://127.0.0.1:8080",
-  "http://localhost:8082", "http://127.0.0.1:8082",
-  "http://192.168.1.60:8080",
-  "https://luxestay-fix-final-v2.loca.lt",
+  "https://hotel-management-frontend-puce.vercel.app",
+  "https://hotel-management-admin-eta.vercel.app",
+  "http://localhost:5173",
+  "http://localhost:3000",
   ...rawOrigins,
 ];
 
@@ -217,11 +215,8 @@ const isTrustedVercelDomain = (origin) => {
 const isValidOrigin = (origin) => {
   if (!origin || origin === "null" || origin === "undefined") return false;
   if (allowedOrigins.includes(origin)) return true;
-  // Local host and dynamic Vercel subdomains are only allowed in non-production environments
-  if (!isProd) {
-    if (origin.startsWith("http://localhost:") || origin.startsWith("http://127.0.0.1:")) return true;
-    if (isTrustedVercelDomain(origin)) return true;
-  }
+  // Dynamic Vercel subdomains allowed for PR deployments
+  if (isTrustedVercelDomain(origin)) return true;
   return false;
 };
 
@@ -318,18 +313,19 @@ app.use(helmet({
   },
 }));
 
-// Handle preflight for all routes FIRST — before any other middleware
+// ── Global CORS Header Middleware ──
+// Ensure every API response includes proper headers for valid origins
 app.use((req, res, next) => {
-  if (req.method === "OPTIONS") {
-    const origin = req.headers["origin"];
-    // Fix: Cross-Domain Misconfiguration
-    // Only echo origin if it is explicitly trusted.
-    if (isValidOrigin(origin)) {
-      res.setHeader("Access-Control-Allow-Origin", origin);
-    }
+  const origin = req.headers["origin"];
+  if (isValidOrigin(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Access-Control-Allow-Credentials", "true");
     res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD");
     res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With, Upgrade");
-    res.setHeader("Access-Control-Allow-Credentials", "true");
+  }
+  
+  // Handle preflight directly
+  if (req.method === "OPTIONS") {
     res.removeHeader("X-Powered-By");
     res.removeHeader("Server");
     return res.sendStatus(204);
@@ -570,7 +566,7 @@ app.get("/api/health", (req, res) => {
 });
 
 // ── Global Middlewares ────────────────────────────────────
-app.use(cors(corsOptions));
+// app.use(cors(corsOptions)); // Removed duplicate CORS middleware
 // Use trust proxy 1 for express-rate-limit behind a single proxy (Railway/Vercel)
 app.set("trust proxy", 1);
 app.use(cookieParser());

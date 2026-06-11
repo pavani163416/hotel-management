@@ -1,5 +1,6 @@
 import Layout from "@/components/Layout";
 import { useState } from "react";
+import DOMPurify from "dompurify";
 import { Link } from "react-router-dom";
 import { AuthModal } from "@/components/AuthModal";
 import { useBooking } from "@/context/BookingContext";
@@ -425,7 +426,7 @@ const SupportCentre = () => {
                   </div>
                   <div className="bg-secondary/60 border border-border rounded-xl px-4 py-2 text-sm font-mono font-semibold text-foreground flex justify-center items-center">
                     {captchaChallenge.trim().startsWith('<svg') 
-                      ? <div dangerouslySetInnerHTML={{ __html: captchaChallenge }} />
+                      ? <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(captchaChallenge) }} />
                       : captchaChallenge}
                   </div>
                   <input id="captcha-input" type="text" value={captchaAnswer} onChange={e => setCaptchaAnswer(e.target.value)}
