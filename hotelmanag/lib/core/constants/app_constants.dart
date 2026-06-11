@@ -28,9 +28,9 @@ class AppConstants {
     if (kIsWeb) {
       return 'http://127.0.0.1:5000/api/';
     } else if (defaultTargetPlatform == TargetPlatform.android) {
-      // 192.168.1.60 is the host LAN IP for the physical device to connect.
-      // Use 10.0.2.2 if running on an Android Emulator instead.
-      return 'http://192.168.1.60:5000/api/';
+      // 10.0.2.2 is the host LAN IP for the Android Emulator to connect to localhost.
+      // Use 192.168.1.60 if running on a physical device instead.
+      return 'http://10.0.2.2:5000/api/';
     } else {
       return 'http://127.0.0.1:5000/api/';
     }

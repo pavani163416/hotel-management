@@ -51,7 +51,7 @@ class _LoginPageState extends State<LoginPage> {
       });
     } else {
       setState(() {
-        _captchaChallenge = 'ERROR_NETWORK_DISCONNECTED';
+        _captchaChallenge = 'ERROR';
         _captchaId = '';
         _captchaController.clear();
         _captchaLoading = false;
@@ -229,13 +229,13 @@ class _LoginPageState extends State<LoginPage> {
                       child: Center(
                         child: _captchaChallenge.trim().startsWith('<svg') 
                           ? SvgPicture.string(_captchaChallenge, fit: BoxFit.contain)
-                          : Text(_captchaChallenge,
-                              style: const TextStyle(
-                                fontFamily: 'monospace',
-                                fontSize: 24,
-                                letterSpacing: 8,
-                                fontWeight: FontWeight.w800,
-                                color: Colors.black87,
+                          : Text(_captchaChallenge == 'ERROR' ? 'Failed to load CAPTCHA' : _captchaChallenge,
+                              style: TextStyle(
+                                fontFamily: _captchaChallenge == 'ERROR' ? 'sans-serif' : 'monospace',
+                                fontSize: _captchaChallenge == 'ERROR' ? 14 : 24,
+                                letterSpacing: _captchaChallenge == 'ERROR' ? 0 : 8,
+                                fontWeight: _captchaChallenge == 'ERROR' ? FontWeight.w500 : FontWeight.w800,
+                                color: _captchaChallenge == 'ERROR' ? Colors.red : Colors.black87,
                               ),
                             ),
                       ),
