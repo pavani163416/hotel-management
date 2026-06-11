@@ -4,6 +4,7 @@ import Layout from "@/components/Layout";
 import { useBooking } from "@/context/BookingContext";
 import { useCurrency } from "@/context/CurrencyContext";
 import { useState, useEffect, useMemo } from "react";
+import DOMPurify from "dompurify";
 import { AuthModal } from "@/components/AuthModal";
 import { API } from "@/services/api";
 import { useSEO } from "@/hooks/useSEO";
@@ -500,7 +501,7 @@ const HotelDetails = () => {
                     </div>
                     <div className="bg-secondary/60 border border-border rounded-lg px-3 py-1.5 text-xs font-mono font-semibold text-foreground flex justify-center items-center">
                       {captchaChallenge.trim().startsWith('<svg') 
-                        ? <div dangerouslySetInnerHTML={{ __html: captchaChallenge }} />
+                        ? <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(captchaChallenge) }} />
                         : captchaChallenge}
                     </div>
                     <input id="review-captcha" type="text" value={captchaAnswer} onChange={e => setCaptchaAnswer(e.target.value)}

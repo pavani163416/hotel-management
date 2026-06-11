@@ -7,7 +7,7 @@
     {
       "source": "/(.*)",
       "headers": [
-        { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com https://checkout.razorpay.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: blob:; connect-src 'self' https: wss: ws:; frame-src 'self' https://accounts.google.com https://*.razorpay.com https://maps.google.com https://www.google.com; frame-ancestors 'none';" },
+        { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' https://accounts.google.com https://checkout.razorpay.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: blob:; connect-src 'self' https: wss: ws:; frame-src 'self' https://accounts.google.com https://*.razorpay.com https://maps.google.com https://www.google.com; frame-ancestors 'none';" },
         { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
         { "key": "X-Content-Type-Options", "value": "nosniff" },
         { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
