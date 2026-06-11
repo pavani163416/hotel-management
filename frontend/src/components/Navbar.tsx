@@ -58,6 +58,17 @@ const Navbar = () => {
   const [hasActiveStay, setHasActiveStay] = useState(false);
   // Track whether the modal was open so we know when it just closed
   const wasAuthOpen = useRef(false);
+  const notificationRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
+        setShowNotifications(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   // Auto-open sign-in when redirected from a protected route or via global event
   useEffect(() => {
@@ -272,7 +283,7 @@ const Navbar = () => {
           </button>
           {user ? (
             <>
-              <div className="relative">
+              <div className="relative" ref={notificationRef}>
                 <button
                   onClick={() => setShowNotifications((v) => !v)}
                   className="relative w-9 h-9 grid place-items-center rounded-full hover:bg-accent/5 transition-base border border-transparent hover:border-border"
@@ -326,7 +337,7 @@ const Navbar = () => {
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <Link to="/owner-portal" className="w-full cursor-pointer flex items-center gap-1.5 text-primary hover:text-accent font-medium">
-                      <Building2 className="w-3.5 h-3.5" /> List Your Property
+                      <Building2 className="w-3.5 h-3.5" /> {user?.role === "owner" ? "Owner Dashboard" : "List Your Property"}
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem

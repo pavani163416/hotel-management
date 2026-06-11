@@ -106,7 +106,7 @@ export const createPublicTicket = async (req, res) => {
     // Create Notification for Super Admin
     await Notification.create({
       role: "admin",
-      message: `New public support ticket ${ticketId} from ${fullName} - ${issueType}`,
+      message: `New public support ticket ${ticketId} from ${finalName} - ${finalIssue}`,
       type: "system"
     });
 
@@ -115,13 +115,13 @@ export const createPublicTicket = async (req, res) => {
     if (io) {
       io.to("role:admin").to("role:Super Admin").emit("support:new-public-ticket", {
         ticketId,
-        fullName,
-        issueType,
-        priority
+        fullName: finalName,
+        issueType: finalIssue,
+        priority: priority || "Medium"
       });
       io.to("role:admin").to("role:Super Admin").emit("notification:new", {
         type: "system",
-        message: `New public support ticket ${ticketId} from ${fullName} - ${issueType}`
+        message: `New public support ticket ${ticketId} from ${finalName} - ${finalIssue}`
       });
     }
 
@@ -132,15 +132,15 @@ export const createPublicTicket = async (req, res) => {
         await resend.emails.send({
           from: process.env.RESEND_FROM_EMAIL || "LuxeStay <onboarding@resend.dev>",
           to: [process.env.ADMIN_EMAIL || "addepallipavani4@gmail.com"], // Change if needed
-          subject: `New Support Request: ${ticketId} - ${issueType}`,
+          subject: `New Support Request: ${ticketId} - ${finalIssue}`,
           html: `
             <h2>New Public Support Ticket</h2>
             <p><strong>Ticket ID:</strong> ${ticketId}</p>
-            <p><strong>Name:</strong> ${fullName}</p>
-            <p><strong>Email:</strong> ${email}</p>
-            <p><strong>Issue Type:</strong> ${issueType}</p>
-            <p><strong>Priority:</strong> ${priority}</p>
-            <p><strong>Message:</strong><br/>${message.replace(/\n/g, '<br/>')}</p>
+            <p><strong>Name:</strong> ${finalName}</p>
+            <p><strong>Email:</strong> ${finalEmail}</p>
+            <p><strong>Issue Type:</strong> ${finalIssue}</p>
+            <p><strong>Priority:</strong> ${priority || "Medium"}</p>
+            <p><strong>Message:</strong><br/>${finalMessage.replace(/\n/g, '<br/>')}</p>
           `
         });
       } catch (err) {

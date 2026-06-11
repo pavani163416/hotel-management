@@ -1,5 +1,5 @@
 import Layout from "@/components/Layout";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import DOMPurify from "dompurify";
 import { Link } from "react-router-dom";
 import { AuthModal } from "@/components/AuthModal";

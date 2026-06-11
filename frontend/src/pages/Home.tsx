@@ -184,7 +184,7 @@ const Home = () => {
             <p className="text-accent text-xs font-semibold uppercase tracking-widest mb-2">Curated Selection</p>
             <h2 className="font-display text-3xl md:text-4xl font-bold">Featured Destinations</h2>
           </div>
-          <button onClick={() => nav("/hotels")} className="hidden md:flex items-center gap-1 text-sm font-medium text-primary hover:text-accent transition-base">
+          <button onClick={() => { setSearch({ ...search, location: "" }); nav("/hotels"); }} className="hidden md:flex items-center gap-1 text-sm font-medium text-primary hover:text-accent transition-base">
             View all <ArrowRight className="w-4 h-4" />
           </button>
         </div>
