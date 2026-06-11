@@ -1065,6 +1065,7 @@ router.post("/google", async (req, res, next) => {
       const androidClientID = "239513848879-3d319eb0dp07rltmkhelp6qtqp4rhhpq.apps.googleusercontent.com";
       const androidClientID2 = "239513848879-9f7e5ju597pgbl7p4isddckui4misecp.apps.googleusercontent.com";
       const androidClientID3 = "239513848879-b1inguas60lk6gi7lhmhoh3fo319k225.apps.googleusercontent.com";
+      const oldWebClientID = "70312411330-8givsb0ktr8f09u8ullo157vkppkoqqv.apps.googleusercontent.com";
       const match = (tokenInfo.aud === clientID) || 
                     (tokenInfo.azp === clientID) || 
                     (tokenInfo.issued_to === clientID) ||
@@ -1078,10 +1079,13 @@ router.post("/google", async (req, res, next) => {
                     (tokenInfo.issued_to === androidClientID) ||
                     (tokenInfo.client_id === androidClientID) ||
                     (tokenInfo.aud === androidClientID2) ||
-                    (tokenInfo.aud === androidClientID3);
+                    (tokenInfo.aud === androidClientID3) ||
+                    (tokenInfo.aud === oldWebClientID) ||
+                    (tokenInfo.azp === oldWebClientID) ||
+                    (tokenInfo.client_id === oldWebClientID);
       if (!match) {
-        logger.warn("Google Access Token audience mismatch", { tokenInfo, clientID, fallbackID, androidClientID });
-        console.error("[Google OAuth DEBUG] Audience check failed. None of the tokenInfo fields matched clientID, fallbackID, or androidClientID.");
+        logger.warn("Google Access Token audience mismatch", { tokenInfo, clientID, fallbackID, androidClientID, oldWebClientID });
+        console.error("[Google OAuth DEBUG] Audience check failed. None of the tokenInfo fields matched clientID, fallbackID, androidClientID, or oldWebClientID.");
         throw new Error("Invalid access token audience. Token was not issued to this application.");
       }
 
@@ -1100,6 +1104,7 @@ router.post("/google", async (req, res, next) => {
       const androidClientID = "239513848879-3d319eb0dp07rltmkhelp6qtqp4rhhpq.apps.googleusercontent.com";
       const androidClientID2 = "239513848879-9f7e5ju597pgbl7p4isddckui4misecp.apps.googleusercontent.com";
       const androidClientID3 = "239513848879-b1inguas60lk6gi7lhmhoh3fo319k225.apps.googleusercontent.com";
+      const oldWebClientID = "70312411330-8givsb0ktr8f09u8ullo157vkppkoqqv.apps.googleusercontent.com";
       const ticket = await googleClient.verifyIdToken({
         idToken,
         audience: [
@@ -1107,7 +1112,8 @@ router.post("/google", async (req, res, next) => {
           fallbackID,
           androidClientID,
           androidClientID2,
-          androidClientID3
+          androidClientID3,
+          oldWebClientID
         ],
       });
       const payload = ticket.getPayload();
