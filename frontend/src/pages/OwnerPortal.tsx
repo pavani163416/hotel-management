@@ -201,7 +201,7 @@ const OwnerPortal = () => {
   };
 
   // Render loading state
-  if (loading && !dashboardData && appStatus === "not_applied") {
+  if (loading) {
     return (
       <Layout>
         <div className="flex items-center justify-center min-h-[60vh]">
