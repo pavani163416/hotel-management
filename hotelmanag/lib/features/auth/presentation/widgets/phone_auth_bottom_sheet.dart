@@ -157,6 +157,7 @@ class _PhoneAuthBottomSheetState extends State<PhoneAuthBottomSheet> {
       Navigator.pop(context);
       // TC-FE-022: Removed imperative context.go('/'), relying on GoRouter redirect logic.
     } else {
+      _otpController.clear();
       setState(() => _error = auth.error ?? 'OTP verification failed. Please try again.');
     }
   }

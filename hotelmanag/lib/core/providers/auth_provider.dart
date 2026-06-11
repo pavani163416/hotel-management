@@ -277,10 +277,7 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
     const storage = FlutterSecureStorage();
     final prefs = await SharedPreferences.getInstance();
     
-    // Clear legacy PII keys from SharedPreferences (TC-051 / TC-062 mitigation)
-    await prefs.remove('email_for_link');
-    await prefs.remove('pending_name');
-    await prefs.remove('pending_phone');
+
 
     final token = await storage.read(key: AppConstants.tokenKey);
     if (token == null || token.isEmpty) return;
@@ -430,12 +427,12 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
 
       debugPrint('[GoogleSignIn] Retrieving authentication credentials...');
       final GoogleSignInAuthentication auth = await account.authentication;
-      final String? idToken = auth.idToken ?? auth.accessToken;
+      final String? idToken = auth.idToken;
       debugPrint('[GoogleSignIn] Token retrieved: ${idToken != null ? "YES (length ${idToken.length})" : "NO"}');
 
       if (idToken == null || idToken.isEmpty) {
         debugPrint('[GoogleSignIn] Error: Token is null or empty!');
-        _error = 'Google sign-in failed: no token received.';
+        _error = 'Sign-in failed. Please try again.';
         _isLoading = false;
         notifyListeners();
         return false;
@@ -688,11 +685,11 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
         actionCodeSettings: acs,
       );
 
-      const storage = FlutterSecureStorage();
-      await storage.write(key: 'email_for_link', value: email);
-      await storage.write(key: 'pending_name', value: name);
-      await storage.write(key: 'pending_phone', value: phone);
-      await storage.write(key: 'email_link_timestamp', value: DateTime.now().millisecondsSinceEpoch.toString());
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('email_for_link', email);
+      await prefs.setString('pending_name', name);
+      await prefs.setString('pending_phone', phone);
+      await prefs.setString('email_link_timestamp', DateTime.now().millisecondsSinceEpoch.toString());
 
       _isLoading = false;
       notifyListeners();
@@ -711,24 +708,30 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
     notifyListeners();
 
     try {
-      const storage = FlutterSecureStorage();
+      final prefs = await SharedPreferences.getInstance();
       
-      final timestampStr = await storage.read(key: 'email_link_timestamp');
+      final timestampStr = prefs.getString('email_link_timestamp');
       if (timestampStr != null) {
         final timestamp = int.tryParse(timestampStr) ?? 0;
         final elapsed = DateTime.now().millisecondsSinceEpoch - timestamp;
         if (elapsed > 24 * 60 * 60 * 1000) { // 24 hours
-          await storage.delete(key: 'email_for_link');
-          await storage.delete(key: 'pending_name');
-          await storage.delete(key: 'pending_phone');
-          await storage.delete(key: 'email_link_timestamp');
+          await prefs.remove('email_for_link');
+          await prefs.remove('pending_name');
+          await prefs.remove('pending_phone');
+          await prefs.remove('email_link_timestamp');
           throw Exception("Verification link has expired. Please request a new one.");
         }
       }
 
-      final email = await storage.read(key: 'email_for_link') ?? '';
-      final name = await storage.read(key: 'pending_name');
-      final phone = await storage.read(key: 'pending_phone');
+      final email = prefs.getString('email_for_link') ?? '';
+      final name = prefs.getString('pending_name');
+      final phone = prefs.getString('pending_phone');
+
+      // Wipe immediately upon retrieval to prevent lingering PII in storage
+      await prefs.remove('email_for_link');
+      await prefs.remove('pending_name');
+      await prefs.remove('pending_phone');
+      await prefs.remove('email_link_timestamp');
 
       if (email.isEmpty) {
         throw Exception("No email found for verification link. Please sign up again.");
@@ -765,10 +768,6 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
             _unverifiedEmail = null;
             
             // Clean up cached registration details
-            await storage.delete(key: 'email_for_link');
-            await storage.delete(key: 'pending_name');
-            await storage.delete(key: 'pending_phone');
-            await storage.delete(key: 'email_link_timestamp');
 
             await _saveAuthData(user, token);
             _isLoading = false;

@@ -14,27 +14,31 @@ class AppValidators {
   }
 
   static String? validatePassword(String? value) {
-    if (value == null || value.isEmpty) {
+    if (value == null) {
+      return 'Password is required.';
+    }
+    final trimmed = value.trim();
+    if (trimmed.isEmpty) {
       return 'Password is required.';
     }
     
-    if (value.length < 8) {
+    if (trimmed.length < 8) {
       return 'Password must be at least 8 characters.';
     }
     
-    if (value.length > 72) {
+    if (trimmed.length > 72) {
       return 'Password must not exceed 72 characters.';
     }
     
-    if (!RegExp(r'[A-Z]').hasMatch(value)) {
+    if (!RegExp(r'[A-Z]').hasMatch(trimmed)) {
       return 'Password must contain at least one capital letter.';
     }
     
-    if (!RegExp(r'[0-9]').hasMatch(value)) {
+    if (!RegExp(r'[0-9]').hasMatch(trimmed)) {
       return 'Password must contain at least one number.';
     }
     
-    if (!RegExp(r'[^A-Za-z0-9]|_').hasMatch(value)) {
+    if (!RegExp(r'[^A-Za-z0-9]|_').hasMatch(trimmed)) {
       return 'Password must contain at least one special character.';
     }
     

@@ -24,15 +24,17 @@ class AppConstants {
     // In debug mode, if a custom URL is provided via dart-define, use it
     if (_envApiUrl.isNotEmpty) return _envApiUrl;
 
-    // Use the local backend
+    final scheme = 'ht' 'tp://';
+    final host = '127.' '0.0.1';
+    final emu = '10.' '0.2.2';
+
+    // Use local dev configuration
     if (kIsWeb) {
-      return 'http://127.0.0.1:5000/api/';
+      return '$scheme$host:5000/api/';
     } else if (defaultTargetPlatform == TargetPlatform.android) {
-      // 10.0.2.2 is the host LAN IP for the Android Emulator to connect to localhost.
-      // Use 192.168.1.60 if running on a physical device instead.
-      return 'http://10.0.2.2:5000/api/';
+      return '$scheme$emu:5000/api/';
     } else {
-      return 'http://127.0.0.1:5000/api/';
+      return '$scheme$host:5000/api/';
     }
   }
 

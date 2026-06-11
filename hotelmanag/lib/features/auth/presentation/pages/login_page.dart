@@ -88,7 +88,7 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
 
-    final password = _passwordController.text;
+    final password = _passwordController.text.trim();
     if (password.isEmpty) {
       setState(() {
         _passwordError = 'Password is required';
@@ -118,6 +118,7 @@ class _LoginPageState extends State<LoginPage> {
         }
       } else if (auth.error != null) {
         if (mounted) {
+          _passwordController.clear();
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(auth.error!)),
           );

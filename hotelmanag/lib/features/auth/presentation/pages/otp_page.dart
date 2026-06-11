@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -19,9 +20,32 @@ class OtpPage extends StatefulWidget {
 class _OtpPageState extends State<OtpPage> {
   final List<TextEditingController> _controllers = List.generate(6, (_) => TextEditingController());
   final List<FocusNode> _focusNodes = List.generate(6, (_) => FocusNode());
+  int _resendCooldown = 0;
+  Timer? _cooldownTimer;
+
+  void _startCooldown() {
+    setState(() {
+      _resendCooldown = 60;
+    });
+    _cooldownTimer?.cancel();
+    _cooldownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) return;
+      if (_resendCooldown > 1) {
+        setState(() {
+          _resendCooldown--;
+        });
+      } else {
+        setState(() {
+          _resendCooldown = 0;
+        });
+        _cooldownTimer?.cancel();
+      }
+    });
+  }
 
   @override
   void dispose() {
+    _cooldownTimer?.cancel();
     for (var c in _controllers) { c.dispose(); }
     for (var f in _focusNodes) { f.dispose(); }
     super.dispose();
@@ -55,6 +79,13 @@ class _OtpPageState extends State<OtpPage> {
       // TC-FE-022: Relies on GoRouter refreshListenable redirect.
       // Removed imperative context.go('/') hack.
     } else if (mounted) {
+      // Clear all controllers on verification failure
+      for (var c in _controllers) {
+        c.clear();
+      }
+      // Shift focus back to the first box
+      _focusNodes[0].requestFocus();
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(auth.error ?? 'Invalid verification code.')),
       );
@@ -62,6 +93,8 @@ class _OtpPageState extends State<OtpPage> {
   }
 
   void _resendOtp() async {
+    if (_resendCooldown > 0) return;
+    _startCooldown();
     final auth = Provider.of<AuthProvider>(context, listen: false);
     
     final success = await auth.resendOtp(widget.email);
@@ -262,13 +295,13 @@ class _OtpPageState extends State<OtpPage> {
                         style: TextStyle(color: Colors.grey[600], fontSize: 14)
                       ),
                       GestureDetector(
-                        onTap: _resendOtp,
-                        child: const Text(
-                          'Resend Code',
+                        onTap: _resendCooldown > 0 ? null : _resendOtp,
+                        child: Text(
+                          _resendCooldown > 0 ? 'Resend Code in ${_resendCooldown}s' : 'Resend Code',
                           style: TextStyle(
-                            color: AppTheme.accentColor, 
+                            color: _resendCooldown > 0 ? Colors.grey : AppTheme.accentColor, 
                             fontWeight: FontWeight.bold,
-                            decoration: TextDecoration.underline
+                            decoration: _resendCooldown > 0 ? TextDecoration.none : TextDecoration.underline
                           ),
                         ),
                       ),

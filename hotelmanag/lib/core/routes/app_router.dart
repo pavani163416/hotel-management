@@ -47,6 +47,13 @@ class AppRouter {
     return GoRouter(
       initialLocation: splash,
       refreshListenable: authProvider,
+      errorBuilder: (context, state) {
+        return Scaffold(
+          body: Center(
+            child: Text('Oops! We couldn\'t find that page: ${state.uri}'),
+          ),
+        );
+      },
       redirect: (context, state) {
         final path = state.matchedLocation;
 

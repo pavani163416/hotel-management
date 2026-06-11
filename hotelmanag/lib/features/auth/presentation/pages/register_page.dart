@@ -55,6 +55,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
   bool   _obscurePassword = true;
   String _countryCode     = '+91';
+  String? _passwordError;
 
   // CAPTCHA state
   String _captchaId        = '';
@@ -107,6 +108,10 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   Future<void> _handleRegister() async {
+    setState(() {
+      _passwordError = null;
+    });
+
     final name     = _nameController.text.trim();
     final email    = _emailController.text.trim().toLowerCase();
     final phone    = _phoneController.text.trim();
@@ -120,8 +125,22 @@ class _RegisterPageState extends State<RegisterPage> {
     final emailErr = AppValidators.validateEmail(email);
     if (emailErr != null) { _showSnack(emailErr); return; }
 
+    if (password.length < 8) {
+      setState(() {
+        _passwordError = 'Password must be at least 8 characters.';
+      });
+      _showSnack('Password must be at least 8 characters.');
+      return;
+    }
+
     final passErr = AppValidators.validatePassword(password);
-    if (passErr != null) { _showSnack(passErr); return; }
+    if (passErr != null) {
+      setState(() {
+        _passwordError = passErr;
+      });
+      _showSnack(passErr);
+      return;
+    }
 
     final phoneErr = AppValidators.validatePhone(phone);
     if (phoneErr != null) { _showSnack(phoneErr); return; }
@@ -240,6 +259,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 obscureText: _obscurePassword,
                 autofillHints: const [AutofillHints.newPassword],
                 decoration: InputDecoration(
+                  errorText: _passwordError,
                   hintText: '8–15 characters',
                   hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
                   border: OutlineInputBorder(

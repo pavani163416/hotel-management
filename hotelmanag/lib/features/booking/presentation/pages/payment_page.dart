@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
 import '../../../../core/providers/currency_provider.dart';
 import 'package:lucide_icons/lucide_icons.dart';
@@ -175,6 +176,41 @@ class _PaymentPageState extends State<PaymentPage> {
     }
 
     if (isIdValid && isPaymentValid) {
+      if (_selectedMethod == 'card') {
+        final cvv = _cvvController.text;
+        if (double.tryParse(cvv) == null) {
+          setState(() {
+            _isProcessingPayment = false;
+            _errorMessage = 'CVV must contain only numbers';
+          });
+          return;
+        }
+
+        final parts = _expiryController.text.split('/');
+        if (parts.length == 2) {
+          final month = int.tryParse(parts[0]) ?? 0;
+          final year = int.tryParse(parts[1]) ?? 0;
+          
+          final now = DateTime.now();
+          final currentYear = now.year % 100;
+          final currentMonth = now.month;
+
+          if (year < currentYear || (year == currentYear && month < currentMonth)) {
+            setState(() {
+              _isProcessingPayment = false;
+              _errorMessage = 'Card has expired. Please use a valid card.';
+            });
+            return;
+          }
+        } else {
+          setState(() {
+            _isProcessingPayment = false;
+            _errorMessage = 'Invalid format. Use MM/YY.';
+          });
+          return;
+        }
+      }
+
       if (!hasId) {
         final newId = _idNumberController.text.trim();
         if (_selectedGuest == 'lead') {
@@ -810,7 +846,25 @@ class _PaymentPageState extends State<PaymentPage> {
             children: [
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('EXPIRY *'), const SizedBox(height: 8), _buildTextField('MM/YY', required: true, controller: _expiryController, customValidator: AppValidators.validateExpiry)])),
               const SizedBox(width: 16),
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('CVV *'), const SizedBox(height: 8), _buildTextField('123', required: true, controller: _cvvController, customValidator: AppValidators.validateCVV)])),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildLabel('CVV *'),
+                    const SizedBox(height: 8),
+                    _buildTextField(
+                      '123',
+                      required: true,
+                      controller: _cvvController,
+                      customValidator: AppValidators.validateCVV,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      maxLength: 4,
+                      counterText: '',
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 32),
@@ -963,10 +1017,22 @@ class _PaymentPageState extends State<PaymentPage> {
     return Text(text, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.primaryColor.withOpacity(0.5), letterSpacing: 0.5));
   }
 
-  Widget _buildTextField(String hint, {bool required = false, TextEditingController? controller, String? Function(String?)? customValidator}) {
+  Widget _buildTextField(
+    String hint, {
+    bool required = false,
+    TextEditingController? controller,
+    String? Function(String?)? customValidator,
+    TextInputType? keyboardType,
+    List<TextInputFormatter>? inputFormatters,
+    int? maxLength,
+    String? counterText,
+  }) {
     return TextFormField(
       key: ValueKey(hint), // Forces Flutter to preserve unique state per textfield hint
       controller: controller,
+      keyboardType: keyboardType,
+      inputFormatters: inputFormatters,
+      maxLength: maxLength,
       validator: (value) {
         if (required && (value == null || value.trim().isEmpty)) {
           return 'This field is required';
@@ -977,6 +1043,7 @@ class _PaymentPageState extends State<PaymentPage> {
         return null;
       },
       decoration: InputDecoration(
+        counterText: counterText,
         hintText: hint,
         hintStyle: TextStyle(color: Colors.grey[300], fontSize: 14),
         filled: true,
