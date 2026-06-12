@@ -108,6 +108,9 @@ const checkApplicationState = async (req, res, next) => {
       if (existingApp.status === "pending") {
         return res.status(409).json({ success: false, message: "Conflict: Application is already under review." });
       }
+      if (existingApp.status === "processing_upload") {
+        return res.status(409).json({ success: false, message: "Conflict: You already have an application submitted or currently processing." });
+      }
       // If status is 'rejected', we allow them to proceed and re-apply!
     }
     next();
@@ -124,23 +127,71 @@ router.post("/apply", verifyUser, checkApplicationState, uploadPublicSupport.arr
       return res.status(400).json({ success: false, message: "Business name, hotel name, and hotel address are required." });
     }
 
-    const files = req.files || [];
-    const docs = [];
-    for (const file of files) {
+    // 1. ATOMIC LOCKING: Prevent concurrent submissions / state overrides
+    const existing = await OwnerApplication.findOne({ userId: req.user.id });
+    const wasNew = !existing;
+
+    if (wasNew) {
       try {
-        const result = await uploadBufferToCloudinary(file.buffer, file.originalname, file.mimetype);
-        docs.push({
-          type: docType || "document",
-          url: result.secure_url,
-          uploadedAt: new Date(),
+        await OwnerApplication.create({
+          userId: req.user.id,
+          status: "processing_upload",
+          kycStatus: "pending"
         });
-      } catch (err) {
-        logger.error("Cloudinary upload error for KYC:", err);
-        return res.status(500).json({ success: false, message: "Failed to upload document to cloud storage." });
+      } catch (dbErr) {
+        if (dbErr.code === 11000) {
+          return res.status(409).json({
+            success: false,
+            message: "Conflict: You already have an application submitted or currently processing."
+          });
+        }
+        throw dbErr;
+      }
+    } else {
+      // It must be rejected (since approved/pending/processing_upload are blocked by checkApplicationState)
+      const locked = await OwnerApplication.findOneAndUpdate(
+        { userId: req.user.id, status: "rejected" },
+        { $set: { status: "processing_upload", kycStatus: "pending" } },
+        { new: true }
+      );
+      if (!locked) {
+        return res.status(409).json({
+          success: false,
+          message: "Conflict: You already have an application submitted or currently processing."
+        });
       }
     }
 
-    // Create or update application
+    const files = req.files || [];
+    const docs = [];
+    try {
+      for (const file of files) {
+        try {
+          const result = await uploadBufferToCloudinary(file.buffer, file.originalname, file.mimetype);
+          docs.push({
+            type: docType || "document",
+            url: result.secure_url,
+            uploadedAt: new Date(),
+          });
+        } catch (err) {
+          logger.error("Cloudinary upload error for KYC:", err);
+          throw new Error("Failed to upload document to cloud storage.");
+        }
+      }
+    } catch (uploadErr) {
+      // Revert the lock
+      if (wasNew) {
+        await OwnerApplication.deleteOne({ userId: req.user.id }).catch(() => {});
+      } else {
+        await OwnerApplication.findOneAndUpdate(
+          { userId: req.user.id, status: "processing_upload" },
+          { $set: { status: "rejected" } }
+        ).catch(() => {});
+      }
+      return res.status(500).json({ success: false, message: uploadErr.message });
+    }
+
+    // 3. FINAL COMMIT: Update the locked placeholder with final data
     const app = await OwnerApplication.findOneAndUpdate(
       { userId: req.user.id },
       {
@@ -153,7 +204,7 @@ router.post("/apply", verifyUser, checkApplicationState, uploadPublicSupport.arr
         status: "pending",
         kycStatus: "pending",
       },
-      { new: true, upsert: true }
+      { new: true }
     );
 
     // Notify admin panel about the new property application
