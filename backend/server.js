@@ -349,10 +349,35 @@ app.use(sitemapRoutes);
 // ── Swagger / API documentation ──────────────────────────
 // Apply the Swagger-specific CSP so the UI works while keeping the
 // relaxed policy scoped only to documentation routes.
-app.use("/api/docs", swaggerCspMiddleware, swaggerUi.serve, swaggerUi.setup(swaggerDocument));
-app.get(["/api/docs", "/api/docs/"], swaggerCspMiddleware, (req, res) => swaggerUi.setup(swaggerDocument)(req, res));
-app.get("/api/docs.json", (req, res) => res.json(swaggerDocument));
-app.get("/api/docs/swagger.json", (req, res) => res.json(swaggerDocument));
+// Hardening: Disable Swagger documentation in production to prevent schema/API map disclosure.
+app.use("/api/docs", (req, res, next) => {
+  if (process.env.NODE_ENV === "production") {
+    return res.status(404).json({ success: false, message: `Route ${req.method} ${req.originalUrl} not found` });
+  }
+  next();
+}, swaggerCspMiddleware, swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+
+app.get(["/api/docs", "/api/docs/"], (req, res, next) => {
+  if (process.env.NODE_ENV === "production") {
+    return res.status(404).json({ success: false, message: `Route ${req.method} ${req.originalUrl} not found` });
+  }
+  next();
+}, swaggerCspMiddleware, (req, res) => swaggerUi.setup(swaggerDocument)(req, res));
+
+app.get("/api/docs.json", (req, res, next) => {
+  if (process.env.NODE_ENV === "production") {
+    return res.status(404).json({ success: false, message: `Route ${req.method} ${req.originalUrl} not found` });
+  }
+  next();
+}, (req, res) => res.json(swaggerDocument));
+
+app.get("/api/docs/swagger.json", (req, res, next) => {
+  if (process.env.NODE_ENV === "production") {
+    return res.status(404).json({ success: false, message: `Route ${req.method} ${req.originalUrl} not found` });
+  }
+  next();
+}, (req, res) => res.json(swaggerDocument));
+
 app.get("/api/search", getHotels);
 
 // ── Additional headers for WebSocket support ──────────────
