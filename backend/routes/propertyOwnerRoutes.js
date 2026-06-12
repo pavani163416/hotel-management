@@ -9,7 +9,7 @@ import Hotel from "../models/Hotel.js";
 import Booking from "../models/Booking.js";
 import { protect, authorizeRoles } from "../middleware/auth.js";
 import logger from "../utils/logger.js";
-import { uploadPublicSupport } from "../middleware/uploadMiddleware.js";
+import { uploadPublicSupport, validateKycMagicBytes } from "../middleware/uploadMiddleware.js";
 import { sendOwnerApprovalEmail, sendOwnerRejectionEmail } from "../utils/emailService.js";
 
 const router = express.Router();
@@ -98,8 +98,26 @@ router.get("/application-status", verifyUser, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+const checkApplicationState = async (req, res, next) => {
+  try {
+    const existingApp = await OwnerApplication.findOne({ userId: req.user.id });
+    if (existingApp) {
+      if (existingApp.status === "approved") {
+        return res.status(409).json({ success: false, message: "Conflict: Application already approved." });
+      }
+      if (existingApp.status === "pending") {
+        return res.status(409).json({ success: false, message: "Conflict: Application is already under review." });
+      }
+      // If status is 'rejected', we allow them to proceed and re-apply!
+    }
+    next();
+  } catch (err) {
+    next(err);
+  }
+};
+
 // ── POST /api/owners/apply ──────────────────────────────
-router.post("/apply", verifyUser, uploadPublicSupport.array("documents", 5), async (req, res, next) => {
+router.post("/apply", verifyUser, checkApplicationState, uploadPublicSupport.array("documents", 5), validateKycMagicBytes, async (req, res, next) => {
   try {
     const { businessName, hotelName, hotelAddress, gstNumber, businessRegistrationNumber, docType } = req.body;
     if (!businessName || !hotelName || !hotelAddress) {
@@ -131,7 +149,7 @@ router.post("/apply", verifyUser, uploadPublicSupport.array("documents", 5), asy
         hotelAddress,
         gstNumber: gstNumber || "",
         businessRegistrationNumber: businessRegistrationNumber || "",
-        $push: { kycDocuments: { $each: docs } },
+        kycDocuments: docs,
         status: "pending",
         kycStatus: "pending",
       },
