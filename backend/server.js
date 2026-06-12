@@ -170,6 +170,18 @@ app.use((req, res, next) => {
   next();
 });
 
+// Hardening: Block access to sensitive files/directories (e.g. .git, .env)
+app.use((req, res, next) => {
+  const lowerPath = req.path.toLowerCase();
+  if (lowerPath.includes("/.git") || lowerPath.includes("/.env")) {
+    return res.status(403).json({
+      success: false,
+      message: "Access Denied: Restricted system file.",
+    });
+  }
+  next();
+});
+
 app.use(cookieParser());
 app.use(createSessionMiddleware());
 

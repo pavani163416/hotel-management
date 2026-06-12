@@ -135,9 +135,9 @@ export const validateOwnership = (modelName) => {
               (managerHotelObjId && bookingHotelObjId === String(managerHotelObjId));
 
             if (!isAuthorized) {
-              return res.status(403).json({
+              return res.status(404).json({
                 success: false,
-                message: "Unauthorized: You do not manage this hotel's bookings.",
+                message: "Booking not found.",
               });
             }
           } else {
@@ -147,9 +147,9 @@ export const validateOwnership = (modelName) => {
                                  (userEmail && booking.guestSnapshot?.email && booking.guestSnapshot.email.toLowerCase().trim() === userEmail);
 
             if (!isGuestOwner) {
-              return res.status(403).json({
+              return res.status(404).json({
                 success: false,
-                message: "Unauthorized: You do not own this booking.",
+                message: "Booking not found.",
               });
             }
           }

@@ -210,24 +210,8 @@ router.get("/robots.txt", (req, res) => {
 
   const content = `# LuxeStay robots.txt
 User-agent: *
+Disallow: /api/
 Allow: /
-
-# Disallow internal/admin API paths from public crawlers
-Disallow: /api/admin/
-Disallow: /api/manager/
-Disallow: /api/controller/
-Disallow: /api/guests/
-Disallow: /api/notifications/
-Disallow: /api/upload/
-
-# Allow public API paths explicitly
-Allow: /api/hotels
-Allow: /api/rooms
-Allow: /api/search
-Allow: /api/auth/captcha
-Allow: /api/promo/
-Allow: /api/sitemap.json
-Allow: /api/docs
 
 # Sitemap locations
 Sitemap: ${baseUrl}/sitemap.xml
