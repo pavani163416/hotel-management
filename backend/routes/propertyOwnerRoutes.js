@@ -98,6 +98,17 @@ router.get("/application-status", verifyUser, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+const preventExistingOwners = (req, res, next) => {
+  const role = req.user?.role?.toLowerCase();
+  if (role === "owner" || role === "admin" || role === "super admin") {
+    return res.status(409).json({ 
+      success: false, 
+      message: "Conflict: You are already an approved property owner or admin." 
+    });
+  }
+  next();
+};
+
 const checkApplicationState = async (req, res, next) => {
   try {
     const existingApp = await OwnerApplication.findOne({ userId: req.user.id });
@@ -120,7 +131,7 @@ const checkApplicationState = async (req, res, next) => {
 };
 
 // ── POST /api/owners/apply ──────────────────────────────
-router.post("/apply", verifyUser, checkApplicationState, uploadPublicSupport.array("documents", 5), validateKycMagicBytes, async (req, res, next) => {
+router.post("/apply", verifyUser, preventExistingOwners, checkApplicationState, uploadPublicSupport.array("documents", 5), validateKycMagicBytes, async (req, res, next) => {
   try {
     const { businessName, hotelName, hotelAddress, gstNumber, businessRegistrationNumber, docType } = req.body;
     if (!businessName || !hotelName || !hotelAddress) {
@@ -324,13 +335,24 @@ router.get("/admin/list", protect, authorizeRoles("Super Admin", "admin"), async
 // PATCH /api/owners/admin/:id/approve
 router.patch("/admin/:id/approve", protect, authorizeRoles("Super Admin", "admin"), async (req, res, next) => {
   try {
-    const app = await OwnerApplication.findById(req.params.id);
-    if (!app) return res.status(404).json({ success: false, message: "Application not found." });
-
-    app.status = "approved";
-    app.kycStatus = "approved";
-    app.adminNotes = req.body.notes || "";
-    await app.save();
+    // ── ATOMIC SECURITY CHECK: Find and Update in one strict operation ──
+    const app = await OwnerApplication.findOneAndUpdate(
+      { _id: req.params.id, status: "pending" },
+      { 
+        $set: { 
+          status: "approved", 
+          kycStatus: "approved", 
+          adminNotes: req.body.notes || "" 
+        } 
+      },
+      { new: true }
+    );
+    if (!app) {
+      return res.status(409).json({ 
+        success: false, 
+        message: "Conflict: Application already processed or not found." 
+      });
+    }
 
     const user = await User.findById(app.userId);
     if (user) {
@@ -360,12 +382,18 @@ router.patch("/admin/:id/approve", protect, authorizeRoles("Super Admin", "admin
 // PATCH /api/owners/admin/:id/reject
 router.patch("/admin/:id/reject", protect, authorizeRoles("Super Admin", "admin"), async (req, res, next) => {
   try {
-    const app = await OwnerApplication.findByIdAndUpdate(
-      req.params.id,
-      { status: "rejected", adminNotes: req.body.reason || "" },
+    // ── ATOMIC SECURITY CHECK: Find and Update in one strict operation ──
+    const app = await OwnerApplication.findOneAndUpdate(
+      { _id: req.params.id, status: "pending" },
+      { $set: { status: "rejected", adminNotes: req.body.reason || "" } },
       { new: true }
     );
-    if (!app) return res.status(404).json({ success: false, message: "Application not found." });
+    if (!app) {
+      return res.status(409).json({ 
+        success: false, 
+        message: "Conflict: Application already processed or not found." 
+      });
+    }
 
     const user = await User.findById(app.userId);
     if (user) {
