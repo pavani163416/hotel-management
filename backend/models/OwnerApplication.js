@@ -37,6 +37,7 @@ const ownerApplicationSchema = new mongoose.Schema(
       {
         type: { type: String }, // e.g. "aadhar", "pan", etc.
         url: String,
+        public_id: String,
         uploadedAt: { type: Date, default: Date.now },
       }
     ],

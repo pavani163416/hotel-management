@@ -127,6 +127,21 @@ router.post("/apply", verifyUser, checkApplicationState, uploadPublicSupport.arr
       return res.status(400).json({ success: false, message: "Business name, hotel name, and hotel address are required." });
     }
 
+    // ── ATOMIC SECURITY CHECK: Strict Document Type Whitelist ──
+    const ALLOWED_DOC_TYPES = [
+      "Aadhar Card",
+      "PAN Card",
+      "Passport",
+      "Business Registration Certificate / Trade License",
+      "document"
+    ];
+    if (docType && !ALLOWED_DOC_TYPES.includes(docType)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Invalid document type provided. Please select a valid document category." 
+      });
+    }
+
     // 1. ATOMIC LOCKING: Prevent concurrent submissions / state overrides
     const existing = await OwnerApplication.findOne({ userId: req.user.id });
     const wasNew = !existing;
@@ -164,31 +179,44 @@ router.post("/apply", verifyUser, checkApplicationState, uploadPublicSupport.arr
 
     const files = req.files || [];
     const docs = [];
-    try {
-      for (const file of files) {
-        try {
-          const result = await uploadBufferToCloudinary(file.buffer, file.originalname, file.mimetype);
-          docs.push({
-            type: docType || "document",
-            url: result.secure_url,
-            uploadedAt: new Date(),
-          });
-        } catch (err) {
-          logger.error("Cloudinary upload error for KYC:", err);
-          throw new Error("Failed to upload document to cloud storage.");
+    
+    for (const file of files) {
+      try {
+        const result = await uploadBufferToCloudinary(file.buffer, file.originalname, file.mimetype);
+        docs.push({
+          type: docType || "document",
+          url: result.secure_url,
+          public_id: result.public_id,
+          uploadedAt: new Date(),
+        });
+      } catch (err) {
+        logger.error("Cloudinary upload error mid-batch for KYC:", err);
+        
+        // ── ATOMIC ROLLBACK: Delete successfully uploaded files to prevent orphaned storage ──
+        for (const uploadedDoc of docs) {
+          if (uploadedDoc.public_id) {
+            try {
+               const { v2: cloudinary } = await import("cloudinary");
+               await cloudinary.uploader.destroy(uploadedDoc.public_id);
+               logger.info(`Rolled back orphaned file: ${uploadedDoc.public_id}`);
+            } catch (destroyErr) {
+               logger.error("CRITICAL: Failed to delete orphaned file during rollback", destroyErr);
+            }
+          }
         }
+
+        // Revert the lock
+        if (wasNew) {
+          await OwnerApplication.deleteOne({ userId: req.user.id }).catch(() => {});
+        } else {
+          await OwnerApplication.findOneAndUpdate(
+            { userId: req.user.id, status: "processing_upload" },
+            { $set: { status: "rejected" } }
+          ).catch(() => {});
+        }
+
+        return res.status(500).json({ success: false, message: "Upload failed. Transaction rolled back." });
       }
-    } catch (uploadErr) {
-      // Revert the lock
-      if (wasNew) {
-        await OwnerApplication.deleteOne({ userId: req.user.id }).catch(() => {});
-      } else {
-        await OwnerApplication.findOneAndUpdate(
-          { userId: req.user.id, status: "processing_upload" },
-          { $set: { status: "rejected" } }
-        ).catch(() => {});
-      }
-      return res.status(500).json({ success: false, message: uploadErr.message });
     }
 
     // 3. FINAL COMMIT: Update the locked placeholder with final data

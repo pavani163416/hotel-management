@@ -57,6 +57,7 @@ const propertyOwnerSchema = new mongoose.Schema(
       {
         type: { type: String },   // e.g. "aadhar", "pan", "passport", "business_reg"
         url: String,
+        public_id: String,
         uploadedAt: { type: Date, default: Date.now },
       },
     ],
