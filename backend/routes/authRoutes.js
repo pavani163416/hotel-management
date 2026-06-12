@@ -234,7 +234,9 @@ const ACCESS_COOKIE = "luxe_access_token";
 const COOKIE_OPTS = (expiresIn) => ({
   httpOnly: true,
   secure: process.env.NODE_ENV === "production",
-  sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
+  // SameSite=none is required for cross-origin requests (Vercel frontend → Railway backend)
+  // SameSite=none requires Secure=true, which is set above in production
+  sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
   maxAge: (() => {
     // parse simple "7d" / "15m" / "1h" notations to ms
     const m = String(expiresIn).match(/^(\d+)([smhd])$/);
@@ -246,7 +248,7 @@ const COOKIE_OPTS = (expiresIn) => ({
 const setAccessCookie = (res, token, expiresIn = JWT_EXPIRES) =>
   res.cookie(ACCESS_COOKIE, token, COOKIE_OPTS(expiresIn));
 const clearAccessCookie = (res) =>
-  res.clearCookie(ACCESS_COOKIE, { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax" });
+  res.clearCookie(ACCESS_COOKIE, { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: process.env.NODE_ENV === "production" ? "none" : "lax" });
 
 const twilioAuthHeaders = () => {
   const sid = process.env.TWILIO_ACCOUNT_SID;
@@ -913,7 +915,7 @@ router.post("/login", loginLimiter, validateLoginPayload, async (req, res, next)
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
     });
 
@@ -998,6 +1000,9 @@ router.post("/phone/verify", otpRateLimiter, async (req, res, next) => {
         email: generatedEmail,
         passwordHash,
         phone: normalizedPhone,
+        isVerified: true,
+        accountStatus: "active",
+        isActive: true,
       });
 
       const guest = await Guest.create({
@@ -1007,6 +1012,13 @@ router.post("/phone/verify", otpRateLimiter, async (req, res, next) => {
       });
       user.guestId = guest._id;
       await user.save();
+    } else {
+      // Mark existing user as verified if they aren't already
+      if (!user.isVerified || user.accountStatus !== "active") {
+        user.isVerified = true;
+        user.accountStatus = "active";
+        await user.save();
+      }
     }
 
     if (!user.guestId) {
@@ -1748,7 +1760,7 @@ router.post("/verify-otp", otpRateLimiter, async (req, res, next) => {
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
     });
 
@@ -1892,7 +1904,7 @@ router.post("/refresh-token", async (req, res, next) => {
     res.cookie("refreshToken", newRefreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
     });
 
@@ -1969,7 +1981,7 @@ router.post("/logout", async (req, res, next) => {
     res.clearCookie("refreshToken", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
     });
     clearAccessCookie(res);
 
@@ -2051,7 +2063,7 @@ router.post("/logout-all", verifyCustomerToken, async (req, res, next) => {
     res.clearCookie("refreshToken", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict"
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax"
     });
 
     return res.status(200).json({ success: true, message: "Logged out from all devices successfully." });
