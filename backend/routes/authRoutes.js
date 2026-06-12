@@ -1066,7 +1066,10 @@ router.post("/google", async (req, res, next) => {
     const { idToken } = req.body;
     if (!idToken) return res.status(400).json({ success: false, message: "ID Token is required" });
 
-    const clientID = process.env.GOOGLE_CLIENT_ID || "70312411330-jbppehv6ds52au1n7r62r6qji7j8cs9n.apps.googleusercontent.com";
+    // Web Application Client ID (primary — Flutter uses this as serverClientId)
+    const clientID = "70312411330-jbppehv6ds52au1n7r62r6qji7j8cs9n.apps.googleusercontent.com";
+    // Android Client ID for this GCP project
+    const gcpAndroidClientID = "70312411330-fud2l0ec1r7o0p5shgvon0nus00rpjcf.apps.googleusercontent.com";
     let email, name, picture, googleId;
 
     const isJWT = idToken.split('.').length === 3;
@@ -1095,23 +1098,12 @@ router.post("/google", async (req, res, next) => {
       const androidClientID2 = "239513848879-9f7e5ju597pgbl7p4isddckui4misecp.apps.googleusercontent.com";
       const androidClientID3 = "239513848879-b1inguas60lk6gi7lhmhoh3fo319k225.apps.googleusercontent.com";
       const oldWebClientID = "70312411330-8givsb0ktr8f09u8ullo157vkppkoqqv.apps.googleusercontent.com";
-      const match = (tokenInfo.aud === clientID) || 
-                    (tokenInfo.azp === clientID) || 
-                    (tokenInfo.issued_to === clientID) ||
-                    (tokenInfo.client_id === clientID) ||
-                    (tokenInfo.aud === fallbackID) || 
-                    (tokenInfo.azp === fallbackID) || 
-                    (tokenInfo.issued_to === fallbackID) ||
-                    (tokenInfo.client_id === fallbackID) ||
-                    (tokenInfo.aud === androidClientID) ||
-                    (tokenInfo.azp === androidClientID) ||
-                    (tokenInfo.issued_to === androidClientID) ||
-                    (tokenInfo.client_id === androidClientID) ||
-                    (tokenInfo.aud === androidClientID2) ||
-                    (tokenInfo.aud === androidClientID3) ||
-                    (tokenInfo.aud === oldWebClientID) ||
-                    (tokenInfo.azp === oldWebClientID) ||
-                    (tokenInfo.client_id === oldWebClientID);
+      const allowedAudiences = [
+        clientID, gcpAndroidClientID, fallbackID, androidClientID, androidClientID2, androidClientID3, oldWebClientID
+      ];
+      const matchField = (f) => f && allowedAudiences.includes(f);
+      const match = matchField(tokenInfo.aud) || matchField(tokenInfo.azp) ||
+                    matchField(tokenInfo.issued_to) || matchField(tokenInfo.client_id);
       if (!match) {
         logger.warn("Google Access Token audience mismatch", { tokenInfo, clientID, fallbackID, androidClientID, oldWebClientID });
         console.error("[Google OAuth DEBUG] Audience check failed. None of the tokenInfo fields matched clientID, fallbackID, androidClientID, or oldWebClientID.");
@@ -1137,7 +1129,8 @@ router.post("/google", async (req, res, next) => {
       const ticket = await googleClient.verifyIdToken({
         idToken,
         audience: [
-          clientID,
+          clientID,           // GCP Web Client ID (primary — Flutter serverClientId)
+          gcpAndroidClientID, // GCP Android Client ID
           fallbackID,
           androidClientID,
           androidClientID2,

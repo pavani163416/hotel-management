@@ -43,6 +43,12 @@ class AppConstants {
   static const String userKey = 'CACHED_USER_DATA';
   static const String onboardingKey = 'HAS_SEEN_ONBOARDING';
 
+  // Google Sign-In – Web Application Client ID (GCP project 70312411330)
+  // Used as `serverClientId` in GoogleSignIn so the returned idToken can be
+  // verified by the custom backend via google-auth-library.
+  static const String googleWebClientId =
+      '70312411330-jbppehv6ds52au1n7r62r6qji7j8cs9n.apps.googleusercontent.com';
+
   // Feature specific strings
   static const String searchHotelsHint = 'Search for hotels, cities...';
 }

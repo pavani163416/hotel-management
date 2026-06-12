@@ -353,12 +353,10 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
 
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     scopes: ['email', 'openid'],
-    clientId: kIsWeb
-        ? const String.fromEnvironment('GOOGLE_CLIENT_ID',
-            defaultValue: '239513848879-7n631mq8o0due6v807tk58gbli9907mc.apps.googleusercontent.com')
-        : null,
-    serverClientId: kIsWeb ? null : const String.fromEnvironment('GOOGLE_CLIENT_ID',
-        defaultValue: '239513848879-7n631mq8o0due6v807tk58gbli9907mc.apps.googleusercontent.com'),
+    // On web, clientId drives the OAuth flow; on Android, serverClientId tells
+    // Google to embed an ID token that our backend can verify.
+    clientId: kIsWeb ? AppConstants.googleWebClientId : null,
+    serverClientId: kIsWeb ? null : AppConstants.googleWebClientId,
   );
 
   void logout() async {
