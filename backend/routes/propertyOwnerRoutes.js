@@ -24,14 +24,30 @@ const uploadBufferToCloudinary = async (buffer, filename, mimetype) => {
     api_secret: process.env.CLOUDINARY_API_SECRET,
   });
   return new Promise((resolve, reject) => {
-    const isPdf = mimetype === "application/pdf" || (filename && filename.toLowerCase().endsWith(".pdf"));
-    const cleanFilename = filename.includes(".") ? filename.split('.').slice(0, -1).join('.') : filename;
+    // ── ATOMIC SECURITY CHECK: Aggressive Filename Sanitization ──
+    // 1. Strip the extension
+    let baseName = filename.includes(".") ? filename.split('.').slice(0, -1).join('.') : filename;
+    
+    // 2. Strip NULL BYTES (\0) immediately
+    baseName = baseName.replace(/\0/g, '');
+    
+    // 3. Strip EVERYTHING except letters, numbers, dashes, and underscores
+    // This absolutely destroys all Path Traversal characters (/, \, ..)
+    let safeFilename = baseName.replace(/[^a-zA-Z0-9_-]/g, '');
+    
+    // 4. Fallback just in case the attacker sent a filename entirely made of garbage characters
+    if (!safeFilename) {
+      safeFilename = "kyc_document";
+    }
 
     const uploadOptions = {
       folder: "luxestay/kyc",
-      resource_type: isPdf ? "image" : "auto",
-      format: isPdf ? "pdf" : undefined,
-      public_id: `${cleanFilename}-${Date.now()}`,
+      // ── ATOMIC SECURITY CHECK: Treat all uploads as opaque binary blobs ──
+      resource_type: "raw", 
+      format: undefined, // Let it be an opaque blob
+      public_id: `${safeFilename}-${Date.now()}`,
+      // Force Content-Disposition: attachment so the browser downloads it instead of rendering it!
+      attachment: true 
     };
     const uploadStream = cloudinary.uploader.upload_stream(
       uploadOptions,
