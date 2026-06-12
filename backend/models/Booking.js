@@ -217,6 +217,10 @@ bookingSchema.virtual("bookingRef").get(function () {
   return `LS-${this._id.toString().slice(-5).toUpperCase()}`;
 });
 
+bookingSchema.virtual("userId").get(function () {
+  return this.guestSnapshot?.id || (this.guest ? this.guest.toString() : null);
+});
+
 // ── Indexes ──────────────────────────────────────────────
 bookingSchema.index({ guest: 1, status: 1 });
 bookingSchema.index({ room: 1, checkIn: 1, checkOut: 1 });

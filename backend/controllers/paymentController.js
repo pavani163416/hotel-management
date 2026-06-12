@@ -287,8 +287,24 @@ export const cancelPayment = async (req, res, next) => {
       // Emit room release update
       const io = req.app.get("io");
       if (io) {
+        const userRoom = `user:${booking.userId || booking.guestSnapshot?.id || booking.guest}`;
+        let targetEmitter = io.to(userRoom);
+        if (booking.guestSnapshot?.email) {
+          targetEmitter = targetEmitter.to(`user:${booking.guestSnapshot.email.toLowerCase()}`);
+        }
+        targetEmitter = targetEmitter
+          .to("role:admin")
+          .to("role:super admin")
+          .to("role:controller");
+        if (booking.hotelStringId) {
+          targetEmitter = targetEmitter.to(`hotel:${booking.hotelStringId}`);
+        }
+        if (booking.hotelId) {
+          targetEmitter = targetEmitter.to(`hotel:${booking.hotelId}`);
+        }
+
         io.emit("roomStatusUpdate", { roomId: booking.room, hotelStringId: booking.hotelStringId });
-        io.emit("booking_update", { _id: booking._id, status: "PAYMENT_CANCELLED" });
+        targetEmitter.emit("booking_update", { _id: booking._id, status: "PAYMENT_CANCELLED" });
       }
 
       logger.info("Payment cancelled and room released", {
@@ -477,7 +493,23 @@ export const processWebhook = async (req, res, next) => {
 
           // Emit Socket events
           if (io) {
-            io.emit("booking_update", { _id: booking._id, status: "Confirmed", roomId: booking.room });
+            const userRoom = `user:${booking.userId || booking.guestSnapshot?.id || booking.guest}`;
+            let targetEmitter = io.to(userRoom);
+            if (booking.guestSnapshot?.email) {
+              targetEmitter = targetEmitter.to(`user:${booking.guestSnapshot.email.toLowerCase()}`);
+            }
+            targetEmitter = targetEmitter
+              .to("role:admin")
+              .to("role:super admin")
+              .to("role:controller");
+            if (booking.hotelStringId) {
+              targetEmitter = targetEmitter.to(`hotel:${booking.hotelStringId}`);
+            }
+            if (booking.hotelId) {
+              targetEmitter = targetEmitter.to(`hotel:${booking.hotelId}`);
+            }
+
+            targetEmitter.emit("booking_update", { _id: booking._id, status: "Confirmed", roomId: booking.room });
             io.emit("payment_update", { _id: payment._id, status: "SUCCESS" });
           }
 
@@ -567,7 +599,23 @@ export const processWebhook = async (req, res, next) => {
           }).catch(() => {});
 
           if (io) {
-            io.emit("booking_update", { _id: booking._id, status: "PAYMENT_FAILED" });
+            const userRoom = `user:${booking.userId || booking.guestSnapshot?.id || booking.guest}`;
+            let targetEmitter = io.to(userRoom);
+            if (booking.guestSnapshot?.email) {
+              targetEmitter = targetEmitter.to(`user:${booking.guestSnapshot.email.toLowerCase()}`);
+            }
+            targetEmitter = targetEmitter
+              .to("role:admin")
+              .to("role:super admin")
+              .to("role:controller");
+            if (booking.hotelStringId) {
+              targetEmitter = targetEmitter.to(`hotel:${booking.hotelStringId}`);
+            }
+            if (booking.hotelId) {
+              targetEmitter = targetEmitter.to(`hotel:${booking.hotelId}`);
+            }
+
+            targetEmitter.emit("booking_update", { _id: booking._id, status: "PAYMENT_FAILED" });
             io.emit("payment_update", { _id: payment._id, status: "FAILED" });
             io.emit("roomStatusUpdate", { roomId: booking.room, hotelStringId: booking.hotelStringId });
           }
@@ -623,7 +671,23 @@ export const processWebhook = async (req, res, next) => {
           }).catch(() => {});
 
           if (io) {
-            io.emit("booking_update", { _id: booking._id, status: "Cancelled" });
+            const userRoom = `user:${booking.userId || booking.guestSnapshot?.id || booking.guest}`;
+            let targetEmitter = io.to(userRoom);
+            if (booking.guestSnapshot?.email) {
+              targetEmitter = targetEmitter.to(`user:${booking.guestSnapshot.email.toLowerCase()}`);
+            }
+            targetEmitter = targetEmitter
+              .to("role:admin")
+              .to("role:super admin")
+              .to("role:controller");
+            if (booking.hotelStringId) {
+              targetEmitter = targetEmitter.to(`hotel:${booking.hotelStringId}`);
+            }
+            if (booking.hotelId) {
+              targetEmitter = targetEmitter.to(`hotel:${booking.hotelId}`);
+            }
+
+            targetEmitter.emit("booking_update", { _id: booking._id, status: "Cancelled" });
             io.emit("payment_update", { _id: payment._id, status: "REFUNDED" });
             io.emit("roomStatusUpdate", { roomId: booking.room, hotelStringId: booking.hotelStringId });
           }

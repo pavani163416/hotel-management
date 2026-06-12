@@ -545,7 +545,24 @@ export const createWalkInBooking = async (req, res, next) => {
     await session.commitTransaction();
     const populated = await Booking.findById(booking._id).populate("room","roomNumber type pricePerNight").populate("guest","name email phone");
     const io = req.app.get("io");
-    if (io) io.emit("newBooking", { bookingId:booking._id, hotelName:req.scopedHotelName, userName:guestData.name, amount:totalAmount, roomType:room.type, status:"CheckedIn", isWalkIn:true, createdAt:new Date().toISOString() });
+    if (io) {
+      const userRoom = `user:${booking.userId || booking.guestSnapshot?.id || booking.guest}`;
+      let targetEmitter = io.to(userRoom);
+      if (guestData?.email) {
+        targetEmitter = targetEmitter.to(`user:${guestData.email.toLowerCase()}`);
+      }
+      targetEmitter = targetEmitter
+        .to("role:admin")
+        .to("role:super admin")
+        .to("role:controller");
+      if (booking.hotelStringId) {
+        targetEmitter = targetEmitter.to(`hotel:${booking.hotelStringId}`);
+      }
+      if (booking.hotelId) {
+        targetEmitter = targetEmitter.to(`hotel:${booking.hotelId}`);
+      }
+      targetEmitter.emit("newBooking", { bookingId:booking._id, hotelName:req.scopedHotelName, userName:guestData.name, amount:totalAmount, roomType:room.type, status:"CheckedIn", isWalkIn:true, createdAt:new Date().toISOString() });
+    }
     res.status(201).json({ success:true, message:"Walk-in booking created and guest checked in", data:{ ...populated.toJSON(), bookingRef:populated.bookingRef } });
   } catch (err) { await session.abortTransaction(); next(err); }
   finally { session.endSession(); }

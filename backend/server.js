@@ -722,7 +722,17 @@ io.use((socket, next) => {
 });
 
 io.on("connection", (socket) => {
-  logger.info("Socket.IO client connected", { socketId: socket.id, userId: socket.data.user?.id });
+  if (socket.data.user) {
+    socket.user = socket.data.user;
+    if (!socket.user._id && socket.user.id) {
+      socket.user._id = socket.user.id;
+    }
+  }
+  logger.info("Socket.IO client connected", { socketId: socket.id, userId: socket.user?._id || socket.user?.id });
+
+  if (socket.user && socket.user._id) {
+    socket.join(`user:${socket.user._id}`);
+  }
 
   socket.on("registerNotifications", ({ userId, hotelId, role } = {}) => {
     const u = socket.data.user;

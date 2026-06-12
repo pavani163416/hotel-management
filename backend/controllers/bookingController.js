@@ -500,9 +500,25 @@ export const createBooking = async (req, res, next) => {
     // Emit Socket.IO event for real-time admin dashboard update
     const io = req.app.get("io");
     if (io) {
+      const userRoom = `user:${booking.userId || booking.guestSnapshot?.id || booking.guest}`;
+      let targetEmitter = io.to(userRoom);
+      if (booking.guestSnapshot?.email) {
+        targetEmitter = targetEmitter.to(`user:${booking.guestSnapshot.email.toLowerCase()}`);
+      }
+      targetEmitter = targetEmitter
+        .to("role:admin")
+        .to("role:super admin")
+        .to("role:controller");
+      if (booking.hotelStringId) {
+        targetEmitter = targetEmitter.to(`hotel:${booking.hotelStringId}`);
+      }
+      if (booking.hotelId) {
+        targetEmitter = targetEmitter.to(`hotel:${booking.hotelId}`);
+      }
+
       // Only emit newBooking (live alert) for confirmed bookings
       if (booking.status === "Confirmed" || booking.status === "CONFIRMED") {
-        io.emit("newBooking", {
+        targetEmitter.emit("newBooking", {
           bookingId: booking._id,
           hotelName: bookingPayload.hotelName,
           userName: guestData.name,
@@ -517,7 +533,7 @@ export const createBooking = async (req, res, next) => {
         roomNumber: room.roomNumber,
         hotelStringId: room.hotelStringId,
       });
-      io.emit("booking_update", { _id: booking._id, status: booking.status, roomId: room._id });
+      targetEmitter.emit("booking_update", { _id: booking._id, status: booking.status, roomId: room._id });
     }
 
     // Send confirmation email
@@ -782,8 +798,24 @@ export const cancelBooking = async (req, res, next) => {
 
     const io = req.app?.get?.("io");
     if (io) {
+      const userRoom = `user:${booking.userId || booking.guestSnapshot?.id || booking.guest}`;
+      let targetEmitter = io.to(userRoom);
+      if (booking.guestSnapshot?.email) {
+        targetEmitter = targetEmitter.to(`user:${booking.guestSnapshot.email.toLowerCase()}`);
+      }
+      targetEmitter = targetEmitter
+        .to("role:admin")
+        .to("role:super admin")
+        .to("role:controller");
+      if (booking.hotelStringId) {
+        targetEmitter = targetEmitter.to(`hotel:${booking.hotelStringId}`);
+      }
+      if (booking.hotelId) {
+        targetEmitter = targetEmitter.to(`hotel:${booking.hotelId}`);
+      }
+
       io.emit("roomStatusUpdate", { roomId: booking.room, hotelStringId: booking.hotelStringId });
-      io.emit("booking_update", { _id: booking._id, status: "Cancelled" });
+      targetEmitter.emit("booking_update", { _id: booking._id, status: "Cancelled" });
     }
 
     // ── Create CancellationRefund record ──────────────
