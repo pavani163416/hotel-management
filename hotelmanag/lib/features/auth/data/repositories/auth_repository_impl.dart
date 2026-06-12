@@ -1,5 +1,6 @@
 import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:hotelmanag/core/errors/failures.dart';
 import 'package:hotelmanag/features/auth/domain/entities/user_entity.dart';
 import 'package:hotelmanag/features/auth/domain/repositories/auth_repository.dart';
@@ -123,11 +124,20 @@ class AuthRepositoryImpl implements AuthRepository {
       return Right((authResponse.user, authResponse.token));
     } on DioException catch (e) {
       String message = 'Google login failed';
+      // Debug: log the real backend error
+      debugPrint('[GoogleAuth] DioException status: ${e.response?.statusCode}');
+      debugPrint('[GoogleAuth] DioException response data: ${e.response?.data}');
+      debugPrint('[GoogleAuth] DioException message: ${e.message}');
       if (e.response?.data is Map) {
         message = e.response?.data['message'] ?? message;
+      } else if (e.response?.data is String) {
+        message = e.response?.data;
+      } else if (e.message != null && e.message!.isNotEmpty) {
+        message = e.message!;
       }
       return Left(ServerFailure(message));
     } catch (e) {
+      debugPrint('[GoogleAuth] Unexpected error: $e');
       return Left(ServerFailure(e.toString()));
     }
   }
