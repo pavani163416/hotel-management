@@ -45,12 +45,25 @@ export default function Topbar({ searchPlaceholder }: Props) {
   const [notificationToast, setNotificationToast] = useState<NewBookingAlert | null>(null); // fixed type to match context or notifications
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const searchRef = useRef<HTMLDivElement>(null);
+  const notifRef = useRef<HTMLDivElement>(null);
+  const settingsRef = useRef<HTMLDivElement>(null);
+  const hotelSwitcherRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown on click outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      if (searchRef.current && !searchRef.current.contains(target)) {
         setShowSearchDropdown(false);
+      }
+      if (notifRef.current && !notifRef.current.contains(target)) {
+        setShowNotifs(false);
+      }
+      if (settingsRef.current && !settingsRef.current.contains(target)) {
+        setShowSettings(false);
+      }
+      if (hotelSwitcherRef.current && !hotelSwitcherRef.current.contains(target)) {
+        setShowHotelSwitcher(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -127,6 +140,24 @@ export default function Topbar({ searchPlaceholder }: Props) {
       markNotificationRead(n._id).catch(() => {});
     }
     setShowNotifs(false);
+
+    // Check if property owners notification
+    if (n.message?.toLowerCase().includes("property owner") || n.message?.toLowerCase().includes("property application") || n.message?.toLowerCase().includes("owners")) {
+      navigate("/owners");
+      return;
+    }
+
+    // Check if public support ticket notification
+    if (n.message?.toLowerCase().includes("public support ticket")) {
+      const match = n.message.match(/TKT-\d+/);
+      if (match) {
+        navigate(`/public-support?search=${match[0]}`);
+      } else {
+        navigate("/public-support");
+      }
+      return;
+    }
+
     navigate(n.type === "price"
       ? (admin?.role === "Manager" ? "/m/pricing" : "/price-requests")
       : n.type === "assistance" ? "/m/dashboard"
@@ -237,7 +268,7 @@ export default function Topbar({ searchPlaceholder }: Props) {
       <div className="flex items-center gap-2 relative">
 
         {/* Hotel Switcher */}
-        <div className="relative">
+        <div ref={hotelSwitcherRef} className="relative">
           <button
             onClick={() => { setShowHotelSwitcher(!showHotelSwitcher); setShowNotifs(false); setShowSettings(false); }}
             className="flex items-center gap-2 text-xs font-medium px-3 py-1.5 rounded-xl transition-all btn-ghost"
@@ -281,7 +312,7 @@ export default function Topbar({ searchPlaceholder }: Props) {
         </div>
 
         {/* Notifications */}
-        <div className="relative">
+        <div ref={notifRef} className="relative">
           <button
             onClick={() => { setShowNotifs(!showNotifs); setShowSettings(false); setShowHotelSwitcher(false); }}
             className="relative w-9 h-9 grid place-items-center rounded-xl transition-all"
@@ -436,7 +467,7 @@ export default function Topbar({ searchPlaceholder }: Props) {
         )}
 
         {/* Profile / Settings */}
-        <div className="relative">
+        <div ref={settingsRef} className="relative">
           <button
             onClick={() => { setShowSettings(!showSettings); setShowNotifs(false); setShowHotelSwitcher(false); }}
             className="w-9 h-9 grid place-items-center rounded-xl transition-all"

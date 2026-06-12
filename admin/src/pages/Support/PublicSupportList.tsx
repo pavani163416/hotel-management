@@ -8,7 +8,9 @@ import { format } from "date-fns";
 export default function PublicSupportList() {
   const [tickets, setTickets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(() => {
+    return new URLSearchParams(window.location.search).get("search") || "";
+  });
   const [status, setStatus] = useState("");
   const [priority, setPriority] = useState("");
 

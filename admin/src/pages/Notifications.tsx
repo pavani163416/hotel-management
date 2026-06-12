@@ -200,8 +200,12 @@ export default function Notifications() {
     if (n.type === "booking") {
       return { label: "View Bookings", path: "/bookings" };
     }
-    if (n.type === "system" && n.message?.toLowerCase().includes("property owner application")) {
+    if (n.message?.toLowerCase().includes("property owner") || n.message?.toLowerCase().includes("property application") || n.message?.toLowerCase().includes("owners")) {
       return { label: "Review Application", path: "/owners" };
+    }
+    if (n.message?.toLowerCase().includes("public support ticket")) {
+      const match = n.message.match(/TKT-\d+/);
+      return { label: "View Ticket", path: match ? `/public-support?search=${match[0]}` : "/public-support" };
     }
     return null;
   };

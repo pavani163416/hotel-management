@@ -190,6 +190,13 @@ export default function MNotifications() {
     if (n.type === "booking" || n.type === "assistance") {
       return { label: "View Bookings", path: "/m/bookings" };
     }
+    if (n.message?.toLowerCase().includes("property owner") || n.message?.toLowerCase().includes("property application") || n.message?.toLowerCase().includes("owners")) {
+      return { label: "Review Application", path: "/owners" };
+    }
+    if (n.message?.toLowerCase().includes("public support ticket")) {
+      const match = n.message.match(/TKT-\d+/);
+      return { label: "View Ticket", path: match ? `/public-support?search=${match[0]}` : "/public-support" };
+    }
     return null;
   };
 

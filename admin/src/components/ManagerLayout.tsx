@@ -121,6 +121,23 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
       markNotificationRead(n._id).catch(() => {});
     }
     setNotifOpen(false);
+
+    const msg = n.message || n.msg || "";
+    if (msg.toLowerCase().includes("property owner") || msg.toLowerCase().includes("property application") || msg.toLowerCase().includes("owners")) {
+      navigate("/owners");
+      return;
+    }
+
+    if (msg.toLowerCase().includes("public support ticket")) {
+      const match = msg.match(/TKT-\d+/);
+      if (match) {
+        navigate(`/public-support?search=${match[0]}`);
+      } else {
+        navigate("/public-support");
+      }
+      return;
+    }
+
     setNotifDetail(n);
   };
 
@@ -426,6 +443,28 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
                   onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "rgba(212,168,67,0.25)"}
                   onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = "rgba(212,168,67,0.15)"}>
                   View Pricing
+                </button>
+              )}
+              {(notifDetail.message || notifDetail.msg || "").toLowerCase().includes("public support ticket") && (
+                <button onClick={() => {
+                  const match = (notifDetail.message || notifDetail.msg || "").match(/TKT-\d+/);
+                  setNotifDetail(null);
+                  navigate(match ? `/public-support?search=${match[0]}` : "/public-support");
+                }}
+                  className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-colors"
+                  style={{ background: "rgba(212,168,67,0.15)", color: "#d4a843", border: "1px solid rgba(212,168,67,0.3)" }}
+                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "rgba(212,168,67,0.25)"}
+                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = "rgba(212,168,67,0.15)"}>
+                  View Ticket
+                </button>
+              )}
+              {((notifDetail.message || notifDetail.msg || "").toLowerCase().includes("property owner") || (notifDetail.message || notifDetail.msg || "").toLowerCase().includes("property application") || (notifDetail.message || notifDetail.msg || "").toLowerCase().includes("owners")) && (
+                <button onClick={() => { setNotifDetail(null); navigate("/owners"); }}
+                  className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-colors"
+                  style={{ background: "rgba(212,168,67,0.15)", color: "#d4a843", border: "1px solid rgba(212,168,67,0.3)" }}
+                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "rgba(212,168,67,0.25)"}
+                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = "rgba(212,168,67,0.15)"}>
+                  View Owners
                 </button>
               )}
               <button onClick={() => setNotifDetail(null)}

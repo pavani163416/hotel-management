@@ -29,6 +29,8 @@ import Notifications from "@/pages/Notifications";
 import PriceRequests from "@/pages/PriceRequests";
 import Settings    from "@/pages/Settings";
 import Owners      from "@/pages/Owners";
+import PublicSupportList from "@/pages/Support/PublicSupportList";
+import PublicSupportDetails from "@/pages/Support/PublicSupportDetails";
 
 // ── Manager pages (role === "Manager") ────────────────────
 import MDashboard     from "@/pages/manager/MDashboard";
@@ -95,6 +97,8 @@ export default function App() {
             <Route path="/price-requests" element={<PriceRequests />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/owners" element={<Owners />} />
+            <Route path="/public-support" element={<PublicSupportList />} />
+            <Route path="/public-support/:id" element={<PublicSupportDetails />} />
 
             <Route path="/m/dashboard" element={<MDashboard />} />
             <Route path="/m/hotel-map" element={<MFloorMap />} />
