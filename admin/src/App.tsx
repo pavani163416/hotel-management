@@ -97,7 +97,7 @@ export default function App() {
             <Route path="/price-requests" element={<PriceRequests />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/owners" element={<Owners />} />
-            <Route path="/public-support" element={<PublicSupportList />} />
+            <Route path="/public-support" element={<Navigate to="/owners?tab=support" replace />} />
             <Route path="/public-support/:id" element={<PublicSupportDetails />} />
 
             <Route path="/m/dashboard" element={<MDashboard />} />

@@ -151,9 +151,9 @@ export default function Topbar({ searchPlaceholder }: Props) {
     if (n.message?.toLowerCase().includes("public support ticket")) {
       const match = n.message.match(/TKT-\d+/);
       if (match) {
-        navigate(`/public-support?search=${match[0]}`);
+        navigate(`/owners?tab=support&search=${match[0]}`);
       } else {
-        navigate("/public-support");
+        navigate("/owners?tab=support");
       }
       return;
     }

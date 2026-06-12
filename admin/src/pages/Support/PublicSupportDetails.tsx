@@ -4,6 +4,8 @@ import { ArrowLeft, Loader2, FileText, Download, Mail, Phone, Calendar } from "l
 import api from "@/services/api";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import AdminLayout from "@/components/AdminLayout";
+import Topbar from "@/components/Topbar";
 
 export default function PublicSupportDetails() {
   const { id } = useParams();
@@ -16,10 +18,10 @@ export default function PublicSupportDetails() {
     try {
       setLoading(true);
       const res = await api.get(`/admin/public-support/${id}`);
-      setTicket(res.data.data);
+      setTicket(res.data);
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Failed to fetch ticket");
-      navigate("/public-support");
+      navigate("/owners?tab=support");
     } finally {
       setLoading(false);
     }
@@ -53,14 +55,16 @@ export default function PublicSupportDetails() {
   if (!ticket) return null;
 
   return (
-    <div className="p-6 md:p-8 space-y-6 max-w-5xl mx-auto">
-      <button 
-        onClick={() => navigate("/public-support")}
-        className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors text-sm font-medium"
-      >
-        <ArrowLeft className="w-4 h-4" />
-        Back to Requests
-      </button>
+    <AdminLayout>
+      <Topbar title="Support Ticket Details" />
+      <div className="p-6 md:p-8 space-y-6 max-w-5xl mx-auto">
+        <button 
+          onClick={() => navigate("/owners?tab=support")}
+          className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors text-sm font-medium"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Requests
+        </button>
 
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
@@ -201,5 +205,6 @@ export default function PublicSupportDetails() {
         </div>
       </div>
     </div>
-  );
+  </AdminLayout>
+);
 }

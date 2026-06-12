@@ -131,9 +131,9 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
     if (msg.toLowerCase().includes("public support ticket")) {
       const match = msg.match(/TKT-\d+/);
       if (match) {
-        navigate(`/public-support?search=${match[0]}`);
+        navigate(`/owners?tab=support&search=${match[0]}`);
       } else {
-        navigate("/public-support");
+        navigate("/owners?tab=support");
       }
       return;
     }
@@ -449,7 +449,7 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
                 <button onClick={() => {
                   const match = (notifDetail.message || notifDetail.msg || "").match(/TKT-\d+/);
                   setNotifDetail(null);
-                  navigate(match ? `/public-support?search=${match[0]}` : "/public-support");
+                  navigate(match ? `/owners?tab=support&search=${match[0]}` : "/owners?tab=support");
                 }}
                   className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-colors"
                   style={{ background: "rgba(212,168,67,0.15)", color: "#d4a843", border: "1px solid rgba(212,168,67,0.3)" }}

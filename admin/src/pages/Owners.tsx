@@ -8,6 +8,7 @@ import AdminLayout from "@/components/AdminLayout";
 import Topbar from "@/components/Topbar";
 import PageHeader from "@/components/PageHeader";
 import { API } from "@/services/api";
+import PublicSupportList from "./Support/PublicSupportList";
 
 interface Owner {
   _id: string;
@@ -40,6 +41,35 @@ const STATUS_COLORS: Record<string, string> = {
 export default function Owners() {
   const [owners, setOwners] = useState<Owner[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("tab") === "support" || params.get("search")?.startsWith("TKT-") || window.location.search.includes("search=TKT-")) {
+      return "support";
+    }
+    return "owners";
+  });
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("tab") === "support" || params.get("search")?.startsWith("TKT-") || window.location.search.includes("search=TKT-")) {
+      setActiveTab("support");
+    } else {
+      setActiveTab("owners");
+    }
+  }, [window.location.search]);
+
+  const handleTabChange = (tab: "owners" | "support") => {
+    setActiveTab(tab);
+    const params = new URLSearchParams(window.location.search);
+    if (tab === "support") {
+      params.set("tab", "support");
+    } else {
+      params.delete("tab");
+      params.delete("search");
+    }
+    const newSearch = params.toString();
+    window.history.pushState(null, "", window.location.pathname + (newSearch ? `?${newSearch}` : ""));
+  };
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [actionTarget, setActionTarget] = useState<Owner | null>(null);
@@ -203,7 +233,35 @@ export default function Owners() {
           subtitle="Review, approve, reject, or suspend property owner applications."
         />
 
-        {/* Stats */}
+        {/* Tab switcher */}
+        <div className="flex border-b" style={{ borderColor: "rgba(255,255,255,0.08)" }}>
+          <button
+            onClick={() => handleTabChange("owners")}
+            className={`px-6 py-3 text-sm font-semibold border-b-2 transition-all ${
+              activeTab === "owners"
+                ? "text-bright"
+                : "text-muted hover:text-bright"
+            }`}
+            style={{ borderColor: activeTab === "owners" ? "#c0392b" : "transparent" }}
+          >
+            Property Owners
+          </button>
+          <button
+            onClick={() => handleTabChange("support")}
+            className={`px-6 py-3 text-sm font-semibold border-b-2 transition-all ${
+              activeTab === "support"
+                ? "text-bright"
+                : "text-muted hover:text-bright"
+            }`}
+            style={{ borderColor: activeTab === "support" ? "#c0392b" : "transparent" }}
+          >
+            Support Tickets
+          </button>
+        </div>
+
+        {activeTab === "owners" ? (
+          <>
+            {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {[
             { label: "Total", value: owners.length, color: "text-bright" },
@@ -366,6 +424,10 @@ export default function Owners() {
             </div>
           )}
         </div>
+          </>
+        ) : (
+          <PublicSupportList />
+        )}
       </div>
 
       {/* ── Full Application Details Modal ── */}

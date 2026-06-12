@@ -20,13 +20,20 @@ export default function PublicSupportList() {
       const res = await api.get("/admin/public-support", {
         params: { search, status, priority }
       });
-      setTickets(res.data.data);
+      setTickets(res.data || []);
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Failed to fetch tickets");
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    const querySearch = new URLSearchParams(window.location.search).get("search") || "";
+    if (querySearch && querySearch !== search) {
+      setSearch(querySearch);
+    }
+  }, [window.location.search]);
 
   useEffect(() => {
     fetchTickets();
