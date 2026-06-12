@@ -427,6 +427,9 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
       final GoogleSignInAuthentication auth = await account.authentication;
       final String? idToken = auth.idToken;
       debugPrint('[GoogleSignIn] Token retrieved: ${idToken != null ? "YES (length ${idToken.length})" : "NO"}');
+      debugPrint('[GoogleSignIn] Token starts with: ${idToken?.substring(0, idToken.length > 20 ? 20 : idToken.length)}');
+      debugPrint('[GoogleSignIn] Is JWT (3 segments): ${idToken?.split('.').length == 3}');
+      debugPrint('[GoogleSignIn] AccessToken present: ${auth.accessToken != null}');
 
       if (idToken == null || idToken.isEmpty) {
         debugPrint('[GoogleSignIn] Error: Token is null or empty!');

@@ -32,7 +32,8 @@ class AppConstants {
     if (kIsWeb) {
       return '$scheme$host:5000/api/';
     } else if (defaultTargetPlatform == TargetPlatform.android) {
-      return '$scheme$emu:5000/api/';
+      // Use Railway production backend — no local backend is running
+      return _productionApiUrl;
     } else {
       return '$scheme$host:5000/api/';
     }
