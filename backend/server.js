@@ -206,22 +206,17 @@ const allowedOrigins = [
   ...rawOrigins,
 ];
 
+const STRICT_VERCEL_REGEXES = [
+  /^https:\/\/hotel-management-frontend-pr-\d+\.vercel\.app$/,
+  /^https:\/\/hotel-management-admin-eta-pr-\d+\.vercel\.app$/,
+  /^https:\/\/luxestay-frontend-pr-\d+\.vercel\.app$/,
+  /^https:\/\/luxestay-admin-pr-\d+\.vercel\.app$/,
+  /^https:\/\/hotel-mgnt-pr-\d+\.vercel\.app$/
+];
+
 const isTrustedVercelDomain = (origin) => {
   if (!origin) return false;
-  try {
-    const hostname = new URL(origin).hostname;
-    const allowedSubstrings = [
-      "hotel-mgnt",
-      "luxestay-frontend",
-      "luxestay-admin",
-      "hotel-management-admin-eta",
-      "hotel-management-frontend",
-      "hotel-management"
-    ];
-    return hostname.endsWith(".vercel.app") && allowedSubstrings.some(sub => hostname.includes(sub));
-  } catch {
-    return false;
-  }
+  return STRICT_VERCEL_REGEXES.some((regex) => regex.test(origin));
 };
 
 const isValidOrigin = (origin) => {
