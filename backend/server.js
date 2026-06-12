@@ -170,10 +170,17 @@ app.use((req, res, next) => {
   next();
 });
 
-// Hardening: Block access to sensitive files/directories (e.g. .git, .env)
+// Hardening: Block access to sensitive files/directories (e.g. .git, .env, package.json, lockfiles)
 app.use((req, res, next) => {
   const lowerPath = req.path.toLowerCase();
-  if (lowerPath.includes("/.git") || lowerPath.includes("/.env")) {
+  if (
+    lowerPath.includes("/.git") ||
+    lowerPath.includes("/.env") ||
+    lowerPath.includes("/package.json") ||
+    lowerPath.includes("/package-lock.json") ||
+    lowerPath.includes("/yarn.lock") ||
+    lowerPath.includes("/pnpm-lock.yaml")
+  ) {
     return res.status(403).json({
       success: false,
       message: "Access Denied: Restricted system file.",
