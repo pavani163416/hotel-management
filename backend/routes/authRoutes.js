@@ -331,25 +331,40 @@ const normalizePhoneNumber = (phone) => {
   return normalized;
 };
 
-const sendTwilioSMS = async (normalizedPhone, otpCode) => {
+const sendTwilioVerifyOtp = async (normalizedPhone) => {
   const sid = process.env.TWILIO_ACCOUNT_SID;
   const token = process.env.TWILIO_AUTH_TOKEN;
-  const fromNumber = process.env.TWILIO_PHONE_NUMBER;
-  
-  if (!sid || !token || !fromNumber) {
-    throw new Error("Twilio SMS is not configured.");
+  const serviceSid = process.env.TWILIO_VERIFY_SERVICE_SID;
+
+  if (!sid || !token || !serviceSid) {
+    throw new Error("Twilio Verify is not configured. Set TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, and TWILIO_VERIFY_SERVICE_SID.");
   }
 
   const client = twilio(sid, token);
-  try {
-    const message = await client.messages.create({
-      body: `Your LuxeStay verification code is: ${otpCode}`,
-      from: fromNumber,
-      to: normalizedPhone,
-    });
-  } catch (error) {
-    throw new Error(error.message || "Unable to send SMS via Twilio.");
+  const verification = await client.verify.v2
+    .services(serviceSid)
+    .verifications.create({ to: normalizedPhone, channel: "sms" });
+
+  if (verification.status !== "pending") {
+    throw new Error(`Twilio Verify returned unexpected status: ${verification.status}`);
   }
+};
+
+const checkTwilioVerifyOtp = async (normalizedPhone, code) => {
+  const sid = process.env.TWILIO_ACCOUNT_SID;
+  const token = process.env.TWILIO_AUTH_TOKEN;
+  const serviceSid = process.env.TWILIO_VERIFY_SERVICE_SID;
+
+  if (!sid || !token || !serviceSid) {
+    throw new Error("Twilio Verify is not configured.");
+  }
+
+  const client = twilio(sid, token);
+  const verificationCheck = await client.verify.v2
+    .services(serviceSid)
+    .verificationChecks.create({ to: normalizedPhone, code });
+
+  return verificationCheck.status === "approved";
 };
 
 // ── Middleware: verify customer JWT ──────────────────────
@@ -936,24 +951,14 @@ router.post("/phone/send", otpRateLimiter, async (req, res, next) => {
     }
 
     const normalizedPhone = normalizePhoneNumber(phone);
-    const otpCode = crypto.randomInt(100000, 1000000).toString();
-    await cacheSet(`mock_phone_otp_${normalizedPhone}`, otpCode, 300);
 
-    try {
-      await sendTwilioSMS(normalizedPhone, otpCode);
-      return res.status(200).json({ success: true, message: "OTP sent successfully." });
-    } catch (twilioErr) {
-      logger.warn(`Twilio SMS fail: ${twilioErr.message}`);
+    // Use Twilio Verify API — no TWILIO_PHONE_NUMBER needed, Twilio manages delivery
+    await sendTwilioVerifyOtp(normalizedPhone);
 
-      // Fallback for demo: if Twilio fails (due to unverified number etc.), return success and log it
-      return res.status(200).json({
-        success: true,
-        message: `OTP sent successfully. (Mocked: ${otpCode})`
-      });
-    }
+    logger.info("Phone OTP sent via Twilio Verify", { phone: normalizedPhone });
+    return res.status(200).json({ success: true, message: "OTP sent successfully." });
   } catch (err) {
     logger.error(err.message, "Phone OTP send failed");
-    // Return 400 Bad Request for validation/formatting errors
     const isValidationError = err.message?.includes("required") || 
                               err.message?.includes("format") || 
                               err.message?.includes("digits") || 
@@ -974,17 +979,11 @@ router.post("/phone/verify", otpRateLimiter, async (req, res, next) => {
 
     const normalizedPhone = normalizePhoneNumber(phone);
 
-    // Check if there is an OTP stored
-    const storedCode = await cacheGet(`mock_phone_otp_${normalizedPhone}`);
-    let isApproved = false;
-
-    if (storedCode && storedCode === code) {
-      isApproved = true;
-      await cacheDel(`mock_phone_otp_${normalizedPhone}`);
-    }
+    // Verify OTP via Twilio Verify API
+    const isApproved = await checkTwilioVerifyOtp(normalizedPhone, code);
 
     if (!isApproved) {
-      return res.status(401).json({ success: false, message: "OTP verification failed." });
+      return res.status(401).json({ success: false, message: "OTP verification failed. Please check the code and try again." });
     }
 
     let user = await User.findOne({ phone: normalizedPhone }).select("+passwordHash");
