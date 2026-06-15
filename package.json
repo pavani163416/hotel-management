@@ -9,6 +9,7 @@
     "backend"
   ],
   "scripts": {
+    "start": "npm --prefix backend start",
     "build:admin": "npm --prefix admin run build",
     "build:frontend": "npm --prefix frontend run build",
     "build": "npm run build:admin",
