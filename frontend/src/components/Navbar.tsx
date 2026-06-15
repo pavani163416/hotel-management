@@ -130,14 +130,14 @@ const Navbar = () => {
     wasAuthOpen.current = true;
   };
 
-  const handleAuthClose = () => {
+  const handleAuthClose = (success?: boolean) => {
     setAuthOpen(false);
-    if (!user) {
+    if (!success) {
       // User closed/cancelled without signing in — clear pending redirect
       wasAuthOpen.current = false;
       sessionStorage.removeItem("redirectAfterLogin");
     }
-    // If user DID sign in, the useEffect above handles the redirect
+    // If user DID sign in (success is true), the useEffect above handles the redirect
   };
 
   const handleLogout = async () => {

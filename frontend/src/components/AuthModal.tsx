@@ -52,7 +52,7 @@ const getPhonePlaceholder = (code: string) => {
 
 type AuthModalProps = {
   isOpen: boolean;
-  onClose: () => void;
+  onClose: (success?: boolean) => void;
   defaultMode?: "signin" | "signup";
 };
 
@@ -437,6 +437,7 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
 
   useEffect(() => {
     if (isOpen) {
+      resetForm();
       const pendingEmail = localStorage.getItem("luxe_pending_email");
       if (pendingEmail) {
         setMode("verify_email_otp");
@@ -490,7 +491,7 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
       const d = res.data?.data ?? res.data;
       // Token is now an HttpOnly cookie set by the backend — no localStorage write needed
       setUser({ name: d.name, email: d.email, phone: d.phone || "", city: d.city || "", role: d.role || "customer" });
-      onClose(); resetForm();
+      onClose(true); resetForm();
     } catch (err: any) {
       const respData = err.response?.data;
       if (respData?.requiresVerification || respData?.code === "UNVERIFIED_EMAIL") {
@@ -553,7 +554,7 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
       } else {
         // Token is now an HttpOnly cookie set by the backend — no localStorage write needed
         setUser({ name: d.name, email: d.email, phone: d.phone || "", city: d.city || "", role: d.role || "customer" });
-        onClose(); resetForm();
+        onClose(true); resetForm();
       }
     } catch (err: any) {
       setError(err.response?.data?.message || err.message || "Registration failed. Please try again.");
@@ -573,7 +574,7 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
     // the user object might be partially structured differently.
     await refreshUser();
     
-    onClose(); resetForm();
+    onClose(true); resetForm();
   };
 
   const handleSendPhoneOTP = async () => {

@@ -13,11 +13,28 @@ const Wishlist = () => {
   const nav = useNavigate();
 
   useEffect(() => {
-    const token = localStorage.getItem("luxe_customer_token");
-    if (!user && !token) {
-      nav("/", { state: { openAuth: true } });
-    }
-  }, [user, nav]);
+    // Only scroll to top if needed, do not aggressively redirect anymore.
+  }, [user]);
+
+  if (!user && !localStorage.getItem("luxe_customer_token")) {
+    return (
+      <Layout>
+        <div className="container py-20 text-center min-h-[60vh] flex flex-col items-center justify-center">
+          <Heart className="w-16 h-16 text-muted-foreground/30 mb-6" />
+          <h2 className="text-2xl font-bold text-primary mb-3">Sign in to view your wishlist</h2>
+          <p className="text-muted-foreground mb-8 max-w-md">
+            Save your favorite properties and access them from any device.
+          </p>
+          <button
+            onClick={() => window.dispatchEvent(new Event("luxe_open_auth"))}
+            className="bg-primary text-primary-foreground px-8 py-3 rounded-xl font-semibold hover:bg-primary/90 transition-base"
+          >
+            Sign In / Sign Up
+          </button>
+        </div>
+      </Layout>
+    );
+  }
 
   const wishlistedHotels = hotels.filter((h) => wishlist.includes(h.id));
 
