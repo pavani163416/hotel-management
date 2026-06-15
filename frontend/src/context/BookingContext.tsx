@@ -218,6 +218,7 @@ type Ctx = {
   cancelBooking: (id: string) => void;
   user: UserProfile | null;
   setUser: (u: UserProfile | null) => void;
+  refreshUser: () => Promise<void>;
   submitReview: (hotelId: string, review: { author: string; rating: number; comment: string; captchaId?: string; captchaAnswer?: string; captchaToken?: string }) => Promise<void>;
 };
 
@@ -263,6 +264,18 @@ export const BookingProvider = ({ children }: { children: ReactNode }) => {
     window.addEventListener("luxe_logout", handleLuxeLogout);
     return () => window.removeEventListener("luxe_logout", handleLuxeLogout);
   }, []);
+
+  // Centralized user refresh logic
+  const refreshUser = async () => {
+    try {
+      const res = await api.get("/auth/me");
+      if (res.data?.success && res.data.data) {
+        _setUser(res.data.data);
+      }
+    } catch {
+      // Ignore errors if not logged in
+    }
+  };
 
   // Fetch latest user profile details on mount to sync database role updates
   useEffect(() => {
@@ -497,7 +510,7 @@ export const BookingProvider = ({ children }: { children: ReactNode }) => {
     <BookingCtx.Provider value={{
       hotels, search, setSearch, selectedHotel, setSelectedHotel,
       selectedRoom, setSelectedRoom, guest, setGuest, promo, applyPromo,
-      bookings, addBooking, cancelBooking, user, setUser, submitReview,
+      bookings, addBooking, cancelBooking, user, setUser, refreshUser, submitReview,
     }}>
       {children}
     </BookingCtx.Provider>

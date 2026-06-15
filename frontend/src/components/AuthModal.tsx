@@ -402,7 +402,7 @@ function AuthModalInner({ isOpen, onClose, defaultMode, mode, setMode, loading, 
 }
 
 export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModalProps) {
-  const { setUser } = useBooking();
+  const { setUser, refreshUser } = useBooking();
   const [mode, setMode]         = useState<"signin" | "signup" | "phone" | "verify_email_otp" | "forgot_password">(defaultMode);
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState("");
@@ -563,10 +563,16 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
     }
   };
 
-  const finishAuth = (d: any) => {
+  const finishAuth = async (d: any) => {
     localStorage.removeItem("luxe_pending_email");
     // Token is now an HttpOnly cookie set by the backend — no localStorage write needed
     setUser({ name: d.name, email: d.email, phone: d.phone || "", city: d.city || "", role: d.role || "customer" });
+    
+    // Explicitly refetch the authenticated user to ensure all context and UI state (Navbar) 
+    // is instantly synced across the application, especially for OAuth logins where 
+    // the user object might be partially structured differently.
+    await refreshUser();
+    
     onClose(); resetForm();
   };
 
