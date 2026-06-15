@@ -16,7 +16,7 @@
       "headers": [
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' https://accounts.google.com https://checkout.razorpay.com https://cdn.razorpay.com; script-src-elem 'self' https://accounts.google.com https://checkout.razorpay.com https://cdn.razorpay.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://checkout.razorpay.com https://cdn.razorpay.com; style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https: blob:; connect-src 'self' https://api.razorpay.com https://checkout.razorpay.com https://cdn.razorpay.com https://lumberjack.razorpay.com https://lumberjack-dx.razorpay.com https://hooks.razorpay.com   https://accounts.google.com https://oauth2.googleapis.com https://www.googleapis.com https://countriesnow.space https://ipapi.co https://freeipapi.com wss: ws:; frame-src 'self' https://accounts.google.com https://api.razorpay.com https://checkout.razorpay.com https://cdn.razorpay.com https://maps.google.com https://www.google.com; frame-ancestors 'none'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests; block-all-mixed-content; report-uri https://api.luxestay.com/api/csp-report"
+          "value": "default-src 'self'; script-src 'self' https://accounts.google.com https://checkout.razorpay.com https://cdn.razorpay.com; script-src-elem 'self' https://accounts.google.com https://checkout.razorpay.com https://cdn.razorpay.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://checkout.razorpay.com https://cdn.razorpay.com; style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https: blob:; connect-src 'self' https://*.up.railway.app wss://*.up.railway.app https://api.razorpay.com https://checkout.razorpay.com https://cdn.razorpay.com https://lumberjack.razorpay.com https://lumberjack-dx.razorpay.com https://hooks.razorpay.com https://accounts.google.com https://oauth2.googleapis.com https://www.googleapis.com https://countriesnow.space https://ipapi.co https://freeipapi.com wss: ws:; frame-src 'self' https://accounts.google.com https://api.razorpay.com https://checkout.razorpay.com https://cdn.razorpay.com https://maps.google.com https://www.google.com; frame-ancestors 'none'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests; block-all-mixed-content;"
         },
         { "key": "X-Frame-Options",        "value": "DENY" },
         { "key": "X-Content-Type-Options",  "value": "nosniff" },
@@ -28,8 +28,5 @@
         { "key": "X-Robots-Tag",            "value": "noindex, nofollow" }
       ]
     }
-  ],
-  "env": {
-    "VITE_API_URL": "https://api.luxestay.com/api"
-  }
+  ]
 }
