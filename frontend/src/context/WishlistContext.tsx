@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import api from "@/services/api";
 import { useBooking } from "@/context/BookingContext";
+import { toast } from "sonner";
 
 interface WishlistContextType {
   wishlist: string[];
@@ -16,6 +17,7 @@ const WishlistContext = createContext<WishlistContextType>({
 
 export const WishlistProvider = ({ children }: { children: React.ReactNode }) => {
   const [wishlist, setWishlist] = useState<string[]>([]);
+  const [loadingItems, setLoadingItems] = useState<Set<string>>(new Set());
   const { user } = useBooking();
 
   // Load wishlist from user if logged in, otherwise empty array
@@ -43,6 +45,11 @@ export const WishlistProvider = ({ children }: { children: React.ReactNode }) =>
       return;
     }
 
+    if (loadingItems.has(hotelId)) return;
+    setLoadingItems((prev) => new Set(prev).add(hotelId));
+
+    const wasWishlisted = wishlist.includes(hotelId);
+
     // Optimistic update
     setWishlist((prev) => {
       if (prev.includes(hotelId)) {
@@ -52,6 +59,12 @@ export const WishlistProvider = ({ children }: { children: React.ReactNode }) =>
       }
     });
 
+    if (wasWishlisted) {
+      toast.success("Removed from wishlist");
+    } else {
+      toast.success("Added to wishlist successfully ❤️");
+    }
+
     try {
       const res = await api.post("/auth/wishlist", { hotelId });
       if (res.data.success) {
@@ -59,6 +72,21 @@ export const WishlistProvider = ({ children }: { children: React.ReactNode }) =>
       }
     } catch (err) {
       console.error("Failed to sync wishlist", err);
+      // Revert optimistic update on failure
+      setWishlist((prev) => {
+        if (wasWishlisted) {
+          return [...prev, hotelId];
+        } else {
+          return prev.filter((id) => id !== hotelId);
+        }
+      });
+      toast.error("Failed to update wishlist. Please try again.");
+    } finally {
+      setLoadingItems((prev) => {
+        const next = new Set(prev);
+        next.delete(hotelId);
+        return next;
+      });
     }
   };
 

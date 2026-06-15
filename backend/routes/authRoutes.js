@@ -1767,6 +1767,9 @@ router.post("/verify-otp", otpRateLimiter, async (req, res, next) => {
       maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
     });
 
+    // Set access token in secure HttpOnly cookie (neutralises XSS token-theft)
+    setAccessCookie(res, accessToken);
+
     logger.info("Email verified successfully", { email: normalEmail });
 
     return res.status(200).json({
