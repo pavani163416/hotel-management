@@ -27,8 +27,10 @@ export const protect = async (req, res, next) => {
 
     if (authHeader?.startsWith("Bearer ")) {
       token = authHeader.split(" ")[1];
+    } else if (req.cookies?.luxe_access_token) {
+      token = req.cookies.luxe_access_token;
     } else if (req.cookies?.token) {
-      token = req.cookies.token;
+      token = req.cookies.token; // fallback for legacy
     }
 
     if (!token) {
