@@ -2,8 +2,18 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
+import { loadEnv } from "vite";
 
-export default defineConfig(({ mode }) => ({
+export default defineConfig(({ mode }) => {
+  if (mode === "production") {
+    const env = loadEnv(mode, process.cwd(), "");
+    if (!env.VITE_API_URL) {
+      console.error("FATAL BUILD ERROR: VITE_API_URL is missing! You must explicitly provide this environment variable for production builds to avoid data-integrity risks.");
+      process.exit(1);
+    }
+  }
+
+  return {
   server: {
     host: "::",
     port: 8080,
@@ -27,4 +37,5 @@ export default defineConfig(({ mode }) => ({
       "@tanstack/react-query", "@tanstack/query-core",
     ],
   },
-}));
+};
+});

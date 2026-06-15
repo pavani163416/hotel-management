@@ -1,8 +1,18 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
+import { loadEnv } from "vite";
 
-export default defineConfig(({ mode }) => ({
+export default defineConfig(({ mode }) => {
+  if (mode === "production") {
+    const env = loadEnv(mode, process.cwd(), "");
+    if (!env.VITE_API_URL) {
+      console.error("FATAL BUILD ERROR: VITE_API_URL is missing! You must explicitly provide this environment variable for production builds to avoid data-integrity risks.");
+      process.exit(1);
+    }
+  }
+
+  return {
   plugins: [react()],
   resolve: {
     alias: { "@": path.resolve(__dirname, "./src") },
@@ -20,4 +30,5 @@ export default defineConfig(({ mode }) => ({
       },
     },
   },
-}));
+};
+});

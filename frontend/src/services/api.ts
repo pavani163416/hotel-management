@@ -13,7 +13,7 @@ export const getApiUrl = () => {
     if (isLocal) {
       return "http://localhost:5000/api";
     }
-    return "https://hotel-management-production-2225.up.railway.app/api";
+    throw new Error("VITE_API_URL environment variable is missing.");
   }
   url = url.trim().replace(/\/+$/, "");
   if (!url.toLowerCase().endsWith("/api")) {
