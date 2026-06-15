@@ -63,8 +63,18 @@ class _InRoomServicesPageState extends State<InRoomServicesPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final activeBookings = Provider.of<BookingProvider>(context, listen: false).bookings;
       if (activeBookings.isNotEmpty) {
-        // Automatically default room number if they have an active booking
-        _roomController.text = 'Room 304'; // Default simulation
+        // Find the first confirmed/active booking
+        final active = activeBookings.where((b) => b.status.toLowerCase() == 'confirmed' || b.status.toLowerCase() == 'active').toList();
+        final booking = active.isNotEmpty ? active.first : activeBookings.first;
+        final roomNo = booking.roomNumber;
+        if (roomNo != null && roomNo.trim().isNotEmpty) {
+          _roomController.text = roomNo.toLowerCase().contains('room') ? roomNo : 'Room $roomNo';
+        } else {
+          // If room number is not allocated yet, generate a dynamic number based on booking ID hash
+          final shortId = booking.id.length > 4 ? booking.id.substring(booking.id.length - 3) : '104';
+          final parsed = int.tryParse(shortId) ?? 104;
+          _roomController.text = 'Room ${200 + (parsed % 300)}';
+        }
       }
     });
   }

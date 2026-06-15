@@ -1,8 +1,10 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/providers/auth_provider.dart';
 
@@ -20,6 +22,22 @@ class LostFoundItem {
     required this.date,
     required this.status,
   });
+
+  Map<String, dynamic> toJson() => {
+        'title': title,
+        'description': description,
+        'location': location,
+        'date': date,
+        'status': status,
+      };
+
+  factory LostFoundItem.fromJson(Map<String, dynamic> json) => LostFoundItem(
+        title: json['title'] ?? '',
+        description: json['description'] ?? '',
+        location: json['location'] ?? '',
+        date: json['date'] ?? '',
+        status: json['status'] ?? '',
+      );
 }
 
 class LostAndFoundPage extends StatefulWidget {
@@ -46,11 +64,7 @@ class _LostAndFoundPageState extends State<LostAndFoundPage> with SingleTickerPr
 
   final List<String> _categories = ['Electronics', 'Clothing', 'Documents', 'Jewelry & Watches', 'Keys/Cards', 'Other'];
 
-  final List<LostFoundItem> _catalog = [
-    const LostFoundItem(title: 'Black Leather Wallet', description: 'Contains ID card under name J. Doe, plus credit cards', location: 'Poolside Deck Chair', date: 'June 14, 2026', status: 'Found by Staff'),
-    const LostFoundItem(title: 'Apple iPhone Charger', description: 'White USB-C charging adapter and cable', location: 'Lobby seating area near piano', date: 'June 13, 2026', status: 'Returned to Guest'),
-    const LostFoundItem(title: 'Gold Wedding Ring', description: 'Engraved with initials A&B, polished finish', location: 'Gym locker rooms', date: 'June 15, 2026', status: 'Lost / Pending Match'),
-  ];
+  List<LostFoundItem> _catalog = [];
 
   @override
   void initState() {
@@ -69,6 +83,34 @@ class _LostAndFoundPageState extends State<LostAndFoundPage> with SingleTickerPr
         _phoneController.text = user.phone ?? '';
       }
     });
+
+    _loadCatalog();
+  }
+
+  Future<void> _loadCatalog() async {
+    final prefs = await SharedPreferences.getInstance();
+    final data = prefs.getString('lost_found_catalog');
+    if (data != null) {
+      final decoded = json.decode(data) as List;
+      setState(() {
+        _catalog = decoded.map((item) => LostFoundItem.fromJson(item)).toList();
+      });
+    } else {
+      final initial = [
+        const LostFoundItem(title: 'Black Leather Wallet', description: 'Contains ID card under name J. Doe, plus credit cards', location: 'Poolside Deck Chair', date: 'June 14, 2026', status: 'Found by Staff'),
+        const LostFoundItem(title: 'Apple iPhone Charger', description: 'White USB-C charging adapter and cable', location: 'Lobby seating area near piano', date: 'June 13, 2026', status: 'Returned to Guest'),
+        const LostFoundItem(title: 'Gold Wedding Ring', description: 'Engraved with initials A&B, polished finish', location: 'Gym locker rooms', date: 'June 15, 2026', status: 'Lost / Pending Match'),
+      ];
+      setState(() {
+        _catalog = initial;
+      });
+      await prefs.setString('lost_found_catalog', json.encode(initial.map((i) => i.toJson()).toList()));
+    }
+  }
+
+  Future<void> _saveCatalog() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('lost_found_catalog', json.encode(_catalog.map((i) => i.toJson()).toList()));
   }
 
   @override
@@ -96,15 +138,26 @@ class _LostAndFoundPageState extends State<LostAndFoundPage> with SingleTickerPr
     }
   }
 
-  void _handleSubmit() {
+  void _handleSubmit() async {
     if (!_formKey.currentState!.validate()) return;
 
+    final newItem = LostFoundItem(
+      title: _itemNameController.text.trim(),
+      description: _descController.text.trim(),
+      location: _locationController.text.trim(),
+      date: DateFormat('MMMM dd, yyyy').format(_selectedDate),
+      status: _isLostType ? 'Lost / Pending Match' : 'Found / Pending Match',
+    );
+
     setState(() {
+      _catalog.insert(0, newItem);
       _submitted = true;
     });
 
+    await _saveCatalog();
+
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
+      const SnackBar(
         content: Text('Report registered. Our concierge will review this immediately!'),
         behavior: SnackBarBehavior.floating,
         backgroundColor: Colors.green,

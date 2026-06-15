@@ -10,6 +10,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/main_layout.dart';
 import '../../../../core/widgets/custom_text_field.dart';
 import '../../../../core/providers/auth_provider.dart';
+import '../../../../core/providers/booking_provider.dart';
 import '../../../../core/utils/performance_utils.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -99,6 +100,12 @@ class _ProfilePageState extends State<ProfilePage> {
           }
         });
       }
+    }
+    // Fetch bookings to dynamically render loyalty status card
+    if (mounted) {
+      try {
+        await Provider.of<BookingProvider>(context, listen: false).fetchMyBookings();
+      } catch (_) {}
     }
   }
 
@@ -490,64 +497,116 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Widget _buildLoyaltyCard() {
-    return Container(
-      margin: const EdgeInsets.only(top: 180),
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: AppTheme.primaryColor,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: AppTheme.primaryColor.withOpacity(0.3),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('PLATINUM', style: TextStyle(color: AppTheme.accentColor, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 2)),
-                  SizedBox(height: 4),
-                  Text('Loyalty Status', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-                ],
-              ),
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(LucideIcons.award, color: AppTheme.accentColor, size: 24),
+    return Consumer<BookingProvider>(
+      builder: (context, bookingProvider, _) {
+        final bookings = bookingProvider.bookings;
+        
+        // Calculate total amount spent on all confirmed/completed/active bookings
+        final totalSpent = bookings
+            .where((b) => b.status.toLowerCase() == 'confirmed' || b.status.toLowerCase() == 'completed' || b.status.toLowerCase() == 'active')
+            .fold<double>(0.0, (sum, b) => sum + b.totalAmount);
+
+        // Dynamic points calculation (1 point for every $10 spent + 200 base points for joining)
+        final int points = (totalSpent / 10).round() + 200;
+
+        // Determine Loyalty Tier
+        String tier = 'SILVER';
+        double progress = 0.0;
+        int nextTierPoints = 500;
+        String nextTierName = 'Gold Status';
+
+        if (points >= 5000) {
+          tier = 'DIAMOND';
+          progress = 1.0;
+          nextTierPoints = 0;
+          nextTierName = '';
+        } else if (points >= 2000) {
+          tier = 'PLATINUM';
+          nextTierPoints = 5000;
+          nextTierName = 'Diamond Status';
+          progress = (points - 2000) / 3000;
+        } else if (points >= 500) {
+          tier = 'GOLD';
+          nextTierPoints = 2000;
+          nextTierName = 'Platinum Status';
+          progress = (points - 500) / 1500;
+        } else {
+          tier = 'SILVER';
+          nextTierPoints = 500;
+          nextTierName = 'Gold Status';
+          progress = points / 500;
+        }
+
+        // Format points with commas
+        final pointsStr = points.toString().replaceAllMapped(
+          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+          (Match m) => '${m[1]},',
+        );
+
+        final pointsToNextTier = nextTierPoints - points;
+
+        return Container(
+          margin: const EdgeInsets.only(top: 180),
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: AppTheme.primaryColor,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: AppTheme.primaryColor.withOpacity(0.3),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
               ),
             ],
           ),
-          const SizedBox(height: 32),
-          const Text('2,850', style: TextStyle(color: Colors.white, fontSize: 36, fontWeight: FontWeight.bold)),
-          Text('Available Points', style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 13)),
-          const SizedBox(height: 24),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: LinearProgressIndicator(
-              value: 0.78,
-              backgroundColor: Colors.white.withOpacity(0.1),
-              valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.accentColor),
-              minHeight: 8,
-            ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(tier, style: const TextStyle(color: AppTheme.accentColor, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 2)),
+                      const SizedBox(height: 4),
+                      const Text('Loyalty Status', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(LucideIcons.award, color: AppTheme.accentColor, size: 24),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 32),
+              Text(pointsStr, style: const TextStyle(color: Colors.white, fontSize: 36, fontWeight: FontWeight.bold)),
+              Text('Available Points', style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 13)),
+              const SizedBox(height: 24),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: LinearProgressIndicator(
+                  value: progress.clamp(0.0, 1.0),
+                  backgroundColor: Colors.white.withOpacity(0.1),
+                  valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.accentColor),
+                  minHeight: 8,
+                ),
+              ),
+              if (nextTierPoints > 0) ...[
+                const SizedBox(height: 12),
+                Text(
+                  '$pointsToNextTier points to $nextTierName',
+                  style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 11, fontWeight: FontWeight.w500),
+                ),
+              ],
+            ],
           ),
-          const SizedBox(height: 12),
-          Text(
-            '550 points to Diamond Status',
-            style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 11, fontWeight: FontWeight.w500),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
