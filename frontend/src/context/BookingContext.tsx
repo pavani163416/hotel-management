@@ -266,18 +266,21 @@ export const BookingProvider = ({ children }: { children: ReactNode }) => {
 
   // Fetch latest user profile details on mount to sync database role updates
   useEffect(() => {
+    const controller = new AbortController();
     const fetchUserProfile = async () => {
       try {
         // Cookie is sent automatically — no localStorage token check needed
-        const res = await api.get("/auth/me");
+        const res = await api.get("/auth/me", { signal: controller.signal });
         if (res.data?.success && res.data.data) {
           _setUser(res.data.data);
         }
-      } catch {
+      } catch (err: any) {
+        if (err.name === "CanceledError" || err.message === "canceled") return;
         // Not logged in or cookie expired — silently ignore
       }
     };
     fetchUserProfile();
+    return () => controller.abort();
   }, []);
 
   // ── Global real-time notification listener ───────────────
@@ -330,6 +333,7 @@ export const BookingProvider = ({ children }: { children: ReactNode }) => {
     let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
     let reconnectDelay = 2000;
     let destroyed = false;
+    const controller = new AbortController();
 
     const applyHotels = (data: any[]) => {
       // MongoDB/API is the source of truth. Empty array means no active hotels.
@@ -341,7 +345,8 @@ export const BookingProvider = ({ children }: { children: ReactNode }) => {
     };
 
     const fetchHotels = () => {
-      fetch(`${API}/hotels`)
+      if (destroyed) return;
+      fetch(`${API}/hotels`, { signal: controller.signal })
         .then((r) => r.json())
         .then((d) => { if (Array.isArray(d?.data)) applyHotels(d.data); })
         .catch(() => {});
@@ -405,9 +410,16 @@ export const BookingProvider = ({ children }: { children: ReactNode }) => {
 
     return () => {
       destroyed = true;
-      sse?.close();
+      controller.abort();
+      if (sse) {
+        sse.close();
+        sse = null;
+      }
       stopPolling();
-      if (reconnectTimer) clearTimeout(reconnectTimer);
+      if (reconnectTimer) {
+        clearTimeout(reconnectTimer);
+        reconnectTimer = null;
+      }
     };
   }, []);
 

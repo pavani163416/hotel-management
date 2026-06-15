@@ -71,6 +71,8 @@ export default api;
 
 // ── Typed helpers ─────────────────────────────────────────
 
+export const DEFAULT_PAGINATION_LIMIT = 20;
+
 export interface CreateBookingPayload {
   roomId?: string;
   roomNumber?: string;

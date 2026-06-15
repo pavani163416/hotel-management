@@ -6,7 +6,7 @@ import { useWishlist } from "@/context/WishlistContext";
 import { AuthModal } from "@/components/AuthModal";
 import CurrencySwitcher from "@/components/CurrencySwitcher";
 import socket from "@/services/socket";
-import api, { getNotifications, markNotificationRead, createNotification, API } from "@/services/api";
+import api, { getNotifications, markNotificationRead, createNotification, API, DEFAULT_PAGINATION_LIMIT } from "@/services/api";
 import { toast } from "sonner";
 import {
   DropdownMenu,
@@ -137,7 +137,7 @@ const Navbar = () => {
       // (local context bookings may be stale or missing hotelId)
       let hotelId = selectedHotel?.id || "";
       try {
-        const bRes = await api.get(`/bookings?guestEmail=${encodeURIComponent(user.email)}&limit=10`);
+        const bRes = await api.get(`/bookings?guestEmail=${encodeURIComponent(user.email)}&limit=${DEFAULT_PAGINATION_LIMIT}`);
         const apiBookings: any[] = bRes.data?.data || [];
         // Find most recent confirmed booking — use room.hotelStringId (e.g. "h7") for routing
         const confirmed = apiBookings.find((b: any) => b.status === "Confirmed") || apiBookings[0];
@@ -203,15 +203,17 @@ const Navbar = () => {
     socket.emit("registerNotifications", scope);
     getNotifications(scope).then((res) => setNotifications(res?.data || [])).catch(() => {});
 
+    const controller = new AbortController();
     // Check if user has an active (Confirmed/CheckedIn) booking from API
-    api.get(`/bookings?guestEmail=${encodeURIComponent(user.email)}&limit=20`)
+    api.get(`/bookings?guestEmail=${encodeURIComponent(user.email)}&limit=${DEFAULT_PAGINATION_LIMIT}`, { signal: controller.signal })
       .then((res) => {
         const active = (res.data?.data || []).some((b: any) =>
           (b.status === "Confirmed" || b.status === "CheckedIn") && bookingIsActiveToday(b)
         );
         setHasActiveStay(active || bookings.some((b) => (b.status === "Confirmed" || b.status === "CheckedIn") && bookingIsActiveToday(b)));
       })
-      .catch(() => {
+      .catch((err) => {
+        if (err.name === "CanceledError" || err.message === "canceled") return;
         setHasActiveStay(bookings.some((b) => (b.status === "Confirmed" || b.status === "CheckedIn") && bookingIsActiveToday(b)));
       });
 
@@ -222,6 +224,7 @@ const Navbar = () => {
     socket.on("notification", onNotification);
     return () => {
       socket.off("notification", onNotification);
+      controller.abort();
     };
   }, [user?.email, bookings]);
 
@@ -346,7 +349,7 @@ const Navbar = () => {
                       // Pre-fetch room number and floor from active booking
                       if (user?.email) {
                         try {
-                          const bRes = await api.get(`/bookings?guestEmail=${encodeURIComponent(user.email)}&limit=5`);
+                          const bRes = await api.get(`/bookings?guestEmail=${encodeURIComponent(user.email)}&limit=${DEFAULT_PAGINATION_LIMIT}`);
                           const apiBookings: any[] = bRes.data?.data || [];
                           const confirmed = apiBookings.find((b: any) => b.status === "Confirmed") || apiBookings[0];
                           if (confirmed?.room?.roomNumber) {

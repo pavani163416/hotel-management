@@ -134,11 +134,11 @@ const Hotels = () => {
         </div>
       )}
 
-      <div className="bg-gradient-to-br from-secondary via-background to-secondary/50 min-h-screen">
+      <div className="bg-gradient-to-br from-secondary via-background to-secondary/50 min-h-dvh">
         <div className="container py-8">
           <div className="grid lg:grid-cols-[300px_1fr] gap-8">
           {/* SIDEBAR */}
-          <aside className="lg:sticky lg:top-20 lg:self-start space-y-5 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto pr-1">
+          <aside className="lg:sticky lg:top-20 lg:self-start space-y-5 lg:max-h-[calc(100dvh-6rem)] lg:overflow-y-auto pr-1">
             <div className="rounded-xl border border-border overflow-hidden bg-card">
               <div className="h-60 relative">
                 <HotelMap hotels={filtered} onHotelClick={(id) => nav(`/hotel/${id}`)} />

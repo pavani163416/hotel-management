@@ -489,7 +489,7 @@ const OwnerPortal = () => {
   // ── 5. Default/Not Applied: Render Owner Application Form ──
   return (
     <Layout>
-      <div className="bg-gradient-to-br from-secondary via-background to-secondary/30 min-h-screen py-12 px-4">
+      <div className="bg-gradient-to-br from-secondary via-background to-secondary/30 min-h-dvh py-12 px-4">
         {/* Process Steps bar above form */}
         <div className="container max-w-4xl mb-8">
           <div className="bg-card border border-border rounded-2xl p-5">
