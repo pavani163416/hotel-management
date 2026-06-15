@@ -497,7 +497,7 @@ const Navbar = () => {
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto py-4 px-3 flex flex-col gap-1">
+        <div className="flex-1 overflow-y-auto py-4 px-3 flex flex-col gap-1 relative z-50">
           {user && (
             <div className="px-3 py-4 mb-2 bg-secondary/50 rounded-xl">
               <p className="font-semibold text-primary">{user.name}</p>
@@ -505,71 +505,72 @@ const Navbar = () => {
             </div>
           )}
 
-          {links.map((l) => (
-            <NavLink 
-              key={l.to} 
-              to={l.to} 
-              end={l.to === "/"}
-              onClick={() => setMobileMenuOpen(false)}
-              className={({ isActive }) => `px-3 min-h-[44px] flex items-center text-base font-medium rounded-lg transition-base ${isActive ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-primary"}`}
-            >
-              {l.label}
-            </NavLink>
-          ))}
-          
-          <div className="my-2 h-px bg-border/50" />
-          
-          <button
-            onClick={() => { setMobileMenuOpen(false); navigate('/wishlist'); }}
-            className="px-3 min-h-[44px] flex items-center justify-between text-base font-medium text-muted-foreground hover:bg-secondary hover:text-primary rounded-lg transition-base"
-          >
+          {/* Common Links for everyone */}
+          <NavLink to="/" end onClick={() => setMobileMenuOpen(false)} className={({ isActive }) => `px-4 py-3 min-h-[44px] flex items-center text-base font-medium rounded-lg transition-base ${isActive ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-primary"}`}>Home</NavLink>
+          <NavLink to="/hotels" onClick={() => setMobileMenuOpen(false)} className={({ isActive }) => `px-4 py-3 min-h-[44px] flex items-center text-base font-medium rounded-lg transition-base ${isActive ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-primary"}`}>Hotels</NavLink>
+
+          {/* Authenticated Links */}
+          {user && (
+            <>
+              <NavLink to="/history" onClick={() => setMobileMenuOpen(false)} className={({ isActive }) => `px-4 py-3 min-h-[44px] flex items-center text-base font-medium rounded-lg transition-base ${isActive ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-primary"}`}>History</NavLink>
+            </>
+          )}
+
+          {/* Common Links 2 */}
+          <button onClick={() => { setMobileMenuOpen(false); navigate('/wishlist'); }} className="px-4 py-3 min-h-[44px] flex items-center justify-between text-base font-medium text-muted-foreground hover:bg-secondary hover:text-primary rounded-lg transition-base">
             Wishlist <Heart className="w-4 h-4" />
           </button>
-          
-          <div className="px-3 py-2 flex items-center justify-between">
-            <span className="text-base font-medium text-muted-foreground">Currency</span>
-            <CurrencySwitcher />
-          </div>
+
+          {user && (
+            <button onClick={() => { setMobileMenuOpen(false); setShowNotifications(true); }} className="px-4 py-3 min-h-[44px] flex items-center justify-between text-base font-medium text-muted-foreground hover:bg-secondary hover:text-primary rounded-lg transition-base">
+              Notifications
+              {unreadCount > 0 && <span className="bg-accent text-accent-foreground text-xs font-bold px-2 py-0.5 rounded-full">{unreadCount}</span>}
+            </button>
+          )}
+
+          <NavLink to="/support-centre" onClick={() => setMobileMenuOpen(false)} className={({ isActive }) => `px-4 py-3 min-h-[44px] flex items-center text-base font-medium rounded-lg transition-base ${isActive ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-primary"}`}>Support</NavLink>
+
+          {!user && (
+            <button onClick={() => { setMobileMenuOpen(false); navigate('/contact'); }} className="px-4 py-3 min-h-[44px] flex items-center text-base font-medium text-muted-foreground hover:bg-secondary hover:text-primary rounded-lg transition-base">
+              Contact Admin
+            </button>
+          )}
 
           <div className="my-2 h-px bg-border/50" />
 
+          {/* Bottom Actions */}
           {user ? (
             <>
-              <button
-                onClick={() => { setMobileMenuOpen(false); navigate('/profile'); }}
-                className="px-3 min-h-[44px] flex items-center text-base font-medium text-muted-foreground hover:bg-secondary hover:text-primary rounded-lg transition-base"
-              >
+              <button onClick={() => { setMobileMenuOpen(false); navigate('/profile'); }} className="px-4 py-3 min-h-[44px] flex items-center text-base font-medium text-muted-foreground hover:bg-secondary hover:text-primary rounded-lg transition-base">
                 Profile
               </button>
-              <button
-                onClick={() => { setMobileMenuOpen(false); navigate('/owner-portal'); }}
-                className="px-3 min-h-[44px] flex items-center text-base font-medium text-muted-foreground hover:bg-secondary hover:text-primary rounded-lg transition-base"
-              >
-                {user.role === "owner" ? "Owner Dashboard" : "List Your Property"}
+              <button onClick={() => { setMobileMenuOpen(false); navigate('/owner-portal'); }} className="px-4 py-3 min-h-[44px] flex items-center text-base font-medium text-muted-foreground hover:bg-secondary hover:text-primary rounded-lg transition-base">
+                Dashboard
               </button>
-              <button
-                onClick={() => { setMobileMenuOpen(false); handleLogout(); }}
-                className="px-3 min-h-[44px] flex items-center text-base font-medium text-destructive hover:bg-destructive/10 rounded-lg transition-base mt-2"
-              >
+              <button onClick={() => { setMobileMenuOpen(false); navigate('/history'); }} className="px-4 py-3 min-h-[44px] flex items-center text-base font-medium text-muted-foreground hover:bg-secondary hover:text-primary rounded-lg transition-base">
+                My Bookings
+              </button>
+              <button onClick={() => { setMobileMenuOpen(false); handleLogout(); }} className="px-4 py-3 min-h-[44px] flex items-center text-base font-medium text-destructive hover:bg-destructive/10 rounded-lg transition-base mt-2">
                 Log out
               </button>
             </>
           ) : (
-            <div className="flex flex-col gap-2 mt-4 px-2">
-              <button
-                onClick={() => { setMobileMenuOpen(false); openAuth("signin"); }}
-                className="w-full min-h-[44px] flex items-center justify-center font-semibold rounded-lg bg-secondary text-primary hover:bg-secondary/80 transition-base"
-              >
+            <div className="flex flex-col gap-2 px-2">
+              <button onClick={() => { setMobileMenuOpen(false); openAuth("signin"); }} className="w-full min-h-[44px] flex items-center justify-center font-semibold rounded-lg bg-secondary text-primary hover:bg-secondary/80 transition-base">
                 Sign In
               </button>
-              <button
-                onClick={() => { setMobileMenuOpen(false); openAuth("signup"); }}
-                className="w-full min-h-[44px] flex items-center justify-center font-semibold rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-base"
-              >
+              <button onClick={() => { setMobileMenuOpen(false); openAuth("signup"); }} className="w-full min-h-[44px] flex items-center justify-center font-semibold rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-base">
                 Sign Up
               </button>
             </div>
           )}
+
+          <div className="my-2 h-px bg-border/50" />
+          
+          <div className="px-4 py-3 min-h-[44px] flex items-center justify-between">
+            <span className="text-base font-medium text-muted-foreground">Currency</span>
+            <CurrencySwitcher />
+          </div>
         </div>
       </div>
 
