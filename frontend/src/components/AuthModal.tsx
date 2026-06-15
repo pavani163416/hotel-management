@@ -38,6 +38,17 @@ const COUNTRY_CODES = [
   { code: "+972", name: "Israel" }
 ].sort((a, b) => a.name.localeCompare(b.name));
 
+const getPhonePlaceholder = (code: string) => {
+  switch (code) {
+    case "+91": return "9876543210";
+    case "+44": return "7911 123456";
+    case "+1": return "555 000 0000";
+    case "+61": return "412 345 678";
+    case "+971": return "50 123 4567";
+    default: return "Mobile number";
+  }
+};
+
 
 type AuthModalProps = {
   isOpen: boolean;
@@ -220,7 +231,7 @@ function AuthModalInner({ isOpen, onClose, defaultMode, mode, setMode, loading, 
               </select>
               <input type="tel" value={phone} onChange={e => setPhone(e.target.value.replace(/\D/g, ""))}
                 className="flex-1 w-full px-4 py-2 border border-border rounded-lg outline-none focus:border-accent"
-                placeholder="555 000 0000" autoComplete="tel" />
+                placeholder={getPhonePlaceholder(countryCode)} autoComplete="tel" />
             </div>
           </div>
           <div className="space-y-2">
@@ -276,7 +287,7 @@ function AuthModalInner({ isOpen, onClose, defaultMode, mode, setMode, loading, 
               </select>
               <input type="tel" value={phone} onChange={e => setPhone(e.target.value.replace(/\D/g, ""))}
                 className="flex-1 w-full px-4 py-2 border border-border rounded-lg outline-none focus:border-accent"
-                placeholder="Mobile number" autoComplete="tel" />
+                placeholder={getPhonePlaceholder(countryCode)} autoComplete="tel" />
             </div>
           </div>
           {otpSent && (
