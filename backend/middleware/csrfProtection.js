@@ -24,7 +24,7 @@ const TRUSTED_ORIGINS = [
   "https://luxestay-frontend.vercel.app",
   "https://luxestay-admin.vercel.app",
   "https://hotel-management-admin-eta.vercel.app",
-  "https://hotel-management-production-2225.up.railway.app",
+  "",
   ...RAW_ORIGINS,
 ];
 

@@ -13,7 +13,7 @@ export const getApiUrl = () => {
     if (isLocal) {
       return "http://localhost:5000/api";
     }
-    throw new Error("VITE_API_URL environment variable is missing.");
+    throw new Error("FATAL: VITE_API_URL environment variable is missing. Hardcoded production fallbacks are disabled.");
   }
   url = url.trim().replace(/\/+$/, "");
   if (!url.toLowerCase().endsWith("/api")) {
