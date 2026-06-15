@@ -5,6 +5,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/responsive_container.dart';
 import '../../../../core/widgets/main_layout.dart';
 import '../../../../core/widgets/notification_modal.dart';
 import '../../../../core/providers/notification_provider.dart';
@@ -68,17 +69,15 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return MainLayout(
-      child: Column(
-        children: [
-          _buildHero(context),
-          Transform.translate(
-            offset: const Offset(0, -60), // Adjusted overlap
-            child: _buildCategories(),
-          ),
-          Transform.translate(
-            offset: const Offset(0, -40),
-            child: Column(
+    return ResponsiveContainer(
+      child: MainLayout(
+        child: Column(
+          children: [
+            _buildHero(context),
+            const SizedBox(height: 24),
+            _buildCategories(),
+            const SizedBox(height: 16),
+            Column(
               children: [
                 _buildTopCities(context),
                 _buildFeaturedSection(context),
@@ -88,9 +87,9 @@ class _HomePageState extends State<HomePage> {
                 _buildTrustStrip(context),
               ],
             ),
-          ),
-          const SizedBox(height: 100),
-        ],
+            const SizedBox(height: 100),
+          ],
+        ),
       ),
     );
   }
@@ -330,42 +329,48 @@ class _HomePageState extends State<HomePage> {
     return Stack(
       children: [
         // Premium Background Image
-        Consumer<HotelProvider>(
-          builder: (context, provider, child) {
-            final String heroImage = provider.allHotels.isNotEmpty 
-                ? provider.allHotels.first.imageUrl 
-                : '';
-            return Container(
-              height: 500, // Balanced height to avoid overflow
-              width: double.infinity,
-              foregroundDecoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.black.withOpacity(0.3),
-                    Colors.transparent,
-                    AppTheme.backgroundColor.withOpacity(0.9),
-                    AppTheme.backgroundColor,
-                  ],
-                  stops: const [0.0, 0.4, 0.8, 1.0], // Adjusted stops for quicker fade
+        Positioned.fill(
+          child: Consumer<HotelProvider>(
+            builder: (context, provider, child) {
+              final String heroImage = provider.allHotels.isNotEmpty 
+                  ? provider.allHotels.first.imageUrl 
+                  : '';
+              return Container(
+                width: double.infinity,
+                foregroundDecoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.black.withOpacity(0.3),
+                      Colors.transparent,
+                      AppTheme.backgroundColor.withOpacity(0.9),
+                      AppTheme.backgroundColor,
+                    ],
+                    stops: const [0.0, 0.4, 0.8, 1.0], // Adjusted stops for quicker fade
+                  ),
                 ),
-              ),
-              child: heroImage.isNotEmpty 
-                  ? CachedNetworkImage(
-                      imageUrl: heroImage,
-                      fit: BoxFit.cover,
-                      memCacheWidth: 1000,
-                      memCacheHeight: 700,
-                      placeholder: (context, url) => Container(color: AppTheme.primaryColor),
-                    )
-                  : Container(color: AppTheme.primaryColor),
-            );
-          },
+                child: heroImage.isNotEmpty 
+                    ? CachedNetworkImage(
+                        imageUrl: heroImage,
+                        fit: BoxFit.cover,
+                        memCacheWidth: 1000,
+                        memCacheHeight: 700,
+                        placeholder: (context, url) => Container(color: AppTheme.primaryColor),
+                      )
+                    : Container(color: AppTheme.primaryColor),
+              );
+            },
+          ),
         ),
         // Hero Content
-        Positioned.fill(
+        Container(
+          constraints: BoxConstraints(
+            minHeight: MediaQuery.of(context).size.height * 0.42,
+          ),
+          width: double.infinity,
           child: SafeArea(
+            bottom: false,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Column(
@@ -376,54 +381,60 @@ class _HomePageState extends State<HomePage> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      InkWell(
-                        onTap: () => context.push('/profile'),
-                        borderRadius: BorderRadius.circular(50),
-                        child: Row(
-                          children: [
-                            Consumer<AuthProvider>(
-                              builder: (context, auth, _) {
-                                final profileImage = auth.user?.profileImage;
-                                final name = auth.user?.name ?? 'Guest';
-                                return Container(
-                                  padding: const EdgeInsets.all(2),
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    border: Border.all(color: Colors.white, width: 2),
-                                  ),
-                                  child: CircleAvatar(
-                                    radius: 18,
-                                    backgroundColor: AppTheme.accentColor,
-                                    backgroundImage: (profileImage != null && profileImage.isNotEmpty)
-                                        ? CachedNetworkImageProvider(profileImage)
-                                        : null,
-                                    child: (profileImage == null || profileImage.isEmpty)
-                                        ? const Icon(LucideIcons.user, size: 20, color: AppTheme.primaryColor)
-                                        : null,
-                                  ),
-                                );
-                              },
-                            ),
-                            const SizedBox(width: 12),
-                            Consumer<AuthProvider>(
-                              builder: (context, auth, _) {
-                                final name = (auth.user?.name?.isEmpty ?? true) ? 'Guest' : auth.user!.name;
-                                return Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Welcome back,',
-                                      style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 12),
+                      Expanded(
+                        child: InkWell(
+                          onTap: () => context.push('/profile'),
+                          borderRadius: BorderRadius.circular(50),
+                          child: Row(
+                            children: [
+                              Consumer<AuthProvider>(
+                                builder: (context, auth, _) {
+                                  final profileImage = auth.user?.profileImage;
+                                  final name = auth.user?.name ?? 'Guest';
+                                  return Container(
+                                    padding: const EdgeInsets.all(2),
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      border: Border.all(color: Colors.white, width: 2),
                                     ),
-                                    Text(
-                                      name,
-                                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                                    child: CircleAvatar(
+                                      radius: 18,
+                                      backgroundColor: AppTheme.accentColor,
+                                      backgroundImage: (profileImage != null && profileImage.isNotEmpty)
+                                          ? CachedNetworkImageProvider(profileImage)
+                                          : null,
+                                      child: (profileImage == null || profileImage.isEmpty)
+                                          ? const Icon(LucideIcons.user, size: 20, color: AppTheme.primaryColor)
+                                          : null,
                                     ),
-                                  ],
-                                );
-                              },
-                            ),
-                          ],
+                                  );
+                                },
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Consumer<AuthProvider>(
+                                  builder: (context, auth, _) {
+                                    final name = (auth.user?.name?.isEmpty ?? true) ? 'Guest' : auth.user!.name;
+                                    return Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'Welcome back,',
+                                          style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 12),
+                                        ),
+                                        Text(
+                                          name,
+                                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                       Row(

@@ -41,23 +41,22 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   }
 
   void _checkAuthAndNavigate() async {
-    await Future.delayed(const Duration(milliseconds: 3000));
-    if (!mounted) return;
-
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final isLoggedIn = await authProvider.tryAutoLogin();
 
     if (mounted) {
       if (isLoggedIn) {
         context.go('/');
+        return;
+      }
+      // Not logged in: show splash for a short delay before navigating
+      await Future.delayed(const Duration(milliseconds: 3000));
+      final prefs = await SharedPreferences.getInstance();
+      final hasSeenOnboarding = prefs.getBool(AppConstants.onboardingKey) ?? false;
+      if (hasSeenOnboarding) {
+        context.go('/welcome');
       } else {
-        final prefs = await SharedPreferences.getInstance();
-        final hasSeenOnboarding = prefs.getBool(AppConstants.onboardingKey) ?? false;
-        if (hasSeenOnboarding) {
-          context.go('/welcome');
-        } else {
-          context.go('/onboarding');
-        }
+        context.go('/onboarding');
       }
     }
   }
@@ -138,33 +137,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                           ),
                         ),
                         const Spacer(),
-                        // CTA Button
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 40),
-                          child: ElevatedButton(
-                            onPressed: () async {
-                              final auth = Provider.of<AuthProvider>(context, listen: false);
-                              if (auth.isAuthenticated) {
-                                context.go('/');
-                              } else {
-                                final prefs = await SharedPreferences.getInstance();
-                                final hasSeenOnboarding = prefs.getBool(AppConstants.onboardingKey) ?? false;
-                                if (hasSeenOnboarding) {
-                                  context.go('/welcome');
-                                } else {
-                                  context.go('/onboarding');
-                                }
-                              }
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFFD4A373),
-                              foregroundColor: Colors.white,
-                              minimumSize: const Size(double.infinity, 56),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            ),
-                            child: const Text('EXPLORE COLLECTION', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 2)),
-                          ),
-                        ),
+
                         const SizedBox(height: 24),
                         Text(
                           'GLOBAL CURATORS',

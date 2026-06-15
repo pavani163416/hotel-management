@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/responsive_container.dart';
 import '../../../../core/widgets/main_layout.dart';
 import '../../../../core/widgets/stepper_widget.dart';
 import '../../../../core/providers/booking_provider.dart';
@@ -70,67 +71,69 @@ class _ReviewPageState extends State<ReviewPage> {
       return const MainLayout(child: Center(child: Text('No hotel selected')));
     }
 
-    return MainLayout(
-      child: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const StepperWidget(currentStep: 2),
-              const SizedBox(height: 24),
-              const Text(
-                'Review Your Booking',
-                style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: AppTheme.primaryColor, fontFamily: 'Serif'),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Please confirm your details before proceeding to payment.',
-                style: TextStyle(color: AppTheme.primaryColor.withOpacity(0.5), fontSize: 14),
-              ),
-              const SizedBox(height: 32),
-              
-              LayoutBuilder(
-                builder: (context, constraints) {
-                  final isWide = constraints.maxWidth > 800;
-                  return Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        flex: 3,
-                        child: Column(
-                          children: [
-                            _buildStaySummary(provider),
-                            const SizedBox(height: 24),
-                            _buildGuestInformation(provider),
-                          ],
-                        ),
-                      ),
-                      if (isWide) const SizedBox(width: 32),
-                      if (isWide)
+    return ResponsiveContainer(
+      child: MainLayout(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const StepperWidget(currentStep: 2),
+                const SizedBox(height: 24),
+                const Text(
+                  'Review Your Booking',
+                  style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: AppTheme.primaryColor, fontFamily: 'Serif'),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Please confirm your details before proceeding to payment.',
+                  style: TextStyle(color: AppTheme.primaryColor.withOpacity(0.5), fontSize: 14),
+                ),
+                const SizedBox(height: 32),
+
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final isWide = constraints.maxWidth > 800;
+                    return Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
                         Expanded(
-                          flex: 2,
-                          child: _buildPriceSummary(context, provider, promoProvider),
+                          flex: 3,
+                          child: Column(
+                            children: [
+                              _buildStaySummary(provider),
+                              const SizedBox(height: 24),
+                              _buildGuestInformation(provider),
+                            ],
+                          ),
                         ),
-                    ],
-                  );
-                }
-              ),
-              
-              // Mobile Price Summary
-              LayoutBuilder(
-                builder: (context, constraints) {
-                  if (constraints.maxWidth <= 800) {
-                    return Padding(
-                      padding: const EdgeInsets.only(top: 32),
-                      child: _buildPriceSummary(context, provider, promoProvider),
+                        if (isWide) const SizedBox(width: 32),
+                        if (isWide)
+                          Expanded(
+                            flex: 2,
+                            child: _buildPriceSummary(context, provider, promoProvider),
+                          ),
+                      ],
                     );
-                  }
-                  return const SizedBox.shrink();
-                }
-              ),
-              const SizedBox(height: 100),
-            ],
+                  },
+                ),
+
+                // Mobile Price Summary
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    if (constraints.maxWidth <= 800) {
+                      return Padding(
+                        padding: const EdgeInsets.only(top: 32),
+                        child: _buildPriceSummary(context, provider, promoProvider),
+                      );
+                    }
+                    return const SizedBox.shrink();
+                  },
+                ),
+                const SizedBox(height: 100),
+              ],
+            ),
           ),
         ),
       ),
@@ -225,9 +228,9 @@ class _ReviewPageState extends State<ReviewPage> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildInfoBlock('Name', lead['name'] ?? 'Not set'),
-              const Spacer(),
-              _buildInfoBlock('Email', lead['email'] ?? 'Not set'),
+              Expanded(child: _buildInfoBlock('Name', lead['name'] ?? 'Not set')),
+              const SizedBox(width: 16),
+              Expanded(flex: 2, child: _buildInfoBlock('Email', lead['email'] ?? 'Not set')),
             ],
           ),
           const SizedBox(height: 20),

@@ -73,9 +73,8 @@ class AppRouter {
       }
 
       // 2. TC-FE-033: Prevent redundant logins — redirect authenticated users
-      //    away from every public/auth page EXCEPT splash (splash handles its
-      //    own redirect after loading cached auth).
-      if (authProvider.isAuthenticated && isPublicPage && path != splash) {
+      //    away from every public/auth page, including splash.
+      if (authProvider.isAuthenticated && isPublicPage) {
         return root;
       }
 
