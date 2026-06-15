@@ -95,8 +95,6 @@ const Home = () => {
             </div>
           </div>
 
-          </div>
-
           {/* Illustration on Desktop, bottom on mobile */}
           <div className="relative flex justify-center items-center animate-fade-in order-3 lg:order-none w-full max-w-sm lg:max-w-none mx-auto mt-6 lg:mt-0">
             <div className="absolute inset-0 bg-gradient-to-tr from-accent/20 via-transparent to-brown/10 rounded-full blur-3xl" />
