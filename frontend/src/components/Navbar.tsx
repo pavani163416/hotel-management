@@ -61,6 +61,11 @@ const Navbar = () => {
   const wasAuthOpen = useRef(false);
   const notificationRef = useRef<HTMLDivElement>(null);
 
+  const handleMenuNavigation = (route: string) => {
+    setMobileMenuOpen(false);
+    navigate(route);
+  };
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
@@ -506,18 +511,18 @@ const Navbar = () => {
           )}
 
           {/* Common Links for everyone */}
-          <NavLink to="/" end onClick={() => setMobileMenuOpen(false)} className={({ isActive }) => `px-4 py-3 min-h-[44px] flex items-center text-base font-medium rounded-lg transition-base ${isActive ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-primary"}`}>Home</NavLink>
-          <NavLink to="/hotels" onClick={() => setMobileMenuOpen(false)} className={({ isActive }) => `px-4 py-3 min-h-[44px] flex items-center text-base font-medium rounded-lg transition-base ${isActive ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-primary"}`}>Hotels</NavLink>
+          <button onClick={() => handleMenuNavigation("/")} className={`px-4 py-3 min-h-[44px] flex items-center text-base font-medium rounded-lg transition-base ${location.pathname === "/" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-primary"}`}>Home</button>
+          <button onClick={() => handleMenuNavigation("/hotels")} className={`px-4 py-3 min-h-[44px] flex items-center text-base font-medium rounded-lg transition-base ${location.pathname === "/hotels" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-primary"}`}>Hotels</button>
 
           {/* Authenticated Links */}
           {user && (
             <>
-              <NavLink to="/history" onClick={() => setMobileMenuOpen(false)} className={({ isActive }) => `px-4 py-3 min-h-[44px] flex items-center text-base font-medium rounded-lg transition-base ${isActive ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-primary"}`}>History</NavLink>
+              <button onClick={() => handleMenuNavigation("/history")} className={`px-4 py-3 min-h-[44px] flex items-center text-base font-medium rounded-lg transition-base ${location.pathname === "/history" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-primary"}`}>History</button>
             </>
           )}
 
           {/* Common Links 2 */}
-          <button onClick={() => { setMobileMenuOpen(false); navigate('/wishlist'); }} className="px-4 py-3 min-h-[44px] flex items-center justify-between text-base font-medium text-muted-foreground hover:bg-secondary hover:text-primary rounded-lg transition-base">
+          <button onClick={() => handleMenuNavigation("/wishlist")} className="px-4 py-3 min-h-[44px] flex items-center justify-between text-base font-medium text-muted-foreground hover:bg-secondary hover:text-primary rounded-lg transition-base">
             Wishlist <Heart className="w-4 h-4" />
           </button>
 
@@ -528,10 +533,10 @@ const Navbar = () => {
             </button>
           )}
 
-          <NavLink to="/support-centre" onClick={() => setMobileMenuOpen(false)} className={({ isActive }) => `px-4 py-3 min-h-[44px] flex items-center text-base font-medium rounded-lg transition-base ${isActive ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-primary"}`}>Support</NavLink>
+          <button onClick={() => handleMenuNavigation("/support-centre")} className={`px-4 py-3 min-h-[44px] flex items-center text-base font-medium rounded-lg transition-base ${location.pathname === "/support-centre" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-primary"}`}>Support</button>
 
           {!user && (
-            <button onClick={() => { setMobileMenuOpen(false); navigate('/contact'); }} className="px-4 py-3 min-h-[44px] flex items-center text-base font-medium text-muted-foreground hover:bg-secondary hover:text-primary rounded-lg transition-base">
+            <button onClick={() => handleMenuNavigation("/contact")} className="px-4 py-3 min-h-[44px] flex items-center text-base font-medium text-muted-foreground hover:bg-secondary hover:text-primary rounded-lg transition-base">
               Contact Admin
             </button>
           )}
@@ -541,13 +546,13 @@ const Navbar = () => {
           {/* Bottom Actions */}
           {user ? (
             <>
-              <button onClick={() => { setMobileMenuOpen(false); navigate('/profile'); }} className="px-4 py-3 min-h-[44px] flex items-center text-base font-medium text-muted-foreground hover:bg-secondary hover:text-primary rounded-lg transition-base">
+              <button onClick={() => handleMenuNavigation("/profile")} className="px-4 py-3 min-h-[44px] flex items-center text-base font-medium text-muted-foreground hover:bg-secondary hover:text-primary rounded-lg transition-base">
                 Profile
               </button>
-              <button onClick={() => { setMobileMenuOpen(false); navigate('/owner-portal'); }} className="px-4 py-3 min-h-[44px] flex items-center text-base font-medium text-muted-foreground hover:bg-secondary hover:text-primary rounded-lg transition-base">
+              <button onClick={() => handleMenuNavigation("/owner-portal")} className="px-4 py-3 min-h-[44px] flex items-center text-base font-medium text-muted-foreground hover:bg-secondary hover:text-primary rounded-lg transition-base">
                 Dashboard
               </button>
-              <button onClick={() => { setMobileMenuOpen(false); navigate('/history'); }} className="px-4 py-3 min-h-[44px] flex items-center text-base font-medium text-muted-foreground hover:bg-secondary hover:text-primary rounded-lg transition-base">
+              <button onClick={() => handleMenuNavigation("/history")} className="px-4 py-3 min-h-[44px] flex items-center text-base font-medium text-muted-foreground hover:bg-secondary hover:text-primary rounded-lg transition-base">
                 My Bookings
               </button>
               <button onClick={() => { setMobileMenuOpen(false); handleLogout(); }} className="px-4 py-3 min-h-[44px] flex items-center text-base font-medium text-destructive hover:bg-destructive/10 rounded-lg transition-base mt-2">
