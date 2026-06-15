@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
-import { Bell, Hotel, UserCircle, LogOut, Mail, CheckCircle2, Building2, Heart } from "lucide-react";
+import { Bell, Hotel, UserCircle, LogOut, Mail, CheckCircle2, Building2, Heart, Menu, X } from "lucide-react";
 import { useBooking } from "@/context/BookingContext";
 import { useWishlist } from "@/context/WishlistContext";
 import { AuthModal } from "@/components/AuthModal";
@@ -56,6 +56,7 @@ const Navbar = () => {
   const [activeRoomNo, setActiveRoomNo]   = useState("");
   const [activeFloorNo, setActiveFloorNo] = useState("");
   const [hasActiveStay, setHasActiveStay] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   // Track whether the modal was open so we know when it just closed
   const wasAuthOpen = useRef(false);
   const notificationRef = useRef<HTMLDivElement>(null);
@@ -69,6 +70,28 @@ const Navbar = () => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => { document.body.style.overflow = ""; };
+  }, [mobileMenuOpen]);
+
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMobileMenuOpen(false);
+    };
+    window.addEventListener("keydown", handleEsc);
+    return () => window.removeEventListener("keydown", handleEsc);
+  }, []);
+
+  // Close mobile menu on route change
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [location.pathname]);
 
   // Auto-open sign-in when redirected from a protected route or via global event
   useEffect(() => {
@@ -252,18 +275,32 @@ const Navbar = () => {
   return (
     <header className="sticky top-0 z-40 bg-background/85 backdrop-blur-md border-b border-border">
       <div className="container flex items-center justify-between h-16">
-        <Link to="/" className="flex items-center gap-2 font-display font-bold text-lg text-primary">
-          <span className="grid place-items-center w-8 h-8 rounded-lg bg-primary text-primary-foreground">
+        
+        {/* Mobile Left: Hamburger */}
+        <div className="flex items-center md:hidden w-1/4">
+          <button 
+            onClick={() => setMobileMenuOpen(true)}
+            className="min-w-[44px] min-h-[44px] flex items-center justify-start -ml-2 text-primary hover:text-accent transition-base"
+            aria-label="Open menu"
+          >
+            <Menu className="w-6 h-6" />
+          </button>
+        </div>
+
+        {/* Logo */}
+        <Link to="/" className="flex items-center justify-center gap-2 font-display font-bold text-lg text-primary w-2/4 md:w-auto md:justify-start">
+          <span className="grid place-items-center w-8 h-8 rounded-lg bg-primary text-primary-foreground shrink-0">
             <Hotel className="w-4 h-4" />
           </span>
-          LuxeStay
+          <span className="hidden sm:inline-block">LuxeStay</span>
         </Link>
 
+        {/* Desktop Links */}
         <nav className="hidden md:flex items-center gap-1">
           {links.map((l) => (
             <NavLink key={l.to} to={l.to} end={l.to === "/"}
               className={({ isActive }) =>
-                `relative px-4 py-2 text-sm font-medium transition-base ${isActive ? "text-primary" : "text-muted-foreground hover:text-primary"}`
+                `relative px-4 py-2 text-sm font-medium transition-base min-h-[44px] flex items-center ${isActive ? "text-primary" : "text-muted-foreground hover:text-primary"}`
               }>
               {({ isActive }) => (
                 <>
@@ -275,32 +312,37 @@ const Navbar = () => {
           ))}
         </nav>
 
-        <div className="flex items-center gap-3">
-          <CurrencySwitcher />
+        {/* Right Actions */}
+        <div className="flex items-center justify-end gap-1 md:gap-3 w-1/4 md:w-auto">
+          <div className="hidden md:block">
+            <CurrencySwitcher />
+          </div>
           <button
             onClick={() => navigate('/wishlist')}
-            className="relative w-9 h-9 grid place-items-center rounded-full hover:bg-accent/5 transition-base border border-transparent hover:border-border"
+            className="hidden md:grid relative w-[44px] h-[44px] place-items-center rounded-full hover:bg-accent/5 transition-base border border-transparent hover:border-border"
             aria-label="Wishlist"
           >
-            <Heart className="w-4 h-4 text-muted-foreground" />
+            <Heart className="w-5 h-5 text-muted-foreground" />
           </button>
+          
           {user ? (
             <>
-              <div className="relative" ref={notificationRef}>
+              {/* Notifications */}
+              <div className="relative flex items-center justify-center" ref={notificationRef}>
                 <button
                   onClick={() => setShowNotifications((v) => !v)}
-                  className="relative w-9 h-9 grid place-items-center rounded-full hover:bg-accent/5 transition-base border border-transparent hover:border-border"
+                  className="relative w-[44px] h-[44px] flex items-center justify-center rounded-full hover:bg-accent/5 transition-base border border-transparent hover:border-border"
                   aria-label="Notifications"
                 >
-                  <Bell className="w-4 h-4 text-muted-foreground" />
+                  <Bell className="w-5 h-5 text-muted-foreground" />
                   {unreadCount > 0 && (
-                    <span className="absolute top-0.5 right-0.5 min-w-4 h-4 px-1 rounded-full bg-accent text-accent-foreground text-[10px] font-bold grid place-items-center">
+                    <span className="absolute top-1 right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-accent text-accent-foreground text-[10px] font-bold grid place-items-center">
                       {unreadCount}
                     </span>
                   )}
                 </button>
                 {showNotifications && (
-                  <div className="absolute right-0 top-11 z-50 w-80 overflow-hidden rounded-xl border border-border bg-card shadow-elegant">
+                  <div className="absolute right-0 top-12 z-50 w-[90vw] max-w-sm overflow-hidden rounded-xl border border-border bg-card shadow-elegant">
                     <div className="flex items-center justify-between px-4 py-3 border-b border-border">
                       <p className="text-sm font-semibold text-primary">Notifications</p>
                       <span className="text-xs text-muted-foreground">{unreadCount} unread</span>
@@ -312,7 +354,7 @@ const Navbar = () => {
                         <button
                           key={n._id}
                           onClick={() => openNotification(n)}
-                          className="w-full text-left px-4 py-3 border-b border-border last:border-0 hover:bg-secondary transition-base"
+                          className="w-full text-left px-4 py-3 border-b border-border last:border-0 hover:bg-secondary transition-base min-h-[44px]"
                         >
                           <div className="flex items-start gap-3">
                             <span className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${n.isRead ? "bg-border" : "bg-accent"}`} />
@@ -327,81 +369,206 @@ const Navbar = () => {
                   </div>
                 )}
               </div>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button className="flex items-center gap-2 px-3 py-1.5 rounded-full hover:bg-accent/5 transition-base border border-transparent hover:border-border outline-none">
-                    <span className="font-semibold text-sm text-primary">{user.name.split(" ")[0]}</span>
-                    <UserCircle className="w-7 h-7 text-muted-foreground" />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-40">
-                  <DropdownMenuItem asChild>
-                    <Link to="/profile" className="w-full cursor-pointer">Profile</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/owner-portal" className="w-full cursor-pointer flex items-center gap-1.5 text-primary hover:text-accent font-medium">
-                      <Building2 className="w-3.5 h-3.5" /> {user?.role === "owner" ? "Owner Dashboard" : "List Your Property"}
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={async () => {
-                      if (!hasActiveStay) return;
-                      // Pre-fetch room number and floor from active booking
-                      if (user?.email) {
-                        try {
-                          const bRes = await api.get(`/bookings?guestEmail=${encodeURIComponent(user.email)}&limit=${DEFAULT_PAGINATION_LIMIT}`);
-                          const apiBookings: any[] = bRes.data?.data || [];
-                          const confirmed = apiBookings.find((b: any) => b.status === "Confirmed") || apiBookings[0];
-                          if (confirmed?.room?.roomNumber) {
-                            setActiveRoomNo(confirmed.room.roomNumber);
-                            const match = confirmed.room.roomNumber.match(/(\d+)/);
-                            const roomNum = match ? match[1] : "";
-                            setActiveFloorNo(roomNum.length >= 3 ? roomNum[0] : "");
-                          } else {
+
+              {/* Desktop User Avatar (hidden on mobile, but user wants avatar on right. "Profile Avatar OR Guest Icon") */}
+              {/* Since we need avatar on mobile, we show it! */}
+              <div className="hidden md:block">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className="flex items-center gap-2 px-3 py-1.5 rounded-full hover:bg-accent/5 transition-base border border-transparent hover:border-border outline-none min-h-[44px]">
+                      <span className="font-semibold text-sm text-primary">{user.name.split(" ")[0]}</span>
+                      <UserCircle className="w-7 h-7 text-muted-foreground shrink-0" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    <DropdownMenuItem asChild>
+                      <Link to="/profile" className="w-full cursor-pointer min-h-[44px]">Profile</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/owner-portal" className="w-full cursor-pointer flex items-center gap-1.5 text-primary hover:text-accent font-medium min-h-[44px]">
+                        <Building2 className="w-3.5 h-3.5" /> {user?.role === "owner" ? "Owner Dashboard" : "List Property"}
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={async () => {
+                        if (!hasActiveStay) return;
+                        if (user?.email) {
+                          try {
+                            const bRes = await api.get(`/bookings?guestEmail=${encodeURIComponent(user.email)}&limit=${DEFAULT_PAGINATION_LIMIT}`);
+                            const apiBookings: any[] = bRes.data?.data || [];
+                            const confirmed = apiBookings.find((b: any) => b.status === "Confirmed") || apiBookings[0];
+                            if (confirmed?.room?.roomNumber) {
+                              setActiveRoomNo(confirmed.room.roomNumber);
+                              const match = confirmed.room.roomNumber.match(/(\d+)/);
+                              const roomNum = match ? match[1] : "";
+                              setActiveFloorNo(roomNum.length >= 3 ? roomNum[0] : "");
+                            } else {
+                              setActiveRoomNo("");
+                              setActiveFloorNo("");
+                            }
+                          } catch {
                             setActiveRoomNo("");
                             setActiveFloorNo("");
                           }
-                        } catch {
-                          setActiveRoomNo("");
-                          setActiveFloorNo("");
                         }
-                      }
-                      setAssistanceOpen(true);
-                    }}
-                    disabled={requesting || requestSuccess || !hasActiveStay}
-                    className={hasActiveStay ? "cursor-pointer" : "cursor-not-allowed opacity-50"}
-                    title={!hasActiveStay ? "No active booking — assistance is only available during your stay" : undefined}
-                  >
-                    {requestSuccess ? (
-                      <><CheckCircle2 className="w-4 h-4 mr-2 text-green-500" /> Sent!</>
-                    ) : (
-                      <><Mail className="w-4 h-4 mr-2" /> {requesting ? "Sending..." : "Request Assistance"}</>
-                    )}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={handleLogout}
-                    className="text-destructive cursor-pointer focus:text-destructive focus:bg-destructive/10"
-                  >
-                    <LogOut className="w-4 h-4 mr-2" /> Log out
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                        setAssistanceOpen(true);
+                      }}
+                      disabled={requesting || requestSuccess || !hasActiveStay}
+                      className={`min-h-[44px] ${hasActiveStay ? "cursor-pointer" : "cursor-not-allowed opacity-50"}`}
+                      title={!hasActiveStay ? "Assistance available during stay" : undefined}
+                    >
+                      {requestSuccess ? (
+                        <><CheckCircle2 className="w-4 h-4 mr-2 text-green-500" /> Sent!</>
+                      ) : (
+                        <><Mail className="w-4 h-4 mr-2" /> {requesting ? "Sending..." : "Request Assistance"}</>
+                      )}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={handleLogout}
+                      className="text-destructive cursor-pointer focus:text-destructive focus:bg-destructive/10 min-h-[44px]"
+                    >
+                      <LogOut className="w-4 h-4 mr-2" /> Log out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+
+              {/* Mobile Avatar (just triggers drawer or acts as avatar) */}
+              <button 
+                onClick={() => setMobileMenuOpen(true)}
+                className="md:hidden flex items-center justify-center min-w-[44px] min-h-[44px] -mr-2"
+                aria-label="Open menu"
+              >
+                <UserCircle className="w-6 h-6 text-muted-foreground" />
+              </button>
             </>
           ) : (
             <>
+              {/* Desktop Sign In / Sign Up */}
+              <div className="hidden md:flex items-center gap-2">
+                <button
+                  onClick={() => openAuth("signin")}
+                  className="px-5 py-2 min-h-[44px] text-sm font-semibold rounded-lg text-primary hover:bg-secondary transition-base"
+                >
+                  Sign In
+                </button>
+                <button
+                  onClick={() => openAuth("signup")}
+                  className="px-5 py-2 min-h-[44px] text-sm font-semibold rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-base"
+                >
+                  Sign Up
+                </button>
+              </div>
+              
+              {/* Mobile Guest Avatar */}
+              <button 
+                onClick={() => setMobileMenuOpen(true)}
+                className="md:hidden flex items-center justify-center min-w-[44px] min-h-[44px] -mr-2"
+                aria-label="Open menu"
+              >
+                <UserCircle className="w-6 h-6 text-muted-foreground" />
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Mobile Drawer (Hamburger Menu) */}
+      <div 
+        className={`fixed inset-0 z-50 bg-background/80 backdrop-blur-sm transition-opacity duration-300 md:hidden ${mobileMenuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}
+        onClick={() => setMobileMenuOpen(false)}
+      />
+      <div 
+        className={`fixed top-0 left-0 bottom-0 z-50 w-[80vw] max-w-sm bg-card border-r border-border shadow-luxe transition-transform duration-300 ease-in-out md:hidden flex flex-col ${mobileMenuOpen ? "translate-x-0" : "-translate-x-full"}`}
+      >
+        <div className="flex items-center justify-between p-4 border-b border-border">
+          <Link to="/" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 font-display font-bold text-lg text-primary">
+            <span className="grid place-items-center w-8 h-8 rounded-lg bg-primary text-primary-foreground shrink-0">
+              <Hotel className="w-4 h-4" />
+            </span>
+            LuxeStay
+          </Link>
+          <button 
+            onClick={() => setMobileMenuOpen(false)} 
+            className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg hover:bg-accent/10 transition-base text-muted-foreground"
+            aria-label="Close menu"
+          >
+            <X className="w-6 h-6" />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto py-4 px-3 flex flex-col gap-1">
+          {user && (
+            <div className="px-3 py-4 mb-2 bg-secondary/50 rounded-xl">
+              <p className="font-semibold text-primary">{user.name}</p>
+              <p className="text-sm text-muted-foreground truncate">{user.email}</p>
+            </div>
+          )}
+
+          {links.map((l) => (
+            <NavLink 
+              key={l.to} 
+              to={l.to} 
+              end={l.to === "/"}
+              onClick={() => setMobileMenuOpen(false)}
+              className={({ isActive }) => `px-3 min-h-[44px] flex items-center text-base font-medium rounded-lg transition-base ${isActive ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-primary"}`}
+            >
+              {l.label}
+            </NavLink>
+          ))}
+          
+          <div className="my-2 h-px bg-border/50" />
+          
+          <button
+            onClick={() => { setMobileMenuOpen(false); navigate('/wishlist'); }}
+            className="px-3 min-h-[44px] flex items-center justify-between text-base font-medium text-muted-foreground hover:bg-secondary hover:text-primary rounded-lg transition-base"
+          >
+            Wishlist <Heart className="w-4 h-4" />
+          </button>
+          
+          <div className="px-3 py-2 flex items-center justify-between">
+            <span className="text-base font-medium text-muted-foreground">Currency</span>
+            <CurrencySwitcher />
+          </div>
+
+          <div className="my-2 h-px bg-border/50" />
+
+          {user ? (
+            <>
               <button
-                onClick={() => openAuth("signin")}
-                className="px-5 py-2 text-sm font-semibold rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-base"
+                onClick={() => { setMobileMenuOpen(false); navigate('/profile'); }}
+                className="px-3 min-h-[44px] flex items-center text-base font-medium text-muted-foreground hover:bg-secondary hover:text-primary rounded-lg transition-base"
+              >
+                Profile
+              </button>
+              <button
+                onClick={() => { setMobileMenuOpen(false); navigate('/owner-portal'); }}
+                className="px-3 min-h-[44px] flex items-center text-base font-medium text-muted-foreground hover:bg-secondary hover:text-primary rounded-lg transition-base"
+              >
+                {user.role === "owner" ? "Owner Dashboard" : "List Your Property"}
+              </button>
+              <button
+                onClick={() => { setMobileMenuOpen(false); handleLogout(); }}
+                className="px-3 min-h-[44px] flex items-center text-base font-medium text-destructive hover:bg-destructive/10 rounded-lg transition-base mt-2"
+              >
+                Log out
+              </button>
+            </>
+          ) : (
+            <div className="flex flex-col gap-2 mt-4 px-2">
+              <button
+                onClick={() => { setMobileMenuOpen(false); openAuth("signin"); }}
+                className="w-full min-h-[44px] flex items-center justify-center font-semibold rounded-lg bg-secondary text-primary hover:bg-secondary/80 transition-base"
               >
                 Sign In
               </button>
               <button
-                onClick={() => openAuth("signup")}
-                className="px-5 py-2 text-sm font-semibold rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-base"
+                onClick={() => { setMobileMenuOpen(false); openAuth("signup"); }}
+                className="w-full min-h-[44px] flex items-center justify-center font-semibold rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-base"
               >
                 Sign Up
               </button>
-            </>
+            </div>
           )}
         </div>
       </div>
@@ -420,7 +587,6 @@ const Navbar = () => {
         defaultFloorNo={activeFloorNo}
       />
     </header>
-
   );
 };
 

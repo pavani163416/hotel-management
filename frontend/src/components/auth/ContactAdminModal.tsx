@@ -11,7 +11,7 @@ type ContactAdminModalProps = {
 export function ContactAdminModal({ isOpen, onClose }: ContactAdminModalProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[400px] bg-background/95 backdrop-blur-md border border-border/50 shadow-2xl p-0 overflow-hidden">
+      <DialogContent className="sm:max-w-[400px] w-[min(95vw,400px)] max-h-[90dvh] bg-background/95 backdrop-blur-md border border-border/50 shadow-2xl p-0 overflow-y-auto">
         <div className="p-6 bg-primary/5 border-b border-border">
           <DialogHeader>
             <DialogTitle className="font-display text-2xl font-bold text-foreground flex items-center gap-2">

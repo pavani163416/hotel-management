@@ -302,7 +302,7 @@ const OwnerPortal = () => {
     const sc = { color: "text-green-700", bg: "bg-green-50 border-green-200", label: "Approved Partner" };
     return (
       <Layout>
-        <div className="bg-gradient-to-br from-secondary via-background to-secondary/50 min-h-screen">
+        <div className="bg-gradient-to-br from-secondary via-background to-secondary/50 min-h-[100dvh]">
           <div className="container py-10 max-w-4xl">
             {/* Header */}
             <div className="flex items-start justify-between flex-wrap gap-4 mb-8">

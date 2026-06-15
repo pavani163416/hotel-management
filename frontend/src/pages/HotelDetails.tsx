@@ -233,13 +233,21 @@ const HotelDetails = () => {
   return (
     <Layout>
       {/* Gallery */}
-      <div className="container pt-8">
-        <div className="grid md:grid-cols-3 gap-3 rounded-2xl overflow-hidden md:h-[420px]">
-          <img src={hotel.gallery?.[0] || hotel.image} alt={hotel.name} className="md:col-span-2 w-full h-[250px] md:h-full object-cover" />
-          <div className="grid grid-rows-2 gap-3 h-[250px] md:h-full">
+      <div className="container pt-8 px-0 sm:px-4">
+        {/* Desktop Gallery */}
+        <div className="hidden md:grid grid-cols-3 gap-3 rounded-2xl overflow-hidden h-[420px]">
+          <img src={hotel.gallery?.[0] || hotel.image} alt={hotel.name} className="col-span-2 w-full h-full object-cover" />
+          <div className="grid grid-rows-2 gap-3 h-full">
             <img src={hotel.gallery?.[1] || hotel.image} alt="" className="w-full h-full object-cover" loading="lazy" />
             <img src={hotel.gallery?.[2] || hotel.image} alt="" className="w-full h-full object-cover" loading="lazy" />
           </div>
+        </div>
+
+        {/* Mobile Swipe Gallery */}
+        <div className="md:hidden flex overflow-x-auto snap-x snap-mandatory scrollbar-hide gap-2 px-4 pb-2">
+          {[hotel.gallery?.[0] || hotel.image, hotel.gallery?.[1] || hotel.image, hotel.gallery?.[2] || hotel.image].map((src, i) => (
+             <img key={i} src={src} alt="" className="snap-center shrink-0 w-[85vw] h-[280px] object-cover rounded-xl" loading={i === 0 ? "eager" : "lazy"} />
+          ))}
         </div>
       </div>
 
@@ -263,10 +271,10 @@ const HotelDetails = () => {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 border-b border-border mt-8">
+        <div id="rooms-section" className="flex gap-1 border-b border-border mt-8 overflow-x-auto scrollbar-hide whitespace-nowrap">
           {(["rooms", "amenities", "reviews", "location"] as const).map((t) => (
             <button key={t} onClick={() => setTab(t)}
-              className={`px-5 py-3 text-sm font-semibold capitalize relative transition-base ${tab === t ? "text-primary" : "text-muted-foreground hover:text-primary"}`}>
+              className={`px-5 py-3 text-sm font-semibold capitalize relative transition-base min-h-[44px] ${tab === t ? "text-primary" : "text-muted-foreground hover:text-primary"}`}>
               {t} {t === "reviews" && `(${allReviews.length})`}
               {tab === t && <span className="absolute left-0 right-0 -bottom-px h-0.5 bg-accent rounded-full" />}
             </button>
@@ -645,6 +653,21 @@ const HotelDetails = () => {
             </div>
           </div>
         )}
+      </div>
+
+      {/* Sticky Mobile Book CTA */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 p-4 bg-background/90 backdrop-blur border-t border-border z-40 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+        <button
+          onClick={() => {
+            setTab("rooms");
+            setTimeout(() => {
+              document.getElementById("rooms-section")?.scrollIntoView({ behavior: "smooth" });
+            }, 100);
+          }}
+          className="w-full min-h-[44px] bg-accent hover:bg-accent/90 text-accent-foreground rounded-xl font-bold text-lg shadow-luxe transition-base"
+        >
+          Book Now
+        </button>
       </div>
 
       {/* Auth popup */}

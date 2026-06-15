@@ -71,13 +71,13 @@ const Home = () => {
   return (
     <Layout>
       {/* Hero */}
-      <section className="relative bg-gradient-to-br from-secondary via-background to-secondary/50">
+      <section className="relative bg-gradient-to-br from-secondary via-background to-secondary/50 flex flex-col min-h-[100dvh] lg:min-h-0 lg:block">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute top-20 -left-20 w-72 h-72 rounded-full bg-accent/10 blur-3xl" />
           <div className="absolute bottom-0 right-0 w-96 h-96 rounded-full bg-brown/5 blur-3xl" />
         </div>
 
-        <div className="container relative pt-16 pb-12 grid lg:grid-cols-2 gap-10 items-center">
+        <div className="container relative pt-16 pb-6 lg:pb-12 flex flex-col lg:grid lg:grid-cols-2 gap-10 items-center order-1 lg:order-none">
           <div className="text-left animate-fade-in">
             <span className="inline-flex items-center gap-2 bg-accent/15 text-brown text-xs font-semibold uppercase tracking-widest px-3 py-1.5 rounded-full">
               <Sparkles className="w-3.5 h-3.5" /> Curated Luxury Stays
@@ -95,7 +95,10 @@ const Home = () => {
             </div>
           </div>
 
-          <div className="relative flex justify-center items-center animate-fade-in">
+          </div>
+
+          {/* Illustration on Desktop, bottom on mobile */}
+          <div className="relative flex justify-center items-center animate-fade-in order-3 lg:order-none w-full max-w-sm lg:max-w-none mx-auto mt-6 lg:mt-0">
             <div className="absolute inset-0 bg-gradient-to-tr from-accent/20 via-transparent to-brown/10 rounded-full blur-3xl" />
             <img src={HERO_IMG} alt="Premium boutique hotel"
               className="relative w-full max-w-[560px] drop-shadow-[0_30px_50px_hsl(60_14%_8%_/_0.18)] hover:scale-[1.02] transition-base duration-500 mix-blend-multiply" />
@@ -103,7 +106,7 @@ const Home = () => {
         </div>
 
         {/* Search bar */}
-        <div className="container relative z-10 pb-16">
+        <div className="container relative z-10 pb-16 order-2 lg:order-none mt-4 lg:mt-0">
           <form onSubmit={submit}
             className="bg-card rounded-2xl shadow-luxe border border-border p-2 grid grid-cols-1 md:grid-cols-[2fr_1fr_1fr_1fr_auto] gap-1 max-w-5xl mx-auto">
             
@@ -158,10 +161,10 @@ const Home = () => {
             <Field icon={<Users className="w-4 h-4" />} label="Guests">
               <input type="number" min={1} max={8} value={local.guests}
                 onChange={(e) => setLocal({ ...local, guests: Number(e.target.value) })}
-                className="w-full bg-transparent outline-none text-sm font-medium text-primary" />
+                className="w-full bg-transparent outline-none text-sm font-medium text-primary min-h-[30px]" />
             </Field>
             <button type="submit"
-              className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl px-6 py-4 font-semibold text-sm flex items-center justify-center gap-2 transition-base">
+              className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl px-6 py-4 font-semibold text-sm flex items-center justify-center gap-2 transition-base min-h-[44px] w-full md:w-auto">
               <Search className="w-4 h-4" /> Search
             </button>
           </form>

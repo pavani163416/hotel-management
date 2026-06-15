@@ -71,6 +71,13 @@
     @apply bg-background text-foreground antialiased;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
+
+  html,
+  body,
+  #root {
+    overflow-x: hidden;
+    max-width: 100%;
+  }
   h1, h2, h3, h4 { @apply tracking-tight text-primary; }
 
   /* Hide default Edge/IE password reveal and clear buttons to avoid double toggles */
