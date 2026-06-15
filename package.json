@@ -21,7 +21,6 @@
     "connect-redis": "^9.0.0",
     "express-session": "^1.19.0",
     "google-auth-library": "^10.6.2",
-    "puppeteer": "^25.1.0",
     "redis": "^5.12.1"
   },
   "devDependencies": {
