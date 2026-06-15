@@ -19,6 +19,9 @@ import '../../features/booking/presentation/pages/review_page.dart';
 import '../../features/booking/presentation/pages/confirmation_page.dart';
 import '../../features/booking/presentation/pages/promo_codes_page.dart';
 import '../../features/profile/presentation/pages/favorites_page.dart';
+import '../../features/hotels/presentation/pages/hotel_map_search_page.dart';
+import '../../features/profile/presentation/pages/in_room_services_page.dart';
+import '../../features/profile/presentation/pages/lost_and_found_page.dart';
 
 import '../utils/injection_container.dart' as di;
 import '../providers/auth_provider.dart';
@@ -42,6 +45,9 @@ class AppRouter {
   static const String otp = '/otp';
   static const String firebaseAuth = '/firebase-auth';
   static const String promoCodes = '/promo-codes';
+  static const String mapSearch = '/map-search';
+  static const String inRoomServices = '/in-room-services';
+  static const String lostAndFound = '/lost-and-found';
 
   static GoRouter createRouter(AuthProvider authProvider) {
     return GoRouter(
@@ -165,6 +171,18 @@ class AppRouter {
       GoRoute(
         path: favorites,
         builder: (context, state) => const FavoritesPage(),
+      ),
+      GoRoute(
+        path: mapSearch,
+        builder: (context, state) => const HotelMapSearchPage(),
+      ),
+      GoRoute(
+        path: inRoomServices,
+        builder: (context, state) => const InRoomServicesPage(),
+      ),
+      GoRoute(
+        path: lostAndFound,
+        builder: (context, state) => const LostAndFoundPage(),
       ),
     ],
     );

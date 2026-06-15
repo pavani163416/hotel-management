@@ -106,42 +106,46 @@ class _HotelsPageState extends State<HotelsPage> {
 
   Widget _buildMapPlaceholder() {
     final isDark = Theme.of(context).colorScheme.brightness == Brightness.dark;
-    return Container(
-      height: 200,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: isDark ? Colors.white10 : AppTheme.mutedColor),
-        image: const DecorationImage(
-          image: NetworkImage('https://static.vecteezy.com/system/resources/previews/007/317/373/original/world-map-modern-gray-color-style-vector.jpg'),
-          fit: BoxFit.cover,
-          opacity: 0.5,
+    return InkWell(
+      onTap: () => context.push('/map-search'),
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        height: 200,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: isDark ? Colors.white10 : AppTheme.mutedColor),
+          image: const DecorationImage(
+            image: NetworkImage('https://static.vecteezy.com/system/resources/previews/007/317/373/original/world-map-modern-gray-color-style-vector.jpg'),
+            fit: BoxFit.cover,
+            opacity: 0.5,
+          ),
         ),
-      ),
-      child: Stack(
-        children: [
-          Center(child: Icon(LucideIcons.mapPin, color: Theme.of(context).colorScheme.primary.withOpacity(0.5), size: 32)),
-          Positioned(
-            bottom: 12,
-            right: 12,
-            left: 12,
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF19222E) : Colors.white, 
-                borderRadius: BorderRadius.circular(8), 
-                border: Border.all(color: isDark ? Colors.white10 : AppTheme.mutedColor),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(LucideIcons.maximize2, size: 12, color: Theme.of(context).colorScheme.primary),
-                  const SizedBox(width: 8),
-                  Text('Explore Map', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary)),
-                ],
+        child: Stack(
+          children: [
+            Center(child: Icon(LucideIcons.mapPin, color: Theme.of(context).colorScheme.primary.withOpacity(0.5), size: 32)),
+            Positioned(
+              bottom: 12,
+              right: 12,
+              left: 12,
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF19222E) : Colors.white, 
+                  borderRadius: BorderRadius.circular(8), 
+                  border: Border.all(color: isDark ? Colors.white10 : AppTheme.mutedColor),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(LucideIcons.maximize2, size: 12, color: Theme.of(context).colorScheme.primary),
+                    const SizedBox(width: 8),
+                    Text('Explore Map', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary)),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -478,6 +482,8 @@ class _HotelsPageState extends State<HotelsPage> {
           Row(
             children: [
               Expanded(child: _buildSortDropdown()),
+              const SizedBox(width: 12),
+              _buildIconBtn(LucideIcons.map, false, onTap: () => context.push('/map-search')),
               const SizedBox(width: 12),
               _buildIconBtn(LucideIcons.slidersHorizontal, false, onTap: () => _showMobileFilters(context)),
             ],

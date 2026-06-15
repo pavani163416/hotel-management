@@ -9,6 +9,7 @@ import '../providers/booking_provider.dart';
 import '../providers/hotel_provider.dart';
 import '../providers/currency_provider.dart';
 import 'package:provider/provider.dart';
+import 'chatbot_bottom_sheet.dart';
 
 class MainLayout extends StatelessWidget {
   final Widget child;
@@ -32,30 +33,45 @@ class MainLayout extends StatelessWidget {
       backgroundColor: AppTheme.backgroundColor,
       extendBody: true,
       appBar: (showNavbar && showAppBar) ? _buildAppBar(context) : null,
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        constraints: BoxConstraints(minHeight: MediaQuery.of(context).size.height),
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              AppTheme.backgroundColor,
-              AppTheme.accentColor,
-            ],
-            stops: [0.7, 1.0],
+      body: Stack(
+        children: [
+          Container(
+            width: double.infinity,
+            height: double.infinity,
+            constraints: BoxConstraints(minHeight: MediaQuery.of(context).size.height),
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  AppTheme.backgroundColor,
+                  AppTheme.accentColor,
+                ],
+                stops: [0.7, 1.0],
+              ),
+            ),
+            child: isScrollable
+                ? SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        child,
+                      ],
+                    ),
+                  )
+                : child,
           ),
-        ),
-        child: isScrollable
-            ? SingleChildScrollView(
-                child: Column(
-                  children: [
-                    child,
-                  ],
-                ),
-              )
-            : child,
+          if (showNavbar && showBottomNav)
+            Positioned(
+              right: 16,
+              bottom: 86 + MediaQuery.of(context).padding.bottom,
+              child: FloatingActionButton(
+                onPressed: () => _openChatbot(context),
+                backgroundColor: AppTheme.primaryColor,
+                elevation: 6,
+                child: const Icon(LucideIcons.sparkles, color: Colors.white),
+              ),
+            ),
+        ],
       ),
       bottomNavigationBar: (showNavbar && showBottomNav) ? _buildBottomNav(context) : null,
       floatingActionButton: Navigator.of(context).canPop()
@@ -230,6 +246,15 @@ class MainLayout extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+
+  void _openChatbot(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => const ChatbotBottomSheet(),
     );
   }
 }

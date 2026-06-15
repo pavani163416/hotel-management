@@ -1,28 +1,20 @@
 {
   "project_info": {
-    "project_number": "239513848879",
-    "project_id": "hotel-mgnt-8ffff",
-    "storage_bucket": "hotel-mgnt-8ffff.firebasestorage.app"
+    "project_number": "70312411330",
+    "project_id": "hotel-mgnt",
+    "storage_bucket": "hotel-mgnt.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:239513848879:android:2eeec57c5abcbfc6f30ada",
+        "mobilesdk_app_id": "1:70312411330:android:c1d8e286671ac820a6bb5b",
         "android_client_info": {
           "package_name": "com.example.hotelmanag"
         }
       },
       "oauth_client": [
         {
-          "client_id": "239513848879-3d319eb0dp07rltmkhelp6qtqp4rhhpq.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.example.hotelmanag",
-            "certificate_hash": "a4c61554abd742ddead10f742182ff034dc791fc"
-          }
-        },
-        {
-          "client_id": "239513848879-9f7e5ju597pgbl7p4isddckui4misecp.apps.googleusercontent.com",
+          "client_id": "70312411330-92emlm6l8473d0cj23vs3nnm42vdl6p2.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.example.hotelmanag",
@@ -30,28 +22,20 @@
           }
         },
         {
-          "client_id": "239513848879-b1inguas60lk6gi7lhmhoh3fo319k225.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.example.hotelmanag",
-            "certificate_hash": "c71cb8b1ab998c29c43379375b3cab33382633bc"
-          }
-        },
-        {
-          "client_id": "239513848879-7n631mq8o0due6v807tk58gbli9907mc.apps.googleusercontent.com",
+          "client_id": "70312411330-jbppehv6ds52au1n7r62r6qji7j8cs9n.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyBi6icwlduwBjJjue-uDXJDiXm9icrV_Wo"
+          "current_key": "AIzaSyC21KhN0BriLoZV7Jzv26rYvHWavlembw8"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "239513848879-7n631mq8o0due6v807tk58gbli9907mc.apps.googleusercontent.com",
+              "client_id": "70312411330-jbppehv6ds52au1n7r62r6qji7j8cs9n.apps.googleusercontent.com",
               "client_type": 3
             }
           ]

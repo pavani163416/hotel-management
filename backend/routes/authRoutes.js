@@ -1079,7 +1079,7 @@ router.post("/google", async (req, res, next) => {
     if (!idToken) return res.status(400).json({ success: false, message: "ID Token is required" });
 
     // Web Application Client ID (primary — Flutter uses this as serverClientId)
-    const clientID = "70312411330-jbppehv6ds52au1n7r62r6qji7j8cs9n.apps.googleusercontent.com";
+    const clientID = "70312411330-92emlm6l8473d0cj23vs3nnm42vdl6p2.apps.googleusercontent.com";
     // Android Client ID for this GCP project
     const gcpAndroidClientID = "70312411330-fud2l0ec1r7o0p5shgvon0nus00rpjcf.apps.googleusercontent.com";
     let email, name, picture, googleId;
@@ -1110,8 +1110,9 @@ router.post("/google", async (req, res, next) => {
       const androidClientID2 = "239513848879-9f7e5ju597pgbl7p4isddckui4misecp.apps.googleusercontent.com";
       const androidClientID3 = "239513848879-b1inguas60lk6gi7lhmhoh3fo319k225.apps.googleusercontent.com";
       const oldWebClientID = "70312411330-8givsb0ktr8f09u8ullo157vkppkoqqv.apps.googleusercontent.com";
+      const oldWebClientID2 = "70312411330-jbppehv6ds52au1n7r62r6qji7j8cs9n.apps.googleusercontent.com";
       const allowedAudiences = [
-        clientID, gcpAndroidClientID, fallbackID, androidClientID, androidClientID2, androidClientID3, oldWebClientID
+        clientID, gcpAndroidClientID, fallbackID, androidClientID, androidClientID2, androidClientID3, oldWebClientID, oldWebClientID2
       ];
       const matchField = (f) => f && allowedAudiences.includes(f);
       const match = matchField(tokenInfo.aud) || matchField(tokenInfo.azp) ||
@@ -1138,6 +1139,7 @@ router.post("/google", async (req, res, next) => {
       const androidClientID2 = "239513848879-9f7e5ju597pgbl7p4isddckui4misecp.apps.googleusercontent.com";
       const androidClientID3 = "239513848879-b1inguas60lk6gi7lhmhoh3fo319k225.apps.googleusercontent.com";
       const oldWebClientID = "70312411330-8givsb0ktr8f09u8ullo157vkppkoqqv.apps.googleusercontent.com";
+      const oldWebClientID2 = "70312411330-jbppehv6ds52au1n7r62r6qji7j8cs9n.apps.googleusercontent.com";
       const ticket = await googleClient.verifyIdToken({
         idToken,
         audience: [
@@ -1147,7 +1149,8 @@ router.post("/google", async (req, res, next) => {
           androidClientID,
           androidClientID2,
           androidClientID3,
-          oldWebClientID
+          oldWebClientID,
+          oldWebClientID2
         ],
       });
       const payload = ticket.getPayload();

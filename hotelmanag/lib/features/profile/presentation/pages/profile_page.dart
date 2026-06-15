@@ -33,6 +33,7 @@ class _ProfilePageState extends State<ProfilePage> {
   late TextEditingController _nameController;
   late TextEditingController _emailController;
   late TextEditingController _phoneController;
+  late TextEditingController _cityController;
 
   String _currentLanguage = 'English (US)';
 
@@ -55,6 +56,7 @@ class _ProfilePageState extends State<ProfilePage> {
     _nameController = TextEditingController(text: user?.name ?? '');
     _emailController = TextEditingController(text: user?.email ?? '');
     _phoneController = TextEditingController(text: user?.phone ?? '');
+    _cityController = TextEditingController(text: user?.city ?? '');
     
     if (user?.profileImage != null && user!.profileImage!.isNotEmpty) {
       _profileImageUrl = user.profileImage!;
@@ -88,6 +90,7 @@ class _ProfilePageState extends State<ProfilePage> {
           _nameController.text = user.name;
           _emailController.text = user.email;
           _phoneController.text = user.phone ?? '';
+          _cityController.text = user.city ?? '';
           if (user.profileImage != null && user.profileImage!.isNotEmpty) {
             _profileImageUrl = user.profileImage!;
           }
@@ -104,6 +107,7 @@ class _ProfilePageState extends State<ProfilePage> {
     _nameController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
+    _cityController.dispose();
     _cardNumberController.dispose();
     _expiryController.dispose();
     _cvvController.dispose();
@@ -161,6 +165,19 @@ class _ProfilePageState extends State<ProfilePage> {
                 _buildSectionTitle('Support & Help'),
                 const SizedBox(height: 16),
                 _buildCustomerSupportCard(context),
+                const SizedBox(height: 16),
+                _buildSettingItem(
+                  LucideIcons.clipboardList,
+                  'In-Room Service Requests',
+                  'Request room service, housekeeping, or repairs',
+                  onTap: () => context.push('/in-room-services'),
+                ),
+                _buildSettingItem(
+                  LucideIcons.helpCircle,
+                  'Lost & Found Reports',
+                  'Report lost or found belongings during your stay',
+                  onTap: () => context.push('/lost-and-found'),
+                ),
                 const SizedBox(height: 24),
                 _buildLogoutButton(),
                 const SizedBox(height: 120),
@@ -463,20 +480,6 @@ class _ProfilePageState extends State<ProfilePage> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 4),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      Icon(LucideIcons.mapPin, size: 12, color: Theme.of(context).colorScheme.primary),
-                      const SizedBox(width: 4),
-                      Text(
-                        displayCity,
-                        style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7), fontSize: 13),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
                 ],
               ),
             ),
@@ -643,6 +646,8 @@ class _ProfilePageState extends State<ProfilePage> {
             CustomTextField(label: 'Email Address', hint: 'Your email address', prefixIcon: LucideIcons.mail, keyboardType: TextInputType.emailAddress, controller: _emailController),
             const SizedBox(height: 16),
             CustomTextField(label: 'Phone Number', hint: 'Your phone number', prefixIcon: LucideIcons.phone, keyboardType: TextInputType.phone, controller: _phoneController),
+            const SizedBox(height: 16),
+            CustomTextField(label: 'City / Location', hint: 'Your city/location', prefixIcon: LucideIcons.mapPin, controller: _cityController),
             const SizedBox(height: 32),
             _buildSaveButton(context),
             const SizedBox(height: 32),
@@ -651,6 +656,7 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
     );
   }
+
 
   void _showLanguagePicker(BuildContext context) {
     final languages = ['English (US)', 'Spanish', 'French', 'German', 'Chinese'];
@@ -1130,6 +1136,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   final success = await auth.updateProfile(
                     name: _nameController.text,
                     phone: _phoneController.text,
+                    city: _cityController.text,
                     profileImage: newProfileImageUrl,
                     coverImage: newCoverImageUrl,
                   );

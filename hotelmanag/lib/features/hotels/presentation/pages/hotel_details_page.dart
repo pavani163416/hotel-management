@@ -915,6 +915,184 @@ class _HotelDetailsPageState extends State<HotelDetailsPage> with SingleTickerPr
     }
   }
 
+  Widget _buildAISummaryCard(HotelEntity hotel) {
+    final isDark = Theme.of(context).colorScheme.brightness == Brightness.dark;
+    final List<String> positives = [];
+    final List<String> negatives = [];
+    
+    if (hotel.reviews.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppTheme.primaryColor.withOpacity(0.04),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppTheme.primaryColor.withOpacity(0.1)),
+        ),
+        child: Row(
+          children: [
+            const Icon(LucideIcons.sparkles, color: AppTheme.accentColor, size: 20),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'AI Summary: No guest reviews yet. Summaries will appear once reviews are submitted.',
+                style: TextStyle(
+                  fontSize: 12.5,
+                  fontStyle: FontStyle.italic,
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final commentsCombined = hotel.reviews.map((r) => r.comment.toLowerCase()).join(' ');
+    
+    if (commentsCombined.contains('staff') || commentsCombined.contains('service') || commentsCombined.contains('friendly') || commentsCombined.contains('host')) {
+      positives.add('🤝 Warm, helpful, and highly professional service from staff.');
+    }
+    if (commentsCombined.contains('location') || commentsCombined.contains('near') || commentsCombined.contains('close') || commentsCombined.contains('walk')) {
+      positives.add('📍 Convenient location, easily walkable to top attractions.');
+    }
+    if (commentsCombined.contains('clean') || commentsCombined.contains('spotless') || commentsCombined.contains('hygiene')) {
+      positives.add('✨ Excellent room cleanliness and housekeeping services.');
+    }
+    if (commentsCombined.contains('breakfast') || commentsCombined.contains('food') || commentsCombined.contains('dinner') || commentsCombined.contains('delicious')) {
+      positives.add('🍳 High-quality culinary experiences and breakfast selections.');
+    }
+    if (commentsCombined.contains('pool') || commentsCombined.contains('swim')) {
+      positives.add('🏊‍♂️ Beautiful, well-maintained swimming pool/spa facilities.');
+    }
+    if (commentsCombined.contains('quiet') || commentsCombined.contains('peaceful') || commentsCombined.contains('silent')) {
+      positives.add('🤫 Peaceful atmosphere and well-soundproofed rooms.');
+    }
+    if (commentsCombined.contains('view') || commentsCombined.contains('scenery') || commentsCombined.contains('beautiful view')) {
+      positives.add('🌅 Breathtaking scenery and room views.');
+    }
+    
+    if (positives.isEmpty) {
+      positives.add('🏨 Comfortable accommodations with good overall guest satisfaction.');
+    }
+
+    if (commentsCombined.contains('noise') || commentsCombined.contains('noisy') || commentsCombined.contains('loud') || commentsCombined.contains('street')) {
+      negatives.add('🔊 Light sleepers may experience minor street noise.');
+    }
+    if (commentsCombined.contains('price') || commentsCombined.contains('expensive') || commentsCombined.contains('cost') || commentsCombined.contains('dear')) {
+      negatives.add('💰 Premium pricing on dining or on-site services.');
+    }
+    if (commentsCombined.contains('small') || commentsCombined.contains('narrow') || commentsCombined.contains('cramped')) {
+      negatives.add('📐 Standard rooms are cozy and slightly compact.');
+    }
+    if (commentsCombined.contains('old') || commentsCombined.contains('dated') || commentsCombined.contains('decor')) {
+      negatives.add('🛋️ Some elements of decor have a classic, vintage style.');
+    }
+    if (commentsCombined.contains('slow') || commentsCombined.contains('wait') || commentsCombined.contains('delay')) {
+      negatives.add('⏳ Peak hours can result in check-in or service delays.');
+    }
+    
+    if (negatives.isEmpty) {
+      negatives.add('🔒 No notable drawbacks reported by verified guests.');
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 24),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF253040) : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.primaryColor.withOpacity(0.15)),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.primaryColor.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(LucideIcons.sparkles, color: AppTheme.accentColor, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                'AI Review Summary',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const Text(
+                  'BETA',
+                  style: TextStyle(
+                    fontSize: 9,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.primaryColor,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Analyzing comments from ${hotel.reviews.length} verified stays to summarize key takeaways:',
+            style: TextStyle(
+              fontSize: 11.5,
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+            ),
+          ),
+          const SizedBox(height: 16),
+          ...positives.map((p) => Padding(
+            padding: const EdgeInsets.only(bottom: 8.0),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.check_circle_outline, color: Colors.green, size: 16),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    p,
+                    style: const TextStyle(fontSize: 12.5),
+                  ),
+                ),
+              ],
+            ),
+          )),
+          const SizedBox(height: 8),
+          const Divider(height: 1),
+          const SizedBox(height: 12),
+          ...negatives.map((n) => Padding(
+            padding: const EdgeInsets.only(bottom: 8.0),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.info_outline, color: Colors.orange, size: 16),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    n,
+                    style: const TextStyle(fontSize: 12.5),
+                  ),
+                ),
+              ],
+            ),
+          )),
+        ],
+      ),
+    );
+  }
+
   Widget _buildReviewsTab(HotelEntity hotel) {
     final isWide = MediaQuery.of(context).size.width > 900;
 
@@ -926,16 +1104,22 @@ class _HotelDetailsPageState extends State<HotelDetailsPage> with SingleTickerPr
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
-                  child: hotel.reviews.isEmpty
-                      ? _buildEmptyReviewsPlaceholder(context)
-                      : Column(
-                          children: hotel.reviews
-                              .map((r) => Padding(
-                                    padding: const EdgeInsets.only(bottom: 16.0),
-                                    child: ReviewCard(review: r),
-                                  ))
-                              .toList(),
-                        ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildAISummaryCard(hotel),
+                      hotel.reviews.isEmpty
+                          ? _buildEmptyReviewsPlaceholder(context)
+                          : Column(
+                              children: hotel.reviews
+                                  .map((r) => Padding(
+                                        padding: const EdgeInsets.only(bottom: 16.0),
+                                        child: ReviewCard(review: r),
+                                      ))
+                                  .toList(),
+                            ),
+                    ],
+                  ),
                 ),
                 const SizedBox(width: 24),
                 SizedBox(
@@ -949,6 +1133,8 @@ class _HotelDetailsPageState extends State<HotelDetailsPage> with SingleTickerPr
               children: [
                 _buildWriteReviewCard(hotel),
                 const SizedBox(height: 32),
+                _buildAISummaryCard(hotel),
+                const SizedBox(height: 16),
                 Text(
                   'Guest Reviews (${hotel.reviews.length})',
                   style: TextStyle(
