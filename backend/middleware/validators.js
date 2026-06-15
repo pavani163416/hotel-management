@@ -83,9 +83,10 @@ export const validateBooking = [
     .withMessage("Phone number is required")
     .custom((value) => {
       const normalized = value.replace(/[\s()\-]/g, "");
-      const e164Regex = /^\+91\d{10}$/;
-      if (!e164Regex.test(normalized)) {
-        throw new Error("Phone number must be a valid 10-digit Indian number starting with +91.");
+      // Allow optional leading + and international numbers between 7 and 15 digits
+      const intlRegex = /^\+?\d{7,15}$/;
+      if (!intlRegex.test(normalized)) {
+        throw new Error("Please enter a valid phone number");
       }
       return true;
     }),

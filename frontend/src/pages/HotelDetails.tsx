@@ -55,31 +55,7 @@ const HotelDetails = () => {
   const [reviewRating, setReviewRating] = useState(5);
   const [err, setErr] = useState("");
 
-  const [captchaId, setCaptchaId] = useState("");
-  const [captchaChallenge, setCaptchaChallenge] = useState("");
-  const [captchaAnswer, setCaptchaAnswer] = useState("");
-  const [captchaLoading, setCaptchaLoading] = useState(false);
-
-  const fetchCaptcha = async () => {
-    setCaptchaLoading(true);
-    setCaptchaAnswer("");
-    try {
-      const res: any = await api.get("/auth/captcha");
-      const d = res.data?.data || res.data || {};
-      setCaptchaId(d.captchaId || "");
-      setCaptchaChallenge(d.challenge || "");
-    } catch {
-      setCaptchaChallenge(""); setCaptchaId("");
-    } finally {
-      setCaptchaLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (tab === "reviews" && user) {
-      fetchCaptcha();
-    }
-  }, [tab, user]);
+  // Captcha removed for reviews — simpler UX; server-side no longer requires captcha for reviews
 
   // Room filters
   const [roomSort, setRoomSort] = useState<"price-asc" | "price-desc" | "default">("default");
@@ -192,27 +168,17 @@ const HotelDetails = () => {
       setErr("Please fill in your name and review.");
       return;
     }
-    if (captchaChallenge && !captchaAnswer.trim()) {
-      setErr("Please complete the security check.");
-      return;
-    }
-
     try {
       setErr("");
       await submitReview(hotel!.id, {
         author: reviewName,
         rating: reviewRating,
         comment: reviewText,
-        captchaId,
-        captchaAnswer: captchaAnswer.trim(),
       });
       setReviewName("");
       setReviewText("");
-      setCaptchaAnswer("");
-      fetchCaptcha();
     } catch (error: any) {
       setErr(error.message || "Could not submit review. Please try again.");
-      fetchCaptcha();
     }
   };
 
@@ -498,25 +464,7 @@ const HotelDetails = () => {
                 <textarea value={reviewText} onChange={(e) => setReviewText(e.target.value)} placeholder="Share your experience..." rows={4}
                   className="w-full px-4 py-2.5 border border-border rounded-lg outline-none focus:ring-2 focus:ring-primary focus:border-primary text-sm resize-none" />
                 
-                {captchaChallenge && (
-                  <div className="space-y-1.5 text-left">
-                    <div className="flex items-center justify-between">
-                      <label htmlFor="review-captcha" className="block text-xs font-medium text-foreground">Security Check</label>
-                      <button type="button" onClick={fetchCaptcha} disabled={captchaLoading}
-                        className="text-[10px] text-primary hover:underline flex items-center gap-0.5">
-                        {captchaLoading ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : "↻"} New challenge
-                      </button>
-                    </div>
-                    <div className="bg-secondary/60 border border-border rounded-lg px-3 py-1.5 text-xs font-mono font-semibold text-foreground flex justify-center items-center">
-                      {captchaChallenge.trim().startsWith('<svg') 
-                        ? <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(captchaChallenge) }} />
-                        : captchaChallenge}
-                    </div>
-                    <input id="review-captcha" type="text" value={captchaAnswer} onChange={e => setCaptchaAnswer(e.target.value)}
-                      className="w-full px-3 py-2 border border-border rounded-lg outline-none focus:ring-1 focus:ring-primary text-xs"
-                      placeholder="Your answer" autoComplete="off" />
-                  </div>
-                )}
+                {/* Captcha removed for reviews */}
 
                 {err && <p className="text-destructive text-xs">{err}</p>}
                 <button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-2.5 rounded-lg font-semibold text-sm transition-base">

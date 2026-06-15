@@ -664,11 +664,11 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
   const handleResendEmailOTP = async () => {
     setError(""); setLoading(true);
     try {
-      const res: any = await api.post("/auth/resend-otp", { email: email.trim() });
+      const res: any = await api.post("/auth/resend-otp", { email: email.trim().toLowerCase() });
       setOtpMessage("A new verification code has been sent to your email.");
       setResendCooldown(60);
     } catch (err: any) {
-      setError(err.message || "Resend failed. Please try again.");
+      setError(err.response?.data?.message || err.message || "Resend failed. Please try again.");
     } finally {
       setLoading(false);
     }

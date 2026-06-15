@@ -45,8 +45,8 @@ const GuestDetails = () => {
                   placeholder="you@example.com" className="w-full px-4 py-2.5 border border-border rounded-lg outline-none focus:ring-2 focus:ring-primary focus:border-primary text-sm" />
               </Field>
               <Field label="Phone Number" error={errors.phone?.message}>
-                <input {...register("phone", { required: "Please enter a valid phone", pattern: { value: /^\+91\d{10}$/, message: "Phone number must start with +91 followed by 10 digits" } })}
-                  placeholder="+91 98765 43210" className="w-full px-4 py-2.5 border border-border rounded-lg outline-none focus:ring-2 focus:ring-primary focus:border-primary text-sm" />
+                <input {...register("phone", { required: "Please enter a valid phone", pattern: { value: /^\+?\d{7,15}$/, message: "Please enter a valid phone number" } })}
+                  placeholder="+919876543210 or 9876543210" className="w-full px-4 py-2.5 border border-border rounded-lg outline-none focus:ring-2 focus:ring-primary focus:border-primary text-sm" />
               </Field>
             </div>
             <Field label="Special Requests (optional)">
@@ -89,8 +89,8 @@ const GuestDetails = () => {
                           placeholder="you@example.com" className="w-full px-4 py-2.5 border border-border rounded-lg outline-none focus:ring-2 focus:ring-primary focus:border-primary text-sm" />
                       </Field>
                       <Field label="Phone Number" error={errors.adults?.[index]?.phone?.message}>
-                        <input {...register(`adults.${index}.phone`, { required: "Please enter a valid phone", pattern: { value: /^\+91\d{10}$/, message: "Phone number must start with +91 followed by 10 digits" } })}
-                          placeholder="+91 98765 43210" className="w-full px-4 py-2.5 border border-border rounded-lg outline-none focus:ring-2 focus:ring-primary focus:border-primary text-sm" />
+                        <input {...register(`adults.${index}.phone`, { required: "Please enter a valid phone", pattern: { value: /^\+?\d{7,15}$/, message: "Please enter a valid phone number" } })}
+                          placeholder="+919876543210 or 9876543210" className="w-full px-4 py-2.5 border border-border rounded-lg outline-none focus:ring-2 focus:ring-primary focus:border-primary text-sm" />
                       </Field>
                     </div>
                     <Field label="Special Requests (optional)">

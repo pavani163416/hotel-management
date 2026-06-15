@@ -294,8 +294,13 @@ const Payment = () => {
             if (processingTimerRef.current) clearTimeout(processingTimerRef.current);
             // User dismissed Razorpay — cancel the booking, release the room, go to hotels
             setProcessing(false);
-            // Fire-and-forget: cancel backend booking and release room
-            cancelPaymentOrder({ orderId: rzpOrder.orderId, bookingId: mongoBookingId || undefined }).catch(() => {});
+            // Fire-and-forget: cancel backend booking and release room (be defensive if order not set)
+            try {
+              const orderId = rzpOrder?.orderId || rzpOrder?.order_id || null;
+              if (orderId || mongoBookingId) {
+                cancelPaymentOrder({ orderId: orderId || undefined, bookingId: mongoBookingId || undefined }).catch(() => {});
+              }
+            } catch (_) { /* ignore */ }
             // Redirect to hotels with a query param so hotels page can show a toast
             nav("/hotels?payment=cancelled");
           },

@@ -110,7 +110,7 @@ export const getHotelById = async (req, res, next) => {
 // POST /api/hotels/:id/reviews
 export const addReviewToHotel = async (req, res, next) => {
   try {
-    const { rating, comment, captchaId, captchaAnswer, captchaToken } = req.body;
+    const { rating, comment } = req.body;
     if (!rating || !comment) {
       return res.status(422).json({ success: false, message: "Rating and review text are required." });
     }
@@ -133,22 +133,7 @@ export const addReviewToHotel = async (req, res, next) => {
       });
     }
 
-    // CAPTCHA verification
-    if (!captchaToken && (!captchaId || !captchaAnswer)) {
-      return res.status(400).json({
-        success: false,
-        message: "Security check is required. Please complete the CAPTCHA challenge."
-      });
-    }
-
-    const { verifyCaptchaOrToken } = await import("../utils/captcha.js");
-    const captchaValid = await verifyCaptchaOrToken({ captchaId, captchaAnswer, captchaToken });
-    if (!captchaValid) {
-      return res.status(400).json({
-        success: false,
-        message: "Incorrect security check answer. Please try again."
-      });
-    }
+    // Note: Captcha/security check removed for review submissions (UX improvement).
 
     // Require a completed stay before accepting a review.
     const userId   = req.user?._id || req.user?.id;
