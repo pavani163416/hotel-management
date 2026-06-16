@@ -552,26 +552,14 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Widget _buildLogo() {
-    return RichText(
-      text: const TextSpan(
-        children: [
-          TextSpan(
-            text: 'L',
-            style: TextStyle(
-              color: AppTheme.primaryColor,
-              fontSize: 32,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          TextSpan(
-            text: 'uxeStay-',
-            style: TextStyle(
-              color: AppTheme.primaryColor,
-              fontSize: 32,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
+    return Text(
+      'Athithigriha',
+      style: TextStyle(
+        fontFamily: 'Cinzel',
+        color: AppTheme.primaryColor,
+        fontSize: 30,
+        fontWeight: FontWeight.bold,
+        letterSpacing: 1.5,
       ),
     );
   }

@@ -239,26 +239,14 @@ class _RegisterPageState extends State<RegisterPage> {
             children: [
               // ── Logo ─────────────────────────────────
               Center(
-                child: RichText(
-                  text: const TextSpan(
-                    children: [
-                      TextSpan(
-                        text: 'L',
-                        style: TextStyle(
-                          color: Color(0xFFA67C52),
-                          fontSize: 32,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      TextSpan(
-                        text: 'uxeStay',
-                        style: TextStyle(
-                          color: AppTheme.primaryColor,
-                          fontSize: 32,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
+                child: Text(
+                  'Athithigriha',
+                  style: TextStyle(
+                    fontFamily: 'Cinzel',
+                    color: AppTheme.primaryColor,
+                    fontSize: 30,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.5,
                   ),
                 ),
               ),
