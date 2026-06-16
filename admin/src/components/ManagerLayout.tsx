@@ -87,7 +87,13 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
     const onDisconnect = () => setConnected(false);
     const onBooking    = (data: any) => {
       setNotifications((prev) => [
-        { id: Date.now().toString(), msg: `New booking: ${data.guestName || "Guest"} — ${data.roomType || "Room"}`, time: "just now" },
+        {
+          id: Date.now().toString(),
+          msg: `New booking: ${data.guestName || "Guest"} — ${data.roomType || "Room"}`,
+          createdAt: new Date().toISOString(),
+          type: "booking",
+          isRead: false,
+        },
         ...prev.slice(0, 9),
       ]);
     };

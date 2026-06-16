@@ -153,31 +153,7 @@ const SupportCentre = () => {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
 
-  const [captchaId, setCaptchaId] = useState("");
-  const [captchaChallenge, setCaptchaChallenge] = useState("");
-  const [captchaAnswer, setCaptchaAnswer] = useState("");
-  const [captchaLoading, setCaptchaLoading] = useState(false);
-
-  const fetchCaptcha = async () => {
-    setCaptchaLoading(true);
-    setCaptchaAnswer("");
-    try {
-      const res: any = await api.get("/auth/captcha");
-      const d = res.data?.data || res.data || {};
-      setCaptchaId(d.captchaId || "");
-      setCaptchaChallenge(d.challenge || "");
-    } catch {
-      setCaptchaChallenge(""); setCaptchaId("");
-    } finally {
-      setCaptchaLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (user) {
-      fetchCaptcha();
-    }
-  }, [user]);
+  // CAPTCHA removed from Support Centre form to improve UX; backend will accept tickets without captcha
 
   const handle = (k: string, v: string) => setForm((p) => ({ ...p, [k]: v }));
 
@@ -191,10 +167,7 @@ const SupportCentre = () => {
       setError("Please enter a valid email address.");
       return;
     }
-    if (captchaChallenge && !captchaAnswer.trim()) {
-      setError("Please complete the security check.");
-      return;
-    }
+    // no captcha required for support tickets
     setError(""); setLoading(true);
     try {
       await api.post("/public/support/create", {
@@ -203,8 +176,6 @@ const SupportCentre = () => {
         issueType: form.category || "Other",
         subject: form.subject.trim() || "Support Request",
         message: form.message.trim(),
-        captchaId,
-        captchaAnswer: captchaAnswer.trim(),
       });
       setSuccess(true);
       setForm({ name: "", email: "", category: "", subject: "", message: "" });
@@ -453,7 +424,8 @@ const SupportCentre = () => {
         isOpen={authOpen}
         onClose={() => setAuthOpen(false)}
         defaultMode={authMode}
-      />
+          showCaptcha={false}
+        />
     </Layout>
   );
 };

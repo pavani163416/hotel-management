@@ -229,9 +229,9 @@ const OwnerPortal = () => {
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
               <button onClick={() => setAuthOpen(true)}
-                className="flex items-center gap-2 bg-primary-foreground text-primary font-semibold px-8 py-3.5 rounded-xl hover:bg-primary-foreground/90 transition-base text-sm">
-                Get Started / List Your Property <ArrowRight className="w-4 h-4" />
-              </button>
+                  className="flex items-center gap-2 bg-primary-foreground text-primary font-semibold px-8 py-3.5 rounded-xl hover:bg-primary-foreground/90 transition-base text-sm">
+                  Get Started / List Your Property <ArrowRight className="w-4 h-4" />
+                </button>
             </div>
           </div>
         </section>
@@ -292,7 +292,7 @@ const OwnerPortal = () => {
           </div>
         </section>
 
-        <AuthModal isOpen={authOpen} onClose={() => setAuthOpen(false)} defaultMode="signin" />
+        <AuthModal isOpen={authOpen} onClose={() => setAuthOpen(false)} defaultMode="signin" showCaptcha={false} />
       </Layout>
     );
   }

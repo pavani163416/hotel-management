@@ -50,6 +50,7 @@ const Halls = () => {
   const [authMode, setAuthMode] = useState<"signin" | "signup">("signin");
 
   const selectedHotel = hotels.find((hotel) => hotel.id === selectedHotelId) || hotels[0] || null;
+  const isUnauthorizedUser = !!user && user.role !== "customer";
 
   useEffect(() => {
     if (!selectedHotelId && hotels.length > 0) {
@@ -98,6 +99,10 @@ const Halls = () => {
     }
     if (!user) {
       openAuth("signin");
+      return;
+    }
+    if (isUnauthorizedUser) {
+      toast.error("Only guest accounts can submit hall booking requests.");
       return;
     }
 
@@ -179,6 +184,20 @@ const Halls = () => {
                 Create account
               </button>
             </div>
+          </div>
+        ) : isUnauthorizedUser ? (
+          <div className="rounded-3xl border border-border bg-card p-10 text-center">
+            <div className="mx-auto mb-6 grid h-20 w-20 place-items-center rounded-full bg-red-500/10 text-red-500">
+              <Building2 className="w-10 h-10" />
+            </div>
+            <h2 className="font-display text-2xl font-bold mb-3">Access denied</h2>
+            <p className="text-muted-foreground mb-6">Your current account is not authorized to submit hall booking requests. Please use a guest account to continue.</p>
+            <button
+              onClick={() => navigate("/profile")}
+              className="inline-flex items-center justify-center rounded-2xl border border-border bg-card px-6 py-3 text-sm font-semibold text-primary transition-base hover:bg-secondary"
+            >
+              Back to profile
+            </button>
           </div>
         ) : (
           <div className="grid gap-8 xl:grid-cols-[320px_1fr]">

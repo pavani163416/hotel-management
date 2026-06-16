@@ -161,6 +161,9 @@ export const bookHotelHall = async (req, res, next) => {
     }
 
     const { eventName, date, startTime, endTime, capacity, notes } = req.body;
+    if (req.user?.role !== "customer") {
+      return res.status(403).json({ success: false, message: "Only customer accounts can submit hall booking requests." });
+    }
     if (!eventName || !date || !startTime || !endTime || !capacity) {
       return res.status(400).json({ success: false, message: "eventName, date, startTime, endTime and capacity are required" });
     }

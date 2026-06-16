@@ -54,6 +54,7 @@ type AuthModalProps = {
   isOpen: boolean;
   onClose: (success?: boolean) => void;
   defaultMode?: "signin" | "signup";
+  showCaptcha?: boolean;
 };
 
 function AuthModalInner({ isOpen, onClose, defaultMode, mode, setMode, loading, setLoading, error, setError, email, setEmail, password, setPassword, name, setName, phone, setPhone, countryCode, setCountryCode, city, setCity, otpSent, setOtpSent, verificationCode, setVerificationCode, otpMessage, setOtpMessage, resendCooldown, setResendCooldown, showContactAdmin, setShowContactAdmin, resetForm, handleOpenChange, handleSignIn, handleSignUp, finishAuth, handleSendPhoneOTP, handleVerifyPhoneOTP, handleVerifyEmailOTP, handleResendEmailOTP, renderAuthOptions, handleForgotPassword, captchaId, captchaChallenge, captchaAnswer, setCaptchaAnswer, captchaLoading, fetchCaptcha }: any) {
@@ -401,7 +402,7 @@ function AuthModalInner({ isOpen, onClose, defaultMode, mode, setMode, loading, 
   );
 }
 
-export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModalProps) {
+export function AuthModal({ isOpen, onClose, defaultMode = "signin", showCaptcha = true }: AuthModalProps) {
   const { setUser, refreshUser } = useBooking();
   const [mode, setMode]         = useState<"signin" | "signup" | "phone" | "verify_email_otp" | "forgot_password">(defaultMode);
   const [loading, setLoading]   = useState(false);
@@ -447,9 +448,10 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
         setMode(defaultMode);
       }
       setError("");
-      fetchCaptcha(); // load a fresh CAPTCHA every time the modal opens
+      // Only fetch CAPTCHA when explicitly enabled (Owner Portal / Support Centre can disable)
+      if (showCaptcha) fetchCaptcha();
     }
-  }, [isOpen, defaultMode]);
+  }, [isOpen, defaultMode, showCaptcha]);
 
 
   const fetchCaptcha = async () => {

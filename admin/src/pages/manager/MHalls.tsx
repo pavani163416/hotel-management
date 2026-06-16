@@ -69,6 +69,8 @@ export default function Halls() {
   const month = currentDate.getMonth();
   const firstDay = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
   const prevMonth = () => setCurrentDate(new Date(year, month - 1, 1));
   const nextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
@@ -298,15 +300,21 @@ export default function Halls() {
                 const day = i + 1;
                 const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
                 const dayEvents = eventsOnDay(day);
+                const dayDate = new Date(year, month, day);
+                dayDate.setHours(0, 0, 0, 0);
+                const isPast = dayDate < today;
                 const isSelected = selectedDay === dateStr;
-                const isToday = new Date().toDateString() === new Date(year, month, day).toDateString();
+                const isToday = dayDate.getTime() === today.getTime();
 
                 return (
                   <button
                     key={day}
+                    type="button"
                     onClick={() => setSelectedDay(isSelected ? null : dateStr)}
                     className={`relative min-h-[52px] rounded-xl p-1.5 text-left transition-all ${
-                      isSelected
+                      isPast
+                        ? "opacity-40"
+                        : isSelected
                         ? "bg-primary text-white"
                         : isToday
                         ? "border border-gold/40 bg-gold/10"
@@ -552,6 +560,7 @@ export default function Halls() {
               <div>
                 <label className="block text-xs font-semibold text-dim uppercase tracking-wider mb-1">Date *</label>
                 <input required type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })}
+                  min={new Date().toISOString().slice(0, 10)}
                   className="w-full border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-gold bg-white/5 text-bright" />
               </div>
               <div>

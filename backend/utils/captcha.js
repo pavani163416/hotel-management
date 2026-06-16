@@ -44,15 +44,16 @@ setInterval(() => {
 import svgCaptcha from "svg-captcha";
 
 export const generateCaptcha = async () => {
+  // Use a simpler, user-friendly CAPTCHA (short, low-noise) to improve UX
   const captcha = svgCaptcha.create({
-    size: 6,
+    size: 4,
     ignoreChars: '0o1iIlL', // Omit confusing letters
-    noise: 5, // Enhanced noise lines to deter bots
+    noise: 2, // Reduced noise for readability
     color: true,
-    background: '#f8f9fa',
-    width: 200,
-    height: 60,
-    fontSize: 50,
+    background: '#f3f4f6',
+    width: 180,
+    height: 48,
+    fontSize: 40,
   });
 
   const captchaId = randomUUID();

@@ -31,24 +31,10 @@ const uploadBufferToCloudinary = async (buffer, filename, mimetype) => {
 
 export const createPublicTicket = async (req, res) => {
   try {
-    const { fullName, hotelName, email, phoneNumber, issueType, priority, message, captchaId, captchaAnswer, captchaToken } = req.body;
+    const { fullName, hotelName, email, phoneNumber, issueType, priority, message } = req.body;
 
-    // CAPTCHA verification
-    if (!captchaToken && (!captchaId || !captchaAnswer)) {
-      return res.status(400).json({
-        success: false,
-        message: "Security check is required. Please complete the CAPTCHA challenge."
-      });
-    }
-
-    const { verifyCaptchaOrToken } = await import("../utils/captcha.js");
-    const captchaValid = await verifyCaptchaOrToken({ captchaId, captchaAnswer, captchaToken });
-    if (!captchaValid) {
-      return res.status(400).json({
-        success: false,
-        message: "Incorrect security check answer. Please try again."
-      });
-    }
+    // CAPTCHA removed for public support tickets to simplify UX.
+    // Any captcha fields sent by clients will be ignored by this endpoint.
 
     // Resolve names to support both frontend naming variants safely
     const finalName = String(fullName || req.body.guestName || "").trim();

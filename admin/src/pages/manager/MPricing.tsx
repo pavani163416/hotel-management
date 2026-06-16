@@ -120,8 +120,14 @@ export default function Pricing() {
   const [error, setError]       = useState("");
   const [success, setSuccess]   = useState("");
   const [showRequest, setShowRequest] = useState(false);
-  const [reqForm, setReqForm]   = useState({ roomId: "", requestedPrice: "", reason: "", effectiveDate: "" });
+  const [reqForm, setReqForm]   = useState({ roomId: "", requestedPrice: "", reason: "", effectiveDate: new Date().toISOString().slice(0, 10) });
   const [filterStatus, setFilterStatus] = useState("All");
+
+  useEffect(() => {
+    if (showRequest && rooms.length && !reqForm.roomId) {
+      setReqForm((prev) => ({ ...prev, roomId: rooms[0]._id }));
+    }
+  }, [showRequest, rooms, reqForm.roomId]);
 
   const load = useCallback(async () => {
     try {
@@ -167,13 +173,37 @@ export default function Pricing() {
   const handleRequestSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const room = rooms.find((r) => r._id === reqForm.roomId);
-    if (!room) return;
+    if (!room) {
+      setError("Please select a room for the request.");
+      return;
+    }
+    if (!reqForm.requestedPrice) {
+      setError("Please enter the requested price.");
+      return;
+    }
+    const requestedPriceNumber = Number(reqForm.requestedPrice);
+    if (Number.isNaN(requestedPriceNumber) || requestedPriceNumber <= 0) {
+      setError("Requested price must be a valid number greater than zero.");
+      return;
+    }
+    if (!reqForm.effectiveDate) {
+      setError("Please select an effective date.");
+      return;
+    }
+    const effectiveDate = new Date(`${reqForm.effectiveDate}T00:00:00`);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (effectiveDate < today) {
+      setError("Effective date cannot be in the past.");
+      return;
+    }
+
     setSaving(true);
     setError("");
     try {
       await createManagerPriceRequest({
         roomId: reqForm.roomId,
-        requestedPrice: Number(reqForm.requestedPrice),
+        requestedPrice: requestedPriceNumber,
         reason: reqForm.reason,
         effectiveDate: reqForm.effectiveDate,
       });
@@ -184,7 +214,7 @@ export default function Pricing() {
       return;
     }
     setShowRequest(false);
-    setReqForm({ roomId: "", requestedPrice: "", reason: "", effectiveDate: "" });
+    setReqForm({ roomId: "", requestedPrice: "", reason: "", effectiveDate: new Date().toISOString().slice(0, 10) });
     setSaving(false);
   };
 
@@ -474,6 +504,7 @@ export default function Pricing() {
             <label style={labelStyle}>Effective Date *</label>
             <input required type="date" value={reqForm.effectiveDate}
               onChange={(e) => setReqForm({ ...reqForm, effectiveDate: e.target.value })}
+              min={new Date().toISOString().slice(0, 10)}
               style={{ ...inputStyle, colorScheme: "dark" }}
               onFocus={e => { e.currentTarget.style.borderColor = "rgba(212,168,67,0.5)"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(212,168,67,0.1)"; }}
               onBlur={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"; e.currentTarget.style.boxShadow = "none"; }}
