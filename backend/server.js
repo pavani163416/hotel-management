@@ -203,7 +203,7 @@ const rawOrigins = [
   ...(process.env.CLIENT_ORIGIN || "").split(","),
   ...(process.env.FRONTEND_URL || "").split(","),
   ...(process.env.ADMIN_URL || "").split(","),
-].map((o) => o.trim()).filter(Boolean);
+].map((o) => o.replace(/['"]/g, "").trim()).filter(Boolean);
 
 // Always-allowed origins (Vercel deployments + local dev)
 const allowedOrigins = [
@@ -334,25 +334,8 @@ app.use(helmet({
   },
 }));
 
-// ── Global CORS Header Middleware ──
-// Ensure every API response includes proper headers for valid origins
-app.use((req, res, next) => {
-  const origin = req.headers["origin"];
-  if (isValidOrigin(origin)) {
-    res.setHeader("Access-Control-Allow-Origin", origin);
-    res.setHeader("Access-Control-Allow-Credentials", "true");
-    res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With, Upgrade");
-  }
-  
-  // Handle preflight directly
-  if (req.method === "OPTIONS") {
-    res.removeHeader("X-Powered-By");
-    res.removeHeader("Server");
-    return res.sendStatus(204);
-  }
-  next();
-});
+// ── Global CORS Middleware ──
+// Delegate all CORS and preflight handling to the official cors package
 app.options("*", cors(corsOptions));
 app.use(cors(corsOptions));
 
