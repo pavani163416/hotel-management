@@ -165,6 +165,12 @@ import("./models/Hotel.js").then(async ({ default: Hotel }) => {
 const app = express();
 app.disable("x-powered-by");
 
+// Global Request Logger for Debugging
+app.use((req, res, next) => {
+  console.log(`[REQ] ${req.method} ${req.originalUrl} | Origin: ${req.headers.origin || 'None'}`);
+  next();
+});
+
 // Set X-Robots-Tag globally on all API and backend responses
 app.use((req, res, next) => {
   res.setHeader("X-Robots-Tag", "noindex, nofollow");
