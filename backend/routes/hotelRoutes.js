@@ -109,7 +109,7 @@
  *         description: Room removed successfully
  */
 import express from "express";
-import { getHotels, getHotelById, createHotel, updateHotel, deleteHotel, addRoomToHotel, removeRoomFromHotel, updateRoomInHotel, addReviewToHotel, editReviewInHotel, deleteReviewFromHotel } from "../controllers/hotelController.js";
+import { getHotels, getHotelById, createHotel, updateHotel, deleteHotel, addRoomToHotel, removeRoomFromHotel, updateRoomInHotel, addReviewToHotel, editReviewInHotel, deleteReviewFromHotel, getHotelHalls, bookHotelHall } from "../controllers/hotelController.js";
 import { protect, authorizeRoles, validateOwnership, requireObjectId } from "../middleware/auth.js";
 import { validate, schemas } from "../middleware/zodValidation.js";
 
