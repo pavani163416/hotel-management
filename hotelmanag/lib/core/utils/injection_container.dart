@@ -29,17 +29,13 @@ Future<void> init() async {
   sl.registerLazySingleton<AuthRemoteDataSource>(
     () => AuthRemoteDataSourceImpl(sl()),
   );
-  sl.registerLazySingleton<AuthRepository>(
-    () => AuthRepositoryImpl(sl()),
-  );
+  sl.registerLazySingleton<AuthRepository>(() => AuthRepositoryImpl(sl()));
 
   // Features - Hotels
   sl.registerLazySingleton<HotelRemoteDataSource>(
     () => HotelRemoteDataSourceImpl(sl()),
   );
-  sl.registerLazySingleton<HotelRepository>(
-    () => HotelRepositoryImpl(sl()),
-  );
+  sl.registerLazySingleton<HotelRepository>(() => HotelRepositoryImpl(sl()));
 
   // Features - Booking
   sl.registerLazySingleton<BookingRemoteDataSource>(

@@ -117,26 +117,30 @@ class _OnboardingPageState extends State<OnboardingPage> {
     return [
       OnboardingData(
         title: 'Find Your Perfect\nStay.',
-        subtitle: 'Discover luxury hotels and boutique\nstays right in your neighborhood or at\nyour next destination.',
+        subtitle:
+            'Discover luxury hotels and boutique\nstays right in your neighborhood or at\nyour next destination.',
         imagePath: 'assets/images/Onboarding_screen_1.png',
         extraContent: [
           _buildInfoCard(
             icon: LucideIcons.crosshair,
             title: '\'Near Me\' Search',
-            desc: 'Real-time location-based suggestions tailored to your current vicinity.',
+            desc:
+                'Real-time location-based suggestions tailored to your current vicinity.',
             context: context,
           ),
           _buildInfoCard(
             icon: LucideIcons.map,
             title: 'Interactive Maps',
-            desc: 'Explore amenities and surroundings visually with our high-fidelity map interface.',
+            desc:
+                'Explore amenities and surroundings visually with our high-fidelity map interface.',
             context: context,
           ),
         ],
       ),
       OnboardingData(
         title: 'Unlock Elite Benefits',
-        subtitle: 'Access member-only rates, seasonal\npromotions, and curated packages designed for\nthe discerning traveler.',
+        subtitle:
+            'Access member-only rates, seasonal\npromotions, and curated packages designed for\nthe discerning traveler.',
         imagePath: 'assets/images/Onboarding_screen_2.png',
         extraContent: [
           _buildInfoCard(
@@ -149,7 +153,8 @@ class _OnboardingPageState extends State<OnboardingPage> {
           _buildInfoCard(
             icon: LucideIcons.sparkles,
             title: 'Curated Deals',
-            desc: 'Tailored offers based on your preferences and travel history.',
+            desc:
+                'Tailored offers based on your preferences and travel history.',
             context: context,
             isRoundedRect: true,
           ),
@@ -157,20 +162,23 @@ class _OnboardingPageState extends State<OnboardingPage> {
       ),
       OnboardingData(
         title: 'Effortless Stay\nManagement.',
-        subtitle: 'Book your suite in seconds and manage\nyour entire experience, from check-in to\ndigital keys, all in one place.',
+        subtitle:
+            'Book your suite in seconds and manage\nyour entire experience, from check-in to\ndigital keys, all in one place.',
         imagePath: 'assets/images/Onboarding_screen_3.png',
         extraContent: [
           _buildInfoCard(
             icon: LucideIcons.mousePointer2,
             title: 'Instant Booking',
-            desc: 'Secure your room with a single tap through our streamlined luxury portal.',
+            desc:
+                'Secure your room with a single tap through our streamlined luxury portal.',
             context: context,
             isRoundedRect: true,
           ),
           _buildInfoCard(
             icon: LucideIcons.key,
             title: 'Digital Key',
-            desc: 'Skip the front desk with mobile room access directly from your phone.',
+            desc:
+                'Skip the front desk with mobile room access directly from your phone.',
             context: context,
             isRoundedRect: true,
           ),
@@ -194,10 +202,14 @@ class _OnboardingPageState extends State<OnboardingPage> {
                 children: [
                   const Row(
                     children: [
-                      Icon(LucideIcons.bedDouble, size: 24, color: AppTheme.primaryColor),
+                      Icon(
+                        LucideIcons.bedDouble,
+                        size: 24,
+                        color: AppTheme.primaryColor,
+                      ),
                       SizedBox(width: 8),
                       Text(
-                        'LuxeStay',
+                        'Athithigriha',
                         style: TextStyle(
                           color: AppTheme.primaryColor,
                           fontSize: 18,
@@ -226,7 +238,8 @@ class _OnboardingPageState extends State<OnboardingPage> {
             // Page Content
             Expanded(
               child: PageView.builder(
-                physics: const NeverScrollableScrollPhysics(), // Disables swiping
+                physics:
+                    const NeverScrollableScrollPhysics(), // Disables swiping
                 controller: _pageController,
                 itemCount: _pages.length,
                 onPageChanged: (index) => setState(() => _currentPage = index),
@@ -311,7 +324,11 @@ class _OnboardingPageState extends State<OnboardingPage> {
                                   ),
                                 ),
                                 SizedBox(width: 8),
-                                Icon(LucideIcons.checkCircle2, color: Colors.white, size: 20),
+                                Icon(
+                                  LucideIcons.checkCircle2,
+                                  color: Colors.white,
+                                  size: 20,
+                                ),
                               ],
                             ),
                           ),
@@ -328,7 +345,9 @@ class _OnboardingPageState extends State<OnboardingPage> {
                             onPressed: _nextPage,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppTheme.primaryColor,
-                              padding: const EdgeInsets.symmetric(horizontal: 24),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                              ),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(25),
                               ),
@@ -345,7 +364,11 @@ class _OnboardingPageState extends State<OnboardingPage> {
                                   ),
                                 ),
                                 SizedBox(width: 8),
-                                Icon(LucideIcons.arrowRight, color: Colors.white, size: 16),
+                                Icon(
+                                  LucideIcons.arrowRight,
+                                  color: Colors.white,
+                                  size: 16,
+                                ),
                               ],
                             ),
                           ),
@@ -370,7 +393,9 @@ class _OnboardingPageState extends State<OnboardingPage> {
           height: 6,
           width: isSelected ? 24 : 6,
           decoration: BoxDecoration(
-            color: isSelected ? AppTheme.primaryColor : Colors.grey.withOpacity(0.3),
+            color: isSelected
+                ? AppTheme.primaryColor
+                : Colors.grey.withOpacity(0.3),
             borderRadius: BorderRadius.circular(3),
           ),
         );
@@ -378,4 +403,3 @@ class _OnboardingPageState extends State<OnboardingPage> {
     );
   }
 }
-

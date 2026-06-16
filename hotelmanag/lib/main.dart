@@ -23,7 +23,7 @@ import 'package:flutter/services.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   try {
     if (Firebase.apps.isEmpty) {
       if (kIsWeb) {
@@ -61,7 +61,7 @@ void main() async {
     try {
       bool jailbroken = false;
       bool hasFrida = false;
-      
+
       if (Platform.isAndroid) {
         final rootPaths = [
           '/system/app/Superuser.apk',
@@ -72,16 +72,16 @@ void main() async {
           '/data/local/bin/su',
           '/system/sd/xbin/su',
           '/system/bin/failsafe/su',
-          '/data/local/su'
+          '/data/local/su',
         ];
-        
+
         for (var path in rootPaths) {
           if (File(path).existsSync()) {
             jailbroken = true;
             break;
           }
         }
-        
+
         try {
           final maps = File('/proc/self/maps').readAsStringSync();
           if (maps.contains('frida') || maps.contains('libfrida')) {
@@ -89,9 +89,11 @@ void main() async {
           }
         } catch (_) {}
       }
-      
+
       if (jailbroken || hasFrida) {
-        debugPrint('Security Violation: Rooted device or Frida detected. Exiting app.');
+        debugPrint(
+          'Security Violation: Rooted device or Frida detected. Exiting app.',
+        );
         SystemNavigator.pop();
         return; // Prevent app execution
       }
@@ -120,10 +122,10 @@ void main() async {
 class MyScrollBehavior extends MaterialScrollBehavior {
   @override
   Set<PointerDeviceKind> get dragDevices => {
-        PointerDeviceKind.touch,
-        PointerDeviceKind.mouse,
-        PointerDeviceKind.trackpad,
-      };
+    PointerDeviceKind.touch,
+    PointerDeviceKind.mouse,
+    PointerDeviceKind.trackpad,
+  };
 }
 
 class MyApp extends StatelessWidget {

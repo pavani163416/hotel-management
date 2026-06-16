@@ -98,21 +98,26 @@ class PromoProvider extends ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       final seenRaw = prefs.getString(_kSeenCouponsKey) ?? '[]';
       final Set<String> seen = Set<String>.from(
-          (jsonDecode(seenRaw) as List).map((e) => e.toString()));
+        (jsonDecode(seenRaw) as List).map((e) => e.toString()),
+      );
 
       final newCoupons = validCoupons.where((c) {
         if (seen.contains(c.id)) return false;
         // Only show first-time coupons to first-time users
         if (c.firstTimeOnly && !isFirstTimeUser) return false;
-        
+
         // Filter out test/dummy coupons so they don't trigger push notifications
         final codeLower = c.code.toLowerCase();
         final descLower = c.description?.toLowerCase() ?? '';
-        if (codeLower.contains('test') || codeLower.contains('demo') || codeLower.contains('mock') ||
-            descLower.contains('test') || descLower.contains('demo') || descLower.contains('mock')) {
+        if (codeLower.contains('test') ||
+            codeLower.contains('demo') ||
+            codeLower.contains('mock') ||
+            descLower.contains('test') ||
+            descLower.contains('demo') ||
+            descLower.contains('mock')) {
           return false;
         }
-        
+
         return true;
       }).toList();
 
@@ -122,7 +127,7 @@ class PromoProvider extends ChangeNotifier {
         for (final coupon in newCoupons) {
           seen.add(coupon.id);
         }
-        
+
         // Show the most recent one
         final latestCoupon = newCoupons.first;
         onNewOffer(latestCoupon);

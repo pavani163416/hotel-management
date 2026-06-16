@@ -46,8 +46,11 @@ class _ReviewPageState extends State<ReviewPage> {
 
   void _applyPromo(BookingProvider provider, PromoProvider promoProvider) {
     if (_promoController.text.isEmpty) return;
-    
-    bool success = provider.applyPromoCode(_promoController.text, promoProvider.validCoupons);
+
+    bool success = provider.applyPromoCode(
+      _promoController.text,
+      promoProvider.validCoupons,
+    );
     if (success) {
       _promoController.clear();
       // Success message is now shown in UI
@@ -83,12 +86,20 @@ class _ReviewPageState extends State<ReviewPage> {
                 const SizedBox(height: 24),
                 const Text(
                   'Review Your Booking',
-                  style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: AppTheme.primaryColor, fontFamily: 'Serif'),
+                  style: TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.primaryColor,
+                    fontFamily: 'Serif',
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   'Please confirm your details before proceeding to payment.',
-                  style: TextStyle(color: AppTheme.primaryColor.withOpacity(0.5), fontSize: 14),
+                  style: TextStyle(
+                    color: AppTheme.primaryColor.withOpacity(0.5),
+                    fontSize: 14,
+                  ),
                 ),
                 const SizedBox(height: 32),
 
@@ -112,7 +123,11 @@ class _ReviewPageState extends State<ReviewPage> {
                         if (isWide)
                           Expanded(
                             flex: 2,
-                            child: _buildPriceSummary(context, provider, promoProvider),
+                            child: _buildPriceSummary(
+                              context,
+                              provider,
+                              promoProvider,
+                            ),
                           ),
                       ],
                     );
@@ -125,7 +140,11 @@ class _ReviewPageState extends State<ReviewPage> {
                     if (constraints.maxWidth <= 800) {
                       return Padding(
                         padding: const EdgeInsets.only(top: 32),
-                        child: _buildPriceSummary(context, provider, promoProvider),
+                        child: _buildPriceSummary(
+                          context,
+                          provider,
+                          promoProvider,
+                        ),
                       );
                     }
                     return const SizedBox.shrink();
@@ -152,7 +171,14 @@ class _ReviewPageState extends State<ReviewPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Stay Summary', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+          const Text(
+            'Stay Summary',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: AppTheme.primaryColor,
+            ),
+          ),
           const SizedBox(height: 20),
           Row(
             children: [
@@ -170,15 +196,34 @@ class _ReviewPageState extends State<ReviewPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(hotel.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
-                    Text(hotel.location, style: TextStyle(fontSize: 12, color: AppTheme.primaryColor.withOpacity(0.5))),
+                    Text(
+                      hotel.name,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.primaryColor,
+                      ),
+                    ),
+                    Text(
+                      hotel.location,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppTheme.primaryColor.withOpacity(0.5),
+                      ),
+                    ),
                     const SizedBox(height: 12),
                     Wrap(
                       spacing: 16,
                       runSpacing: 8,
                       children: [
-                        _buildSummaryItem('Check-in', DateFormat('yyyy-MM-dd').format(provider.checkIn)),
-                        _buildSummaryItem('Check-out', DateFormat('yyyy-MM-dd').format(provider.checkOut)),
+                        _buildSummaryItem(
+                          'Check-in',
+                          DateFormat('yyyy-MM-dd').format(provider.checkIn),
+                        ),
+                        _buildSummaryItem(
+                          'Check-out',
+                          DateFormat('yyyy-MM-dd').format(provider.checkOut),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 12),
@@ -187,7 +232,10 @@ class _ReviewPageState extends State<ReviewPage> {
                       runSpacing: 8,
                       children: [
                         _buildSummaryItem('Room', 'Standard'),
-                        _buildSummaryItem('Guests', '${provider.guests} - ${provider.nights} nights'),
+                        _buildSummaryItem(
+                          'Guests',
+                          '${provider.guests} - ${provider.nights} nights',
+                        ),
                       ],
                     ),
                   ],
@@ -204,8 +252,23 @@ class _ReviewPageState extends State<ReviewPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: AppTheme.primaryColor.withOpacity(0.4), letterSpacing: 1)),
-        Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.primaryColor)),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 9,
+            fontWeight: FontWeight.bold,
+            color: AppTheme.primaryColor.withOpacity(0.4),
+            letterSpacing: 1,
+          ),
+        ),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: AppTheme.primaryColor,
+          ),
+        ),
       ],
     );
   }
@@ -223,14 +286,26 @@ class _ReviewPageState extends State<ReviewPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Guest Information', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+          const Text(
+            'Guest Information',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: AppTheme.primaryColor,
+            ),
+          ),
           const SizedBox(height: 20),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(child: _buildInfoBlock('Name', lead['name'] ?? 'Not set')),
+              Expanded(
+                child: _buildInfoBlock('Name', lead['name'] ?? 'Not set'),
+              ),
               const SizedBox(width: 16),
-              Expanded(flex: 2, child: _buildInfoBlock('Email', lead['email'] ?? 'Not set')),
+              Expanded(
+                flex: 2,
+                child: _buildInfoBlock('Email', lead['email'] ?? 'Not set'),
+              ),
             ],
           ),
           const SizedBox(height: 20),
@@ -244,14 +319,31 @@ class _ReviewPageState extends State<ReviewPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: TextStyle(fontSize: 10, color: AppTheme.primaryColor.withOpacity(0.4))),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 10,
+            color: AppTheme.primaryColor.withOpacity(0.4),
+          ),
+        ),
         const SizedBox(height: 4),
-        Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            color: AppTheme.primaryColor,
+          ),
+        ),
       ],
     );
   }
 
-  Widget _buildPriceSummary(BuildContext context, BookingProvider provider, PromoProvider promoProvider) {
+  Widget _buildPriceSummary(
+    BuildContext context,
+    BookingProvider provider,
+    PromoProvider promoProvider,
+  ) {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -262,23 +354,59 @@ class _ReviewPageState extends State<ReviewPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('PRICE SUMMARY', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.primaryColor, letterSpacing: 1)),
+          const Text(
+            'PRICE SUMMARY',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: AppTheme.primaryColor,
+              letterSpacing: 1,
+            ),
+          ),
           const SizedBox(height: 24),
-          _buildPriceRow('Standard (${provider.nights} nights)', context.watch<CurrencyProvider>().format(provider.subtotal)),
-          _buildPriceRow('Service Fee', context.watch<CurrencyProvider>().format(provider.serviceFee)),
-          _buildPriceRow('Taxes', context.watch<CurrencyProvider>().format(provider.taxes)),
+          _buildPriceRow(
+            'Standard (${provider.nights} nights)',
+            context.watch<CurrencyProvider>().format(provider.subtotal),
+          ),
+          _buildPriceRow(
+            'Service Fee',
+            context.watch<CurrencyProvider>().format(provider.serviceFee),
+          ),
+          _buildPriceRow(
+            'Taxes',
+            context.watch<CurrencyProvider>().format(provider.taxes),
+          ),
           if (provider.discountAmount > 0)
-            _buildPriceRow('Discount (${provider.appliedPromoCode})', '-' + context.watch<CurrencyProvider>().format(provider.discountAmount), isDiscount: true),
-          
+            _buildPriceRow(
+              'Discount (${provider.appliedPromoCode})',
+              '-' +
+                  context.watch<CurrencyProvider>().format(
+                    provider.discountAmount,
+                  ),
+              isDiscount: true,
+            ),
+
           const SizedBox(height: 16),
           const Divider(color: AppTheme.mutedColor),
           const SizedBox(height: 24),
-          
+
           Row(
             children: [
-              Icon(LucideIcons.tag, size: 14, color: AppTheme.primaryColor.withOpacity(0.6)),
+              Icon(
+                LucideIcons.tag,
+                size: 14,
+                color: AppTheme.primaryColor.withOpacity(0.6),
+              ),
               const SizedBox(width: 8),
-              const Text('PROMO CODE', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.primaryColor, letterSpacing: 1)),
+              const Text(
+                'PROMO CODE',
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.primaryColor,
+                  letterSpacing: 1,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 12),
@@ -296,12 +424,12 @@ class _ReviewPageState extends State<ReviewPage> {
               height: 54,
               padding: const EdgeInsets.symmetric(horizontal: 16),
               decoration: BoxDecoration(
-                color: provider.appliedPromoCode != null 
+                color: provider.appliedPromoCode != null
                     ? const Color(0xFFF0FDF4) // Light mint green
                     : Colors.white,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: provider.appliedPromoCode != null 
+                  color: provider.appliedPromoCode != null
                       ? const Color(0xFF4ADE80) // Mint green border
                       : Colors.grey[300]!,
                   width: 1,
@@ -320,15 +448,17 @@ class _ReviewPageState extends State<ReviewPage> {
                   Container(
                     padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
-                      color: provider.appliedPromoCode != null 
+                      color: provider.appliedPromoCode != null
                           ? const Color(0xFF4ADE80).withOpacity(0.15)
                           : Colors.grey[100],
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(
-                      LucideIcons.tag, 
-                      size: 16, 
-                      color: provider.appliedPromoCode != null ? const Color(0xFF16A34A) : Colors.black87,
+                      LucideIcons.tag,
+                      size: 16,
+                      color: provider.appliedPromoCode != null
+                          ? const Color(0xFF16A34A)
+                          : Colors.black87,
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -338,11 +468,13 @@ class _ReviewPageState extends State<ReviewPage> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          provider.appliedPromoCode != null 
-                              ? provider.appliedPromoCode! 
+                          provider.appliedPromoCode != null
+                              ? provider.appliedPromoCode!
                               : 'Add Promo Code',
                           style: TextStyle(
-                            color: provider.appliedPromoCode != null ? const Color(0xFF16A34A) : Colors.black87,
+                            color: provider.appliedPromoCode != null
+                                ? const Color(0xFF16A34A)
+                                : Colors.black87,
                             fontWeight: FontWeight.bold,
                             fontSize: 13,
                           ),
@@ -361,7 +493,9 @@ class _ReviewPageState extends State<ReviewPage> {
                   Text(
                     provider.appliedPromoCode != null ? 'Applied' : 'Apply',
                     style: TextStyle(
-                      color: provider.appliedPromoCode != null ? const Color(0xFF16A34A) : AppTheme.primaryColor, // Matching app theme
+                      color: provider.appliedPromoCode != null
+                          ? const Color(0xFF16A34A)
+                          : AppTheme.primaryColor, // Matching app theme
                       fontWeight: FontWeight.bold,
                       fontSize: 13,
                     ),
@@ -370,7 +504,7 @@ class _ReviewPageState extends State<ReviewPage> {
               ),
             ),
           ),
-          
+
           if (provider.appliedPromoCode != null)
             Padding(
               padding: const EdgeInsets.only(top: 12),
@@ -381,7 +515,11 @@ class _ReviewPageState extends State<ReviewPage> {
                   Expanded(
                     child: Text(
                       '${provider.appliedPromoCode} applied — ${provider.promoDescription ?? 'discount applied'}!',
-                      style: const TextStyle(color: Color(0xFF38A169), fontSize: 11, fontWeight: FontWeight.w500),
+                      style: const TextStyle(
+                        color: Color(0xFF38A169),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ),
                   InkWell(
@@ -397,16 +535,26 @@ class _ReviewPageState extends State<ReviewPage> {
                 ],
               ),
             ),
-          
+
           const SizedBox(height: 24),
           const Divider(color: AppTheme.mutedColor),
           const SizedBox(height: 32),
-          
+
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Total Amount', style: TextStyle(fontSize: 14, color: AppTheme.primaryColor)),
-              Text(context.watch<CurrencyProvider>().format(provider.total), style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+              const Text(
+                'Total Amount',
+                style: TextStyle(fontSize: 14, color: AppTheme.primaryColor),
+              ),
+              Text(
+                context.watch<CurrencyProvider>().format(provider.total),
+                style: const TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.primaryColor,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 24),
@@ -418,13 +566,18 @@ class _ReviewPageState extends State<ReviewPage> {
                 backgroundColor: const Color(0xFF4A5568),
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 20),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 elevation: 0,
               ),
               child: const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text('Continue to Payment', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  Text(
+                    'Continue to Payment',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
                   SizedBox(width: 12),
                   Icon(LucideIcons.arrowRight, size: 18),
                 ],
@@ -442,15 +595,31 @@ class _ReviewPageState extends State<ReviewPage> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: TextStyle(fontSize: 14, color: isDiscount ? Colors.grey[400] : AppTheme.primaryColor.withOpacity(0.6))),
-          Text(value, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: isDiscount ? Colors.grey[400] : AppTheme.primaryColor)),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 14,
+              color: isDiscount
+                  ? Colors.grey[400]
+                  : AppTheme.primaryColor.withOpacity(0.6),
+            ),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: isDiscount ? Colors.grey[400] : AppTheme.primaryColor,
+            ),
+          ),
         ],
       ),
     );
   }
 
   Widget _buildPromoChip(String code, BookingProvider provider) {
-    bool isApplied = provider.appliedPromoCode == code || _promoController.text == code;
+    bool isApplied =
+        provider.appliedPromoCode == code || _promoController.text == code;
     return GestureDetector(
       onTap: () {
         setState(() {
@@ -460,7 +629,9 @@ class _ReviewPageState extends State<ReviewPage> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
         decoration: BoxDecoration(
-          color: isApplied ? const Color(0xFFF7FAFC) : AppTheme.mutedColor.withOpacity(0.2),
+          color: isApplied
+              ? const Color(0xFFF7FAFC)
+              : AppTheme.mutedColor.withOpacity(0.2),
           borderRadius: BorderRadius.circular(6),
           border: isApplied ? Border.all(color: AppTheme.mutedColor) : null,
         ),
@@ -468,7 +639,9 @@ class _ReviewPageState extends State<ReviewPage> {
           code,
           style: TextStyle(
             fontSize: 10,
-            color: isApplied ? AppTheme.primaryColor : AppTheme.primaryColor.withOpacity(0.6),
+            color: isApplied
+                ? AppTheme.primaryColor
+                : AppTheme.primaryColor.withOpacity(0.6),
             fontWeight: FontWeight.bold,
           ),
         ),

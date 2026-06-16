@@ -24,12 +24,19 @@ class FavoritesPage extends StatelessWidget {
           children: [
             const Text(
               'My Favorites',
-              style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
+              style: TextStyle(
+                fontSize: 32,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.primaryColor,
+              ),
             ),
             const SizedBox(height: 8),
             Text(
               'Your curated list of masterpiece stays.',
-              style: TextStyle(color: AppTheme.primaryColor.withOpacity(0.6), fontSize: 16),
+              style: TextStyle(
+                color: AppTheme.primaryColor.withOpacity(0.6),
+                fontSize: 16,
+              ),
             ),
             const SizedBox(height: 32),
             if (favorites.isEmpty)
@@ -63,13 +70,19 @@ class FavoritesPage extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: AppTheme.mutedColor.withOpacity(0.5)),
           boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4)),
+            BoxShadow(
+              color: Colors.black.withOpacity(0.03),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
           ],
         ),
         child: Row(
           children: [
             ClipRRect(
-              borderRadius: const BorderRadius.horizontal(left: Radius.circular(20)),
+              borderRadius: const BorderRadius.horizontal(
+                left: Radius.circular(20),
+              ),
               child: CachedNetworkImage(
                 imageUrl: hotel.imageUrl,
                 width: 120,
@@ -87,20 +100,31 @@ class FavoritesPage extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      hotel.name, 
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppTheme.primaryColor),
+                      hotel.name,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                        color: AppTheme.primaryColor,
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        Icon(LucideIcons.mapPin, size: 12, color: Colors.grey[400]),
+                        Icon(
+                          LucideIcons.mapPin,
+                          size: 12,
+                          color: Colors.grey[400],
+                        ),
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
-                            hotel.location, 
-                            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                            hotel.location,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -113,8 +137,11 @@ class FavoritesPage extends StatelessWidget {
                       children: [
                         Expanded(
                           child: Text(
-                            '${context.watch<CurrencyProvider>().format(hotel.pricePerNight)}/night', 
-                            style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
+                            '${context.watch<CurrencyProvider>().format(hotel.pricePerNight)}/night',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.primaryColor,
+                            ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -128,7 +155,11 @@ class FavoritesPage extends StatelessWidget {
                                 provider.toggleFavorite(hotel);
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
-                                    content: Text(isFav ? 'Removed from Favorites!' : 'Added to Favorites!'),
+                                    content: Text(
+                                      isFav
+                                          ? 'Removed from Favorites!'
+                                          : 'Added to Favorites!',
+                                    ),
                                     behavior: SnackBarBehavior.floating,
                                     duration: const Duration(seconds: 1),
                                   ),
@@ -166,9 +197,20 @@ class EmptyFavoritesWidget extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           const SizedBox(height: 60),
-          const Icon(Icons.favorite_border, size: 64, color: AppTheme.mutedColor),
+          const Icon(
+            Icons.favorite_border,
+            size: 64,
+            color: AppTheme.mutedColor,
+          ),
           const SizedBox(height: 16),
-          Text('No favorites yet', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.primaryColor.withOpacity(0.5))),
+          Text(
+            'No favorites yet',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: AppTheme.primaryColor.withOpacity(0.5),
+            ),
+          ),
           const SizedBox(height: 24),
           ElevatedButton(
             onPressed: () => context.go('/hotels'),
@@ -176,7 +218,9 @@ class EmptyFavoritesWidget extends StatelessWidget {
               backgroundColor: AppTheme.primaryColor,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
             child: const Text('Browse hotels to add favorites'),
           ),

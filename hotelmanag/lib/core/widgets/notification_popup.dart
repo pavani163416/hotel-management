@@ -49,8 +49,8 @@ class NotificationPopupOverlay extends StatefulWidget {
       NotificationPopupOverlayState();
 }
 
-class NotificationPopupOverlayState
-    extends State<NotificationPopupOverlay> with TickerProviderStateMixin {
+class NotificationPopupOverlayState extends State<NotificationPopupOverlay>
+    with TickerProviderStateMixin {
   final List<_PopupItem> _queue = [];
   _PopupItem? _current;
   late AnimationController _animController;
@@ -66,17 +66,11 @@ class NotificationPopupOverlayState
       vsync: this,
       duration: const Duration(milliseconds: 380),
     );
-    _slideAnim = Tween<Offset>(
-      begin: const Offset(0, -1.2),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _animController,
-      curve: Curves.easeOutBack,
-    ));
-    _fadeAnim = CurvedAnimation(
-      parent: _animController,
-      curve: Curves.easeOut,
-    );
+    _slideAnim = Tween<Offset>(begin: const Offset(0, -1.2), end: Offset.zero)
+        .animate(
+          CurvedAnimation(parent: _animController, curve: Curves.easeOutBack),
+        );
+    _fadeAnim = CurvedAnimation(parent: _animController, curve: Curves.easeOut);
   }
 
   @override

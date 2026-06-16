@@ -47,14 +47,17 @@ class NotificationProvider extends ChangeNotifier {
           : [];
 
       _backendNotifications = dataList.map((n) {
-        final id = n['_id']?.toString() ?? DateTime.now().millisecondsSinceEpoch.toString();
+        final id =
+            n['_id']?.toString() ??
+            DateTime.now().millisecondsSinceEpoch.toString();
         final message = n['message']?.toString() ?? 'Notification';
         final type = _mapType(n['type']?.toString());
         final isRead = n['isRead'] == true;
         final createdAt = n['createdAt'] != null
             ? DateTime.tryParse(n['createdAt'].toString()) ?? DateTime.now()
             : DateTime.now();
-        final isCancelled = message.toLowerCase().contains('cancel') ||
+        final isCancelled =
+            message.toLowerCase().contains('cancel') ||
             (n['type']?.toString().toLowerCase() == 'cancellation');
 
         return NotificationItem(
@@ -91,7 +94,9 @@ class NotificationProvider extends ChangeNotifier {
   }
 
   /// Returns merged list: backend API notifications + booking-derived + live session.
-  List<NotificationItem> getRealNotifications(List<BookingEntity> realBookings) {
+  List<NotificationItem> getRealNotifications(
+    List<BookingEntity> realBookings,
+  ) {
     final Map<String, NotificationItem> map = {};
 
     // 1. Backend API notifications (highest priority — real data)
@@ -139,7 +144,8 @@ class NotificationProvider extends ChangeNotifier {
     return items;
   }
 
-  void addNotification(String title, {
+  void addNotification(
+    String title, {
     bool isCancelled = false,
     String? bookingId,
     String subtitle = '',
@@ -164,13 +170,13 @@ class NotificationProvider extends ChangeNotifier {
       icon: type == 'Offer'
           ? Icons.local_offer_rounded
           : isCancelled
-              ? Icons.cancel_outlined
-              : Icons.check_circle_outline_rounded,
+          ? Icons.cancel_outlined
+          : Icons.check_circle_outline_rounded,
       iconColor: type == 'Offer'
           ? const Color(0xFFC0A080)
           : isCancelled
-              ? Colors.redAccent
-              : Colors.green,
+          ? Colors.redAccent
+          : Colors.green,
     );
 
     // Also trigger system notification so it displays in notification tray
@@ -184,14 +190,18 @@ class NotificationProvider extends ChangeNotifier {
       _readIds.add(item.id);
     }
     // Also update local backend list so dots disappear immediately
-    _backendNotifications = _backendNotifications.map((n) => NotificationItem(
-      id: n.id,
-      title: n.title,
-      type: n.type,
-      timestamp: n.timestamp,
-      isNew: false,
-      isCancelled: n.isCancelled,
-    )).toList();
+    _backendNotifications = _backendNotifications
+        .map(
+          (n) => NotificationItem(
+            id: n.id,
+            title: n.title,
+            type: n.type,
+            timestamp: n.timestamp,
+            isNew: false,
+            isCancelled: n.isCancelled,
+          ),
+        )
+        .toList();
     notifyListeners();
   }
 }

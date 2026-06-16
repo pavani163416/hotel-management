@@ -122,7 +122,11 @@ class _HomePageState extends State<HomePage> {
               padding: EdgeInsets.symmetric(horizontal: 24),
               child: Text(
                 'Explore Destinations',
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.primaryColor,
+                ),
               ),
             ),
             const SizedBox(height: 16),
@@ -151,7 +155,11 @@ class _HomePageState extends State<HomePage> {
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             boxShadow: [
-                              BoxShadow(color: Colors.black.withOpacity(0.12), blurRadius: 10, offset: const Offset(0, 4)),
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.12),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
                             ],
                           ),
                           child: ClipOval(
@@ -167,7 +175,10 @@ class _HomePageState extends State<HomePage> {
                               ),
                               errorWidget: (_, __, ___) => Container(
                                 color: AppTheme.mutedColor,
-                                child: const Icon(LucideIcons.mapPin, color: AppTheme.primaryColor),
+                                child: const Icon(
+                                  LucideIcons.mapPin,
+                                  color: AppTheme.primaryColor,
+                                ),
                               ),
                             ),
                           ),
@@ -180,7 +191,10 @@ class _HomePageState extends State<HomePage> {
                             textAlign: TextAlign.center,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
                           ),
                         ),
                       ],
@@ -213,11 +227,21 @@ class _HomePageState extends State<HomePage> {
             children: [
               const Text(
                 'Your Favorites',
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.primaryColor,
+                ),
               ),
               TextButton(
                 onPressed: () => context.push('/favorites'),
-                child: const Text('View All', style: TextStyle(color: AppTheme.primaryColor, fontWeight: FontWeight.bold)),
+                child: const Text(
+                  'View All',
+                  style: TextStyle(
+                    color: AppTheme.primaryColor,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
             ],
           ),
@@ -242,80 +266,122 @@ class _HomePageState extends State<HomePage> {
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
-                      BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 15, offset: const Offset(0, 8)),
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 15,
+                        offset: const Offset(0, 8),
+                      ),
                     ],
                   ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Hero(
-                      tag: 'hotel_image_fav_${item.id}',
-                      child: ClipRRect(
-                        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-                        child: CachedNetworkImage(
-                          imageUrl: item.imageUrl,
-                          height: 140,
-                          width: double.infinity,
-                          fit: BoxFit.cover,
-                          memCacheWidth: 440, // Reduced resolution for memory
-                          placeholder: (context, url) => Shimmer.fromColors(
-                            baseColor: Colors.grey[300]!,
-                            highlightColor: Colors.grey[100]!,
-                            child: Container(color: Colors.white),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Hero(
+                        tag: 'hotel_image_fav_${item.id}',
+                        child: ClipRRect(
+                          borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(20),
+                          ),
+                          child: CachedNetworkImage(
+                            imageUrl: item.imageUrl,
+                            height: 140,
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                            memCacheWidth: 440, // Reduced resolution for memory
+                            placeholder: (context, url) => Shimmer.fromColors(
+                              baseColor: Colors.grey[300]!,
+                              highlightColor: Colors.grey[100]!,
+                              child: Container(color: Colors.white),
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14), maxLines: 1, overflow: TextOverflow.ellipsis),
-                          const SizedBox(height: 4),
-                          Row(
-                            children: [
-                              Icon(LucideIcons.mapPin, size: 10, color: Colors.grey[400]),
-                              const SizedBox(width: 4),
-                              Text(item.location, style: TextStyle(fontSize: 11, color: Colors.grey[600])),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(context.watch<CurrencyProvider>().format(item.pricePerNight), style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
-                              Consumer<FavoritesProvider>(
-                                builder: (context, provider, child) {
-                                  final isFav = provider.isFavorite(item);
-                                  return GestureDetector(
-                                    onTap: () {
-                                      provider.toggleFavorite(item);
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(
-                                          content: Text(isFav ? 'Removed from Favorites!' : 'Added to Favorites!'),
-                                          behavior: SnackBarBehavior.floating,
-                                          duration: const Duration(seconds: 1),
-                                        ),
-                                      );
-                                    },
-                                    child: Icon(
-                                      LucideIcons.heart,
-                                      size: 16,
-                                      color: isFav ? Colors.red : Colors.grey[400],
-                                      fill: isFav ? 1.0 : 0.0,
-                                    ),
-                                  );
-                                },
+                      Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              item.name,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
                               ),
-                            ],
-                          ),
-                        ],
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                Icon(
+                                  LucideIcons.mapPin,
+                                  size: 10,
+                                  color: Colors.grey[400],
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  item.location,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  context.watch<CurrencyProvider>().format(
+                                    item.pricePerNight,
+                                  ),
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: AppTheme.primaryColor,
+                                  ),
+                                ),
+                                Consumer<FavoritesProvider>(
+                                  builder: (context, provider, child) {
+                                    final isFav = provider.isFavorite(item);
+                                    return GestureDetector(
+                                      onTap: () {
+                                        provider.toggleFavorite(item);
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              isFav
+                                                  ? 'Removed from Favorites!'
+                                                  : 'Added to Favorites!',
+                                            ),
+                                            behavior: SnackBarBehavior.floating,
+                                            duration: const Duration(
+                                              seconds: 1,
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                      child: Icon(
+                                        LucideIcons.heart,
+                                        size: 16,
+                                        color: isFav
+                                            ? Colors.red
+                                            : Colors.grey[400],
+                                        fill: isFav ? 1.0 : 0.0,
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
               );
             },
           ),
@@ -332,8 +398,8 @@ class _HomePageState extends State<HomePage> {
         Positioned.fill(
           child: Consumer<HotelProvider>(
             builder: (context, provider, child) {
-              final String heroImage = provider.allHotels.isNotEmpty 
-                  ? provider.allHotels.first.imageUrl 
+              final String heroImage = provider.allHotels.isNotEmpty
+                  ? provider.allHotels.first.imageUrl
                   : '';
               return Container(
                 width: double.infinity,
@@ -347,16 +413,22 @@ class _HomePageState extends State<HomePage> {
                       AppTheme.backgroundColor.withOpacity(0.9),
                       AppTheme.backgroundColor,
                     ],
-                    stops: const [0.0, 0.4, 0.8, 1.0], // Adjusted stops for quicker fade
+                    stops: const [
+                      0.0,
+                      0.4,
+                      0.8,
+                      1.0,
+                    ], // Adjusted stops for quicker fade
                   ),
                 ),
-                child: heroImage.isNotEmpty 
+                child: heroImage.isNotEmpty
                     ? CachedNetworkImage(
                         imageUrl: heroImage,
                         fit: BoxFit.cover,
                         memCacheWidth: 1000,
                         memCacheHeight: 700,
-                        placeholder: (context, url) => Container(color: AppTheme.primaryColor),
+                        placeholder: (context, url) =>
+                            Container(color: AppTheme.primaryColor),
                       )
                     : Container(color: AppTheme.primaryColor),
               );
@@ -395,16 +467,29 @@ class _HomePageState extends State<HomePage> {
                                     padding: const EdgeInsets.all(2),
                                     decoration: BoxDecoration(
                                       shape: BoxShape.circle,
-                                      border: Border.all(color: Colors.white, width: 2),
+                                      border: Border.all(
+                                        color: Colors.white,
+                                        width: 2,
+                                      ),
                                     ),
                                     child: CircleAvatar(
                                       radius: 18,
                                       backgroundColor: AppTheme.accentColor,
-                                      backgroundImage: (profileImage != null && profileImage.isNotEmpty)
-                                          ? CachedNetworkImageProvider(profileImage)
+                                      backgroundImage:
+                                          (profileImage != null &&
+                                              profileImage.isNotEmpty)
+                                          ? CachedNetworkImageProvider(
+                                              profileImage,
+                                            )
                                           : null,
-                                      child: (profileImage == null || profileImage.isEmpty)
-                                          ? const Icon(LucideIcons.user, size: 20, color: AppTheme.primaryColor)
+                                      child:
+                                          (profileImage == null ||
+                                              profileImage.isEmpty)
+                                          ? const Icon(
+                                              LucideIcons.user,
+                                              size: 20,
+                                              color: AppTheme.primaryColor,
+                                            )
                                           : null,
                                     ),
                                   );
@@ -414,17 +499,30 @@ class _HomePageState extends State<HomePage> {
                               Expanded(
                                 child: Consumer<AuthProvider>(
                                   builder: (context, auth, _) {
-                                    final name = (auth.user?.name?.isEmpty ?? true) ? 'Guest' : auth.user!.name;
+                                    final name =
+                                        (auth.user?.name?.isEmpty ?? true)
+                                        ? 'Guest'
+                                        : auth.user!.name;
                                     return Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
                                           'Welcome back,',
-                                          style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 12),
+                                          style: TextStyle(
+                                            color: Colors.white.withOpacity(
+                                              0.9,
+                                            ),
+                                            fontSize: 12,
+                                          ),
                                         ),
                                         Text(
                                           name,
-                                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 16,
+                                          ),
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
                                         ),
@@ -441,18 +539,27 @@ class _HomePageState extends State<HomePage> {
                         children: [
                           Consumer2<NotificationProvider, BookingProvider>(
                             builder: (context, provider, bookingProv, child) {
-                              final items = provider.getRealNotifications(bookingProv.bookings);
-                              final unreadCount = items.where((i) => i.isNew).length;
+                              final items = provider.getRealNotifications(
+                                bookingProv.bookings,
+                              );
+                              final unreadCount = items
+                                  .where((i) => i.isNew)
+                                  .length;
                               return Stack(
                                 children: [
                                   IconButton(
-                                    icon: const Icon(LucideIcons.bell, color: Colors.white, size: 24),
+                                    icon: const Icon(
+                                      LucideIcons.bell,
+                                      color: Colors.white,
+                                      size: 24,
+                                    ),
                                     onPressed: () {
                                       showModalBottomSheet(
                                         context: context,
                                         isScrollControlled: true,
                                         backgroundColor: Colors.transparent,
-                                        builder: (context) => const NotificationModal(),
+                                        builder: (context) =>
+                                            const NotificationModal(),
                                       );
                                     },
                                   ),
@@ -462,7 +569,10 @@ class _HomePageState extends State<HomePage> {
                                       right: 4,
                                       child: Container(
                                         padding: const EdgeInsets.all(4),
-                                        decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                                        decoration: const BoxDecoration(
+                                          color: Colors.red,
+                                          shape: BoxShape.circle,
+                                        ),
                                         child: Text(
                                           '$unreadCount',
                                           style: const TextStyle(
@@ -481,11 +591,16 @@ class _HomePageState extends State<HomePage> {
                           Consumer<CurrencyProvider>(
                             builder: (context, currencyProvider, child) {
                               return Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 6,
+                                ),
                                 decoration: BoxDecoration(
                                   color: Colors.white.withOpacity(0.15),
                                   borderRadius: BorderRadius.circular(20),
-                                  border: Border.all(color: Colors.white.withOpacity(0.3)),
+                                  border: Border.all(
+                                    color: Colors.white.withOpacity(0.3),
+                                  ),
                                 ),
                                 child: DropdownButtonHideUnderline(
                                   child: DropdownButton<String>(
@@ -493,22 +608,35 @@ class _HomePageState extends State<HomePage> {
                                     value: currencyProvider.currency,
                                     icon: const Padding(
                                       padding: EdgeInsets.only(left: 4),
-                                      child: Icon(LucideIcons.chevronDown, color: Colors.white, size: 14),
+                                      child: Icon(
+                                        LucideIcons.chevronDown,
+                                        color: Colors.white,
+                                        size: 14,
+                                      ),
                                     ),
-                                    style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
-                                    dropdownColor: AppTheme.primaryColor.withOpacity(0.95),
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    dropdownColor: AppTheme.primaryColor
+                                        .withOpacity(0.95),
                                     borderRadius: BorderRadius.circular(16),
                                     onChanged: (String? newValue) {
                                       if (newValue != null) {
                                         currencyProvider.setCurrency(newValue);
                                       }
                                     },
-                                    items: CurrencyProvider.rates.keys.map<DropdownMenuItem<String>>((String value) {
-                                      return DropdownMenuItem<String>(
-                                        value: value,
-                                        child: Text(value),
-                                      );
-                                    }).toList(),
+                                    items: CurrencyProvider.rates.keys
+                                        .map<DropdownMenuItem<String>>((
+                                          String value,
+                                        ) {
+                                          return DropdownMenuItem<String>(
+                                            value: value,
+                                            child: Text(value),
+                                          );
+                                        })
+                                        .toList(),
                                   ),
                                 ),
                               );
@@ -530,7 +658,9 @@ class _HomePageState extends State<HomePage> {
                           decoration: BoxDecoration(
                             color: Colors.white.withOpacity(0.15),
                             borderRadius: BorderRadius.circular(24),
-                            border: Border.all(color: Colors.white.withOpacity(0.2)),
+                            border: Border.all(
+                              color: Colors.white.withOpacity(0.2),
+                            ),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -592,14 +722,32 @@ class _HomePageState extends State<HomePage> {
               padding: const EdgeInsets.all(12),
               child: Row(
                 children: [
-                  const Icon(LucideIcons.search, size: 20, color: AppTheme.primaryColor),
+                  const Icon(
+                    LucideIcons.search,
+                    size: 20,
+                    color: AppTheme.primaryColor,
+                  ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('LOCATION', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.grey[400], letterSpacing: 1)),
-                        Text(_location, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                        Text(
+                          'LOCATION',
+                          style: TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey[400],
+                            letterSpacing: 1,
+                          ),
+                        ),
+                        Text(
+                          _location,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -618,12 +766,23 @@ class _HomePageState extends State<HomePage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('DATES', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.grey[400], letterSpacing: 1)),
                         Text(
-                          _dateRange == null 
-                            ? 'Add Dates' 
-                            : '${DateFormat('MMM dd').format(_dateRange!.start)} - ${DateFormat('MMM dd').format(_dateRange!.end)}',
-                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                          'DATES',
+                          style: TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey[400],
+                            letterSpacing: 1,
+                          ),
+                        ),
+                        Text(
+                          _dateRange == null
+                              ? 'Add Dates'
+                              : '${DateFormat('MMM dd').format(_dateRange!.start)} - ${DateFormat('MMM dd').format(_dateRange!.end)}',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ],
                     ),
@@ -637,8 +796,22 @@ class _HomePageState extends State<HomePage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('GUESTS', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.grey[400], letterSpacing: 1)),
-                        Text('$_guests Guests', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                        Text(
+                          'GUESTS',
+                          style: TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey[400],
+                            letterSpacing: 1,
+                          ),
+                        ),
+                        Text(
+                          '$_guests Guests',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -655,7 +828,10 @@ class _HomePageState extends State<HomePage> {
                 provider.updateSearch(_location);
               }
               if (_dateRange != null) {
-                context.read<BookingProvider>().updateDates(_dateRange!.start, _dateRange!.end);
+                context.read<BookingProvider>().updateDates(
+                  _dateRange!.start,
+                  _dateRange!.end,
+                );
               }
               context.read<BookingProvider>().updateGuests(_guests);
               context.push('/hotels');
@@ -664,9 +840,20 @@ class _HomePageState extends State<HomePage> {
               padding: const EdgeInsets.all(12),
               child: Row(
                 children: [
-                  const Icon(LucideIcons.navigation, size: 18, color: AppTheme.primaryColor),
+                  const Icon(
+                    LucideIcons.navigation,
+                    size: 18,
+                    color: AppTheme.primaryColor,
+                  ),
                   const SizedBox(width: 12),
-                  const Text('Find Premium Hotels', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.primaryColor)),
+                  const Text(
+                    'Find Premium Hotels',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.primaryColor,
+                    ),
+                  ),
                   const Spacer(),
                   Container(
                     padding: const EdgeInsets.all(8),
@@ -674,7 +861,11 @@ class _HomePageState extends State<HomePage> {
                       color: AppTheme.primaryColor,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(LucideIcons.arrowRight, size: 16, color: Colors.white),
+                    child: const Icon(
+                      LucideIcons.arrowRight,
+                      size: 16,
+                      color: Colors.white,
+                    ),
                   ),
                 ],
               ),
@@ -707,7 +898,9 @@ class _HomePageState extends State<HomePage> {
           return InkWell(
             onTap: () {
               context.read<HotelProvider>().clearFilters();
-              context.read<HotelProvider>().updatePropertyType(cat['label'] as String);
+              context.read<HotelProvider>().updatePropertyType(
+                cat['label'] as String,
+              );
               context.push('/hotels');
             },
             borderRadius: BorderRadius.circular(50),
@@ -721,13 +914,27 @@ class _HomePageState extends State<HomePage> {
                       color: Colors.white,
                       shape: BoxShape.circle,
                       boxShadow: [
-                        BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4)),
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
                       ],
                     ),
-                    child: Icon(cat['icon'] as IconData, size: 24, color: AppTheme.primaryColor),
+                    child: Icon(
+                      cat['icon'] as IconData,
+                      size: 24,
+                      color: AppTheme.primaryColor,
+                    ),
                   ),
                   const SizedBox(height: 8),
-                  Text(cat['label'] as String, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                  Text(
+                    cat['label'] as String,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -750,7 +957,11 @@ class _HomePageState extends State<HomePage> {
           end: Alignment.bottomRight,
         ),
         boxShadow: [
-          BoxShadow(color: AppTheme.primaryColor.withOpacity(0.3), blurRadius: 15, offset: const Offset(0, 8)),
+          BoxShadow(
+            color: AppTheme.primaryColor.withOpacity(0.3),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
+          ),
         ],
       ),
       child: Stack(
@@ -758,7 +969,11 @@ class _HomePageState extends State<HomePage> {
           Positioned(
             right: -20,
             bottom: -20,
-            child: Icon(LucideIcons.sparkles, size: 120, color: Colors.white.withOpacity(0.1)),
+            child: Icon(
+              LucideIcons.sparkles,
+              size: 120,
+              color: Colors.white.withOpacity(0.1),
+            ),
           ),
           Padding(
             padding: const EdgeInsets.all(24),
@@ -767,14 +982,43 @@ class _HomePageState extends State<HomePage> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(color: AppTheme.accentColor, borderRadius: BorderRadius.circular(6)),
-                  child: const Text('LIMITED OFFER', style: TextStyle(color: AppTheme.primaryColor, fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 1)),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppTheme.accentColor,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: const Text(
+                    'LIMITED OFFER',
+                    style: TextStyle(
+                      color: AppTheme.primaryColor,
+                      fontSize: 9,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1,
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 12),
-                const Text('Get 25% Off\nOn Your First Booking', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold, height: 1.2)),
+                const Text(
+                  'Get 25% Off\nOn Your First Booking',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    height: 1.2,
+                  ),
+                ),
                 const SizedBox(height: 12),
-                const Text('Use Code: WELCOME25', style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w500)),
+                const Text(
+                  'Use Code: WELCOME25',
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
               ],
             ),
           ),
@@ -789,7 +1033,14 @@ class _HomePageState extends State<HomePage> {
       children: [
         const Padding(
           padding: EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-          child: Text('Recommended for You', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+          child: Text(
+            'Recommended for You',
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: AppTheme.primaryColor,
+            ),
+          ),
         ),
         const SizedBox(height: 8),
         Consumer<HotelProvider>(
@@ -821,7 +1072,11 @@ class _HomePageState extends State<HomePage> {
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(20),
                           boxShadow: [
-                            BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4)),
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.03),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
                           ],
                         ),
                         child: Row(
@@ -829,7 +1084,9 @@ class _HomePageState extends State<HomePage> {
                             Hero(
                               tag: 'hotel_image_rec_${item.id}',
                               child: ClipRRect(
-                                borderRadius: const BorderRadius.horizontal(left: Radius.circular(20)),
+                                borderRadius: const BorderRadius.horizontal(
+                                  left: Radius.circular(20),
+                                ),
                                 child: CachedNetworkImage(
                                   imageUrl: item.imageUrl,
                                   width: 120,
@@ -837,11 +1094,12 @@ class _HomePageState extends State<HomePage> {
                                   fit: BoxFit.cover,
                                   memCacheWidth: 240,
                                   memCacheHeight: 260,
-                                  placeholder: (context, url) => Shimmer.fromColors(
-                                    baseColor: Colors.grey[300]!,
-                                    highlightColor: Colors.grey[100]!,
-                                    child: Container(color: Colors.white),
-                                  ),
+                                  placeholder: (context, url) =>
+                                      Shimmer.fromColors(
+                                        baseColor: Colors.grey[300]!,
+                                        highlightColor: Colors.grey[100]!,
+                                        child: Container(color: Colors.white),
+                                      ),
                                 ),
                               ),
                             ),
@@ -854,19 +1112,30 @@ class _HomePageState extends State<HomePage> {
                                   children: [
                                     Text(
                                       item.name,
-                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppTheme.primaryColor),
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 15,
+                                        color: AppTheme.primaryColor,
+                                      ),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                     const SizedBox(height: 4),
                                     Row(
                                       children: [
-                                        Icon(LucideIcons.mapPin, size: 12, color: Colors.grey[400]),
+                                        Icon(
+                                          LucideIcons.mapPin,
+                                          size: 12,
+                                          color: Colors.grey[400],
+                                        ),
                                         const SizedBox(width: 4),
                                         Expanded(
                                           child: Text(
                                             item.location,
-                                            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.grey[600],
+                                            ),
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
                                           ),
@@ -875,12 +1144,17 @@ class _HomePageState extends State<HomePage> {
                                     ),
                                     const SizedBox(height: 8),
                                     Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
                                       children: [
                                         Expanded(
                                           child: Text(
-                                            '${context.watch<CurrencyProvider>().format(item.pricePerNight)}/night', 
-                                            style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryColor, fontSize: 13),
+                                            '${context.watch<CurrencyProvider>().format(item.pricePerNight)}/night',
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              color: AppTheme.primaryColor,
+                                              fontSize: 13,
+                                            ),
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
                                           ),
@@ -889,26 +1163,53 @@ class _HomePageState extends State<HomePage> {
                                         Row(
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
-                                            const Icon(LucideIcons.star, size: 12, color: AppTheme.accentColor, fill: 1),
+                                            const Icon(
+                                              LucideIcons.star,
+                                              size: 12,
+                                              color: AppTheme.accentColor,
+                                              fill: 1,
+                                            ),
                                             const SizedBox(width: 2),
-                                            Text(item.rating.toString(), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                                            Text(
+                                              item.rating.toString(),
+                                              style: const TextStyle(
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
                                             const SizedBox(width: 4),
                                             Consumer<FavoritesProvider>(
                                               builder: (context, provider, child) {
-                                                final isFav = provider.isFavorite(item);
+                                                final isFav = provider
+                                                    .isFavorite(item);
                                                 return InkWell(
-                                                  onTap: () => provider.toggleFavorite(item),
-                                                  borderRadius: BorderRadius.circular(50),
+                                                  onTap: () => provider
+                                                      .toggleFavorite(item),
+                                                  borderRadius:
+                                                      BorderRadius.circular(50),
                                                   child: Container(
-                                                    padding: const EdgeInsets.all(6),
+                                                    padding:
+                                                        const EdgeInsets.all(6),
                                                     decoration: BoxDecoration(
-                                                      color: isFav ? Colors.red.withOpacity(0.1) : AppTheme.primaryColor.withOpacity(0.05),
+                                                      color: isFav
+                                                          ? Colors.red
+                                                                .withOpacity(
+                                                                  0.1,
+                                                                )
+                                                          : AppTheme
+                                                                .primaryColor
+                                                                .withOpacity(
+                                                                  0.05,
+                                                                ),
                                                       shape: BoxShape.circle,
                                                     ),
                                                     child: Icon(
                                                       LucideIcons.heart,
                                                       size: 14,
-                                                      color: isFav ? Colors.red : AppTheme.primaryColor,
+                                                      color: isFav
+                                                          ? Colors.red
+                                                          : AppTheme
+                                                                .primaryColor,
                                                       fill: isFav ? 1 : 0,
                                                     ),
                                                   ),
@@ -939,18 +1240,27 @@ class _HomePageState extends State<HomePage> {
 
   void _showLocationPicker(BuildContext context) {
     final hotelProvider = context.read<HotelProvider>();
-    final locations = hotelProvider.allHotels.map((h) => h.location).toSet().toList();
+    final locations = hotelProvider.allHotels
+        .map((h) => h.location)
+        .toSet()
+        .toList();
     final isDark = Theme.of(context).colorScheme.brightness == Brightness.dark;
-    
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: isDark ? const Color(0xFF253040) : Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       builder: (context) => StatefulBuilder(
         builder: (context, setModalState) {
           final filtered = locations
-              .where((l) => l.toLowerCase().contains(_searchController.text.toLowerCase()))
+              .where(
+                (l) => l.toLowerCase().contains(
+                  _searchController.text.toLowerCase(),
+                ),
+              )
               .toList();
 
           return DraggableScrollableSheet(
@@ -975,15 +1285,31 @@ class _HomePageState extends State<HomePage> {
                   TextField(
                     autofocus: true,
                     controller: _searchController,
-                    style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
                     decoration: InputDecoration(
                       hintText: 'Search city or hotel location...',
-                      hintStyle: TextStyle(color: isDark ? Colors.grey[400] : Colors.grey[500]),
-                      prefixIcon: Icon(LucideIcons.search, size: 20, color: Theme.of(context).colorScheme.primary),
+                      hintStyle: TextStyle(
+                        color: isDark ? Colors.grey[400] : Colors.grey[500],
+                      ),
+                      prefixIcon: Icon(
+                        LucideIcons.search,
+                        size: 20,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
                       filled: true,
-                      fillColor: isDark ? const Color(0xFF19222E) : Colors.grey[100],
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                      fillColor: isDark
+                          ? const Color(0xFF19222E)
+                          : Colors.grey[100],
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 16,
+                      ),
                     ),
                     onChanged: (v) {
                       setModalState(() {});
@@ -1010,7 +1336,9 @@ class _HomePageState extends State<HomePage> {
                                   Icon(
                                     LucideIcons.mapPinOff,
                                     size: 56,
-                                    color: Theme.of(context).colorScheme.primary.withOpacity(0.4),
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.primary.withOpacity(0.4),
                                   ),
                                   const SizedBox(height: 16),
                                   Text(
@@ -1018,18 +1346,25 @@ class _HomePageState extends State<HomePage> {
                                     style: TextStyle(
                                       fontSize: 18,
                                       fontWeight: FontWeight.bold,
-                                      color: Theme.of(context).colorScheme.onSurface,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurface,
                                     ),
                                   ),
                                   const SizedBox(height: 8),
                                   Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 32),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 32,
+                                    ),
                                     child: Text(
                                       'We couldn\'t find any listings for "${_searchController.text}". Try searching for popular cities like London, Paris, or Tokyo!',
                                       textAlign: TextAlign.center,
                                       style: TextStyle(
                                         fontSize: 13,
-                                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurface
+                                            .withOpacity(0.6),
                                       ),
                                     ),
                                   ),
@@ -1040,7 +1375,8 @@ class _HomePageState extends State<HomePage> {
                         : ListView.separated(
                             controller: scrollController,
                             itemCount: filtered.length,
-                            separatorBuilder: (context, index) => const Divider(height: 1),
+                            separatorBuilder: (context, index) =>
+                                const Divider(height: 1),
                             itemBuilder: (context, index) {
                               final loc = filtered[index];
                               return ListTile(
@@ -1048,13 +1384,17 @@ class _HomePageState extends State<HomePage> {
                                 leading: Container(
                                   padding: const EdgeInsets.all(10),
                                   decoration: BoxDecoration(
-                                    color: Theme.of(context).colorScheme.primary.withOpacity(0.05),
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.primary.withOpacity(0.05),
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: Icon(
                                     LucideIcons.mapPin,
                                     size: 18,
-                                    color: Theme.of(context).colorScheme.primary,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.primary,
                                   ),
                                 ),
                                 title: Text(
@@ -1062,14 +1402,18 @@ class _HomePageState extends State<HomePage> {
                                   style: TextStyle(
                                     fontWeight: FontWeight.w600,
                                     fontSize: 15,
-                                    color: Theme.of(context).colorScheme.onSurface,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurface,
                                   ),
                                 ),
                                 subtitle: Text(
                                   'Top destination',
                                   style: TextStyle(
                                     fontSize: 11,
-                                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurface.withOpacity(0.6),
                                   ),
                                 ),
                                 onTap: () {
@@ -1093,18 +1437,26 @@ class _HomePageState extends State<HomePage> {
 
   void _showDatePicker(BuildContext context) {
     DateTime tempStart = _dateRange?.start ?? DateTime.now();
-    DateTime tempEnd = _dateRange?.end ?? DateTime.now().add(const Duration(days: 3));
+    DateTime tempEnd =
+        _dateRange?.end ?? DateTime.now().add(const Duration(days: 3));
     final isDark = Theme.of(context).colorScheme.brightness == Brightness.dark;
     bool selectingStart = true;
-    
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: isDark ? const Color(0xFF253040) : Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       builder: (context) => StatefulBuilder(
         builder: (context, setModalState) => Container(
-          padding: const EdgeInsets.only(top: 16, left: 24, right: 24, bottom: 24),
+          padding: const EdgeInsets.only(
+            top: 16,
+            left: 24,
+            right: 24,
+            bottom: 24,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1137,14 +1489,20 @@ class _HomePageState extends State<HomePage> {
                       child: Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: selectingStart 
-                            ? Theme.of(context).colorScheme.primary.withOpacity(0.1) 
-                            : Theme.of(context).colorScheme.primary.withOpacity(0.02),
+                          color: selectingStart
+                              ? Theme.of(
+                                  context,
+                                ).colorScheme.primary.withOpacity(0.1)
+                              : Theme.of(
+                                  context,
+                                ).colorScheme.primary.withOpacity(0.02),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: selectingStart 
-                              ? Theme.of(context).colorScheme.primary 
-                              : Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                            color: selectingStart
+                                ? Theme.of(context).colorScheme.primary
+                                : Theme.of(
+                                    context,
+                                  ).colorScheme.primary.withOpacity(0.1),
                             width: selectingStart ? 2 : 1,
                           ),
                         ),
@@ -1152,7 +1510,9 @@ class _HomePageState extends State<HomePage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              selectingStart ? 'CHECK-IN (SELECTING)' : 'CHECK-IN',
+                              selectingStart
+                                  ? 'CHECK-IN (SELECTING)'
+                                  : 'CHECK-IN',
                               style: TextStyle(
                                 fontSize: 9,
                                 fontWeight: FontWeight.bold,
@@ -1176,7 +1536,9 @@ class _HomePageState extends State<HomePage> {
                   const SizedBox(width: 12),
                   Icon(
                     LucideIcons.arrowRight,
-                    color: Theme.of(context).colorScheme.primary.withOpacity(0.5),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.primary.withOpacity(0.5),
                     size: 16,
                   ),
                   const SizedBox(width: 12),
@@ -1186,14 +1548,20 @@ class _HomePageState extends State<HomePage> {
                       child: Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: !selectingStart 
-                            ? Theme.of(context).colorScheme.primary.withOpacity(0.1) 
-                            : Theme.of(context).colorScheme.primary.withOpacity(0.02),
+                          color: !selectingStart
+                              ? Theme.of(
+                                  context,
+                                ).colorScheme.primary.withOpacity(0.1)
+                              : Theme.of(
+                                  context,
+                                ).colorScheme.primary.withOpacity(0.02),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: !selectingStart 
-                              ? Theme.of(context).colorScheme.primary 
-                              : Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                            color: !selectingStart
+                                ? Theme.of(context).colorScheme.primary
+                                : Theme.of(
+                                    context,
+                                  ).colorScheme.primary.withOpacity(0.1),
                             width: !selectingStart ? 2 : 1,
                           ),
                         ),
@@ -1201,7 +1569,9 @@ class _HomePageState extends State<HomePage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              !selectingStart ? 'CHECK-OUT (SELECTING)' : 'CHECK-OUT',
+                              !selectingStart
+                                  ? 'CHECK-OUT (SELECTING)'
+                                  : 'CHECK-OUT',
                               style: TextStyle(
                                 fontSize: 9,
                                 fontWeight: FontWeight.bold,
@@ -1235,17 +1605,20 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
                 child: CalendarDatePicker(
-                  key: ValueKey('calendar_${selectingStart}_${tempStart}_${tempEnd}'),
+                  key: ValueKey(
+                    'calendar_${selectingStart}_${tempStart}_${tempEnd}',
+                  ),
                   initialDate: selectingStart ? tempStart : tempEnd,
-                  firstDate: selectingStart 
-                    ? DateTime.now()
-                    : tempStart.add(const Duration(days: 1)),
+                  firstDate: selectingStart
+                      ? DateTime.now()
+                      : tempStart.add(const Duration(days: 1)),
                   lastDate: DateTime.now().add(const Duration(days: 365)),
                   onDateChanged: (date) {
                     setModalState(() {
                       if (selectingStart) {
                         tempStart = date;
-                        if (tempEnd.isBefore(tempStart) || tempEnd.isAtSameMomentAs(tempStart)) {
+                        if (tempEnd.isBefore(tempStart) ||
+                            tempEnd.isAtSameMomentAs(tempStart)) {
                           tempEnd = tempStart.add(const Duration(days: 2));
                         }
                         selectingStart = false;
@@ -1265,14 +1638,19 @@ class _HomePageState extends State<HomePage> {
                 child: ElevatedButton(
                   onPressed: () {
                     setState(() {
-                      _dateRange = DateTimeRange(start: tempStart, end: tempEnd);
+                      _dateRange = DateTimeRange(
+                        start: tempStart,
+                        end: tempEnd,
+                      );
                     });
                     Navigator.pop(context);
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Theme.of(context).colorScheme.primary,
                     foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                     elevation: 0,
                   ),
                   child: const Text(
@@ -1293,7 +1671,9 @@ class _HomePageState extends State<HomePage> {
     showModalBottomSheet(
       context: context,
       backgroundColor: isDark ? const Color(0xFF253040) : Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       builder: (context) => StatefulBuilder(
         builder: (context, setModalState) => Container(
           padding: const EdgeInsets.all(32),
@@ -1302,10 +1682,10 @@ class _HomePageState extends State<HomePage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'How many guests?', 
+                'How many guests?',
                 style: TextStyle(
-                  fontSize: 22, 
-                  fontWeight: FontWeight.bold, 
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
                   color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
@@ -1317,17 +1697,17 @@ class _HomePageState extends State<HomePage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Guests', 
+                        'Guests',
                         style: TextStyle(
-                          fontSize: 16, 
+                          fontSize: 16,
                           fontWeight: FontWeight.bold,
                           color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
                       Text(
-                        'Number of people in stay', 
+                        'Number of people in stay',
                         style: TextStyle(
-                          fontSize: 12, 
+                          fontSize: 12,
                           color: isDark ? Colors.grey[400] : Colors.grey,
                         ),
                       ),
@@ -1336,28 +1716,38 @@ class _HomePageState extends State<HomePage> {
                   Row(
                     children: [
                       IconButton(
-                        icon: Icon(LucideIcons.minusCircle, color: Theme.of(context).colorScheme.primary),
-                        onPressed: _guests > 1 ? () {
-                          setModalState(() => _guests--);
-                          setState(() {});
-                        } : null,
+                        icon: Icon(
+                          LucideIcons.minusCircle,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                        onPressed: _guests > 1
+                            ? () {
+                                setModalState(() => _guests--);
+                                setState(() {});
+                              }
+                            : null,
                       ),
                       const SizedBox(width: 12),
                       Text(
-                        '$_guests', 
+                        '$_guests',
                         style: TextStyle(
-                          fontSize: 18, 
+                          fontSize: 18,
                           fontWeight: FontWeight.bold,
                           color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
                       const SizedBox(width: 12),
                       IconButton(
-                        icon: Icon(LucideIcons.plusCircle, color: Theme.of(context).colorScheme.primary),
-                        onPressed: _guests < 10 ? () {
-                          setModalState(() => _guests++);
-                          setState(() {});
-                        } : null,
+                        icon: Icon(
+                          LucideIcons.plusCircle,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                        onPressed: _guests < 10
+                            ? () {
+                                setModalState(() => _guests++);
+                                setState(() {});
+                              }
+                            : null,
                       ),
                     ],
                   ),
@@ -1372,9 +1762,14 @@ class _HomePageState extends State<HomePage> {
                     backgroundColor: Theme.of(context).colorScheme.primary,
                     foregroundColor: Theme.of(context).colorScheme.onPrimary,
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                   ),
-                  child: const Text('Confirm', style: TextStyle(fontWeight: FontWeight.bold)),
+                  child: const Text(
+                    'Confirm',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
                 ),
               ),
             ],
@@ -1426,7 +1821,13 @@ class _HomePageState extends State<HomePage> {
                   context.read<HotelProvider>().clearFilters();
                   context.push('/hotels');
                 },
-                child: const Text('View all', style: TextStyle(color: AppTheme.primaryColor, fontWeight: FontWeight.bold)),
+                child: const Text(
+                  'View all',
+                  style: TextStyle(
+                    color: AppTheme.primaryColor,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
             ],
           ),
@@ -1445,7 +1846,10 @@ class _HomePageState extends State<HomePage> {
               }
               return ListView.separated(
                 controller: _featuredController,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 10,
+                ),
                 scrollDirection: Axis.horizontal,
                 physics: const BouncingScrollPhysics(),
                 itemCount: hotels.length,
@@ -1473,7 +1877,14 @@ class _CompactTrustItem extends StatelessWidget {
       children: [
         Icon(icon, size: 20, color: AppTheme.primaryColor),
         const SizedBox(height: 8),
-        Text(label, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.bold,
+            color: AppTheme.primaryColor,
+          ),
+        ),
       ],
     );
   }
@@ -1489,8 +1900,22 @@ class StatItem extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(value, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
-        Text(label, style: TextStyle(fontSize: 10, color: AppTheme.primaryColor.withOpacity(0.6), letterSpacing: 1)),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+            color: AppTheme.primaryColor,
+          ),
+        ),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 10,
+            color: AppTheme.primaryColor.withOpacity(0.6),
+            letterSpacing: 1,
+          ),
+        ),
       ],
     );
   }
@@ -1501,7 +1926,13 @@ class SearchField extends StatelessWidget {
   final String label;
   final String value;
   final VoidCallback onTap;
-  const SearchField({super.key, required this.icon, required this.label, required this.value, required this.onTap});
+  const SearchField({
+    super.key,
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1516,9 +1947,24 @@ class SearchField extends StatelessWidget {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label.toUpperCase(), style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: AppTheme.primaryColor.withOpacity(0.4), letterSpacing: 1)),
+                Text(
+                  label.toUpperCase(),
+                  style: TextStyle(
+                    fontSize: 9,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.primaryColor.withOpacity(0.4),
+                    letterSpacing: 1,
+                  ),
+                ),
                 const SizedBox(height: 2),
-                Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.primaryColor)),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.primaryColor,
+                  ),
+                ),
               ],
             ),
           ],
@@ -1531,10 +1977,7 @@ class SearchField extends StatelessWidget {
 class FeaturedCard extends StatelessWidget {
   final HotelEntity hotel;
 
-  const FeaturedCard({
-    super.key,
-    required this.hotel,
-  });
+  const FeaturedCard({super.key, required this.hotel});
 
   @override
   Widget build(BuildContext context) {
@@ -1560,7 +2003,9 @@ class FeaturedCard extends StatelessWidget {
             Hero(
               tag: 'hotel_image_${hotel.id}',
               child: ClipRRect(
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(24),
+                ),
                 child: CachedNetworkImage(
                   imageUrl: hotel.imageUrl,
                   height: 200,
@@ -1586,16 +2031,31 @@ class FeaturedCard extends StatelessWidget {
                       Expanded(
                         child: Text(
                           hotel.name,
-                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.primaryColor,
+                          ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
                       Row(
                         children: [
-                          const Icon(LucideIcons.star, size: 12, color: AppTheme.accentColor, fill: 1),
+                          const Icon(
+                            LucideIcons.star,
+                            size: 12,
+                            color: AppTheme.accentColor,
+                            fill: 1,
+                          ),
                           const SizedBox(width: 4),
-                          Text(hotel.rating.toString(), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                          Text(
+                            hotel.rating.toString(),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                           const SizedBox(width: 12),
                           Consumer<FavoritesProvider>(
                             builder: (context, provider, child) {
@@ -1606,13 +2066,19 @@ class FeaturedCard extends StatelessWidget {
                                 child: Container(
                                   padding: const EdgeInsets.all(8),
                                   decoration: BoxDecoration(
-                                    color: isFav ? Colors.red.withOpacity(0.1) : AppTheme.primaryColor.withOpacity(0.05),
+                                    color: isFav
+                                        ? Colors.red.withOpacity(0.1)
+                                        : AppTheme.primaryColor.withOpacity(
+                                            0.05,
+                                          ),
                                     shape: BoxShape.circle,
                                   ),
                                   child: Icon(
                                     LucideIcons.heart,
                                     size: 16,
-                                    color: isFav ? Colors.red : AppTheme.primaryColor,
+                                    color: isFav
+                                        ? Colors.red
+                                        : AppTheme.primaryColor,
                                     fill: isFav ? 1 : 0,
                                   ),
                                 ),
@@ -1626,17 +2092,39 @@ class FeaturedCard extends StatelessWidget {
                   const SizedBox(height: 6),
                   Row(
                     children: [
-                      Icon(LucideIcons.mapPin, size: 12, color: Colors.grey[400]),
+                      Icon(
+                        LucideIcons.mapPin,
+                        size: 12,
+                        color: Colors.grey[400],
+                      ),
                       const SizedBox(width: 4),
-                      Text(hotel.location, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                      Text(
+                        hotel.location,
+                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 16),
                   RichText(
                     text: TextSpan(
                       children: [
-                        TextSpan(text: context.watch<CurrencyProvider>().format(hotel.pricePerNight), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
-                        TextSpan(text: ' / night', style: TextStyle(fontSize: 11, color: Colors.grey[500])),
+                        TextSpan(
+                          text: context.watch<CurrencyProvider>().format(
+                            hotel.pricePerNight,
+                          ),
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.primaryColor,
+                          ),
+                        ),
+                        TextSpan(
+                          text: ' / night',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey[500],
+                          ),
+                        ),
                       ],
                     ),
                   ),

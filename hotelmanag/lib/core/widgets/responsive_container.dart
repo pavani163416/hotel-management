@@ -12,7 +12,9 @@ class ResponsiveContainer extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final maxWidth = constraints.maxWidth > 600 ? 600.0 : constraints.maxWidth;
+        final maxWidth = constraints.maxWidth > 600
+            ? 600.0
+            : constraints.maxWidth;
         return Center(
           child: ConstrainedBox(
             constraints: BoxConstraints(maxWidth: maxWidth),

@@ -58,7 +58,7 @@ class _ProfilePageState extends State<ProfilePage> {
     _emailController = TextEditingController(text: user?.email ?? '');
     _phoneController = TextEditingController(text: user?.phone ?? '');
     _cityController = TextEditingController(text: user?.city ?? '');
-    
+
     if (user?.profileImage != null && user!.profileImage!.isNotEmpty) {
       _profileImageUrl = user.profileImage!;
     } else {
@@ -104,7 +104,10 @@ class _ProfilePageState extends State<ProfilePage> {
     // Fetch bookings to dynamically render loyalty status card
     if (mounted) {
       try {
-        await Provider.of<BookingProvider>(context, listen: false).fetchMyBookings();
+        await Provider.of<BookingProvider>(
+          context,
+          listen: false,
+        ).fetchMyBookings();
       } catch (_) {}
     }
   }
@@ -135,7 +138,9 @@ class _ProfilePageState extends State<ProfilePage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 100), // Spacing to account for overlapping profile header
+                const SizedBox(
+                  height: 100,
+                ), // Spacing to account for overlapping profile header
                 _buildSectionTitle('Account Settings'),
                 const SizedBox(height: 16),
                 _buildSettingItem(
@@ -247,7 +252,9 @@ class _ProfilePageState extends State<ProfilePage> {
                     Text(
                       '24/7 Dedicated Concierge Care',
                       style: TextStyle(
-                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withOpacity(0.6),
                         fontSize: 11,
                       ),
                     ),
@@ -259,7 +266,12 @@ class _ProfilePageState extends State<ProfilePage> {
           const SizedBox(height: 16),
           const Divider(),
           const SizedBox(height: 16),
-          _buildSupportInfoRow(context, LucideIcons.userCheck, 'Admin Name', 'LuxeStay Concierge'),
+          _buildSupportInfoRow(
+            context,
+            LucideIcons.userCheck,
+            'Admin Name',
+            'Athithigriha Concierge',
+          ),
           const SizedBox(height: 12),
           _buildSupportInfoRow(
             context,
@@ -281,9 +293,11 @@ class _ProfilePageState extends State<ProfilePage> {
             context,
             LucideIcons.mail,
             'Support Email',
-            'concierge@luxestay.com',
+            'concierge@athithigriha.com',
             onLongPress: () {
-              Clipboard.setData(const ClipboardData(text: 'concierge@luxestay.com'));
+              Clipboard.setData(
+                const ClipboardData(text: 'concierge@athithigriha.com'),
+              );
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   content: Text('Email address copied to clipboard'),
@@ -297,7 +311,13 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  Widget _buildSupportInfoRow(BuildContext context, IconData icon, String label, String value, {VoidCallback? onLongPress}) {
+  Widget _buildSupportInfoRow(
+    BuildContext context,
+    IconData icon,
+    String label,
+    String value, {
+    VoidCallback? onLongPress,
+  }) {
     Widget content = Row(
       children: [
         Icon(
@@ -346,8 +366,12 @@ class _ProfilePageState extends State<ProfilePage> {
     return Consumer<AuthProvider>(
       builder: (context, auth, _) {
         final user = auth.user;
-        final displayName = (user?.name?.isEmpty ?? true) ? 'Guest' : user!.name;
-        final displayCity = (user?.city?.isEmpty ?? true) ? 'Set your location' : user!.city!;
+        final displayName = (user?.name?.isEmpty ?? true)
+            ? 'Guest'
+            : user!.name;
+        final displayCity = (user?.city?.isEmpty ?? true)
+            ? 'Set your location'
+            : user!.city!;
         final profileUrl = user?.profileImage ?? '';
         final coverUrl = user?.coverImage ?? '';
 
@@ -366,15 +390,16 @@ class _ProfilePageState extends State<ProfilePage> {
                       ? DecorationImage(
                           image: (kIsWeb
                               ? NetworkImage(_coverImageFile!.path)
-                              : FileImage(io.File(_coverImageFile!.path)) as ImageProvider),
+                              : FileImage(io.File(_coverImageFile!.path))
+                                    as ImageProvider),
                           fit: BoxFit.cover,
                         )
                       : coverUrl.isNotEmpty
-                          ? DecorationImage(
-                              image: CachedNetworkImageProvider(coverUrl),
-                              fit: BoxFit.cover,
-                            )
-                          : null,
+                      ? DecorationImage(
+                          image: CachedNetworkImageProvider(coverUrl),
+                          fit: BoxFit.cover,
+                        )
+                      : null,
                 ),
                 child: Stack(
                   children: [
@@ -402,7 +427,14 @@ class _ProfilePageState extends State<ProfilePage> {
                         ),
                         child: const Row(
                           children: [
-                            Text('Change Cover', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                            Text(
+                              'Change Cover',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -431,28 +463,54 @@ class _ProfilePageState extends State<ProfilePage> {
                               width: 100,
                               height: 100,
                               decoration: BoxDecoration(
-                                color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.primary.withOpacity(0.1),
                                 shape: BoxShape.circle,
-                                border: Border.all(color: Colors.white, width: 4),
+                                border: Border.all(
+                                  color: Colors.white,
+                                  width: 4,
+                                ),
                                 boxShadow: [
-                                  BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 5)),
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.1),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 5),
+                                  ),
                                 ],
                                 image: _profileImageFile != null
                                     ? DecorationImage(
                                         image: (kIsWeb
-                                            ? NetworkImage(_profileImageFile!.path)
-                                            : FileImage(io.File(_profileImageFile!.path)) as ImageProvider),
+                                            ? NetworkImage(
+                                                _profileImageFile!.path,
+                                              )
+                                            : FileImage(
+                                                    io.File(
+                                                      _profileImageFile!.path,
+                                                    ),
+                                                  )
+                                                  as ImageProvider),
                                         fit: BoxFit.cover,
                                       )
                                     : profileUrl.isNotEmpty
-                                        ? DecorationImage(
-                                            image: CachedNetworkImageProvider(profileUrl),
-                                            fit: BoxFit.cover,
-                                          )
-                                        : null,
+                                    ? DecorationImage(
+                                        image: CachedNetworkImageProvider(
+                                          profileUrl,
+                                        ),
+                                        fit: BoxFit.cover,
+                                      )
+                                    : null,
                               ),
-                              child: _profileImageFile == null && profileUrl.isEmpty
-                                  ? Icon(LucideIcons.user, size: 40, color: Theme.of(context).colorScheme.primary)
+                              child:
+                                  _profileImageFile == null &&
+                                      profileUrl.isEmpty
+                                  ? Icon(
+                                      LucideIcons.user,
+                                      size: 40,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.primary,
+                                    )
                                   : null,
                             ),
                           ),
@@ -466,9 +524,16 @@ class _ProfilePageState extends State<ProfilePage> {
                                 decoration: BoxDecoration(
                                   color: Theme.of(context).colorScheme.primary,
                                   shape: BoxShape.circle,
-                                  border: Border.all(color: Colors.white, width: 2),
+                                  border: Border.all(
+                                    color: Colors.white,
+                                    width: 2,
+                                  ),
                                 ),
-                                child: const Icon(LucideIcons.camera, color: Colors.white, size: 16),
+                                child: const Icon(
+                                  LucideIcons.camera,
+                                  color: Colors.white,
+                                  size: 16,
+                                ),
                               ),
                             ),
                           ),
@@ -500,10 +565,15 @@ class _ProfilePageState extends State<ProfilePage> {
     return Consumer<BookingProvider>(
       builder: (context, bookingProvider, _) {
         final bookings = bookingProvider.bookings;
-        
+
         // Calculate total amount spent on all confirmed/completed/active bookings
         final totalSpent = bookings
-            .where((b) => b.status.toLowerCase() == 'confirmed' || b.status.toLowerCase() == 'completed' || b.status.toLowerCase() == 'active')
+            .where(
+              (b) =>
+                  b.status.toLowerCase() == 'confirmed' ||
+                  b.status.toLowerCase() == 'completed' ||
+                  b.status.toLowerCase() == 'active',
+            )
             .fold<double>(0.0, (sum, b) => sum + b.totalAmount);
 
         // Dynamic points calculation (1 point for every $10 spent + 200 base points for joining)
@@ -568,9 +638,24 @@ class _ProfilePageState extends State<ProfilePage> {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(tier, style: const TextStyle(color: AppTheme.accentColor, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 2)),
+                      Text(
+                        tier,
+                        style: const TextStyle(
+                          color: AppTheme.accentColor,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 2,
+                        ),
+                      ),
                       const SizedBox(height: 4),
-                      const Text('Loyalty Status', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                      const Text(
+                        'Loyalty Status',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ],
                   ),
                   Container(
@@ -579,20 +664,39 @@ class _ProfilePageState extends State<ProfilePage> {
                       color: Colors.white.withOpacity(0.1),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(LucideIcons.award, color: AppTheme.accentColor, size: 24),
+                    child: const Icon(
+                      LucideIcons.award,
+                      color: AppTheme.accentColor,
+                      size: 24,
+                    ),
                   ),
                 ],
               ),
               const SizedBox(height: 32),
-              Text(pointsStr, style: const TextStyle(color: Colors.white, fontSize: 36, fontWeight: FontWeight.bold)),
-              Text('Available Points', style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 13)),
+              Text(
+                pointsStr,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 36,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Text(
+                'Available Points',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.6),
+                  fontSize: 13,
+                ),
+              ),
               const SizedBox(height: 24),
               ClipRRect(
                 borderRadius: BorderRadius.circular(10),
                 child: LinearProgressIndicator(
                   value: progress.clamp(0.0, 1.0),
                   backgroundColor: Colors.white.withOpacity(0.1),
-                  valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.accentColor),
+                  valueColor: const AlwaysStoppedAnimation<Color>(
+                    AppTheme.accentColor,
+                  ),
                   minHeight: 8,
                 ),
               ),
@@ -600,7 +704,11 @@ class _ProfilePageState extends State<ProfilePage> {
                 const SizedBox(height: 12),
                 Text(
                   '$pointsToNextTier points to $nextTierName',
-                  style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 11, fontWeight: FontWeight.w500),
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.8),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ],
             ],
@@ -619,22 +727,29 @@ class _ProfilePageState extends State<ProfilePage> {
         fontWeight: FontWeight.bold,
         letterSpacing: 1.5,
         color: isDark
-            ? const Color(0xFFEAE5DC)   // full-strength cream — clearly visible on dark bg
+            ? const Color(
+                0xFFEAE5DC,
+              ) // full-strength cream — clearly visible on dark bg
             : const Color(0xFF454F5E).withOpacity(0.55),
       ),
     );
   }
 
-  Widget _buildSettingItem(IconData icon, String title, String subtitle, {VoidCallback? onTap}) {
+  Widget _buildSettingItem(
+    IconData icon,
+    String title,
+    String subtitle, {
+    VoidCallback? onTap,
+  }) {
     final isDark = Theme.of(context).colorScheme.brightness == Brightness.dark;
-    final cardColor   = isDark ? const Color(0xFF253040) : Colors.white;
-    final iconBg      = isDark
+    final cardColor = isDark ? const Color(0xFF253040) : Colors.white;
+    final iconBg = isDark
         ? const Color(0xFF19222E)
         : AppTheme.primaryColor.withOpacity(0.05);
-    final iconColor   = isDark ? const Color(0xFFEAE5DC) : AppTheme.primaryColor;
-    final titleColor  = isDark ? const Color(0xFFEAE5DC) : AppTheme.primaryColor;
-    final subColor    = isDark ? const Color(0xFFB0A898) : Colors.grey[500]!;
-    final arrowColor  = isDark ? const Color(0xFF6B7A8D) : Colors.grey[400]!;
+    final iconColor = isDark ? const Color(0xFFEAE5DC) : AppTheme.primaryColor;
+    final titleColor = isDark ? const Color(0xFFEAE5DC) : AppTheme.primaryColor;
+    final subColor = isDark ? const Color(0xFFB0A898) : Colors.grey[500]!;
+    final arrowColor = isDark ? const Color(0xFF6B7A8D) : Colors.grey[400]!;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -643,7 +758,13 @@ class _ProfilePageState extends State<ProfilePage> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: isDark
             ? []
-            : [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))],
+            : [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.03),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
       ),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
@@ -655,12 +776,21 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
           child: Icon(icon, size: 20, color: iconColor),
         ),
-        title: Text(title,
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: titleColor)),
-        subtitle: Text(subtitle,
-            style: TextStyle(color: subColor, fontSize: 12)),
+        title: Text(
+          title,
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 15,
+            color: titleColor,
+          ),
+        ),
+        subtitle: Text(
+          subtitle,
+          style: TextStyle(color: subColor, fontSize: 12),
+        ),
         trailing: Icon(LucideIcons.chevronRight, size: 18, color: arrowColor),
-        onTap: onTap ??
+        onTap:
+            onTap ??
             () {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
@@ -676,37 +806,84 @@ class _ProfilePageState extends State<ProfilePage> {
   void _showFeedback(BuildContext context, String feature) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('$feature settings will be available in the next update.'),
+        content: Text(
+          '$feature settings will be available in the next update.',
+        ),
         behavior: SnackBarBehavior.floating,
-        action: SnackBarAction(label: 'OK', textColor: AppTheme.accentColor, onPressed: () {}),
+        action: SnackBarAction(
+          label: 'OK',
+          textColor: AppTheme.accentColor,
+          onPressed: () {},
+        ),
       ),
     );
   }
 
   void _showPersonalInfo(BuildContext context) async {
-    final authenticated = await BiometricHelper.authenticate(reason: 'Confirm your identity to edit personal information');
+    final authenticated = await BiometricHelper.authenticate(
+      reason: 'Confirm your identity to edit personal information',
+    );
     if (!authenticated) return;
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Theme.of(context).colorScheme.brightness == Brightness.dark ? const Color(0xFF253040) : Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      backgroundColor:
+          Theme.of(context).colorScheme.brightness == Brightness.dark
+          ? const Color(0xFF253040)
+          : Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       builder: (context) => Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom, top: 24, left: 24, right: 24),
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+          top: 24,
+          left: 24,
+          right: 24,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Personal Information', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+            Text(
+              'Personal Information',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
             const SizedBox(height: 24),
-            CustomTextField(label: 'Full Name', hint: 'Your full name', prefixIcon: LucideIcons.user, controller: _nameController),
+            CustomTextField(
+              label: 'Full Name',
+              hint: 'Your full name',
+              prefixIcon: LucideIcons.user,
+              controller: _nameController,
+            ),
             const SizedBox(height: 16),
-            CustomTextField(label: 'Email Address', hint: 'Your email address', prefixIcon: LucideIcons.mail, keyboardType: TextInputType.emailAddress, controller: _emailController),
+            CustomTextField(
+              label: 'Email Address',
+              hint: 'Your email address',
+              prefixIcon: LucideIcons.mail,
+              keyboardType: TextInputType.emailAddress,
+              controller: _emailController,
+            ),
             const SizedBox(height: 16),
-            CustomTextField(label: 'Phone Number', hint: 'Your phone number', prefixIcon: LucideIcons.phone, keyboardType: TextInputType.phone, controller: _phoneController),
+            CustomTextField(
+              label: 'Phone Number',
+              hint: 'Your phone number',
+              prefixIcon: LucideIcons.phone,
+              keyboardType: TextInputType.phone,
+              controller: _phoneController,
+            ),
             const SizedBox(height: 16),
-            CustomTextField(label: 'City / Location', hint: 'Your city/location', prefixIcon: LucideIcons.mapPin, controller: _cityController),
+            CustomTextField(
+              label: 'City / Location',
+              hint: 'Your city/location',
+              prefixIcon: LucideIcons.mapPin,
+              controller: _cityController,
+            ),
             const SizedBox(height: 32),
             _buildSaveButton(context),
             const SizedBox(height: 32),
@@ -716,13 +893,23 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-
   void _showLanguagePicker(BuildContext context) {
-    final languages = ['English (US)', 'Spanish', 'French', 'German', 'Chinese'];
+    final languages = [
+      'English (US)',
+      'Spanish',
+      'French',
+      'German',
+      'Chinese',
+    ];
     showModalBottomSheet(
       context: context,
-      backgroundColor: Theme.of(context).colorScheme.brightness == Brightness.dark ? const Color(0xFF253040) : Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      backgroundColor:
+          Theme.of(context).colorScheme.brightness == Brightness.dark
+          ? const Color(0xFF253040)
+          : Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       builder: (context) => Container(
         padding: const EdgeInsets.symmetric(vertical: 24),
         child: Column(
@@ -730,17 +917,36 @@ class _ProfilePageState extends State<ProfilePage> {
           children: [
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-              child: Text('Select Language', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+              child: Text(
+                'Select Language',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
             ),
             const Divider(),
-            ...languages.map((lang) => ListTile(
-                  title: Text(lang, style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
-                  trailing: _currentLanguage == lang ? Icon(LucideIcons.check, color: Theme.of(context).colorScheme.primary) : null,
-                  onTap: () {
-                    setState(() => _currentLanguage = lang);
-                    Navigator.pop(context);
-                  },
-                )),
+            ...languages.map(
+              (lang) => ListTile(
+                title: Text(
+                  lang,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+                trailing: _currentLanguage == lang
+                    ? Icon(
+                        LucideIcons.check,
+                        color: Theme.of(context).colorScheme.primary,
+                      )
+                    : null,
+                onTap: () {
+                  setState(() => _currentLanguage = lang);
+                  Navigator.pop(context);
+                },
+              ),
+            ),
             const SizedBox(height: 16),
           ],
         ),
@@ -748,33 +954,49 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-
   void _showPaymentMethods(BuildContext context) async {
-    final authenticated = await BiometricHelper.authenticate(reason: 'Confirm your identity to view payment methods');
+    final authenticated = await BiometricHelper.authenticate(
+      reason: 'Confirm your identity to view payment methods',
+    );
     if (!authenticated) return;
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: Theme.of(context).colorScheme.brightness == Brightness.dark ? const Color(0xFF253040) : Colors.white,
+      backgroundColor:
+          Theme.of(context).colorScheme.brightness == Brightness.dark
+          ? const Color(0xFF253040)
+          : Colors.white,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       builder: (context) => Consumer<AuthProvider>(
         builder: (context, auth, _) {
           final paymentMethods = auth.user?.paymentMethods ?? [];
-          
+
           return Container(
             padding: const EdgeInsets.all(24),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Payment Methods', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                Text(
+                  'Payment Methods',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
                 const SizedBox(height: 24),
                 if (paymentMethods.isEmpty)
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 20),
                     child: Center(
-                      child: Text('No payment methods saved', style: TextStyle(color: Colors.grey[500])),
+                      child: Text(
+                        'No payment methods saved',
+                        style: TextStyle(color: Colors.grey[500]),
+                      ),
                     ),
                   )
                 else
@@ -793,7 +1015,12 @@ class _ProfilePageState extends State<ProfilePage> {
                     }
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 12),
-                      child: _buildPaymentCard(pm.type, title, subtitle, pm.isDefault),
+                      child: _buildPaymentCard(
+                        pm.type,
+                        title,
+                        subtitle,
+                        pm.isDefault,
+                      ),
                     );
                   }),
                 const SizedBox(height: 12),
@@ -808,25 +1035,44 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   void _showSecurity(BuildContext context) async {
-    final authenticated = await BiometricHelper.authenticate(reason: 'Confirm your identity to view security settings');
+    final authenticated = await BiometricHelper.authenticate(
+      reason: 'Confirm your identity to view security settings',
+    );
     if (!authenticated) return;
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: Theme.of(context).colorScheme.brightness == Brightness.dark ? const Color(0xFF253040) : Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      backgroundColor:
+          Theme.of(context).colorScheme.brightness == Brightness.dark
+          ? const Color(0xFF253040)
+          : Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       builder: (context) => Container(
         padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Security Settings', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+            Text(
+              'Security Settings',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
             const SizedBox(height: 24),
-            _buildSettingItem(LucideIcons.lock, 'Change Password', 'Update your password regularly', onTap: () {
-              Navigator.pop(context);
-              _showChangePasswordDialog(context);
-            }),
+            _buildSettingItem(
+              LucideIcons.lock,
+              'Change Password',
+              'Update your password regularly',
+              onTap: () {
+                Navigator.pop(context);
+                _showChangePasswordDialog(context);
+              },
+            ),
             const SizedBox(height: 32),
           ],
         ),
@@ -843,8 +1089,13 @@ class _ProfilePageState extends State<ProfilePage> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Theme.of(context).colorScheme.brightness == Brightness.dark ? const Color(0xFF253040) : Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      backgroundColor:
+          Theme.of(context).colorScheme.brightness == Brightness.dark
+          ? const Color(0xFF253040)
+          : Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       builder: (context) => StatefulBuilder(
         builder: (context, setModalState) => Padding(
           padding: EdgeInsets.only(
@@ -861,7 +1112,11 @@ class _ProfilePageState extends State<ProfilePage> {
               children: [
                 Text(
                   'Change Password',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
                 ),
                 const SizedBox(height: 24),
                 CustomTextField(
@@ -871,7 +1126,8 @@ class _ProfilePageState extends State<ProfilePage> {
                   prefixIcon: LucideIcons.lock,
                   controller: oldPasswordController,
                   validator: (val) {
-                    if (val == null || val.isEmpty) return 'Current password is required';
+                    if (val == null || val.isEmpty)
+                      return 'Current password is required';
                     return null;
                   },
                 ),
@@ -883,8 +1139,10 @@ class _ProfilePageState extends State<ProfilePage> {
                   prefixIcon: LucideIcons.lock,
                   controller: newPasswordController,
                   validator: (val) {
-                    if (val == null || val.isEmpty) return 'New password is required';
-                    if (val.length < 6) return 'Password must be at least 6 characters';
+                    if (val == null || val.isEmpty)
+                      return 'New password is required';
+                    if (val.length < 6)
+                      return 'Password must be at least 6 characters';
                     return null;
                   },
                 ),
@@ -896,7 +1154,8 @@ class _ProfilePageState extends State<ProfilePage> {
                   prefixIcon: LucideIcons.lock,
                   controller: confirmPasswordController,
                   validator: (val) {
-                    if (val != newPasswordController.text) return 'Passwords do not match';
+                    if (val != newPasswordController.text)
+                      return 'Passwords do not match';
                     return null;
                   },
                 ),
@@ -919,7 +1178,9 @@ class _ProfilePageState extends State<ProfilePage> {
                                     Navigator.pop(context);
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(
-                                        content: Text('Password updated successfully!'),
+                                        content: Text(
+                                          'Password updated successfully!',
+                                        ),
                                         behavior: SnackBarBehavior.floating,
                                         backgroundColor: Colors.green,
                                       ),
@@ -927,7 +1188,10 @@ class _ProfilePageState extends State<ProfilePage> {
                                   } else {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
-                                        content: Text(auth.error ?? 'Failed to update password'),
+                                        content: Text(
+                                          auth.error ??
+                                              'Failed to update password',
+                                        ),
                                         behavior: SnackBarBehavior.floating,
                                         backgroundColor: Colors.red,
                                       ),
@@ -938,12 +1202,29 @@ class _ProfilePageState extends State<ProfilePage> {
                             },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Theme.of(context).colorScheme.primary,
-                        foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        foregroundColor: Theme.of(
+                          context,
+                        ).colorScheme.onPrimary,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
                       ),
                       child: auth.isLoading
-                          ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                          : const Text('Update Password', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Text(
+                              'Update Password',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
                     ),
                   ),
                 ),
@@ -963,17 +1244,24 @@ class _ProfilePageState extends State<ProfilePage> {
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: Theme.of(context).colorScheme.brightness == Brightness.dark
+      backgroundColor:
+          Theme.of(context).colorScheme.brightness == Brightness.dark
           ? const Color(0xFF253040)
           : Colors.white,
       shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setModalState) {
-          final isDark = Theme.of(ctx).colorScheme.brightness == Brightness.dark;
+          final isDark =
+              Theme.of(ctx).colorScheme.brightness == Brightness.dark;
 
           Widget notifTile(
-              String title, String subtitle, bool value, ValueChanged<bool> onChanged) {
+            String title,
+            String subtitle,
+            bool value,
+            ValueChanged<bool> onChanged,
+          ) {
             return Container(
               margin: const EdgeInsets.only(bottom: 12),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -981,23 +1269,29 @@ class _ProfilePageState extends State<ProfilePage> {
                 color: isDark ? const Color(0xFF19222E) : Colors.grey[50],
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                    color: isDark ? Colors.white10 : Colors.grey[200]!),
+                  color: isDark ? Colors.white10 : Colors.grey[200]!,
+                ),
               ),
               child: SwitchListTile(
                 value: value,
                 onChanged: (v) => setModalState(() => onChanged(v)),
-                title: Text(title,
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15,
-                        color: Theme.of(ctx).colorScheme.onSurface)),
-                subtitle: Text(subtitle,
-                    style: TextStyle(
-                        fontSize: 12,
-                        color: Theme.of(ctx)
-                            .colorScheme
-                            .onSurface
-                            .withOpacity(0.55))),
+                title: Text(
+                  title,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                    color: Theme.of(ctx).colorScheme.onSurface,
+                  ),
+                ),
+                subtitle: Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Theme.of(
+                      ctx,
+                    ).colorScheme.onSurface.withOpacity(0.55),
+                  ),
+                ),
                 activeColor: Theme.of(ctx).colorScheme.primary,
                 contentPadding: EdgeInsets.zero,
               ),
@@ -1018,24 +1312,31 @@ class _ProfilePageState extends State<ProfilePage> {
                 // Handle
                 Center(
                   child: Container(
-                    width: 40, height: 4,
+                    width: 40,
+                    height: 4,
                     margin: const EdgeInsets.only(bottom: 20),
                     decoration: BoxDecoration(
-                        color: Colors.grey[300],
-                        borderRadius: BorderRadius.circular(2)),
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(2),
+                    ),
                   ),
                 ),
                 Row(
                   children: [
-                    Icon(LucideIcons.bell,
-                        size: 20,
-                        color: Theme.of(ctx).colorScheme.primary),
+                    Icon(
+                      LucideIcons.bell,
+                      size: 20,
+                      color: Theme.of(ctx).colorScheme.primary,
+                    ),
                     const SizedBox(width: 12),
-                    Text('Notifications',
-                        style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(ctx).colorScheme.onSurface)),
+                    Text(
+                      'Notifications',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(ctx).colorScheme.onSurface,
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 20),
@@ -1081,11 +1382,16 @@ class _ProfilePageState extends State<ProfilePage> {
                       backgroundColor: Theme.of(ctx).colorScheme.primary,
                       foregroundColor: Theme.of(ctx).colorScheme.onPrimary,
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16)),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
                     ),
-                    child: const Text('Save Preferences',
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 16)),
+                    child: const Text(
+                      'Save Preferences',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -1096,18 +1402,41 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  Widget _buildNotificationSwitch(String title, String subtitle, bool value, Function(bool) onChanged) {
+  Widget _buildNotificationSwitch(
+    String title,
+    String subtitle,
+    bool value,
+    Function(bool) onChanged,
+  ) {
     return SwitchListTile(
       value: value,
       onChanged: onChanged,
-      title: Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Theme.of(context).colorScheme.onSurface)),
-      subtitle: Text(subtitle, style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
+      title: Text(
+        title,
+        style: TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 15,
+          color: Theme.of(context).colorScheme.onSurface,
+        ),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: TextStyle(
+          fontSize: 12,
+          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+        ),
+      ),
       activeColor: Theme.of(context).colorScheme.primary,
       contentPadding: EdgeInsets.zero,
     );
   }
 
-  Widget _buildPaymentCard(String type, String title, String subtitle, bool isDefault) {
+  Widget _buildPaymentCard(
+    String type,
+    String title,
+    String subtitle,
+    bool isDefault,
+  ) {
     IconData icon;
     switch (type) {
       case 'upi':
@@ -1129,10 +1458,19 @@ class _ProfilePageState extends State<ProfilePage> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF19222E) : Colors.white,
-        border: Border.all(color: isDefault ? Theme.of(context).colorScheme.primary : Colors.grey[200]!),
+        border: Border.all(
+          color: isDefault
+              ? Theme.of(context).colorScheme.primary
+              : Colors.grey[200]!,
+        ),
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
-          if (isDefault) BoxShadow(color: Theme.of(context).colorScheme.primary.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4)),
+          if (isDefault)
+            BoxShadow(
+              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
         ],
       ),
       child: Row(
@@ -1143,26 +1481,52 @@ class _ProfilePageState extends State<ProfilePage> {
               color: Theme.of(context).colorScheme.primary.withOpacity(0.05),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(icon, color: Theme.of(context).colorScheme.primary, size: 20),
+            child: Icon(
+              icon,
+              color: Theme.of(context).colorScheme.primary,
+              size: 20,
+            ),
           ),
           const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Theme.of(context).colorScheme.onSurface)),
-                Text(subtitle, style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6), fontSize: 12)),
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withOpacity(0.6),
+                    fontSize: 12,
+                  ),
+                ),
               ],
             ),
           ),
-          if (isDefault) 
+          if (isDefault)
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), 
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary.withOpacity(0.1), 
-                borderRadius: BorderRadius.circular(4)
-              ), 
-              child: Text('DEFAULT', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: 8, fontWeight: FontWeight.bold))
+                color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                'DEFAULT',
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.primary,
+                  fontSize: 8,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
         ],
       ),
@@ -1179,16 +1543,18 @@ class _ProfilePageState extends State<ProfilePage> {
               : () async {
                   String? newProfileImageUrl;
                   String? newCoverImageUrl;
-                  
+
                   if (_profileImageFile != null) {
                     final bytes = await _profileImageFile!.readAsBytes();
-                    final base64Image = await PerformanceUtils.encodeImageToBase64(bytes);
+                    final base64Image =
+                        await PerformanceUtils.encodeImageToBase64(bytes);
                     newProfileImageUrl = await auth.uploadImage(base64Image);
                   }
 
                   if (_coverImageFile != null) {
                     final bytes = await _coverImageFile!.readAsBytes();
-                    final base64Image = await PerformanceUtils.encodeImageToBase64(bytes);
+                    final base64Image =
+                        await PerformanceUtils.encodeImageToBase64(bytes);
                     newCoverImageUrl = await auth.uploadImage(base64Image);
                   }
 
@@ -1212,7 +1578,9 @@ class _ProfilePageState extends State<ProfilePage> {
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text(auth.error ?? 'Failed to update profile'),
+                          content: Text(
+                            auth.error ?? 'Failed to update profile',
+                          ),
                           behavior: SnackBarBehavior.floating,
                           backgroundColor: Colors.red,
                         ),
@@ -1224,18 +1592,26 @@ class _ProfilePageState extends State<ProfilePage> {
             backgroundColor: AppTheme.primaryColor,
             foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(vertical: 16),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
           ),
           child: auth.isLoading
               ? SizedBox(
-                  height: 20, 
-                  width: 20, 
+                  height: 20,
+                  width: 20,
                   child: Semantics(
                     label: 'Loading profile...',
-                    child: const CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    child: const CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
                   ),
                 )
-              : const Text('Save Changes', style: TextStyle(fontWeight: FontWeight.bold)),
+              : const Text(
+                  'Save Changes',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
         ),
       ),
     );
@@ -1252,7 +1628,9 @@ class _ProfilePageState extends State<ProfilePage> {
           foregroundColor: Theme.of(context).colorScheme.primary,
           side: BorderSide(color: Theme.of(context).colorScheme.primary),
           padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
         ),
       ),
     );
@@ -1266,8 +1644,13 @@ class _ProfilePageState extends State<ProfilePage> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Theme.of(context).colorScheme.brightness == Brightness.dark ? const Color(0xFF253040) : Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      backgroundColor:
+          Theme.of(context).colorScheme.brightness == Brightness.dark
+          ? const Color(0xFF253040)
+          : Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       builder: (context) => StatefulBuilder(
         builder: (context, setModalState) => Padding(
           padding: EdgeInsets.only(
@@ -1282,7 +1665,11 @@ class _ProfilePageState extends State<ProfilePage> {
             children: [
               Text(
                 'Add Payment Method',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
               ),
               const SizedBox(height: 24),
               // Type Selector (Debit vs Credit)
@@ -1295,14 +1682,18 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
               const SizedBox(height: 24),
               CustomTextField(
-                label: _selectedPaymentType == 'credit' ? 'Cardholder Name *' : 'Cardholder Name (Optional)',
+                label: _selectedPaymentType == 'credit'
+                    ? 'Cardholder Name *'
+                    : 'Cardholder Name (Optional)',
                 hint: 'John Doe',
                 prefixIcon: LucideIcons.user,
                 controller: _cardNameController,
               ),
               const SizedBox(height: 16),
               CustomTextField(
-                label: _selectedPaymentType == 'credit' ? 'Card Number *' : 'Card Number (Optional)',
+                label: _selectedPaymentType == 'credit'
+                    ? 'Card Number *'
+                    : 'Card Number (Optional)',
                 hint: '0000 0000 0000 0000',
                 prefixIcon: LucideIcons.creditCard,
                 keyboardType: TextInputType.number,
@@ -1313,7 +1704,9 @@ class _ProfilePageState extends State<ProfilePage> {
                 children: [
                   Expanded(
                     child: CustomTextField(
-                      label: _selectedPaymentType == 'credit' ? 'Expiry *' : 'Expiry (Optional)',
+                      label: _selectedPaymentType == 'credit'
+                          ? 'Expiry *'
+                          : 'Expiry (Optional)',
                       hint: 'MM/YY',
                       prefixIcon: LucideIcons.calendar,
                       controller: _expiryController,
@@ -1322,7 +1715,9 @@ class _ProfilePageState extends State<ProfilePage> {
                   const SizedBox(width: 16),
                   Expanded(
                     child: CustomTextField(
-                      label: _selectedPaymentType == 'credit' ? 'CVV *' : 'CVV (Optional)',
+                      label: _selectedPaymentType == 'credit'
+                          ? 'CVV *'
+                          : 'CVV (Optional)',
                       hint: '000',
                       prefixIcon: LucideIcons.lock,
                       keyboardType: TextInputType.number,
@@ -1340,7 +1735,8 @@ class _ProfilePageState extends State<ProfilePage> {
                         ? null
                         : () async {
                             bool success = false;
-                            final cardNo = _cardNumberController.text.replaceAll(' ', '');
+                            final cardNo = _cardNumberController.text
+                                .replaceAll(' ', '');
                             final cardName = _cardNameController.text.trim();
                             final expiry = _expiryController.text.trim();
                             final cvv = _cvvController.text.trim();
@@ -1348,34 +1744,64 @@ class _ProfilePageState extends State<ProfilePage> {
                             if (_selectedPaymentType == 'credit') {
                               if (cardName.isEmpty) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Cardholder name is required for Credit Card'), backgroundColor: Colors.red),
+                                  const SnackBar(
+                                    content: Text(
+                                      'Cardholder name is required for Credit Card',
+                                    ),
+                                    backgroundColor: Colors.red,
+                                  ),
                                 );
                                 return;
                               }
                               if (cardNo.length < 16) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Invalid card number (must be 16 digits)'), backgroundColor: Colors.red),
+                                  const SnackBar(
+                                    content: Text(
+                                      'Invalid card number (must be 16 digits)',
+                                    ),
+                                    backgroundColor: Colors.red,
+                                  ),
                                 );
                                 return;
                               }
                               if (expiry.isEmpty || !expiry.contains('/')) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Invalid expiry date (MM/YY)'), backgroundColor: Colors.red),
+                                  const SnackBar(
+                                    content: Text(
+                                      'Invalid expiry date (MM/YY)',
+                                    ),
+                                    backgroundColor: Colors.red,
+                                  ),
                                 );
                                 return;
                               }
                               if (cvv.length < 3) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Invalid CVV (must be 3 digits)'), backgroundColor: Colors.red),
+                                  const SnackBar(
+                                    content: Text(
+                                      'Invalid CVV (must be 3 digits)',
+                                    ),
+                                    backgroundColor: Colors.red,
+                                  ),
                                 );
                                 return;
                               }
                             }
 
                             // If debit is selected, card fields are optional
-                            final last4Val = cardNo.isNotEmpty ? (cardNo.length >= 4 ? cardNo.substring(cardNo.length - 4) : cardNo) : '0000';
-                            final brandVal = cardNo.isNotEmpty ? (cardNo.startsWith('4') ? 'Visa' : 'Mastercard') : 'Debit';
-                            final expiryVal = expiry.isNotEmpty ? expiry : '12/99';
+                            final last4Val = cardNo.isNotEmpty
+                                ? (cardNo.length >= 4
+                                      ? cardNo.substring(cardNo.length - 4)
+                                      : cardNo)
+                                : '0000';
+                            final brandVal = cardNo.isNotEmpty
+                                ? (cardNo.startsWith('4')
+                                      ? 'Visa'
+                                      : 'Mastercard')
+                                : 'Debit';
+                            final expiryVal = expiry.isNotEmpty
+                                ? expiry
+                                : '12/99';
 
                             success = await auth.addPaymentMethod(
                               type: _selectedPaymentType,
@@ -1395,7 +1821,9 @@ class _ProfilePageState extends State<ProfilePage> {
                                 _bankNameController.clear();
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
-                                    content: Text('Payment method added successfully!'),
+                                    content: Text(
+                                      'Payment method added successfully!',
+                                    ),
                                     behavior: SnackBarBehavior.floating,
                                     backgroundColor: Colors.green,
                                   ),
@@ -1403,7 +1831,10 @@ class _ProfilePageState extends State<ProfilePage> {
                               } else {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
-                                    content: Text(auth.error ?? 'Failed to add payment method'),
+                                    content: Text(
+                                      auth.error ??
+                                          'Failed to add payment method',
+                                    ),
                                     behavior: SnackBarBehavior.floating,
                                     backgroundColor: Colors.red,
                                   ),
@@ -1415,11 +1846,23 @@ class _ProfilePageState extends State<ProfilePage> {
                       backgroundColor: Theme.of(context).colorScheme.primary,
                       foregroundColor: Theme.of(context).colorScheme.onPrimary,
                       padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
                     ),
                     child: auth.isLoading
-                        ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                        : const Text('Save Payment Method', style: TextStyle(fontWeight: FontWeight.bold)),
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Text(
+                            'Save Payment Method',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
                   ),
                 ),
               ),
@@ -1443,10 +1886,14 @@ class _ProfilePageState extends State<ProfilePage> {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
           decoration: BoxDecoration(
-            color: isSelected ? Theme.of(context).colorScheme.primary.withOpacity(0.05) : Colors.transparent,
+            color: isSelected
+                ? Theme.of(context).colorScheme.primary.withOpacity(0.05)
+                : Colors.transparent,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: isSelected ? Theme.of(context).colorScheme.primary : (isDark ? Colors.white10 : Colors.grey[200]!),
+              color: isSelected
+                  ? Theme.of(context).colorScheme.primary
+                  : (isDark ? Colors.white10 : Colors.grey[200]!),
               width: 1.5,
             ),
           ),
@@ -1459,7 +1906,9 @@ class _ProfilePageState extends State<ProfilePage> {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: isSelected ? Theme.of(context).colorScheme.primary : Colors.grey,
+                    color: isSelected
+                        ? Theme.of(context).colorScheme.primary
+                        : Colors.grey,
                     width: 2,
                   ),
                 ),
@@ -1506,7 +1955,9 @@ class _ProfilePageState extends State<ProfilePage> {
           foregroundColor: Colors.red,
           side: BorderSide(color: Colors.red.withOpacity(0.2)),
           padding: const EdgeInsets.symmetric(vertical: 18),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
         ),
       ),
     );
@@ -1515,8 +1966,13 @@ class _ProfilePageState extends State<ProfilePage> {
   void _showImageUploadOptions(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Theme.of(context).colorScheme.brightness == Brightness.dark ? const Color(0xFF253040) : Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      backgroundColor:
+          Theme.of(context).colorScheme.brightness == Brightness.dark
+          ? const Color(0xFF253040)
+          : Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       builder: (context) => Container(
         padding: const EdgeInsets.all(32),
         child: Column(
@@ -1533,19 +1989,36 @@ class _ProfilePageState extends State<ProfilePage> {
             const SizedBox(height: 24),
             Text(
               'Update Profile Photo',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
             ),
             const SizedBox(height: 8),
             Text(
               'Choose a source for your new profile picture',
-              style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
+              style: TextStyle(
+                fontSize: 14,
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+              ),
             ),
             const SizedBox(height: 32),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                _buildUploadOption(context, LucideIcons.camera, 'Camera', onTap: () => _pickImage(ImageSource.camera, isProfile: true)),
-                _buildUploadOption(context, LucideIcons.image, 'Gallery', onTap: () => _pickImage(ImageSource.gallery, isProfile: true)),
+                _buildUploadOption(
+                  context,
+                  LucideIcons.camera,
+                  'Camera',
+                  onTap: () => _pickImage(ImageSource.camera, isProfile: true),
+                ),
+                _buildUploadOption(
+                  context,
+                  LucideIcons.image,
+                  'Gallery',
+                  onTap: () => _pickImage(ImageSource.gallery, isProfile: true),
+                ),
               ],
             ),
             const SizedBox(height: 16),
@@ -1555,18 +2028,47 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  Widget _buildUploadListTile(BuildContext context, IconData icon, String title, String subtitle, {bool isDestructive = false}) {
+  Widget _buildUploadListTile(
+    BuildContext context,
+    IconData icon,
+    String title,
+    String subtitle, {
+    bool isDestructive = false,
+  }) {
     return ListTile(
       leading: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: isDestructive ? Colors.red.withOpacity(0.1) : Theme.of(context).colorScheme.primary.withOpacity(0.1),
+          color: isDestructive
+              ? Colors.red.withOpacity(0.1)
+              : Theme.of(context).colorScheme.primary.withOpacity(0.1),
           borderRadius: BorderRadius.circular(10),
         ),
-        child: Icon(icon, color: isDestructive ? Colors.red : Theme.of(context).colorScheme.primary, size: 20),
+        child: Icon(
+          icon,
+          color: isDestructive
+              ? Colors.red
+              : Theme.of(context).colorScheme.primary,
+          size: 20,
+        ),
       ),
-      title: Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: isDestructive ? Colors.red : Theme.of(context).colorScheme.primary)),
-      subtitle: Text(subtitle, style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
+      title: Text(
+        title,
+        style: TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 15,
+          color: isDestructive
+              ? Colors.red
+              : Theme.of(context).colorScheme.primary,
+        ),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: TextStyle(
+          fontSize: 12,
+          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+        ),
+      ),
       onTap: () {
         Navigator.pop(context);
         setState(() {
@@ -1580,7 +2082,11 @@ class _ProfilePageState extends State<ProfilePage> {
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(isDestructive ? 'Profile photo removed' : 'Profile photo updated successfully!'),
+            content: Text(
+              isDestructive
+                  ? 'Profile photo removed'
+                  : 'Profile photo updated successfully!',
+            ),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -1588,7 +2094,13 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  Widget _buildUploadOption(BuildContext context, IconData icon, String label, {required VoidCallback onTap, bool isDestructive = false}) {
+  Widget _buildUploadOption(
+    BuildContext context,
+    IconData icon,
+    String label, {
+    required VoidCallback onTap,
+    bool isDestructive = false,
+  }) {
     return InkWell(
       onTap: onTap,
       child: Column(
@@ -1596,13 +2108,30 @@ class _ProfilePageState extends State<ProfilePage> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: isDestructive ? Colors.red.withOpacity(0.1) : Theme.of(context).colorScheme.primary.withOpacity(0.05),
+              color: isDestructive
+                  ? Colors.red.withOpacity(0.1)
+                  : Theme.of(context).colorScheme.primary.withOpacity(0.05),
               shape: BoxShape.circle,
             ),
-            child: Icon(icon, color: isDestructive ? Colors.red : Theme.of(context).colorScheme.primary, size: 24),
+            child: Icon(
+              icon,
+              color: isDestructive
+                  ? Colors.red
+                  : Theme.of(context).colorScheme.primary,
+              size: 24,
+            ),
           ),
           const SizedBox(height: 8),
-          Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: isDestructive ? Colors.red : Theme.of(context).colorScheme.primary)),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: isDestructive
+                  ? Colors.red
+                  : Theme.of(context).colorScheme.primary,
+            ),
+          ),
         ],
       ),
     );
@@ -1628,9 +2157,20 @@ class _ProfilePageState extends State<ProfilePage> {
             SnackBar(
               content: Row(
                 children: [
-                  const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)),
+                  const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  ),
                   const SizedBox(width: 16),
-                  Text(isProfile ? 'Uploading profile photo...' : 'Uploading cover photo...'),
+                  Text(
+                    isProfile
+                        ? 'Uploading profile photo...'
+                        : 'Uploading cover photo...',
+                  ),
                 ],
               ),
               duration: const Duration(seconds: 2),
@@ -1641,9 +2181,9 @@ class _ProfilePageState extends State<ProfilePage> {
           final auth = Provider.of<AuthProvider>(context, listen: false);
           final bytes = await pickedFile.readAsBytes();
           final base64Image = base64Encode(bytes);
-          
+
           final newImageUrl = await auth.uploadImage(base64Image);
-          
+
           if (newImageUrl != null) {
             final success = await auth.updateProfile(
               profileImage: isProfile ? newImageUrl : null,
@@ -1652,7 +2192,11 @@ class _ProfilePageState extends State<ProfilePage> {
             if (success && mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text(isProfile ? 'Profile photo updated successfully!' : 'Cover photo updated successfully!'),
+                  content: Text(
+                    isProfile
+                        ? 'Profile photo updated successfully!'
+                        : 'Cover photo updated successfully!',
+                  ),
                   behavior: SnackBarBehavior.floating,
                   backgroundColor: Colors.green,
                 ),
@@ -1682,9 +2226,9 @@ class _ProfilePageState extends State<ProfilePage> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error picking image: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error picking image: $e')));
       }
     }
   }
@@ -1692,8 +2236,13 @@ class _ProfilePageState extends State<ProfilePage> {
   void _showCoverImageOptions(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Theme.of(context).colorScheme.brightness == Brightness.dark ? const Color(0xFF253040) : Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      backgroundColor:
+          Theme.of(context).colorScheme.brightness == Brightness.dark
+          ? const Color(0xFF253040)
+          : Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       builder: (context) => Container(
         padding: const EdgeInsets.symmetric(vertical: 24),
         child: Column(
@@ -1701,11 +2250,30 @@ class _ProfilePageState extends State<ProfilePage> {
           children: [
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-              child: Text('Update Cover Photo', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+              child: Text(
+                'Update Cover Photo',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
             ),
             const Divider(),
-            _buildCoverListTile(context, LucideIcons.camera, 'Camera', 'Capture a new cover image', onTap: () => _pickImage(ImageSource.camera, isProfile: false)),
-            _buildCoverListTile(context, LucideIcons.image, 'Upload from Gallery', 'Select from your library', onTap: () => _pickImage(ImageSource.gallery, isProfile: false)),
+            _buildCoverListTile(
+              context,
+              LucideIcons.camera,
+              'Camera',
+              'Capture a new cover image',
+              onTap: () => _pickImage(ImageSource.camera, isProfile: false),
+            ),
+            _buildCoverListTile(
+              context,
+              LucideIcons.image,
+              'Upload from Gallery',
+              'Select from your library',
+              onTap: () => _pickImage(ImageSource.gallery, isProfile: false),
+            ),
             const SizedBox(height: 16),
           ],
         ),
@@ -1713,7 +2281,13 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  Widget _buildCoverListTile(BuildContext context, IconData icon, String title, String subtitle, {required VoidCallback onTap}) {
+  Widget _buildCoverListTile(
+    BuildContext context,
+    IconData icon,
+    String title,
+    String subtitle, {
+    required VoidCallback onTap,
+  }) {
     return ListTile(
       leading: Container(
         padding: const EdgeInsets.all(8),
@@ -1721,10 +2295,27 @@ class _ProfilePageState extends State<ProfilePage> {
           color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
           borderRadius: BorderRadius.circular(10),
         ),
-        child: Icon(icon, color: Theme.of(context).colorScheme.primary, size: 20),
+        child: Icon(
+          icon,
+          color: Theme.of(context).colorScheme.primary,
+          size: 20,
+        ),
       ),
-      title: Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Theme.of(context).colorScheme.primary)),
-      subtitle: Text(subtitle, style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
+      title: Text(
+        title,
+        style: TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 15,
+          color: Theme.of(context).colorScheme.primary,
+        ),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: TextStyle(
+          fontSize: 12,
+          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+        ),
+      ),
       onTap: onTap,
     );
   }

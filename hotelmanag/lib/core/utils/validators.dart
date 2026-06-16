@@ -3,13 +3,15 @@ class AppValidators {
     if (value == null || value.trim().isEmpty) {
       return 'Email address is required.';
     }
-    
+
     // Robust email regex pattern
-    final emailRegex = RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
+    final emailRegex = RegExp(
+      r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+    );
     if (!emailRegex.hasMatch(value.trim())) {
       return 'Please enter a valid email address.';
     }
-    
+
     return null;
   }
 
@@ -21,27 +23,27 @@ class AppValidators {
     if (trimmed.isEmpty) {
       return 'Password is required.';
     }
-    
+
     if (trimmed.length < 8) {
       return 'Password must be at least 8 characters.';
     }
-    
+
     if (trimmed.length > 72) {
       return 'Password must not exceed 72 characters.';
     }
-    
+
     if (!RegExp(r'[A-Z]').hasMatch(trimmed)) {
       return 'Password must contain at least one capital letter.';
     }
-    
+
     if (!RegExp(r'[0-9]').hasMatch(trimmed)) {
       return 'Password must contain at least one number.';
     }
-    
+
     if (!RegExp(r'[^A-Za-z0-9]|_').hasMatch(trimmed)) {
       return 'Password must contain at least one special character.';
     }
-    
+
     return null;
   }
 
@@ -80,7 +82,7 @@ class AppValidators {
     if (clean.length < 13 || clean.length > 19) {
       return 'Card number must be 13-19 digits long.';
     }
-    
+
     // Luhn algorithm check
     int sum = 0;
     bool alternate = false;
@@ -95,11 +97,11 @@ class AppValidators {
       sum += n;
       alternate = !alternate;
     }
-    
+
     if (sum % 10 != 0) {
       return 'Invalid card number.';
     }
-    
+
     return null;
   }
 
@@ -110,21 +112,21 @@ class AppValidators {
     if (!RegExp(r'^(0[1-9]|1[0-2])\/?([0-9]{2})$').hasMatch(value)) {
       return 'Invalid expiry format (MM/YY).';
     }
-    
+
     final parts = value.split('/');
     if (parts.length != 2) return 'Invalid format';
-    
+
     final month = int.parse(parts[0]);
     final year = int.parse(parts[1]) + 2000;
-    
+
     final now = DateTime.now();
     final expiryDate = DateTime(year, month, 1);
     final currentDate = DateTime(now.year, now.month, 1);
-    
+
     if (expiryDate.isBefore(currentDate)) {
       return 'Card has expired.';
     }
-    
+
     return null;
   }
 

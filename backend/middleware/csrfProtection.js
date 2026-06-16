@@ -24,6 +24,7 @@ const TRUSTED_ORIGINS = [
   "https://luxestay-frontend.vercel.app",
   "https://luxestay-admin.vercel.app",
   "https://hotel-management-admin-eta.vercel.app",
+  "https://athithigriha-frontend.vercel.app",
   "",
   ...RAW_ORIGINS,
 ];
@@ -38,7 +39,8 @@ function isTrustedVercelDomain(origin) {
       "luxestay-admin",
       "hotel-management-admin-eta",
       "hotel-management-frontend",
-      "hotel-management"
+      "hotel-management",
+      "athithigriha"
     ];
     return hostname.endsWith(".vercel.app") && allowedSubstrings.some(sub => hostname.includes(sub));
   } catch {

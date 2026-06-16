@@ -492,7 +492,7 @@ router.post("/register", authLimiter, validateRegisterPayload, async (req, res, 
       if (user.isVerified) {
         return res.status(409).json({
           success: false,
-          message: "An account with this email already exists. Please sign in.",
+          message: "Already existing user",
         });
       } else {
         // User exists but unverified. Re-send email first before saving updates.
@@ -764,6 +764,9 @@ router.post("/login", loginLimiter, validateLoginPayload, async (req, res, next)
       await bcrypt.compare(password, DUMMY_HASH);
       if (user && !user.isActive) {
         return res.status(403).json({ success: false, message: "Account is disabled. Please contact support." });
+      }
+      if (!user) {
+        return res.status(404).json({ success: false, message: "User doesn't exist" });
       }
       return res.status(401).json({ success: false, message: "Invalid credentials." });
     }
@@ -1075,7 +1078,7 @@ router.post("/phone/verify", otpRateLimiter, async (req, res, next) => {
 // ── POST /api/auth/google ──────────────────────────────────
 router.post("/google", async (req, res, next) => {
   try {
-    const { idToken } = req.body;
+    const { idToken, action } = req.body;
     if (!idToken) return res.status(400).json({ success: false, message: "ID Token is required" });
 
     // Web Application Client ID (primary — Flutter uses this as serverClientId)
@@ -1163,6 +1166,10 @@ router.post("/google", async (req, res, next) => {
     let user = await User.findOne({ email });
 
     if (!user) {
+      if (action === "login") {
+        return res.status(404).json({ success: false, message: "User doesn't exist" });
+      }
+
       // Create User
       user = await User.create({
         name,
@@ -1170,6 +1177,9 @@ router.post("/google", async (req, res, next) => {
         passwordHash: await bcrypt.hash(crypto.randomBytes(32).toString("hex"), 10),
         phone: "",
         profileImage: picture || "",
+        isVerified: true,
+        accountStatus: "active",
+        isActive: true,
       });
 
       // Create linked Guest
@@ -1184,6 +1194,28 @@ router.post("/google", async (req, res, next) => {
       await user.save();
 
       logger.info({ email, name }, "New Google user registered with Guest record");
+    } else {
+      if (action === "register") {
+        return res.status(409).json({ success: false, message: "Already existing user" });
+      }
+
+      // Ensure existing user is marked verified & active when logging in via Google
+      let updated = false;
+      if (!user.isVerified) {
+        user.isVerified = true;
+        updated = true;
+      }
+      if (!user.isActive) {
+        user.isActive = true;
+        updated = true;
+      }
+      if (user.accountStatus !== "active") {
+        user.accountStatus = "active";
+        updated = true;
+      }
+      if (updated) {
+        await user.save();
+      }
     }
 
     const token = jwt.sign(

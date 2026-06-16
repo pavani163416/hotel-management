@@ -59,10 +59,18 @@ class CurrencyProvider extends ChangeNotifier {
     final sym = symbols[_currency] ?? '\$';
 
     if (_currency == 'INR') {
-      final f = NumberFormat.currency(locale: 'en_IN', symbol: sym, decimalDigits: 0);
+      final f = NumberFormat.currency(
+        locale: 'en_IN',
+        symbol: sym,
+        decimalDigits: 0,
+      );
       return f.format(converted);
     } else {
-      final f = NumberFormat.currency(locale: 'en_US', symbol: sym, decimalDigits: 0);
+      final f = NumberFormat.currency(
+        locale: 'en_US',
+        symbol: sym,
+        decimalDigits: 0,
+      );
       return f.format(converted);
     }
   }

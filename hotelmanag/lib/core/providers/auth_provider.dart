@@ -68,14 +68,11 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
 
   Future<(String, String)?> fetchCaptcha() async {
     final result = await _authRepository.fetchCaptcha();
-    return result.fold(
-      (failure) {
-        _error = failure.message;
-        notifyListeners();
-        return null;
-      },
-      (captcha) => captcha,
-    );
+    return result.fold((failure) {
+      _error = failure.message;
+      notifyListeners();
+      return null;
+    }, (captcha) => captcha);
   }
 
   /// Registers the device FCM token with the backend so push notifications work.
@@ -91,21 +88,31 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
     }
   }
 
-  Future<void> login(String email, String password, {String? captchaId, String? captchaAnswer}) async {
+  Future<void> login(
+    String email,
+    String password, {
+    String? captchaId,
+    String? captchaAnswer,
+  }) async {
     _isLoading = true;
     _error = null;
     _unverifiedEmail = null;
     notifyListeners();
 
-    final result = await _authRepository.login(email, password, captchaId: captchaId, captchaAnswer: captchaAnswer);
+    final result = await _authRepository.login(
+      email,
+      password,
+      captchaId: captchaId,
+      captchaAnswer: captchaAnswer,
+    );
 
     await result.fold(
       (failure) async {
         if (failure is UnverifiedEmailFailure) {
           _unverifiedEmail = email;
           _error = failure.message;
-        } else if (failure.message.toLowerCase().contains('not verified') || 
-                   failure.message.toLowerCase().contains('verify')) {
+        } else if (failure.message.toLowerCase().contains('not verified') ||
+            failure.message.toLowerCase().contains('verify')) {
           _unverifiedEmail = email;
           _error = failure.message;
         } else {
@@ -141,7 +148,10 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
     notifyListeners();
 
     final result = await _authRepository.register(
-      name, email, password, phone,
+      name,
+      email,
+      password,
+      phone,
       city: city,
       captchaId: captchaId,
       captchaAnswer: captchaAnswer,
@@ -223,10 +233,15 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
     _error = null;
     notifyListeners();
     try {
-      final response = await _apiService!.post('auth/phone/send', data: {'phone': fullPhone});
+      final response = await _apiService!.post(
+        'auth/phone/send',
+        data: {'phone': fullPhone},
+      );
       _isLoading = false;
       notifyListeners();
-      final d = response.data is Map ? response.data : (response.data?['data'] ?? {});
+      final d = response.data is Map
+          ? response.data
+          : (response.data?['data'] ?? {});
       return d as Map<String, dynamic>?;
     } catch (e) {
       _error = e.toString().contains('message')
@@ -244,10 +259,10 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
     _error = null;
     notifyListeners();
     try {
-      final response = await _apiService!.post('auth/phone/verify', data: {
-        'phone': fullPhone,
-        'code': code.trim(),
-      });
+      final response = await _apiService!.post(
+        'auth/phone/verify',
+        data: {'phone': fullPhone, 'code': code.trim()},
+      );
       final raw = response.data is Map ? response.data : {};
       final d = (raw['data'] ?? raw) as Map<String, dynamic>;
       final token = d['token'] as String?;
@@ -276,8 +291,6 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
   Future<void> loadCachedAuth() async {
     const storage = FlutterSecureStorage();
     final prefs = await SharedPreferences.getInstance();
-    
-
 
     final token = await storage.read(key: AppConstants.tokenKey);
     if (token == null || token.isEmpty) return;
@@ -287,15 +300,14 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
       try {
         final userData = jsonDecode(userDataString) as Map<String, dynamic>;
         _user = UserModel.fromJson(userData);
-      } catch (e) {
-      }
+      } catch (e) {}
     }
   }
 
   Future<bool> tryAutoLogin() async {
     const storage = FlutterSecureStorage();
     final token = await storage.read(key: AppConstants.tokenKey);
-    
+
     if (token == null || token.isEmpty) return false;
 
     // Load cached user data if it exists for instant startup
@@ -305,8 +317,7 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
         final userData = jsonDecode(userDataString) as Map<String, dynamic>;
         _user = UserModel.fromJson(userData);
         notifyListeners();
-      } catch (e) {
-      }
+      } catch (e) {}
     }
 
     _isLoading = true;
@@ -314,17 +325,18 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
 
     try {
       final result = await _authRepository.getMe();
-      
+
       return await result.fold(
         (failure) async {
           // If it's an explicit auth failure (Unauthorized/Expired), clear the session.
           // Otherwise, keep the cached session so they are not logged out when offline/poor connection.
           final errorMsg = failure.message.toLowerCase();
-          final isAuthFailure = errorMsg.contains('unauthorized') || 
-                                errorMsg.contains('token') ||
-                                errorMsg.contains('invalid') ||
-                                errorMsg.contains('expired');
-          
+          final isAuthFailure =
+              errorMsg.contains('unauthorized') ||
+              errorMsg.contains('token') ||
+              errorMsg.contains('invalid') ||
+              errorMsg.contains('expired');
+
           if (isAuthFailure) {
             await storage.delete(key: AppConstants.tokenKey);
             await storage.delete(key: 'user_data');
@@ -368,28 +380,34 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
       const storage = FlutterSecureStorage();
       await storage.delete(key: AppConstants.tokenKey);
       await storage.delete(key: 'user_data');
-      
+
       try {
         await sl<FavoritesProvider>().clearFavorites();
         sl<PromoProvider>().reset();
       } catch (_) {}
-      
+
       try {
         await _googleSignIn.signOut();
       } catch (_) {}
 
       if (_user != null) {
         _user = UserEntity(
-          id: '', name: '', email: '', phone: '', city: '',
-          profileImage: '', coverImage: '', paymentMethods: const [],
+          id: '',
+          name: '',
+          email: '',
+          phone: '',
+          city: '',
+          profileImage: '',
+          coverImage: '',
+          paymentMethods: const [],
         );
       }
       _user = null;
-      
+
       try {
         sl<BookingProvider>().reset();
       } catch (_) {}
-      
+
       try {
         await DefaultCacheManager().emptyCache();
       } catch (_) {}
@@ -402,7 +420,7 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
     }
   }
 
-  Future<bool> signInWithGoogle() async {
+  Future<bool> signInWithGoogle({bool isRegister = false}) async {
     try {
       debugPrint('[GoogleSignIn] Starting Google Sign-In flow...');
       _isLoading = true;
@@ -414,7 +432,10 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
 
       debugPrint('[GoogleSignIn] Triggering account chooser picker...');
       final GoogleSignInAccount? account = await _googleSignIn.signIn();
-      if (kDebugMode) debugPrint('[GoogleSignIn] Account picker returned: ${account?.email ?? "null"}');
+      if (kDebugMode)
+        debugPrint(
+          '[GoogleSignIn] Account picker returned: ${account?.email ?? "null"}',
+        );
 
       if (account == null) {
         debugPrint('[GoogleSignIn] User canceled account selection.');
@@ -426,10 +447,18 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
       debugPrint('[GoogleSignIn] Retrieving authentication credentials...');
       final GoogleSignInAuthentication auth = await account.authentication;
       final String? idToken = auth.idToken;
-      debugPrint('[GoogleSignIn] Token retrieved: ${idToken != null ? "YES (length ${idToken.length})" : "NO"}');
-      debugPrint('[GoogleSignIn] Token starts with: ${idToken?.substring(0, idToken.length > 20 ? 20 : idToken.length)}');
-      debugPrint('[GoogleSignIn] Is JWT (3 segments): ${idToken?.split('.').length == 3}');
-      debugPrint('[GoogleSignIn] AccessToken present: ${auth.accessToken != null}');
+      debugPrint(
+        '[GoogleSignIn] Token retrieved: ${idToken != null ? "YES (length ${idToken.length})" : "NO"}',
+      );
+      debugPrint(
+        '[GoogleSignIn] Token starts with: ${idToken?.substring(0, idToken.length > 20 ? 20 : idToken.length)}',
+      );
+      debugPrint(
+        '[GoogleSignIn] Is JWT (3 segments): ${idToken?.split('.').length == 3}',
+      );
+      debugPrint(
+        '[GoogleSignIn] AccessToken present: ${auth.accessToken != null}',
+      );
 
       if (idToken == null || idToken.isEmpty) {
         debugPrint('[GoogleSignIn] Error: Token is null or empty!');
@@ -440,12 +469,17 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
       }
 
       debugPrint('[GoogleSignIn] Sending token to backend for verification...');
-      final res = await _authRepository.signInWithGoogle(idToken);
+      final res = await _authRepository.signInWithGoogle(
+        idToken,
+        action: isRegister ? 'register' : 'login',
+      );
       debugPrint('[GoogleSignIn] Backend response received.');
 
       return res.fold(
         (failure) {
-          debugPrint('[GoogleSignIn] Backend verification failed: ${failure.message}');
+          debugPrint(
+            '[GoogleSignIn] Backend verification failed: ${failure.message}',
+          );
           _error = failure.message;
           _isLoading = false;
           notifyListeners();
@@ -453,7 +487,10 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
         },
         (data) async {
           final (user, token) = data;
-          if (kDebugMode) debugPrint('[GoogleSignIn] Backend verification succeeded! Logged in as: ${user.email}');
+          if (kDebugMode)
+            debugPrint(
+              '[GoogleSignIn] Backend verification succeeded! Logged in as: ${user.email}',
+            );
           _user = user;
           await _saveAuthData(user, token);
           _isLoading = false;
@@ -468,6 +505,29 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
       _isLoading = false;
       notifyListeners();
       return false;
+    }
+  }
+
+  Future<GoogleSignInAccount?> signInWithGoogleClient() async {
+    try {
+      debugPrint('[GoogleSignIn] Starting client-only Google Sign-In flow...');
+      _isLoading = true;
+      _error = null;
+      notifyListeners();
+
+      // Sign out from any current session to force account picker
+      await _googleSignIn.signOut().catchError((_) {});
+
+      final GoogleSignInAccount? account = await _googleSignIn.signIn();
+      _isLoading = false;
+      notifyListeners();
+      return account;
+    } catch (e, stack) {
+      debugPrint('[GoogleSignIn] Client-only Sign-In Exception: $e\n$stack');
+      _error = e.toString();
+      _isLoading = false;
+      notifyListeners();
+      return null;
     }
   }
 
@@ -611,12 +671,12 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
         city: user.city,
         profileImage: user.profileImage,
         coverImage: user.coverImage,
-        paymentMethods: const [], // SECURITY (TC-047): Never cache payment methods in app state
+        paymentMethods:
+            const [], // SECURITY (TC-047): Never cache payment methods in app state
       );
       final userJson = jsonEncode(userModel.toJson());
       await storage.write(key: 'user_data', value: userJson);
-    } catch (e) {
-    }
+    } catch (e) {}
   }
 
   Future<bool> changePassword(String oldPassword, String newPassword) async {
@@ -624,7 +684,10 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
     _error = null;
     notifyListeners();
 
-    final result = await _authRepository.changePassword(oldPassword, newPassword);
+    final result = await _authRepository.changePassword(
+      oldPassword,
+      newPassword,
+    );
 
     return result.fold(
       (failure) {
@@ -667,14 +730,19 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
     );
   }
 
-  Future<bool> sendFirebaseSignInLink(String email, String name, String phone) async {
+  Future<bool> sendFirebaseSignInLink(
+    String email,
+    String name,
+    String phone,
+  ) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
       final acs = ActionCodeSettings(
-        url: 'https://hotel-mgnt-8ffff.firebaseapp.com/firebase-auth?email=$email',
+        url:
+            'https://hotel-mgnt-8ffff.firebaseapp.com/firebase-auth?email=$email',
         handleCodeInApp: true,
         androidPackageName: 'com.example.hotelmanag',
         androidInstallApp: true,
@@ -690,7 +758,10 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
       await prefs.setString('email_for_link', email);
       await prefs.setString('pending_name', name);
       await prefs.setString('pending_phone', phone);
-      await prefs.setString('email_link_timestamp', DateTime.now().millisecondsSinceEpoch.toString());
+      await prefs.setString(
+        'email_link_timestamp',
+        DateTime.now().millisecondsSinceEpoch.toString(),
+      );
 
       _isLoading = false;
       notifyListeners();
@@ -710,17 +781,20 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
 
     try {
       final prefs = await SharedPreferences.getInstance();
-      
+
       final timestampStr = prefs.getString('email_link_timestamp');
       if (timestampStr != null) {
         final timestamp = int.tryParse(timestampStr) ?? 0;
         final elapsed = DateTime.now().millisecondsSinceEpoch - timestamp;
-        if (elapsed > 24 * 60 * 60 * 1000) { // 24 hours
+        if (elapsed > 24 * 60 * 60 * 1000) {
+          // 24 hours
           await prefs.remove('email_for_link');
           await prefs.remove('pending_name');
           await prefs.remove('pending_phone');
           await prefs.remove('email_link_timestamp');
-          throw Exception("Verification link has expired. Please request a new one.");
+          throw Exception(
+            "Verification link has expired. Please request a new one.",
+          );
         }
       }
 
@@ -735,7 +809,9 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
       await prefs.remove('email_link_timestamp');
 
       if (email.isEmpty) {
-        throw Exception("No email found for verification link. Please sign up again.");
+        throw Exception(
+          "No email found for verification link. Please sign up again.",
+        );
       }
 
       if (FirebaseAuth.instance.isSignInWithEmailLink(emailLink)) {
@@ -755,7 +831,7 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
           name: name,
           phone: phone,
         );
-        
+
         return result.fold(
           (failure) {
             _error = failure.message;
@@ -767,7 +843,7 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
             final (user, token) = data;
             _user = user;
             _unverifiedEmail = null;
-            
+
             // Clean up cached registration details
 
             await _saveAuthData(user, token);
@@ -826,7 +902,11 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
     }
   }
 
-  Future<bool> signInWithPhoneOtp(String smsCode, {required String verificationId, required String phoneNumber}) async {
+  Future<bool> signInWithPhoneOtp(
+    String smsCode, {
+    required String verificationId,
+    required String phoneNumber,
+  }) async {
     _isLoading = true;
     _error = null;
     notifyListeners();

@@ -154,10 +154,12 @@ class HotelProvider extends ChangeNotifier {
   void _applyFilters() {
     _filteredHotels = _allHotels.where((hotel) {
       final searchStr = _hotelSearchCache[hotel.id] ?? '';
-      final matchesSearch = searchStr.contains(_searchQuery) ||
-                            hotel.name.toLowerCase().contains(_searchQuery);
-      final matchesPrice = hotel.pricePerNight >= _priceRange.start &&
-                           hotel.pricePerNight <= _priceRange.end;
+      final matchesSearch =
+          searchStr.contains(_searchQuery) ||
+          hotel.name.toLowerCase().contains(_searchQuery);
+      final matchesPrice =
+          hotel.pricePerNight >= _priceRange.start &&
+          hotel.pricePerNight <= _priceRange.end;
 
       bool matchesType = true;
       if (_propertyType != 'Any') {
@@ -178,17 +180,26 @@ class HotelProvider extends ChangeNotifier {
 
       final matchesRating = hotel.rating >= _minRating;
 
-      final matchesAmenities = _selectedAmenities.isEmpty ||
-                               _selectedAmenities.every((a) => hotel.amenities.contains(a));
+      final matchesAmenities =
+          _selectedAmenities.isEmpty ||
+          _selectedAmenities.every((a) => hotel.amenities.contains(a));
 
-      return matchesSearch && matchesPrice && matchesType && matchesRating && matchesAmenities;
+      return matchesSearch &&
+          matchesPrice &&
+          matchesType &&
+          matchesRating &&
+          matchesAmenities;
     }).toList();
 
     // Apply Sorting
     if (_sortBy == 'Price: Low to High') {
-      _filteredHotels.sort((a, b) => a.pricePerNight.compareTo(b.pricePerNight));
+      _filteredHotels.sort(
+        (a, b) => a.pricePerNight.compareTo(b.pricePerNight),
+      );
     } else if (_sortBy == 'Price: High to Low') {
-      _filteredHotels.sort((a, b) => b.pricePerNight.compareTo(a.pricePerNight));
+      _filteredHotels.sort(
+        (a, b) => b.pricePerNight.compareTo(a.pricePerNight),
+      );
     } else {
       _filteredHotels.sort((a, b) => b.rating.compareTo(a.rating));
     }
@@ -198,75 +209,75 @@ class HotelProvider extends ChangeNotifier {
 
   bool _isBeachHotel(HotelEntity hotel, String searchStr) {
     return searchStr.contains('beach') ||
-           searchStr.contains('coast') ||
-           searchStr.contains('sea') ||
-           searchStr.contains('ocean') ||
-           searchStr.contains('surf') ||
-           searchStr.contains('sand') ||
-           searchStr.contains('island') ||
-           searchStr.contains('maldives') ||
-           searchStr.contains('bali') ||
-           searchStr.contains('tropical') ||
-           searchStr.contains('shore') ||
-           searchStr.contains('waterfront') ||
-           searchStr.contains('palm') ||
-           hotel.type.toLowerCase() == 'resort';
+        searchStr.contains('coast') ||
+        searchStr.contains('sea') ||
+        searchStr.contains('ocean') ||
+        searchStr.contains('surf') ||
+        searchStr.contains('sand') ||
+        searchStr.contains('island') ||
+        searchStr.contains('maldives') ||
+        searchStr.contains('bali') ||
+        searchStr.contains('tropical') ||
+        searchStr.contains('shore') ||
+        searchStr.contains('waterfront') ||
+        searchStr.contains('palm') ||
+        hotel.type.toLowerCase() == 'resort';
   }
 
   bool _isMountainHotel(HotelEntity hotel, String searchStr) {
     return searchStr.contains('mountain') ||
-           searchStr.contains('hill') ||
-           searchStr.contains('alps') ||
-           searchStr.contains('peak') ||
-           searchStr.contains('summit') ||
-           searchStr.contains('highland') ||
-           searchStr.contains('snow') ||
-           searchStr.contains('ski') ||
-           searchStr.contains('forest') ||
-           searchStr.contains('wood') ||
-           searchStr.contains('nature') ||
-           searchStr.contains('valley') ||
-           searchStr.contains('ridge');
+        searchStr.contains('hill') ||
+        searchStr.contains('alps') ||
+        searchStr.contains('peak') ||
+        searchStr.contains('summit') ||
+        searchStr.contains('highland') ||
+        searchStr.contains('snow') ||
+        searchStr.contains('ski') ||
+        searchStr.contains('forest') ||
+        searchStr.contains('wood') ||
+        searchStr.contains('nature') ||
+        searchStr.contains('valley') ||
+        searchStr.contains('ridge');
   }
 
   bool _isCityHotel(HotelEntity hotel, String searchStr) {
     return searchStr.contains('city') ||
-           searchStr.contains('downtown') ||
-           searchStr.contains('urban') ||
-           searchStr.contains('metropolis') ||
-           searchStr.contains('tower') ||
-           searchStr.contains('plaza') ||
-           searchStr.contains('london') ||
-           searchStr.contains('paris') ||
-           searchStr.contains('tokyo') ||
-           searchStr.contains('york') ||
-           searchStr.contains('boulevard') ||
-           searchStr.contains('center') ||
-           hotel.type.toLowerCase() == 'hotel';
+        searchStr.contains('downtown') ||
+        searchStr.contains('urban') ||
+        searchStr.contains('metropolis') ||
+        searchStr.contains('tower') ||
+        searchStr.contains('plaza') ||
+        searchStr.contains('london') ||
+        searchStr.contains('paris') ||
+        searchStr.contains('tokyo') ||
+        searchStr.contains('york') ||
+        searchStr.contains('boulevard') ||
+        searchStr.contains('center') ||
+        hotel.type.toLowerCase() == 'hotel';
   }
 
   bool _isDesertHotel(HotelEntity hotel, String searchStr) {
     return searchStr.contains('desert') ||
-           searchStr.contains('dune') ||
-           searchStr.contains('oasis') ||
-           searchStr.contains('safari') ||
-           searchStr.contains('canyon') ||
-           searchStr.contains('dubai') ||
-           searchStr.contains('sahara') ||
-           searchStr.contains('sun');
+        searchStr.contains('dune') ||
+        searchStr.contains('oasis') ||
+        searchStr.contains('safari') ||
+        searchStr.contains('canyon') ||
+        searchStr.contains('dubai') ||
+        searchStr.contains('sahara') ||
+        searchStr.contains('sun');
   }
 
   bool _isLuxuryHotel(HotelEntity hotel, String searchStr) {
     return hotel.pricePerNight > 300 ||
-           searchStr.contains('luxury') ||
-           searchStr.contains('spa') ||
-           searchStr.contains('boutique') ||
-           searchStr.contains('premium') ||
-           searchStr.contains('royal') ||
-           searchStr.contains('grand') ||
-           searchStr.contains('star') ||
-           hotel.type.toLowerCase() == 'villa' ||
-           hotel.type.toLowerCase() == 'suite';
+        searchStr.contains('luxury') ||
+        searchStr.contains('spa') ||
+        searchStr.contains('boutique') ||
+        searchStr.contains('premium') ||
+        searchStr.contains('royal') ||
+        searchStr.contains('grand') ||
+        searchStr.contains('star') ||
+        hotel.type.toLowerCase() == 'villa' ||
+        hotel.type.toLowerCase() == 'suite';
   }
 
   Future<bool> submitReview({
@@ -279,7 +290,12 @@ class HotelProvider extends ChangeNotifier {
     _error = null;
     notifyListeners();
 
-    final result = await _hotelRepository.submitReview(hotelId, author, rating, comment);
+    final result = await _hotelRepository.submitReview(
+      hotelId,
+      author,
+      rating,
+      comment,
+    );
 
     return result.fold(
       (failure) {
@@ -294,7 +310,9 @@ class HotelProvider extends ChangeNotifier {
         if (indexAll != -1) {
           _allHotels[indexAll] = updatedHotel;
         }
-        final indexFiltered = _filteredHotels.indexWhere((h) => h.id == hotelId);
+        final indexFiltered = _filteredHotels.indexWhere(
+          (h) => h.id == hotelId,
+        );
         if (indexFiltered != -1) {
           _filteredHotels[indexFiltered] = updatedHotel;
         }

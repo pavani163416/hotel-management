@@ -17,11 +17,15 @@ class ConfirmationPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<BookingProvider>();
-    final latestBooking = provider.bookings.isNotEmpty ? provider.bookings.first : null;
+    final latestBooking = provider.bookings.isNotEmpty
+        ? provider.bookings.first
+        : null;
     final hotel = provider.currentHotel;
 
     if (hotel == null || latestBooking == null) {
-      return const MainLayout(child: Center(child: Text('No booking data found')));
+      return const MainLayout(
+        child: Center(child: Text('No booking data found')),
+      );
     }
 
     return MainLayout(
@@ -47,24 +51,49 @@ class ConfirmationPage extends StatelessWidget {
                     color: Color(0xFFE5E0D8),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(LucideIcons.check, size: 32, color: AppTheme.primaryColor),
+                  child: const Icon(
+                    LucideIcons.check,
+                    size: 32,
+                    color: AppTheme.primaryColor,
+                  ),
                 ),
                 const SizedBox(height: 32),
                 const Text(
                   'Booking Confirmed!',
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Color(0xFF2D3748)),
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF2D3748),
+                  ),
                 ),
                 const SizedBox(height: 16),
                 RichText(
                   textAlign: TextAlign.center,
                   text: TextSpan(
-                    style: TextStyle(color: AppTheme.primaryColor.withOpacity(0.6), fontSize: 13, height: 1.5),
+                    style: TextStyle(
+                      color: AppTheme.primaryColor.withOpacity(0.6),
+                      fontSize: 13,
+                      height: 1.5,
+                    ),
                     children: [
                       const TextSpan(text: 'Your reservation at '),
-                      TextSpan(text: hotel.name, style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+                      TextSpan(
+                        text: hotel.name,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.primaryColor,
+                        ),
+                      ),
                       const TextSpan(text: ' is confirmed. Booking ID '),
-                      TextSpan(text: '#${latestBooking.id.length > 10 ? latestBooking.id.substring(latestBooking.id.length - 10) : latestBooking.id}', style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+                      TextSpan(
+                        text:
+                            '#${latestBooking.id.length > 10 ? latestBooking.id.substring(latestBooking.id.length - 10) : latestBooking.id}',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.primaryColor,
+                        ),
+                      ),
                       const TextSpan(text: ' has been saved to your history.'),
                     ],
                   ),
@@ -84,13 +113,25 @@ class ConfirmationPage extends StatelessWidget {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('BOOKING ID', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 0.5)),
+                          const Text(
+                            'BOOKING ID',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
                           const SizedBox(height: 8),
                           FittedBox(
                             fit: BoxFit.scaleDown,
                             child: Text(
                               '#${latestBooking.id.length > 12 ? latestBooking.id.substring(latestBooking.id.length - 12) : latestBooking.id}',
-                              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF2D3748)),
+                              style: const TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF2D3748),
+                              ),
                             ),
                           ),
                         ],
@@ -100,7 +141,12 @@ class ConfirmationPage extends StatelessWidget {
                         top: 8,
                         child: Text(
                           'PAYMENT SUCCESSFUL',
-                          style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.black12, letterSpacing: 1),
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black12,
+                            letterSpacing: 1,
+                          ),
                         ),
                       ),
                     ],
@@ -129,16 +175,32 @@ class ConfirmationPage extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(hotel.name, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF2D3748)), maxLines: 1, overflow: TextOverflow.ellipsis),
+                          Text(
+                            hotel.name,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF2D3748),
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                           const SizedBox(height: 6),
                           Row(
                             children: [
-                              const Icon(LucideIcons.calendar, size: 12, color: Colors.grey),
+                              const Icon(
+                                LucideIcons.calendar,
+                                size: 12,
+                                color: Colors.grey,
+                              ),
                               const SizedBox(width: 6),
                               Expanded(
                                 child: Text(
                                   '${DateFormat('MMM dd').format(provider.checkIn)} → ${DateFormat('MMM dd').format(provider.checkOut)} (${provider.nights}n)',
-                                  style: const TextStyle(fontSize: 11, color: Colors.grey),
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    color: Colors.grey,
+                                  ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
@@ -148,11 +210,18 @@ class ConfirmationPage extends StatelessWidget {
                           const SizedBox(height: 4),
                           Row(
                             children: [
-                              const Icon(LucideIcons.users, size: 12, color: Colors.grey),
+                              const Icon(
+                                LucideIcons.users,
+                                size: 12,
+                                color: Colors.grey,
+                              ),
                               const SizedBox(width: 6),
                               Text(
                                 '${provider.guests} guest${provider.guests != 1 ? 's' : ''} · ${provider.selectedRoomType}',
-                                style: const TextStyle(fontSize: 11, color: Colors.grey),
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.grey,
+                                ),
                               ),
                             ],
                           ),
@@ -167,21 +236,48 @@ class ConfirmationPage extends StatelessWidget {
                 const SizedBox(height: 24),
 
                 // ── Price breakdown ───────────────────────────
-                _priceRow('Subtotal', context.watch<CurrencyProvider>().format(provider.subtotal)),
-                _priceRow('Service Fee', context.watch<CurrencyProvider>().format(provider.serviceFee)),
-                _priceRow('Taxes', context.watch<CurrencyProvider>().format(provider.taxes)),
+                _priceRow(
+                  'Subtotal',
+                  context.watch<CurrencyProvider>().format(provider.subtotal),
+                ),
+                _priceRow(
+                  'Service Fee',
+                  context.watch<CurrencyProvider>().format(provider.serviceFee),
+                ),
+                _priceRow(
+                  'Taxes',
+                  context.watch<CurrencyProvider>().format(provider.taxes),
+                ),
                 if (provider.discountAmount > 0)
-                  _priceRow('Discount', '-' + context.watch<CurrencyProvider>().format(provider.discountAmount), valueColor: Colors.green),
+                  _priceRow(
+                    'Discount',
+                    '-' +
+                        context.watch<CurrencyProvider>().format(
+                          provider.discountAmount,
+                        ),
+                    valueColor: Colors.green,
+                  ),
                 const SizedBox(height: 8),
                 const Divider(color: AppTheme.mutedColor),
                 const SizedBox(height: 8),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Total Paid', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+                    const Text(
+                      'Total Paid',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.primaryColor,
+                      ),
+                    ),
                     Text(
                       context.watch<CurrencyProvider>().format(provider.total),
-                      style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.primaryColor,
+                      ),
                     ),
                   ],
                 ),
@@ -192,14 +288,27 @@ class ConfirmationPage extends StatelessWidget {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
-                    onPressed: () => _downloadReceipt(context, provider, latestBooking, hotel.location),
+                    onPressed: () => _downloadReceipt(
+                      context,
+                      provider,
+                      latestBooking,
+                      hotel.location,
+                    ),
                     icon: const Icon(LucideIcons.download, size: 18),
-                    label: const Text('Download Receipt', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                    label: const Text(
+                      'Download Receipt',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppTheme.primaryColor,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
                       elevation: 0,
                     ),
                   ),
@@ -217,10 +326,18 @@ class ConfirmationPage extends StatelessWidget {
                           backgroundColor: const Color(0xFFE2DED5),
                           foregroundColor: const Color(0xFF2D3748),
                           padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                           elevation: 0,
                         ),
-                        child: const Text('History', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                        child: const Text(
+                          'History',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -231,10 +348,18 @@ class ConfirmationPage extends StatelessWidget {
                           backgroundColor: const Color(0xFFE2DED5),
                           foregroundColor: const Color(0xFF2D3748),
                           padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                           elevation: 0,
                         ),
-                        child: const Text('Browse More', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                        child: const Text(
+                          'Browse More',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -254,14 +379,27 @@ class ConfirmationPage extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label, style: const TextStyle(fontSize: 13, color: Colors.grey)),
-          Text(value, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: valueColor ?? AppTheme.primaryColor)),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: valueColor ?? AppTheme.primaryColor,
+            ),
+          ),
         ],
       ),
     );
   }
 
-  void _downloadReceipt(BuildContext context, BookingProvider provider, BookingEntity booking, String hotelLocation) {
-    final nights = booking.nights ?? booking.checkOut.difference(booking.checkIn).inDays;
+  void _downloadReceipt(
+    BuildContext context,
+    BookingProvider provider,
+    BookingEntity booking,
+    String hotelLocation,
+  ) {
+    final nights =
+        booking.nights ?? booking.checkOut.difference(booking.checkIn).inDays;
     final sub = booking.subtotal ?? booking.totalAmount;
     final tax = booking.taxes ?? 0;
     final disc = (sub + tax - booking.totalAmount).clamp(0.0, sub + tax);
@@ -276,7 +414,10 @@ class ConfirmationPage extends StatelessWidget {
       checkIn: booking.checkIn,
       checkOut: booking.checkOut,
       nights: nights,
-      guests: 1 + (booking.additionalAdults?.length ?? 0) + (booking.additionalChildren?.length ?? 0),
+      guests:
+          1 +
+          (booking.additionalAdults?.length ?? 0) +
+          (booking.additionalChildren?.length ?? 0),
       pricePerNight: booking.pricePerNight ?? provider.selectedRoomPrice,
       subtotal: sub,
       taxes: tax,

@@ -19,16 +19,18 @@ class ApiService {
     _dio.options.receiveTimeout = const Duration(seconds: 30);
     _dio.options.sendTimeout = const Duration(seconds: 30); // TC-053 Fix
     _dio.options.headers['Content-Type'] = 'application/json';
-    _dio.options.headers['Origin'] = 'https://luxestay-frontend.vercel.app';
+    _dio.options.headers['Origin'] =
+        'https://hotel-management-frontend-puce.vercel.app';
 
     if (!kIsWeb) {
       _dio.httpClientAdapter = IOHttpClientAdapter(
         createHttpClient: () {
           final client = HttpClient(context: SecurityContext.defaultContext);
-          client.badCertificateCallback = (X509Certificate cert, String host, int port) {
-            // Do not allow bad certificates in production.
-            return false;
-          };
+          client.badCertificateCallback =
+              (X509Certificate cert, String host, int port) {
+                // Do not allow bad certificates in production.
+                return false;
+              };
           return client;
         },
         validateCertificate: (cert, host, port) {
@@ -57,7 +59,9 @@ class ApiService {
                 sl<AuthProvider>().logout();
               }
             } catch (err, stack) {
-              debugPrint('[ApiService] Error during 401 unauthorized logout: $err\n$stack');
+              debugPrint(
+                '[ApiService] Error during 401 unauthorized logout: $err\n$stack',
+              );
             }
           }
           // Convert network/timeout errors into a friendlier DioException
@@ -69,7 +73,8 @@ class ApiService {
                 requestOptions: e.requestOptions,
                 type: e.type,
                 error: e.error,
-                message: 'Unable to connect to the server. Please check your internet connection.',
+                message:
+                    'Unable to connect to the server. Please check your internet connection.',
               ),
             );
           }
@@ -79,7 +84,10 @@ class ApiService {
     );
   }
 
-  Future<Response> get(String path, {Map<String, dynamic>? queryParameters}) async {
+  Future<Response> get(
+    String path, {
+    Map<String, dynamic>? queryParameters,
+  }) async {
     return await _dio.get(path, queryParameters: queryParameters);
   }
 

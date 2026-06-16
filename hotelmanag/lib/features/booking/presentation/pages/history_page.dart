@@ -41,12 +41,19 @@ class _HistoryPageState extends State<HistoryPage> {
             children: [
               const Text(
                 'Booking History',
-                style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
+                style: TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.primaryColor,
+                ),
               ),
               const SizedBox(height: 8),
               Text(
                 'Manage your upcoming stays and review past adventures.',
-                style: TextStyle(color: AppTheme.primaryColor.withOpacity(0.6), fontSize: 14),
+                style: TextStyle(
+                  color: AppTheme.primaryColor.withOpacity(0.6),
+                  fontSize: 14,
+                ),
               ),
               const SizedBox(height: 32),
               _buildFilters(),
@@ -59,18 +66,20 @@ class _HistoryPageState extends State<HistoryPage> {
                   if (provider.error != null) {
                     return Center(child: Text('Error: ${provider.error}'));
                   }
-                  
+
                   final bookings = provider.bookings;
-                  final filteredBookings = _filter == 'all' 
-                    ? bookings 
-                    : bookings.where((b) => b.status == _filter).toList();
+                  final filteredBookings = _filter == 'all'
+                      ? bookings
+                      : bookings.where((b) => b.status == _filter).toList();
 
                   if (filteredBookings.isEmpty) {
                     return _buildEmptyState();
                   }
 
                   return Column(
-                    children: filteredBookings.map((booking) => BookingListItem(booking: booking)).toList(),
+                    children: filteredBookings
+                        .map((booking) => BookingListItem(booking: booking))
+                        .toList(),
                   );
                 },
               ),
@@ -89,8 +98,18 @@ class _HistoryPageState extends State<HistoryPage> {
           const SizedBox(height: 60),
           Icon(LucideIcons.calendarX, size: 64, color: AppTheme.mutedColor),
           const SizedBox(height: 16),
-          Text('No bookings found', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.primaryColor.withOpacity(0.5))),
-          Text('Try changing your filters', style: TextStyle(color: AppTheme.primaryColor.withOpacity(0.4))),
+          Text(
+            'No bookings found',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: AppTheme.primaryColor.withOpacity(0.5),
+            ),
+          ),
+          Text(
+            'Try changing your filters',
+            style: TextStyle(color: AppTheme.primaryColor.withOpacity(0.4)),
+          ),
         ],
       ),
     );
@@ -110,13 +129,17 @@ class _HistoryPageState extends State<HistoryPage> {
             duration: const Duration(milliseconds: 200),
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             decoration: BoxDecoration(
-              color: isSelected ? const Color(0xFFE5E0D8) : AppTheme.mutedColor.withOpacity(0.3),
+              color: isSelected
+                  ? const Color(0xFFE5E0D8)
+                  : AppTheme.mutedColor.withOpacity(0.3),
               borderRadius: BorderRadius.circular(30),
             ),
             child: Text(
               f == 'all' ? 'All Bookings' : f,
               style: TextStyle(
-                color: isSelected ? AppTheme.primaryColor : AppTheme.primaryColor.withOpacity(0.7),
+                color: isSelected
+                    ? AppTheme.primaryColor
+                    : AppTheme.primaryColor.withOpacity(0.7),
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                 fontSize: 13,
               ),
@@ -135,15 +158,21 @@ class BookingListItem extends StatelessWidget {
   String _getBookingImageUrl(BuildContext context, BookingEntity booking) {
     try {
       final hotelProvider = Provider.of<HotelProvider>(context, listen: false);
-      final matchedHotel = hotelProvider.allHotels.cast<HotelEntity?>().firstWhere(
-        (h) => h != null && (h.name.toLowerCase() == booking.hotelName.toLowerCase() || h.id == booking.imageUrl),
-        orElse: () => null,
-      );
+      final matchedHotel = hotelProvider.allHotels
+          .cast<HotelEntity?>()
+          .firstWhere(
+            (h) =>
+                h != null &&
+                (h.name.toLowerCase() == booking.hotelName.toLowerCase() ||
+                    h.id == booking.imageUrl),
+            orElse: () => null,
+          );
       if (matchedHotel != null) {
         return matchedHotel.imageUrl;
       }
     } catch (_) {}
-    return booking.imageUrl ?? 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=400';
+    return booking.imageUrl ??
+        'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=400';
   }
 
   @override
@@ -159,7 +188,9 @@ class BookingListItem extends StatelessWidget {
             border: Border.all(color: AppTheme.mutedColor.withOpacity(0.5)),
           ),
           clipBehavior: Clip.antiAlias,
-          child: isWide ? _buildDesktopCard(context) : _buildMobileCard(context),
+          child: isWide
+              ? _buildDesktopCard(context)
+              : _buildMobileCard(context),
         );
       },
     );
@@ -167,7 +198,8 @@ class BookingListItem extends StatelessWidget {
 
   Widget _buildDesktopCard(BuildContext context) {
     final df = DateFormat('yyyy-MM-dd');
-    final dateString = '${df.format(booking.checkIn)} — ${df.format(booking.checkOut)}';
+    final dateString =
+        '${df.format(booking.checkIn)} — ${df.format(booking.checkOut)}';
 
     return IntrinsicHeight(
       child: Row(
@@ -192,18 +224,40 @@ class BookingListItem extends StatelessWidget {
                 children: [
                   _buildLabel('PROPERTY'),
                   const SizedBox(height: 4),
-                  Text(booking.hotelName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppTheme.primaryColor)),
+                  Text(
+                    booking.hotelName,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: AppTheme.primaryColor,
+                    ),
+                  ),
                   Row(
                     children: [
-                      Icon(LucideIcons.mapPin, size: 10, color: Colors.grey[400]),
+                      Icon(
+                        LucideIcons.mapPin,
+                        size: 10,
+                        color: Colors.grey[400],
+                      ),
                       const SizedBox(width: 4),
-                      Text(booking.city?.isNotEmpty == true ? booking.city! : 'Unknown City', style: TextStyle(fontSize: 11, color: Colors.grey[400])),
+                      Text(
+                        booking.city?.isNotEmpty == true
+                            ? booking.city!
+                            : 'Unknown City',
+                        style: TextStyle(fontSize: 11, color: Colors.grey[400]),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 24),
                   _buildLabel('DATES'),
                   const SizedBox(height: 4),
-                  Text(dateString, style: TextStyle(fontSize: 13, color: AppTheme.primaryColor.withOpacity(0.7))),
+                  Text(
+                    dateString,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: AppTheme.primaryColor.withOpacity(0.7),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -229,7 +283,11 @@ class BookingListItem extends StatelessWidget {
               ),
             ),
           ),
-          VerticalDivider(width: 1, thickness: 1, color: AppTheme.mutedColor.withOpacity(0.5)),
+          VerticalDivider(
+            width: 1,
+            thickness: 1,
+            color: AppTheme.mutedColor.withOpacity(0.5),
+          ),
           Expanded(
             flex: 2,
             child: Padding(
@@ -237,25 +295,55 @@ class BookingListItem extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text('Total', style: TextStyle(fontSize: 10, color: Colors.grey)),
-                  Text(context.watch<CurrencyProvider>().format(booking.totalAmount), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+                  const Text(
+                    'Total',
+                    style: TextStyle(fontSize: 10, color: Colors.grey),
+                  ),
+                  Text(
+                    context.watch<CurrencyProvider>().format(
+                      booking.totalAmount,
+                    ),
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.primaryColor,
+                    ),
+                  ),
                   const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: () => _showBookingDetails(context),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFFE5E0D8),
                       foregroundColor: AppTheme.primaryColor,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 10,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                       elevation: 0,
                     ),
-                    child: const Text('View Details', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                    child: const Text(
+                      'View Details',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 8),
                   if (booking.status != 'Cancelled')
                     GestureDetector(
                       onTap: () => _showCancelDialog(context, booking),
-                      child: const Text('Cancel Booking', style: TextStyle(color: Colors.redAccent, fontSize: 11, fontWeight: FontWeight.bold)),
+                      child: const Text(
+                        'Cancel Booking',
+                        style: TextStyle(
+                          color: Colors.redAccent,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                 ],
               ),
@@ -268,7 +356,8 @@ class BookingListItem extends StatelessWidget {
 
   Widget _buildMobileCard(BuildContext context) {
     final df = DateFormat('MM-dd');
-    final dateString = '${df.format(booking.checkIn)} → ${df.format(booking.checkOut)}';
+    final dateString =
+        '${df.format(booking.checkIn)} → ${df.format(booking.checkOut)}';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -304,16 +393,45 @@ class BookingListItem extends StatelessWidget {
                       children: [
                         _buildLabel('PROPERTY'),
                         const SizedBox(height: 4),
-                        Text(booking.hotelName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppTheme.primaryColor), maxLines: 1, overflow: TextOverflow.ellipsis),
-                        Text(booking.city?.isNotEmpty == true ? booking.city! : 'Unknown City', style: TextStyle(fontSize: 11, color: Colors.grey[400])),
+                        Text(
+                          booking.hotelName,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: AppTheme.primaryColor,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        Text(
+                          booking.city?.isNotEmpty == true
+                              ? booking.city!
+                              : 'Unknown City',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey[400],
+                          ),
+                        ),
                       ],
                     ),
                   ),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      const Text('Total Paid', style: TextStyle(fontSize: 10, color: Colors.grey)),
-                      Text(context.watch<CurrencyProvider>().format(booking.totalAmount), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+                      const Text(
+                        'Total Paid',
+                        style: TextStyle(fontSize: 10, color: Colors.grey),
+                      ),
+                      Text(
+                        context.watch<CurrencyProvider>().format(
+                          booking.totalAmount,
+                        ),
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.primaryColor,
+                        ),
+                      ),
                     ],
                   ),
                 ],
@@ -327,7 +445,13 @@ class BookingListItem extends StatelessWidget {
                     children: [
                       _buildLabel('DATES'),
                       const SizedBox(height: 4),
-                      Text(dateString, style: TextStyle(fontSize: 13, color: AppTheme.primaryColor.withOpacity(0.7))),
+                      Text(
+                        dateString,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: AppTheme.primaryColor.withOpacity(0.7),
+                        ),
+                      ),
                     ],
                   ),
                   Row(
@@ -335,7 +459,14 @@ class BookingListItem extends StatelessWidget {
                       if (booking.status != 'Cancelled')
                         TextButton(
                           onPressed: () => _showCancelDialog(context, booking),
-                          child: const Text('Cancel', style: TextStyle(color: Colors.redAccent, fontSize: 12, fontWeight: FontWeight.bold)),
+                          child: const Text(
+                            'Cancel',
+                            style: TextStyle(
+                              color: Colors.redAccent,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
                       const SizedBox(width: 8),
                       ElevatedButton(
@@ -343,11 +474,22 @@ class BookingListItem extends StatelessWidget {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFFE5E0D8),
                           foregroundColor: AppTheme.primaryColor,
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                           elevation: 0,
                         ),
-                        child: const Text('Details', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                        child: const Text(
+                          'Details',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -361,7 +503,15 @@ class BookingListItem extends StatelessWidget {
   }
 
   Widget _buildLabel(String text) {
-    return Text(text, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey[400], letterSpacing: 0.5));
+    return Text(
+      text,
+      style: TextStyle(
+        fontSize: 10,
+        fontWeight: FontWeight.bold,
+        color: Colors.grey[400],
+        letterSpacing: 0.5,
+      ),
+    );
   }
 
   Widget _buildStatusBadge(String status) {
@@ -372,14 +522,30 @@ class BookingListItem extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppTheme.mutedColor),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 5)],
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 5),
+        ],
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(width: 6, height: 6, decoration: BoxDecoration(shape: BoxShape.circle, color: isConfirmed ? Colors.green : Colors.red)),
+          Container(
+            width: 6,
+            height: 6,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: isConfirmed ? Colors.green : Colors.red,
+            ),
+          ),
           const SizedBox(width: 6),
-          Text(status, style: const TextStyle(color: AppTheme.primaryColor, fontSize: 10, fontWeight: FontWeight.bold)),
+          Text(
+            status,
+            style: const TextStyle(
+              color: AppTheme.primaryColor,
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ],
       ),
     );
@@ -393,61 +559,100 @@ class BookingListItem extends StatelessWidget {
       'Found a better deal',
       'Booking error',
       'Personal emergency',
-      'Other'
+      'Other',
     ];
 
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-          title: const Text('Cancel Booking?', style: TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          title: const Text(
+            'Cancel Booking?',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: AppTheme.primaryColor,
+            ),
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Are you sure you want to cancel your stay at ${booking.hotelName}?', style: TextStyle(color: Colors.grey[600], fontSize: 14)),
+              Text(
+                'Are you sure you want to cancel your stay at ${booking.hotelName}?',
+                style: TextStyle(color: Colors.grey[600], fontSize: 14),
+              ),
               const SizedBox(height: 24),
-              const Text('Please select a reason:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+              const Text(
+                'Please select a reason:',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.primaryColor,
+                ),
+              ),
               const SizedBox(height: 12),
-              ...reasons.map((r) => RadioListTile<String>(
-                title: Text(r, style: const TextStyle(fontSize: 13)),
-                value: r,
-                groupValue: selectedReason,
-                dense: true,
-                contentPadding: EdgeInsets.zero,
-                activeColor: AppTheme.primaryColor,
-                onChanged: (v) => setDialogState(() => selectedReason = v),
-              )),
+              ...reasons.map(
+                (r) => RadioListTile<String>(
+                  title: Text(r, style: const TextStyle(fontSize: 13)),
+                  value: r,
+                  groupValue: selectedReason,
+                  dense: true,
+                  contentPadding: EdgeInsets.zero,
+                  activeColor: AppTheme.primaryColor,
+                  onChanged: (v) => setDialogState(() => selectedReason = v),
+                ),
+              ),
             ],
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Keep Booking', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+              child: const Text(
+                'Keep Booking',
+                style: TextStyle(
+                  color: Colors.grey,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
             ElevatedButton(
-              onPressed: selectedReason == null ? null : () async {
-                Navigator.pop(parentContext);
-                final success = await parentContext.read<BookingProvider>().cancelBooking(booking.id);
-                if (success && parentContext.mounted) {
-                  parentContext.read<NotificationProvider>().addNotification(
-                    'Booking Cancelled',
-                    subtitle: 'Your stay at ${booking.hotelName} has been cancelled.',
-                    isCancelled: true,
-                  );
-                  ScaffoldMessenger.of(parentContext).showSnackBar(
-                    const SnackBar(content: Text('Booking cancelled successfully'), behavior: SnackBarBehavior.floating),
-                  );
-                }
-              },
+              onPressed: selectedReason == null
+                  ? null
+                  : () async {
+                      Navigator.pop(parentContext);
+                      final success = await parentContext
+                          .read<BookingProvider>()
+                          .cancelBooking(booking.id);
+                      if (success && parentContext.mounted) {
+                        parentContext.read<NotificationProvider>().addNotification(
+                          'Booking Cancelled',
+                          subtitle:
+                              'Your stay at ${booking.hotelName} has been cancelled.',
+                          isCancelled: true,
+                        );
+                        ScaffoldMessenger.of(parentContext).showSnackBar(
+                          const SnackBar(
+                            content: Text('Booking cancelled successfully'),
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      }
+                    },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.redAccent,
                 foregroundColor: Colors.white,
                 elevation: 0,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
               ),
-              child: const Text('Cancel Now', style: TextStyle(fontWeight: FontWeight.bold)),
+              child: const Text(
+                'Cancel Now',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
             ),
           ],
         ),
@@ -457,7 +662,8 @@ class BookingListItem extends StatelessWidget {
 
   void _showBookingDetails(BuildContext context) {
     final df = DateFormat('yyyy-MM-dd');
-    final dateString = '${df.format(booking.checkIn)} — ${df.format(booking.checkOut)}';
+    final dateString =
+        '${df.format(booking.checkIn)} — ${df.format(booking.checkOut)}';
     final nights = booking.checkOut.difference(booking.checkIn).inDays;
     final createdString = booking.createdAt != null
         ? DateFormat('MMMM dd, yyyy \'at\' hh:mm a').format(booking.createdAt!)
@@ -477,130 +683,171 @@ class BookingListItem extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-              Stack(
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(16),
-                    child: CachedNetworkImage(
-                      imageUrl: _getBookingImageUrl(context, booking),
-                      height: 180,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                      memCacheWidth: 600,
-                      memCacheHeight: 360,
-                    ),
-                  ),
-                  Positioned(
-                    top: 12,
-                    right: 12,
-                    child: InkWell(
-                      onTap: () => Navigator.pop(context),
-                      child: Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: const BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.white70,
-                        ),
-                        child: const Icon(LucideIcons.x, size: 16, color: Colors.black87),
+                Stack(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: CachedNetworkImage(
+                        imageUrl: _getBookingImageUrl(context, booking),
+                        height: 180,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                        memCacheWidth: 600,
+                        memCacheHeight: 360,
                       ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              Text(
-                booking.hotelName,
-                style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.primaryColor,
-                  letterSpacing: -0.5,
+                    Positioned(
+                      top: 12,
+                      right: 12,
+                      child: InkWell(
+                        onTap: () => Navigator.pop(context),
+                        child: Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: const BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white70,
+                          ),
+                          child: const Icon(
+                            LucideIcons.x,
+                            size: 16,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-              const SizedBox(height: 16),
-              const Divider(color: AppTheme.mutedColor, height: 1),
-              _buildDetailRow('Booking ID', '#${booking.id}', isId: true),
-              _buildDetailRow('Guest', booking.guestName ?? 'Guest'),
-              _buildDetailRow('Room', '${booking.roomType ?? 'Room'} (${booking.roomNumber ?? booking.roomId})'),
-              if (booking.paymentMethod != null) _buildDetailRow('Payment', booking.paymentMethod!.toUpperCase()),
-              _buildDetailRow('Dates', dateString),
-              _buildDetailRow('Nights', '${booking.nights ?? nights}'),
-              if (booking.subtotal != null) _buildDetailRow('Subtotal', context.watch<CurrencyProvider>().format(booking.subtotal)),
-              if (booking.taxes != null) _buildDetailRow('Taxes & Fees', context.watch<CurrencyProvider>().format(booking.taxes)),
-              _buildDetailRow('Total Paid', context.watch<CurrencyProvider>().format(booking.totalAmount), isBold: true),
-              _buildDetailRow('Status', booking.status),
-              _buildDetailRow('Confirmed At', createdString),
-              const SizedBox(height: 20),
-              // ── Download Receipt button ──────────────────
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    final nights = booking.nights ?? booking.checkOut.difference(booking.checkIn).inDays;
-                    final sub = booking.subtotal ?? booking.totalAmount;
-                    final tax = booking.taxes ?? 0;
-                    final disc = (sub + tax - booking.totalAmount).clamp(0.0, sub + tax);
-                    final data = ReceiptData(
-                      bookingId: booking.id,
-                      hotelName: booking.hotelName,
-                      hotelLocation: booking.city ?? '',
-                      guestName: booking.guestName ?? 'Guest',
-                      guestId: booking.guestId,
-                      roomType: booking.roomType ?? 'Room',
-                      roomNumber: booking.roomNumber ?? booking.roomId,
-                      checkIn: booking.checkIn,
-                      checkOut: booking.checkOut,
-                      nights: nights,
-                      guests: 1 + (booking.additionalAdults?.length ?? 0) + (booking.additionalChildren?.length ?? 0),
-                      pricePerNight: booking.pricePerNight ?? 0,
-                      subtotal: sub,
-                      taxes: tax,
-                      discount: disc,
-                      total: booking.totalAmount,
-                      paymentMethod: booking.paymentMethod ?? 'Card',
-                      status: booking.status,
-                      bookedAt: booking.createdAt ?? booking.checkIn,
-                      additionalAdults: booking.additionalAdults ?? const [],
-                      additionalChildren: booking.additionalChildren ?? const [],
-                    );
-                    downloadReceipt(context, data);
-                  },
-                  icon: const Icon(LucideIcons.download, size: 16),
-                  label: const Text('Download Receipt', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryColor,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    elevation: 0,
+                const SizedBox(height: 20),
+                Text(
+                  booking.hotelName,
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.primaryColor,
+                    letterSpacing: -0.5,
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 16),
+                const Divider(color: AppTheme.mutedColor, height: 1),
+                _buildDetailRow('Booking ID', '#${booking.id}', isId: true),
+                _buildDetailRow('Guest', booking.guestName ?? 'Guest'),
+                _buildDetailRow(
+                  'Room',
+                  '${booking.roomType ?? 'Room'} (${booking.roomNumber ?? booking.roomId})',
+                ),
+                if (booking.paymentMethod != null)
+                  _buildDetailRow(
+                    'Payment',
+                    booking.paymentMethod!.toUpperCase(),
+                  ),
+                _buildDetailRow('Dates', dateString),
+                _buildDetailRow('Nights', '${booking.nights ?? nights}'),
+                if (booking.subtotal != null)
+                  _buildDetailRow(
+                    'Subtotal',
+                    context.watch<CurrencyProvider>().format(booking.subtotal),
+                  ),
+                if (booking.taxes != null)
+                  _buildDetailRow(
+                    'Taxes & Fees',
+                    context.watch<CurrencyProvider>().format(booking.taxes),
+                  ),
+                _buildDetailRow(
+                  'Total Paid',
+                  context.watch<CurrencyProvider>().format(booking.totalAmount),
+                  isBold: true,
+                ),
+                _buildDetailRow('Status', booking.status),
+                _buildDetailRow('Confirmed At', createdString),
+                const SizedBox(height: 20),
+                // ── Download Receipt button ──────────────────
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      final nights =
+                          booking.nights ??
+                          booking.checkOut.difference(booking.checkIn).inDays;
+                      final sub = booking.subtotal ?? booking.totalAmount;
+                      final tax = booking.taxes ?? 0;
+                      final disc = (sub + tax - booking.totalAmount).clamp(
+                        0.0,
+                        sub + tax,
+                      );
+                      final data = ReceiptData(
+                        bookingId: booking.id,
+                        hotelName: booking.hotelName,
+                        hotelLocation: booking.city ?? '',
+                        guestName: booking.guestName ?? 'Guest',
+                        guestId: booking.guestId,
+                        roomType: booking.roomType ?? 'Room',
+                        roomNumber: booking.roomNumber ?? booking.roomId,
+                        checkIn: booking.checkIn,
+                        checkOut: booking.checkOut,
+                        nights: nights,
+                        guests:
+                            1 +
+                            (booking.additionalAdults?.length ?? 0) +
+                            (booking.additionalChildren?.length ?? 0),
+                        pricePerNight: booking.pricePerNight ?? 0,
+                        subtotal: sub,
+                        taxes: tax,
+                        discount: disc,
+                        total: booking.totalAmount,
+                        paymentMethod: booking.paymentMethod ?? 'Card',
+                        status: booking.status,
+                        bookedAt: booking.createdAt ?? booking.checkIn,
+                        additionalAdults: booking.additionalAdults ?? const [],
+                        additionalChildren:
+                            booking.additionalChildren ?? const [],
+                      );
+                      downloadReceipt(context, data);
+                    },
+                    icon: const Icon(LucideIcons.download, size: 16),
+                    label: const Text(
+                      'Download Receipt',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primaryColor,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 0,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
-    ),
-  );
+    );
   }
 
-  Widget _buildDetailRow(String label, String value, {bool isId = false, bool isBold = false}) {
+  Widget _buildDetailRow(
+    String label,
+    String value, {
+    bool isId = false,
+    bool isBold = false,
+  }) {
     return Container(
       decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: AppTheme.mutedColor, width: 0.5)),
+        border: Border(
+          bottom: BorderSide(color: AppTheme.mutedColor, width: 0.5),
+        ),
       ),
       padding: const EdgeInsets.symmetric(vertical: 12),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 13,
-              color: Colors.grey[600],
-            ),
-          ),
+          Text(label, style: TextStyle(fontSize: 13, color: Colors.grey[600])),
           Flexible(
             child: Text(
               value,
@@ -611,8 +858,8 @@ class BookingListItem extends StatelessWidget {
                 color: isId
                     ? const Color(0xFF2C3E50)
                     : isBold
-                        ? AppTheme.primaryColor
-                        : Colors.black87,
+                    ? AppTheme.primaryColor
+                    : Colors.black87,
               ),
               overflow: TextOverflow.ellipsis,
             ),

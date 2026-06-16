@@ -20,10 +20,12 @@ class BookingRepositoryImpl implements BookingRepository {
   Future<void> _saveToCache(List<BookingEntity> bookings) async {
     try {
       const storage = FlutterSecureStorage();
-      final json = jsonEncode(bookings.map((b) {
-        if (b is BookingModel) return b.toJson();
-        return (b as BookingModel).toJson();
-      }).toList());
+      final json = jsonEncode(
+        bookings.map((b) {
+          if (b is BookingModel) return b.toJson();
+          return (b as BookingModel).toJson();
+        }).toList(),
+      );
       await storage.write(key: _kBookingCacheKey, value: json);
     } catch (e) {
       debugPrint('Booking cache write error: $e');
@@ -47,7 +49,8 @@ class BookingRepositoryImpl implements BookingRepository {
 
   @override
   Future<Either<Failure, BookingEntity>> createBooking(
-      Map<String, dynamic> data) async {
+    Map<String, dynamic> data,
+  ) async {
     try {
       final booking = await _remoteDataSource.createBooking(data);
       // Append new booking to cache
@@ -79,7 +82,8 @@ class BookingRepositoryImpl implements BookingRepository {
         debugPrint('Offline: serving ${cached.length} bookings from cache');
         return Right(cached);
       }
-      String message = 'Unable to connect. Please check your internet connection.';
+      String message =
+          'Unable to connect. Please check your internet connection.';
       if (e.response?.data is Map) {
         message = e.response?.data['message'] ?? message;
       }

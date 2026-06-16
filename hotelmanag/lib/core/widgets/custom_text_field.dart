@@ -34,9 +34,13 @@ class CustomTextField extends StatelessWidget {
     final isDark = Theme.of(context).colorScheme.brightness == Brightness.dark;
     final textColor = isDark ? Colors.white : Colors.black87;
     final fillColor = isDark ? const Color(0xFF19222E) : Colors.white;
-    final borderColor = isDark ? Colors.white24 : AppTheme.primaryColor.withOpacity(0.1);
+    final borderColor = isDark
+        ? Colors.white24
+        : AppTheme.primaryColor.withOpacity(0.1);
     final iconColor = isDark ? Colors.white70 : AppTheme.primaryColor;
-    final hintColor = isDark ? Colors.white38 : AppTheme.primaryColor.withOpacity(0.3);
+    final hintColor = isDark
+        ? Colors.white38
+        : AppTheme.primaryColor.withOpacity(0.3);
 
     return TextFormField(
       controller: controller,
@@ -49,11 +53,15 @@ class CustomTextField extends StatelessWidget {
       style: TextStyle(color: textColor),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: TextStyle(color: isDark ? Colors.white70 : AppTheme.primaryColor),
+        labelStyle: TextStyle(
+          color: isDark ? Colors.white70 : AppTheme.primaryColor,
+        ),
         hintText: hint,
         hintStyle: TextStyle(color: hintColor),
         errorText: errorText,
-        prefixIcon: prefixIcon != null ? Icon(prefixIcon, size: 20, color: iconColor) : null,
+        prefixIcon: prefixIcon != null
+            ? Icon(prefixIcon, size: 20, color: iconColor)
+            : null,
         suffixIcon: suffixIcon,
         counterText: maxLength != null ? '' : null,
         filled: true,
@@ -66,9 +74,7 @@ class CustomTextField extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: AppTheme.accentColor, width: 1.5),
         ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
   }

@@ -87,7 +87,9 @@ class _ReceiptPreviewDialogState extends State<ReceiptPreviewDialog> {
       // Give a tiny delay for state and layout synchronization
       await Future.delayed(const Duration(milliseconds: 150));
 
-      final boundary = _boundaryKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+      final boundary =
+          _boundaryKey.currentContext?.findRenderObject()
+              as RenderRepaintBoundary?;
       if (boundary == null) {
         throw Exception('Render boundary is not initialized yet');
       }
@@ -101,17 +103,19 @@ class _ReceiptPreviewDialogState extends State<ReceiptPreviewDialog> {
       final pngBytes = byteData.buffer.asUint8List();
 
       final ref = widget.data.bookingId.length > 5
-          ? widget.data.bookingId.substring(widget.data.bookingId.length - 5).toUpperCase()
+          ? widget.data.bookingId
+                .substring(widget.data.bookingId.length - 5)
+                .toUpperCase()
           : widget.data.bookingId.toUpperCase();
 
       if (share || kIsWeb) {
         await Printing.sharePdf(
           bytes: pngBytes,
-          filename: 'LuxeStay_Receipt_LS-$ref.png',
+          filename: 'Athithigriha_Receipt_LS-$ref.png',
         );
       } else {
-        await Gal.putImageBytes(pngBytes, name: 'LuxeStay_Receipt_LS-$ref');
-        
+        await Gal.putImageBytes(pngBytes, name: 'Athithigriha_Receipt_LS-$ref');
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -201,13 +205,13 @@ class _ReceiptPreviewDialogState extends State<ReceiptPreviewDialog> {
                             color: Colors.black.withOpacity(0.04),
                             blurRadius: 10,
                             offset: const Offset(0, 4),
-                          )
+                          ),
                         ],
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // LuxeStay Title & Booking Ref
+                          // Athithigriha Title & Booking Ref
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
@@ -215,7 +219,7 @@ class _ReceiptPreviewDialogState extends State<ReceiptPreviewDialog> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   const Text(
-                                    'LuxeStay',
+                                    'Athithigriha',
                                     style: TextStyle(
                                       fontSize: 22,
                                       fontWeight: FontWeight.bold,
@@ -238,7 +242,10 @@ class _ReceiptPreviewDialogState extends State<ReceiptPreviewDialog> {
                                 crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
                                     decoration: BoxDecoration(
                                       color: const Color(0xFFF1EDE6),
                                       borderRadius: BorderRadius.circular(6),
@@ -256,7 +263,10 @@ class _ReceiptPreviewDialogState extends State<ReceiptPreviewDialog> {
                                   const SizedBox(height: 4),
                                   Text(
                                     'Date: ${dateFmt.format(widget.data.bookedAt)}',
-                                    style: TextStyle(fontSize: 9, color: Colors.grey[600]),
+                                    style: TextStyle(
+                                      fontSize: 9,
+                                      color: Colors.grey[600],
+                                    ),
                                   ),
                                 ],
                               ),
@@ -280,9 +290,14 @@ class _ReceiptPreviewDialogState extends State<ReceiptPreviewDialog> {
                                 ),
                               ),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 3,
+                                ),
                                 decoration: BoxDecoration(
-                                  color: widget.data.status.toLowerCase() == 'confirmed'
+                                  color:
+                                      widget.data.status.toLowerCase() ==
+                                          'confirmed'
                                       ? const Color(0xFFD1FAE5)
                                       : const Color(0xFFFEE2E2),
                                   borderRadius: BorderRadius.circular(12),
@@ -292,7 +307,9 @@ class _ReceiptPreviewDialogState extends State<ReceiptPreviewDialog> {
                                   style: TextStyle(
                                     fontSize: 9,
                                     fontWeight: FontWeight.bold,
-                                    color: widget.data.status.toLowerCase() == 'confirmed'
+                                    color:
+                                        widget.data.status.toLowerCase() ==
+                                            'confirmed'
                                         ? const Color(0xFF065F46)
                                         : const Color(0xFF991B1B),
                                   ),
@@ -323,7 +340,10 @@ class _ReceiptPreviewDialogState extends State<ReceiptPreviewDialog> {
                           ),
                           Text(
                             widget.data.hotelLocation,
-                            style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.grey[600],
+                            ),
                           ),
                           const SizedBox(height: 16),
 
@@ -336,11 +356,26 @@ class _ReceiptPreviewDialogState extends State<ReceiptPreviewDialog> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     _buildReceiptSectionHeader('STAY DETAILS'),
-                                    _buildReceiptRow('Check-in', dateFmt.format(widget.data.checkIn)),
-                                    _buildReceiptRow('Check-out', dateFmt.format(widget.data.checkOut)),
-                                    _buildReceiptRow('Nights', '${widget.data.nights} night${widget.data.nights != 1 ? 's' : ''}'),
-                                    _buildReceiptRow('Room Type', widget.data.roomType),
-                                    _buildReceiptRow('Room No.', widget.data.roomNumber),
+                                    _buildReceiptRow(
+                                      'Check-in',
+                                      dateFmt.format(widget.data.checkIn),
+                                    ),
+                                    _buildReceiptRow(
+                                      'Check-out',
+                                      dateFmt.format(widget.data.checkOut),
+                                    ),
+                                    _buildReceiptRow(
+                                      'Nights',
+                                      '${widget.data.nights} night${widget.data.nights != 1 ? 's' : ''}',
+                                    ),
+                                    _buildReceiptRow(
+                                      'Room Type',
+                                      widget.data.roomType,
+                                    ),
+                                    _buildReceiptRow(
+                                      'Room No.',
+                                      widget.data.roomNumber,
+                                    ),
                                   ],
                                 ),
                               ),
@@ -350,8 +385,14 @@ class _ReceiptPreviewDialogState extends State<ReceiptPreviewDialog> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     _buildReceiptSectionHeader('PAYMENT INFO'),
-                                    _buildReceiptRow('Method', widget.data.paymentMethod.toUpperCase()),
-                                    _buildReceiptRow('Guests Total', '${widget.data.guests} person(s)'),
+                                    _buildReceiptRow(
+                                      'Method',
+                                      widget.data.paymentMethod.toUpperCase(),
+                                    ),
+                                    _buildReceiptRow(
+                                      'Guests Total',
+                                      '${widget.data.guests} person(s)',
+                                    ),
                                   ],
                                 ),
                               ),
@@ -362,35 +403,52 @@ class _ReceiptPreviewDialogState extends State<ReceiptPreviewDialog> {
                           const SizedBox(height: 16),
 
                           // GUEST DETAILS SECTION (MANDATORY REQUIREMENT)
-                          _buildReceiptSectionHeader('REGISTERED GUEST(S) & GOVT ID(S)'),
+                          _buildReceiptSectionHeader(
+                            'REGISTERED GUEST(S) & GOVT ID(S)',
+                          ),
                           const SizedBox(height: 6),
-                          
+
                           // Lead Guest
                           _buildGuestItemRow(
                             widget.data.guestName,
                             'Lead Guest',
                             widget.data.guestId ?? 'Not Provided',
                           ),
-                          
+
                           // Additional Adults
-                          ...widget.data.additionalAdults.asMap().entries.map((entry) {
+                          ...widget.data.additionalAdults.asMap().entries.map((
+                            entry,
+                          ) {
                             final idx = entry.key;
                             final guest = entry.value;
-                            final name = guest['name']?.toString() ?? 'Adult ${idx + 1}';
-                            final id = guest['id']?.toString() ?? 'Not Provided';
-                            return _buildGuestItemRow(name, 'Adult Guest ${idx + 1}', id);
+                            final name =
+                                guest['name']?.toString() ?? 'Adult ${idx + 1}';
+                            final id =
+                                guest['id']?.toString() ?? 'Not Provided';
+                            return _buildGuestItemRow(
+                              name,
+                              'Adult Guest ${idx + 1}',
+                              id,
+                            );
                           }),
-                          
+
                           // Additional Children
-                          ...widget.data.additionalChildren.asMap().entries.map((entry) {
-                            final idx = entry.key;
-                            final guest = entry.value;
-                            final name = guest['name']?.toString() ?? 'Child ${idx + 1}';
-                            final id = guest['id']?.toString() ?? 'Not Provided';
-                            final age = guest['age']?.toString() ?? '';
-                            final role = age.isNotEmpty ? 'Child Guest (Age $age)' : 'Child Guest';
-                            return _buildGuestItemRow(name, role, id);
-                          }),
+                          ...widget.data.additionalChildren.asMap().entries.map(
+                            (entry) {
+                              final idx = entry.key;
+                              final guest = entry.value;
+                              final name =
+                                  guest['name']?.toString() ??
+                                  'Child ${idx + 1}';
+                              final id =
+                                  guest['id']?.toString() ?? 'Not Provided';
+                              final age = guest['age']?.toString() ?? '';
+                              final role = age.isNotEmpty
+                                  ? 'Child Guest (Age $age)'
+                                  : 'Child Guest';
+                              return _buildGuestItemRow(name, role, id);
+                            },
+                          ),
 
                           const SizedBox(height: 16),
                           Container(height: 1, color: Colors.grey[200]),
@@ -425,7 +483,8 @@ class _ReceiptPreviewDialogState extends State<ReceiptPreviewDialog> {
                                 Container(height: 1, color: Colors.grey[300]),
                                 const SizedBox(height: 6),
                                 Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     const Text(
                                       'TOTAL PAID',
@@ -448,22 +507,29 @@ class _ReceiptPreviewDialogState extends State<ReceiptPreviewDialog> {
                               ],
                             ),
                           ),
-                          
+
                           const SizedBox(height: 24),
                           Container(height: 1, color: Colors.grey[200]),
                           const SizedBox(height: 8),
-                          
+
                           // Receipt footer message
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                'Thank you for choosing LuxeStay!',
-                                style: TextStyle(fontSize: 9, color: Colors.grey[500], fontStyle: FontStyle.italic),
+                                'Thank you for choosing Athithigriha!',
+                                style: TextStyle(
+                                  fontSize: 9,
+                                  color: Colors.grey[500],
+                                  fontStyle: FontStyle.italic,
+                                ),
                               ),
                               Text(
-                                'support@luxestay.com',
-                                style: TextStyle(fontSize: 9, color: Colors.grey[500]),
+                                'support@athithigriha.com',
+                                style: TextStyle(
+                                  fontSize: 9,
+                                  color: Colors.grey[500],
+                                ),
                               ),
                             ],
                           ),
@@ -488,13 +554,17 @@ class _ReceiptPreviewDialogState extends State<ReceiptPreviewDialog> {
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         side: BorderSide(color: Colors.grey[300]!),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                       child: Text(
                         'Close',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
-                          color: isDark ? Colors.white : const Color(0xFF454F5E),
+                          color: isDark
+                              ? Colors.white
+                              : const Color(0xFF454F5E),
                           fontSize: 12,
                         ),
                       ),
@@ -504,21 +574,30 @@ class _ReceiptPreviewDialogState extends State<ReceiptPreviewDialog> {
                   Expanded(
                     flex: 1,
                     child: OutlinedButton.icon(
-                      onPressed: _isCapturing ? null : () => _shareReceiptAsPng(share: true),
+                      onPressed: _isCapturing
+                          ? null
+                          : () => _shareReceiptAsPng(share: true),
                       icon: const Icon(LucideIcons.share2, size: 14),
                       label: Text(
                         'Share',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
-                          color: isDark ? Colors.white : const Color(0xFF454F5E),
+                          color: isDark
+                              ? Colors.white
+                              : const Color(0xFF454F5E),
                           fontSize: 12,
                         ),
                         maxLines: 1,
                       ),
                       style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 14,
+                          horizontal: 8,
+                        ),
                         side: BorderSide(color: Colors.grey[300]!),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                     ),
                   ),
@@ -526,25 +605,40 @@ class _ReceiptPreviewDialogState extends State<ReceiptPreviewDialog> {
                   Expanded(
                     flex: 1,
                     child: ElevatedButton.icon(
-                      onPressed: _isCapturing ? null : () => _shareReceiptAsPng(share: false),
+                      onPressed: _isCapturing
+                          ? null
+                          : () => _shareReceiptAsPng(share: false),
                       icon: _isCapturing
                           ? const SizedBox(
                               width: 14,
                               height: 14,
-                              child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)),
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.white,
+                                ),
+                              ),
                             )
                           : const Icon(LucideIcons.download, size: 14),
                       label: const Text(
                         'Save',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
                       ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF454F5E),
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 14,
+                          horizontal: 8,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                         elevation: 0,
                       ),
                     ),
@@ -583,13 +677,21 @@ class _ReceiptPreviewDialogState extends State<ReceiptPreviewDialog> {
             width: 70,
             child: Text(
               label,
-              style: TextStyle(fontSize: 10, color: Colors.grey[500], fontWeight: FontWeight.w500),
+              style: TextStyle(
+                fontSize: 10,
+                color: Colors.grey[500],
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF454F5E)),
+              style: const TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF454F5E),
+              ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
@@ -611,13 +713,21 @@ class _ReceiptPreviewDialogState extends State<ReceiptPreviewDialog> {
               children: [
                 Text(
                   name,
-                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF2D3748)),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF2D3748),
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
                 Text(
                   role,
-                  style: TextStyle(fontSize: 9, color: Colors.grey[600], fontWeight: FontWeight.w500),
+                  style: TextStyle(
+                    fontSize: 9,
+                    color: Colors.grey[600],
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ],
             ),
@@ -661,7 +771,11 @@ class _ReceiptPreviewDialogState extends State<ReceiptPreviewDialog> {
           ),
           Text(
             val,
-            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: valColor ?? const Color(0xFF454F5E)),
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: valColor ?? const Color(0xFF454F5E),
+            ),
           ),
         ],
       ),

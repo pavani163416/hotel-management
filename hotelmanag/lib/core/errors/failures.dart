@@ -17,12 +17,16 @@ class CacheFailure extends Failure {
 }
 
 class NetworkFailure extends Failure {
-  const NetworkFailure([String message = 'No Internet Connection']) : super(message);
+  const NetworkFailure([String message = 'No Internet Connection'])
+    : super(message);
 }
 
 class UnverifiedEmailFailure extends Failure {
   final String? otp;
-  const UnverifiedEmailFailure([String message = 'Email not verified', this.otp]) : super(message);
+  const UnverifiedEmailFailure([
+    String message = 'Email not verified',
+    this.otp,
+  ]) : super(message);
 
   @override
   List<Object> get props => [message, otp ?? ''];

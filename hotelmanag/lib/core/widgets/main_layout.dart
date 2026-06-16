@@ -38,26 +38,19 @@ class MainLayout extends StatelessWidget {
           Container(
             width: double.infinity,
             height: double.infinity,
-            constraints: BoxConstraints(minHeight: MediaQuery.of(context).size.height),
+            constraints: BoxConstraints(
+              minHeight: MediaQuery.of(context).size.height,
+            ),
             decoration: const BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [
-                  AppTheme.backgroundColor,
-                  AppTheme.accentColor,
-                ],
+                colors: [AppTheme.backgroundColor, AppTheme.accentColor],
                 stops: [0.7, 1.0],
               ),
             ),
             child: isScrollable
-                ? SingleChildScrollView(
-                    child: Column(
-                      children: [
-                        child,
-                      ],
-                    ),
-                  )
+                ? SingleChildScrollView(child: Column(children: [child]))
                 : child,
           ),
           if (showNavbar && showBottomNav)
@@ -73,14 +66,19 @@ class MainLayout extends StatelessWidget {
             ),
         ],
       ),
-      bottomNavigationBar: (showNavbar && showBottomNav) ? _buildBottomNav(context) : null,
+      bottomNavigationBar: (showNavbar && showBottomNav)
+          ? _buildBottomNav(context)
+          : null,
       floatingActionButton: Navigator.of(context).canPop()
           ? Padding(
               padding: const EdgeInsets.only(top: 16),
               child: FloatingActionButton.small(
                 onPressed: () => context.pop(),
                 backgroundColor: Colors.white.withOpacity(0.9),
-                child: const Icon(LucideIcons.arrowLeft, color: AppTheme.primaryColor),
+                child: const Icon(
+                  LucideIcons.arrowLeft,
+                  color: AppTheme.primaryColor,
+                ),
               ),
             )
           : null,
@@ -95,7 +93,7 @@ class MainLayout extends StatelessWidget {
       title: InkWell(
         onTap: () => context.go('/'),
         child: const Text(
-          'LuxeStay',
+          'Athithigriha',
           style: TextStyle(
             color: AppTheme.primaryColor,
             fontWeight: FontWeight.bold,
@@ -111,7 +109,11 @@ class MainLayout extends StatelessWidget {
             return Stack(
               children: [
                 IconButton(
-                  icon: const Icon(LucideIcons.bell, color: AppTheme.primaryColor, size: 22),
+                  icon: const Icon(
+                    LucideIcons.bell,
+                    color: AppTheme.primaryColor,
+                    size: 22,
+                  ),
                   onPressed: () {
                     showModalBottomSheet(
                       context: context,
@@ -127,7 +129,10 @@ class MainLayout extends StatelessWidget {
                     right: 8,
                     child: Container(
                       padding: const EdgeInsets.all(4),
-                      decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                      decoration: const BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                      ),
                       child: Text(
                         '$unreadCount',
                         style: const TextStyle(
@@ -147,25 +152,39 @@ class MainLayout extends StatelessWidget {
             return DropdownButtonHideUnderline(
               child: DropdownButton<String>(
                 value: currencyProvider.currency,
-                icon: const Icon(LucideIcons.chevronDown, color: AppTheme.primaryColor, size: 16),
-                style: const TextStyle(color: AppTheme.primaryColor, fontSize: 13, fontWeight: FontWeight.bold),
+                icon: const Icon(
+                  LucideIcons.chevronDown,
+                  color: AppTheme.primaryColor,
+                  size: 16,
+                ),
+                style: const TextStyle(
+                  color: AppTheme.primaryColor,
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                ),
                 onChanged: (String? newValue) {
                   if (newValue != null) {
                     currencyProvider.setCurrency(newValue);
                   }
                 },
-                items: CurrencyProvider.rates.keys.map<DropdownMenuItem<String>>((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
+                items: CurrencyProvider.rates.keys
+                    .map<DropdownMenuItem<String>>((String value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value),
+                      );
+                    })
+                    .toList(),
               ),
             );
           },
         ),
         IconButton(
-          icon: const Icon(LucideIcons.user, color: AppTheme.primaryColor, size: 22),
+          icon: const Icon(
+            LucideIcons.user,
+            color: AppTheme.primaryColor,
+            size: 22,
+          ),
           onPressed: () => context.go('/profile'),
         ),
         const SizedBox(width: 8),
@@ -176,10 +195,14 @@ class MainLayout extends StatelessWidget {
   Widget _buildBottomNav(BuildContext context) {
     final location = GoRouterState.of(context).matchedLocation;
     int currentIndex = 0;
-    if (location == '/') currentIndex = 0;
-    else if (location == '/hotels') currentIndex = 1;
-    else if (location == '/history') currentIndex = 2;
-    else if (location == '/profile') currentIndex = 3;
+    if (location == '/')
+      currentIndex = 0;
+    else if (location == '/hotels')
+      currentIndex = 1;
+    else if (location == '/history')
+      currentIndex = 2;
+    else if (location == '/profile')
+      currentIndex = 3;
 
     return Container(
       height: 70 + MediaQuery.of(context).padding.bottom,
@@ -198,17 +221,52 @@ class MainLayout extends StatelessWidget {
         padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom),
         child: Row(
           children: [
-            _buildNavItem(context, 0, Icons.home_outlined, Icons.home_rounded, 'Home', currentIndex == 0),
-            _buildNavItem(context, 1, Icons.apartment_outlined, Icons.apartment_rounded, 'Hotels', currentIndex == 1),
-            _buildNavItem(context, 2, Icons.history_rounded, Icons.manage_history_rounded, 'History', currentIndex == 2),
-            _buildNavItem(context, 3, Icons.account_circle_outlined, Icons.account_circle_rounded, 'Profile', currentIndex == 3),
+            _buildNavItem(
+              context,
+              0,
+              Icons.home_outlined,
+              Icons.home_rounded,
+              'Home',
+              currentIndex == 0,
+            ),
+            _buildNavItem(
+              context,
+              1,
+              Icons.apartment_outlined,
+              Icons.apartment_rounded,
+              'Hotels',
+              currentIndex == 1,
+            ),
+            _buildNavItem(
+              context,
+              2,
+              Icons.history_rounded,
+              Icons.manage_history_rounded,
+              'History',
+              currentIndex == 2,
+            ),
+            _buildNavItem(
+              context,
+              3,
+              Icons.account_circle_outlined,
+              Icons.account_circle_rounded,
+              'Profile',
+              currentIndex == 3,
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildNavItem(BuildContext context, int index, IconData outlineIcon, IconData filledIcon, String label, bool isSelected) {
+  Widget _buildNavItem(
+    BuildContext context,
+    int index,
+    IconData outlineIcon,
+    IconData filledIcon,
+    String label,
+    bool isSelected,
+  ) {
     return Expanded(
       child: InkWell(
         onTap: () {
@@ -232,7 +290,9 @@ class MainLayout extends StatelessWidget {
             Icon(
               isSelected ? filledIcon : outlineIcon,
               size: 24,
-              color: isSelected ? AppTheme.primaryColor : Colors.black.withOpacity(0.3),
+              color: isSelected
+                  ? AppTheme.primaryColor
+                  : Colors.black.withOpacity(0.3),
             ),
             const SizedBox(height: 4),
             Text(
@@ -240,7 +300,9 @@ class MainLayout extends StatelessWidget {
               style: TextStyle(
                 fontSize: 10,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                color: isSelected ? AppTheme.primaryColor : Colors.black.withOpacity(0.3),
+                color: isSelected
+                    ? AppTheme.primaryColor
+                    : Colors.black.withOpacity(0.3),
               ),
             ),
           ],

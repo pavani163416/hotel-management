@@ -18,7 +18,10 @@ class OtpPage extends StatefulWidget {
 }
 
 class _OtpPageState extends State<OtpPage> {
-  final List<TextEditingController> _controllers = List.generate(6, (_) => TextEditingController());
+  final List<TextEditingController> _controllers = List.generate(
+    6,
+    (_) => TextEditingController(),
+  );
   final List<FocusNode> _focusNodes = List.generate(6, (_) => FocusNode());
   int _resendCooldown = 0;
   Timer? _cooldownTimer;
@@ -46,8 +49,12 @@ class _OtpPageState extends State<OtpPage> {
   @override
   void dispose() {
     _cooldownTimer?.cancel();
-    for (var c in _controllers) { c.dispose(); }
-    for (var f in _focusNodes) { f.dispose(); }
+    for (var c in _controllers) {
+      c.dispose();
+    }
+    for (var f in _focusNodes) {
+      f.dispose();
+    }
     super.dispose();
   }
 
@@ -58,17 +65,17 @@ class _OtpPageState extends State<OtpPage> {
 
     // TC-FE-028: Guard 1 — field must not be empty
     if (code.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('OTP is required')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('OTP is required')));
       return;
     }
 
     // TC-FE-028: Guard 2 — enforce exactly 6 digits before any API call
     if (code.length < 6) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('OTP must be 6 digits')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('OTP must be 6 digits')));
       return;
     }
 
@@ -96,12 +103,16 @@ class _OtpPageState extends State<OtpPage> {
     if (_resendCooldown > 0) return;
     _startCooldown();
     final auth = Provider.of<AuthProvider>(context, listen: false);
-    
+
     final success = await auth.resendOtp(widget.email);
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(success ? 'A new verification code has been sent to your email.' : (auth.error ?? 'Failed to resend code')),
+          content: Text(
+            success
+                ? 'A new verification code has been sent to your email.'
+                : (auth.error ?? 'Failed to resend code'),
+          ),
         ),
       );
     }
@@ -135,7 +146,11 @@ class _OtpPageState extends State<OtpPage> {
               shape: BoxShape.circle,
             ),
             child: IconButton(
-              icon: const Icon(LucideIcons.chevronLeft, color: AppTheme.primaryColor, size: 22),
+              icon: const Icon(
+                LucideIcons.chevronLeft,
+                color: AppTheme.primaryColor,
+                size: 22,
+              ),
               onPressed: () => context.go('/login'),
             ),
           ),
@@ -168,14 +183,14 @@ class _OtpPageState extends State<OtpPage> {
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(
-                        LucideIcons.shieldCheck, 
-                        size: 40, 
-                        color: AppTheme.primaryColor
+                        LucideIcons.shieldCheck,
+                        size: 40,
+                        color: AppTheme.primaryColor,
                       ),
                     ),
                   ),
                   const SizedBox(height: 32),
-                  
+
                   // Text Headers
                   Text(
                     'Security Verification',
@@ -190,9 +205,14 @@ class _OtpPageState extends State<OtpPage> {
                   RichText(
                     textAlign: TextAlign.center,
                     text: TextSpan(
-                      style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey[600], height: 1.5),
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: Colors.grey[600],
+                        height: 1.5,
+                      ),
                       children: [
-                        const TextSpan(text: 'We sent a 6-digit confirmation code to\n'),
+                        const TextSpan(
+                          text: 'We sent a 6-digit confirmation code to\n',
+                        ),
                         TextSpan(
                           text: widget.email,
                           style: const TextStyle(
@@ -215,20 +235,22 @@ class _OtpPageState extends State<OtpPage> {
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 150),
                           decoration: BoxDecoration(
-                            color: _focusNodes[index].hasFocus 
-                                ? Colors.white 
+                            color: _focusNodes[index].hasFocus
+                                ? Colors.white
                                 : Colors.grey[50],
                             borderRadius: BorderRadius.circular(14),
                             border: Border.all(
-                              color: _focusNodes[index].hasFocus 
-                                  ? AppTheme.primaryColor 
+                              color: _focusNodes[index].hasFocus
+                                  ? AppTheme.primaryColor
                                   : Colors.grey[200]!,
                               width: _focusNodes[index].hasFocus ? 2 : 1,
                             ),
                             boxShadow: [
                               if (_focusNodes[index].hasFocus)
                                 BoxShadow(
-                                  color: AppTheme.primaryColor.withOpacity(0.08),
+                                  color: AppTheme.primaryColor.withOpacity(
+                                    0.08,
+                                  ),
                                   blurRadius: 10,
                                   offset: const Offset(0, 4),
                                 ),
@@ -241,12 +263,16 @@ class _OtpPageState extends State<OtpPage> {
                               keyboardType: TextInputType.text,
                               textAlign: TextAlign.center,
                               style: const TextStyle(
-                                fontSize: 20, 
-                                fontWeight: FontWeight.bold, 
-                                color: AppTheme.primaryColor
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: AppTheme.primaryColor,
                               ),
                               maxLength: 1,
-                              inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9]'))],
+                              inputFormatters: [
+                                FilteringTextInputFormatter.allow(
+                                  RegExp(r'[a-zA-Z0-9]'),
+                                ),
+                              ],
                               decoration: const InputDecoration(
                                 counterText: '',
                                 border: InputBorder.none,
@@ -270,17 +296,27 @@ class _OtpPageState extends State<OtpPage> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppTheme.primaryColor,
                         foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
                         elevation: 0,
                       ),
                       child: auth.isLoading
                           ? const SizedBox(
-                              height: 24, width: 24,
-                              child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                              height: 24,
+                              width: 24,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
                             )
                           : const Text(
-                              'Verify Account', 
-                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 0.5)
+                              'Verify Account',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.5,
+                              ),
                             ),
                     ),
                   ),
@@ -291,24 +327,28 @@ class _OtpPageState extends State<OtpPage> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        "Didn't receive the code? ", 
-                        style: TextStyle(color: Colors.grey[600], fontSize: 14)
+                        "Didn't receive the code? ",
+                        style: TextStyle(color: Colors.grey[600], fontSize: 14),
                       ),
                       GestureDetector(
                         onTap: _resendCooldown > 0 ? null : _resendOtp,
                         child: Text(
-                          _resendCooldown > 0 ? 'Resend Code in ${_resendCooldown}s' : 'Resend Code',
+                          _resendCooldown > 0
+                              ? 'Resend Code in ${_resendCooldown}s'
+                              : 'Resend Code',
                           style: TextStyle(
-                            color: _resendCooldown > 0 ? Colors.grey : AppTheme.accentColor, 
+                            color: _resendCooldown > 0
+                                ? Colors.grey
+                                : AppTheme.accentColor,
                             fontWeight: FontWeight.bold,
-                            decoration: _resendCooldown > 0 ? TextDecoration.none : TextDecoration.underline
+                            decoration: _resendCooldown > 0
+                                ? TextDecoration.none
+                                : TextDecoration.underline,
                           ),
                         ),
                       ),
                     ],
                   ),
-
-
                 ],
               ),
             ),

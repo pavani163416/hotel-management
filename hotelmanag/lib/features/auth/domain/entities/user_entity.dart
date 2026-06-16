@@ -22,7 +22,16 @@ class UserEntity extends Equatable {
   });
 
   @override
-  List<Object?> get props => [id, name, email, phone, city, profileImage, coverImage, paymentMethods];
+  List<Object?> get props => [
+    id,
+    name,
+    email,
+    phone,
+    city,
+    profileImage,
+    coverImage,
+    paymentMethods,
+  ];
 }
 
 class PaymentMethod extends Equatable {
@@ -45,5 +54,13 @@ class PaymentMethod extends Equatable {
   });
 
   @override
-  List<Object?> get props => [type, brand, last4, expiry, upiId, bankName, isDefault];
+  List<Object?> get props => [
+    type,
+    brand,
+    last4,
+    expiry,
+    upiId,
+    bankName,
+    isDefault,
+  ];
 }

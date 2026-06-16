@@ -4,7 +4,12 @@ import 'package:hotelmanag/features/hotels/data/models/hotel_model.dart';
 abstract class HotelRemoteDataSource {
   Future<List<HotelModel>> getHotels();
   Future<HotelModel> getHotelDetails(String id);
-  Future<HotelModel> submitReview(String hotelId, String author, int rating, String comment);
+  Future<HotelModel> submitReview(
+    String hotelId,
+    String author,
+    int rating,
+    String comment,
+  );
 }
 
 class HotelRemoteDataSourceImpl implements HotelRemoteDataSource {
@@ -26,12 +31,16 @@ class HotelRemoteDataSourceImpl implements HotelRemoteDataSource {
   }
 
   @override
-  Future<HotelModel> submitReview(String hotelId, String author, int rating, String comment) async {
-    final response = await _apiService.post('hotels/$hotelId/reviews', data: {
-      'author': author,
-      'rating': rating,
-      'comment': comment,
-    });
+  Future<HotelModel> submitReview(
+    String hotelId,
+    String author,
+    int rating,
+    String comment,
+  ) async {
+    final response = await _apiService.post(
+      'hotels/$hotelId/reviews',
+      data: {'author': author, 'rating': rating, 'comment': comment},
+    );
     return HotelModel.fromJson(response.data['data']);
   }
 }

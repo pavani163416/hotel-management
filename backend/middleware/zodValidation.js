@@ -103,7 +103,7 @@ const createBooking = z.object({
   paymentMode:  z.enum(["card", "upi", "cash", "bank_transfer", "online"]).optional(),
   specialRequests: z.string().max(500).trim().optional(),
 }).strict().refine(
-  (d) => d.roomId || d.room,
+  (d) => d.roomId || d.room || d.hotelStringId,
   { message: "roomId is required", path: ["roomId"] }
 ).refine(
   (d) => new Date(d.checkIn) < new Date(d.checkOut),

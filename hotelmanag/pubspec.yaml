@@ -65,6 +65,7 @@ dependencies:
   latlong2: ^0.9.1
   local_auth: ^3.0.1
   firebase_app_check: ^0.4.4+2
+  dash_chat_2: ^0.0.21
 
 
 dev_dependencies:

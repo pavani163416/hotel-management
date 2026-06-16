@@ -4,11 +4,16 @@ class AppConstants {
   static const String appName = 'HotelManag';
 
   // ── Environment-driven API Configuration ──────────────────────────
-  static const String _productionApiUrl = 'https://hotel-management-production-2225.up.railway.app/api/';
-  static const String _stagingApiUrl = 'https://hotel-management-staging.up.railway.app/api/';
-  
+  static const String _productionApiUrl =
+      'https://hotel-management-production-2225.up.railway.app/api/';
+  static const String _stagingApiUrl =
+      'https://hotel-management-staging.up.railway.app/api/';
+
   static const String _envApiUrl = String.fromEnvironment('API_URL');
-  static const String _envType = String.fromEnvironment('ENV', defaultValue: 'production');
+  static const String _envType = String.fromEnvironment(
+    'ENV',
+    defaultValue: 'production',
+  );
 
   /// Returns the correct base URL for the current build/platform.
   /// - Release builds strictly use HTTPS production/staging URLs.
@@ -24,16 +29,21 @@ class AppConstants {
     // In debug mode, if a custom URL is provided via dart-define, use it
     if (_envApiUrl.isNotEmpty) return _envApiUrl;
 
-    final scheme = 'ht' 'tp://';
-    final host = '127.' '0.0.1';
-    final emu = '10.' '0.2.2';
+    final scheme =
+        'ht'
+        'tp://';
+    final host =
+        '127.'
+        '0.0.1';
+    final emu =
+        '10.'
+        '0.2.2';
 
     // Use local dev configuration
     if (kIsWeb) {
       return '$scheme$host:5000/api/';
     } else if (defaultTargetPlatform == TargetPlatform.android) {
-      // Use Railway production backend — no local backend is running
-      return _productionApiUrl;
+      return '$scheme$emu:5000/api/';
     } else {
       return '$scheme$host:5000/api/';
     }

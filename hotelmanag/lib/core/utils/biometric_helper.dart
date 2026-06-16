@@ -7,14 +7,16 @@ class BiometricHelper {
 
   static Future<bool> authenticate({required String reason}) async {
     // Biometrics usually only work on mobile devices (iOS/Android)
-    if (kIsWeb) return true; // Bypass on web if not supported or needed, or handle appropriately
+    if (kIsWeb)
+      return true; // Bypass on web if not supported or needed, or handle appropriately
 
     try {
       final bool canAuthenticateWithBiometrics = await auth.canCheckBiometrics;
       final bool canAuthenticate =
           canAuthenticateWithBiometrics || await auth.isDeviceSupported();
 
-      if (!canAuthenticate) return true; // If device has no biometrics, we skip or fallback
+      if (!canAuthenticate)
+        return true; // If device has no biometrics, we skip or fallback
 
       final bool didAuthenticate = await auth.authenticate(
         localizedReason: reason,

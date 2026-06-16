@@ -36,15 +36,15 @@ class _NotificationModalState extends State<NotificationModal> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).colorScheme.brightness == Brightness.dark;
-    final sheetBg     = isDark ? const Color(0xFF253040) : Colors.white;
-    final titleColor  = isDark ? const Color(0xFFEAE5DC) : AppTheme.primaryColor;
-    final subColor    = isDark ? const Color(0xFFB0A898) : Colors.grey[500]!;
-    final divColor    = isDark ? Colors.white12 : Colors.grey.shade200;
+    final sheetBg = isDark ? const Color(0xFF253040) : Colors.white;
+    final titleColor = isDark ? const Color(0xFFEAE5DC) : AppTheme.primaryColor;
+    final subColor = isDark ? const Color(0xFFB0A898) : Colors.grey[500]!;
+    final divColor = isDark ? Colors.white12 : Colors.grey.shade200;
     final handleColor = isDark ? Colors.white24 : Colors.grey.shade300;
 
-    final bookings    = context.watch<BookingProvider>().bookings;
-    final provider    = context.watch<NotificationProvider>();
-    final items       = provider.getRealNotifications(bookings);
+    final bookings = context.watch<BookingProvider>().bookings;
+    final provider = context.watch<NotificationProvider>();
+    final items = provider.getRealNotifications(bookings);
     final unreadCount = items.where((i) => i.isNew).length;
 
     return DraggableScrollableSheet(
@@ -67,7 +67,8 @@ class _NotificationModalState extends State<NotificationModal> {
                     children: [
                       Center(
                         child: Container(
-                          width: 40, height: 4,
+                          width: 40,
+                          height: 4,
                           margin: const EdgeInsets.only(top: 12, bottom: 8),
                           decoration: BoxDecoration(
                             color: handleColor,
@@ -83,8 +84,10 @@ class _NotificationModalState extends State<NotificationModal> {
                             Text(
                               'Notifications',
                               style: TextStyle(
-                                fontSize: 18, fontWeight: FontWeight.w700,
-                                color: titleColor, fontFamily: 'Serif',
+                                fontSize: 18,
+                                fontWeight: FontWeight.w700,
+                                color: titleColor,
+                                fontFamily: 'Serif',
                               ),
                             ),
                             Flexible(
@@ -94,38 +97,63 @@ class _NotificationModalState extends State<NotificationModal> {
                                   children: [
                                     if (provider.isFetching)
                                       Padding(
-                                        padding: const EdgeInsets.only(right: 8),
+                                        padding: const EdgeInsets.only(
+                                          right: 8,
+                                        ),
                                         child: SizedBox(
-                                          width: 14, height: 14,
+                                          width: 14,
+                                          height: 14,
                                           child: CircularProgressIndicator(
-                                            strokeWidth: 2, color: subColor,
+                                            strokeWidth: 2,
+                                            color: subColor,
                                           ),
                                         ),
                                       ),
-                                    Text('$unreadCount unread',
-                                      style: TextStyle(fontSize: 13, color: subColor,
-                                        fontWeight: FontWeight.w500)),
+                                    Text(
+                                      '$unreadCount unread',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: subColor,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
                                     TextButton(
                                       style: TextButton.styleFrom(
-                                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                        ),
                                         minimumSize: Size.zero,
-                                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                        tapTargetSize:
+                                            MaterialTapTargetSize.shrinkWrap,
                                       ),
                                       onPressed: () {
                                         provider.markAllAsRead(items);
-                                        ScaffoldMessenger.of(context).showSnackBar(
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
                                           const SnackBar(
-                                            content: Text('All notifications marked as read'),
+                                            content: Text(
+                                              'All notifications marked as read',
+                                            ),
                                             behavior: SnackBarBehavior.floating,
                                           ),
                                         );
                                       },
-                                      child: const Text('Mark all read',
-                                        style: TextStyle(color: Color(0xFFC0A080),
-                                          fontWeight: FontWeight.bold, fontSize: 13)),
+                                      child: const Text(
+                                        'Mark all read',
+                                        style: TextStyle(
+                                          color: Color(0xFFC0A080),
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 13,
+                                        ),
+                                      ),
                                     ),
                                     IconButton(
-                                      icon: Icon(Icons.refresh, size: 18, color: subColor),
+                                      icon: Icon(
+                                        Icons.refresh,
+                                        size: 18,
+                                        color: subColor,
+                                      ),
                                       tooltip: 'Refresh',
                                       padding: EdgeInsets.zero,
                                       constraints: const BoxConstraints(),
@@ -148,7 +176,9 @@ class _NotificationModalState extends State<NotificationModal> {
                 if (items.isEmpty && provider.isFetching)
                   SliverFillRemaining(
                     hasScrollBody: false,
-                    child: Center(child: CircularProgressIndicator(color: subColor)),
+                    child: Center(
+                      child: CircularProgressIndicator(color: subColor),
+                    ),
                   )
                 else if (items.isEmpty)
                   SliverFillRemaining(
@@ -157,10 +187,16 @@ class _NotificationModalState extends State<NotificationModal> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.notifications_none_outlined, size: 48, color: subColor),
+                          Icon(
+                            Icons.notifications_none_outlined,
+                            size: 48,
+                            color: subColor,
+                          ),
                           const SizedBox(height: 12),
-                          Text('No notifications yet.',
-                            style: TextStyle(color: subColor, fontSize: 14)),
+                          Text(
+                            'No notifications yet.',
+                            style: TextStyle(color: subColor, fontSize: 14),
+                          ),
                         ],
                       ),
                     ),
@@ -169,74 +205,91 @@ class _NotificationModalState extends State<NotificationModal> {
                   SliverPadding(
                     padding: const EdgeInsets.only(bottom: 40),
                     sliver: SliverList(
-                      delegate: SliverChildBuilderDelegate(
-                        (context, index) {
-                          final item = items[index];
-                          final timeStr = _formatTimeAgo(item.timestamp);
-                          final cardColor = item.isCancelled
-                              ? (isDark ? const Color(0xFF2A3545) : const Color(0xFFE8E3D9))
-                              : Colors.transparent;
+                      delegate: SliverChildBuilderDelegate((context, index) {
+                        final item = items[index];
+                        final timeStr = _formatTimeAgo(item.timestamp);
+                        final cardColor = item.isCancelled
+                            ? (isDark
+                                  ? const Color(0xFF2A3545)
+                                  : const Color(0xFFE8E3D9))
+                            : Colors.transparent;
 
-                          IconData icon;
-                          Color iconColor;
-                          if (item.type == 'Offer') {
-                            icon = Icons.local_offer_rounded;
-                            iconColor = const Color(0xFFC0A080);
-                          } else if (item.isCancelled) {
-                            icon = Icons.cancel_outlined;
-                            iconColor = Colors.redAccent;
-                          } else {
-                            icon = Icons.check_circle_outline_rounded;
-                            iconColor = Colors.green;
-                          }
+                        IconData icon;
+                        Color iconColor;
+                        if (item.type == 'Offer') {
+                          icon = Icons.local_offer_rounded;
+                          iconColor = const Color(0xFFC0A080);
+                        } else if (item.isCancelled) {
+                          icon = Icons.cancel_outlined;
+                          iconColor = Colors.redAccent;
+                        } else {
+                          icon = Icons.check_circle_outline_rounded;
+                          iconColor = Colors.green;
+                        }
 
-                          return Container(
-                            color: cardColor,
-                            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
+                        return Container(
+                          color: cardColor,
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 12,
+                            horizontal: 20,
+                          ),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                margin: const EdgeInsets.only(
+                                  top: 2,
+                                  right: 12,
+                                ),
+                                padding: const EdgeInsets.all(7),
+                                decoration: BoxDecoration(
+                                  color: iconColor.withOpacity(0.12),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(icon, size: 16, color: iconColor),
+                              ),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      item.title,
+                                      style: TextStyle(
+                                        fontWeight: item.isNew
+                                            ? FontWeight.w600
+                                            : FontWeight.w400,
+                                        fontSize: 14,
+                                        color: titleColor,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      '${item.type} • $timeStr',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: subColor,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              if (item.isNew)
                                 Container(
-                                  margin: const EdgeInsets.only(top: 2, right: 12),
-                                  padding: const EdgeInsets.all(7),
-                                  decoration: BoxDecoration(
-                                    color: iconColor.withOpacity(0.12),
+                                  width: 8,
+                                  height: 8,
+                                  margin: const EdgeInsets.only(
+                                    top: 5,
+                                    left: 8,
+                                  ),
+                                  decoration: const BoxDecoration(
+                                    color: Color(0xFFC0A080),
                                     shape: BoxShape.circle,
                                   ),
-                                  child: Icon(icon, size: 16, color: iconColor),
                                 ),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(item.title,
-                                        style: TextStyle(
-                                          fontWeight: item.isNew
-                                              ? FontWeight.w600 : FontWeight.w400,
-                                          fontSize: 14, color: titleColor,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text('${item.type} • $timeStr',
-                                        style: TextStyle(fontSize: 11, color: subColor)),
-                                    ],
-                                  ),
-                                ),
-                                if (item.isNew)
-                                  Container(
-                                    width: 8, height: 8,
-                                    margin: const EdgeInsets.only(top: 5, left: 8),
-                                    decoration: const BoxDecoration(
-                                      color: Color(0xFFC0A080),
-                                      shape: BoxShape.circle,
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          );
-                        },
-                        childCount: items.length,
-                      ),
+                            ],
+                          ),
+                        );
+                      }, childCount: items.length),
                     ),
                   ),
               ],

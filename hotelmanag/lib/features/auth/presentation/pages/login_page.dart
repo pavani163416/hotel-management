@@ -84,7 +84,9 @@ class _LoginPageState extends State<LoginPage> {
     });
 
     if (emailErr != null) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(emailErr)));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(emailErr)));
       return;
     }
 
@@ -97,7 +99,7 @@ class _LoginPageState extends State<LoginPage> {
     }
 
     setState(() => _isLoggingIn = true);
-    
+
     try {
       final auth = Provider.of<AuthProvider>(context, listen: false);
       await auth.login(
@@ -119,9 +121,9 @@ class _LoginPageState extends State<LoginPage> {
       } else if (auth.error != null) {
         if (mounted) {
           _passwordController.clear();
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(auth.error!)),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(auth.error!)));
           _fetchCaptcha();
         }
       }
@@ -149,7 +151,11 @@ class _LoginPageState extends State<LoginPage> {
               border: Border.all(color: AppTheme.mutedColor),
             ),
             child: IconButton(
-              icon: Icon(LucideIcons.chevronLeft, color: AppTheme.primaryColor, size: 20),
+              icon: Icon(
+                LucideIcons.chevronLeft,
+                color: AppTheme.primaryColor,
+                size: 20,
+              ),
               onPressed: () => context.go('/welcome'),
             ),
           ),
@@ -165,14 +171,21 @@ class _LoginPageState extends State<LoginPage> {
               const Text(
                 'Welcome back glad to see you',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.primaryColor,
+                ),
               ),
               const SizedBox(height: 40),
               CustomTextField(
                 label: 'User Name Or Email Address *',
                 hint: 'Type your user name',
                 controller: _emailController,
-                autofillHints: const [AutofillHints.email, AutofillHints.username],
+                autofillHints: const [
+                  AutofillHints.email,
+                  AutofillHints.username,
+                ],
               ),
               const SizedBox(height: 16),
               CustomTextField(
@@ -183,8 +196,12 @@ class _LoginPageState extends State<LoginPage> {
                 autofillHints: const [AutofillHints.password],
                 errorText: _passwordError,
                 suffixIcon: IconButton(
-                  icon: Icon(_obscurePassword ? LucideIcons.eyeOff : LucideIcons.eye, color: AppTheme.primaryColor.withOpacity(0.5)),
-                  onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                  icon: Icon(
+                    _obscurePassword ? LucideIcons.eyeOff : LucideIcons.eye,
+                    color: AppTheme.primaryColor.withOpacity(0.5),
+                  ),
+                  onPressed: () =>
+                      setState(() => _obscurePassword = !_obscurePassword),
                 ),
               ),
               const SizedBox(height: 16),
@@ -196,20 +213,47 @@ class _LoginPageState extends State<LoginPage> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Security Check',
-                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.black87)),
+                      const Text(
+                        'Security Check',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87,
+                        ),
+                      ),
                       InkWell(
                         onTap: _captchaLoading ? null : _fetchCaptcha,
                         borderRadius: BorderRadius.circular(4),
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 4,
+                            vertical: 4,
+                          ),
                           child: Row(
                             children: [
                               _captchaLoading
-                                ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black54))
-                                : const Icon(Icons.refresh, size: 14, color: Colors.black54),
+                                  ? const SizedBox(
+                                      width: 14,
+                                      height: 14,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.black54,
+                                      ),
+                                    )
+                                  : const Icon(
+                                      Icons.refresh,
+                                      size: 14,
+                                      color: Colors.black54,
+                                    ),
                               const SizedBox(width: 4),
-                              const Text('New challenge', style: TextStyle(fontSize: 12, color: Colors.black54, fontWeight: FontWeight.w500)),
+                              const Text(
+                                'New challenge',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.black54,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
                             ],
                           ),
                         ),
@@ -223,22 +267,40 @@ class _LoginPageState extends State<LoginPage> {
                     decoration: BoxDecoration(
                       color: Colors.black.withOpacity(0.05), // match bg-black/5
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.black.withOpacity(0.1)), // match border-black/10
+                      border: Border.all(
+                        color: Colors.black.withOpacity(0.1),
+                      ), // match border-black/10
                     ),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(12),
                       child: Center(
-                        child: _captchaChallenge.trim().startsWith('<svg') 
-                          ? SvgPicture.string(_captchaChallenge, fit: BoxFit.contain)
-                          : Text(_captchaChallenge == 'ERROR' ? 'Failed to load CAPTCHA' : _captchaChallenge,
-                              style: TextStyle(
-                                fontFamily: _captchaChallenge == 'ERROR' ? 'sans-serif' : 'monospace',
-                                fontSize: _captchaChallenge == 'ERROR' ? 14 : 24,
-                                letterSpacing: _captchaChallenge == 'ERROR' ? 0 : 8,
-                                fontWeight: _captchaChallenge == 'ERROR' ? FontWeight.w500 : FontWeight.w800,
-                                color: _captchaChallenge == 'ERROR' ? Colors.red : Colors.black87,
+                        child: _captchaChallenge.trim().startsWith('<svg')
+                            ? SvgPicture.string(
+                                _captchaChallenge,
+                                fit: BoxFit.contain,
+                              )
+                            : Text(
+                                _captchaChallenge == 'ERROR'
+                                    ? 'Failed to load CAPTCHA'
+                                    : _captchaChallenge,
+                                style: TextStyle(
+                                  fontFamily: _captchaChallenge == 'ERROR'
+                                      ? 'sans-serif'
+                                      : 'monospace',
+                                  fontSize: _captchaChallenge == 'ERROR'
+                                      ? 14
+                                      : 24,
+                                  letterSpacing: _captchaChallenge == 'ERROR'
+                                      ? 0
+                                      : 8,
+                                  fontWeight: _captchaChallenge == 'ERROR'
+                                      ? FontWeight.w500
+                                      : FontWeight.w800,
+                                  color: _captchaChallenge == 'ERROR'
+                                      ? Colors.red
+                                      : Colors.black87,
+                                ),
                               ),
-                            ),
                       ),
                     ),
                   ),
@@ -249,21 +311,35 @@ class _LoginPageState extends State<LoginPage> {
                     style: const TextStyle(fontSize: 14, color: Colors.black87),
                     decoration: InputDecoration(
                       hintText: 'Type the characters above',
-                      hintStyle: TextStyle(color: Colors.black.withOpacity(0.4), fontSize: 14),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                      fillColor: Colors.white.withOpacity(0.5), // match bg-white/50
+                      hintStyle: TextStyle(
+                        color: Colors.black.withOpacity(0.4),
+                        fontSize: 14,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14,
+                      ),
+                      fillColor: Colors.white.withOpacity(
+                        0.5,
+                      ), // match bg-white/50
                       filled: true,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Colors.black.withOpacity(0.1)),
+                        borderSide: BorderSide(
+                          color: Colors.black.withOpacity(0.1),
+                        ),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Colors.black.withOpacity(0.1)),
+                        borderSide: BorderSide(
+                          color: Colors.black.withOpacity(0.1),
+                        ),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Colors.black), // match focus:border-black
+                        borderSide: const BorderSide(
+                          color: Colors.black,
+                        ), // match focus:border-black
                       ),
                     ),
                   ),
@@ -271,182 +347,260 @@ class _LoginPageState extends State<LoginPage> {
               ),
               const SizedBox(height: 16),
 
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Checkbox(
-                      value: _rememberMe,
-                      onChanged: (v) => setState(() => _rememberMe = v ?? false),
-                      activeColor: AppTheme.primaryColor,
-                    ),
-                    const Text('Remember me', style: TextStyle(fontSize: 14, color: AppTheme.primaryColor)),
-                  ],
-                ),
-                Flexible(
-                  child: TextButton(
-                    style: TextButton.styleFrom(
-                      padding: EdgeInsets.zero,
-                      minimumSize: Size.zero,
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    ),
-                    onPressed: () async {
-                      final email = _emailController.text.trim();
-                      if (email.isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Please enter your email first in the UserName/Email field.')),
-                        );
-                        return;
-                      }
-                      final auth = Provider.of<AuthProvider>(context, listen: false);
-                      final success = await auth.forgotPassword(email);
-                      if (mounted) {
-                        if (success) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('If an account exists, a password reset link has been sent to your email.')),
-                          );
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(auth.error ?? 'Failed to send reset link')),
-                          );
-                        }
-                      }
-                    },
-                    child: const Text(
-                      'Forgot your password?',
-                      style: TextStyle(color: AppTheme.primaryColor, fontSize: 13),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 32),
-            Consumer<AuthProvider>(
-              builder: (context, auth, _) {
-                return SizedBox(
-                  width: double.infinity,
-                  height: 56,
-                  child: ElevatedButton(
-                    onPressed: (_isLoggingIn || _isGoogleLoggingIn) ? null : _handleLogin,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.primaryColor,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                    ),
-                    child: _isLoggingIn
-                        ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
-                        : const Text('Log In', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 32),
-            Row(
-              children: [
-                const Expanded(child: Divider(color: AppTheme.mutedColor)),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Text('Or', style: TextStyle(color: AppTheme.primaryColor.withOpacity(0.5))),
-                ),
-                const Expanded(child: Divider(color: AppTheme.mutedColor)),
-              ],
-            ),
-            const SizedBox(height: 32),
-            Consumer<AuthProvider>(
-              builder: (context, auth, _) => Column(
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _buildSocialButton(
-                    'Continue with Google',
-                    LucideIcons.chrome,
-                    isLoading: _isGoogleLoggingIn,
-                    onTap: (_isLoggingIn || _isGoogleLoggingIn)
-                        ? () {}
-                        : () async {
-                            setState(() => _isGoogleLoggingIn = true);
-                            final success = await auth.signInWithGoogle();
-                            if (mounted) {
-                              setState(() => _isGoogleLoggingIn = false);
-                            }
-                            if (success && context.mounted) {
-                              context.read<BookingProvider>().fetchMyBookings();
-                              Future.microtask(() {
-                                if (mounted) context.go('/');
-                              });
-                            } else if (auth.error != null && context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text(auth.error!)),
-                              );
-                            }
-                          },
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Checkbox(
+                        value: _rememberMe,
+                        onChanged: (v) =>
+                            setState(() => _rememberMe = v ?? false),
+                        activeColor: AppTheme.primaryColor,
+                      ),
+                      const Text(
+                        'Remember me',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: AppTheme.primaryColor,
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 16),
-                  _buildSocialButton(
-                    'Continue with Phone Number',
-                    LucideIcons.phone,
-                    isLoading: false,
-                    onTap: (_isLoggingIn || _isGoogleLoggingIn)
-                        ? () {}
-                        : () {
-                            PhoneAuthBottomSheet.show(context);
-                          },
+                  Flexible(
+                    child: TextButton(
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      onPressed: () async {
+                        final email = _emailController.text.trim();
+                        if (email.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Please enter your email first in the UserName/Email field.',
+                              ),
+                            ),
+                          );
+                          return;
+                        }
+                        final auth = Provider.of<AuthProvider>(
+                          context,
+                          listen: false,
+                        );
+                        final success = await auth.forgotPassword(email);
+                        if (mounted) {
+                          if (success) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'If an account exists, a password reset link has been sent to your email.',
+                                ),
+                              ),
+                            );
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  auth.error ?? 'Failed to send reset link',
+                                ),
+                              ),
+                            );
+                          }
+                        }
+                      },
+                      child: const Text(
+                        'Forgot your password?',
+                        style: TextStyle(
+                          color: AppTheme.primaryColor,
+                          fontSize: 13,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
                   ),
                 ],
               ),
-            ),
-            const SizedBox(height: 32),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Text("Don't have an account? ", style: TextStyle(color: AppTheme.primaryColor)),
-                GestureDetector(
-                  onTap: () => context.go('/register'),
-                  child: const Text(
-                    'Register',
-                    style: TextStyle(color: AppTheme.accentColor, fontWeight: FontWeight.bold),
+              const SizedBox(height: 32),
+              Consumer<AuthProvider>(
+                builder: (context, auth, _) {
+                  return SizedBox(
+                    width: double.infinity,
+                    height: 56,
+                    child: ElevatedButton(
+                      onPressed: (_isLoggingIn || _isGoogleLoggingIn)
+                          ? null
+                          : _handleLogin,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primaryColor,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      child: _isLoggingIn
+                          ? const SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2.5,
+                              ),
+                            )
+                          : const Text(
+                              'Log In',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 32),
+              Row(
+                children: [
+                  const Expanded(child: Divider(color: AppTheme.mutedColor)),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Text(
+                      'Or',
+                      style: TextStyle(
+                        color: AppTheme.primaryColor.withOpacity(0.5),
+                      ),
+                    ),
                   ),
+                  const Expanded(child: Divider(color: AppTheme.mutedColor)),
+                ],
+              ),
+              const SizedBox(height: 32),
+              Consumer<AuthProvider>(
+                builder: (context, auth, _) => Column(
+                  children: [
+                    _buildSocialButton(
+                      'Continue with Google',
+                      LucideIcons.chrome,
+                      isLoading: _isGoogleLoggingIn,
+                      onTap: (_isLoggingIn || _isGoogleLoggingIn)
+                          ? () {}
+                          : () async {
+                              setState(() => _isGoogleLoggingIn = true);
+                              final success = await auth.signInWithGoogle(
+                                isRegister: false,
+                              );
+                              if (mounted) {
+                                setState(() => _isGoogleLoggingIn = false);
+                              }
+                              if (success && context.mounted) {
+                                context
+                                    .read<BookingProvider>()
+                                    .fetchMyBookings();
+                                Future.microtask(() {
+                                  if (mounted) context.go('/');
+                                });
+                              } else if (auth.error != null &&
+                                  context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text(auth.error!)),
+                                );
+                              }
+                            },
+                    ),
+                    const SizedBox(height: 16),
+                    _buildSocialButton(
+                      'Continue with Phone Number',
+                      LucideIcons.phone,
+                      isLoading: false,
+                      onTap: (_isLoggingIn || _isGoogleLoggingIn)
+                          ? () {}
+                          : () {
+                              PhoneAuthBottomSheet.show(context);
+                            },
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            const SizedBox(height: 24),
-          ],
+              ),
+              const SizedBox(height: 32),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text(
+                    "Don't have an account? ",
+                    style: TextStyle(color: AppTheme.primaryColor),
+                  ),
+                  GestureDetector(
+                    onTap: () => context.go('/register'),
+                    child: const Text(
+                      'Register',
+                      style: TextStyle(
+                        color: AppTheme.accentColor,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+            ],
+          ),
         ),
-      ),
-    ),
-  );
-}
-
-  Widget _buildLogo() {
-    return RichText(
-      text: const TextSpan(
-        children: [
-          TextSpan(text: 'L', style: TextStyle(color: AppTheme.primaryColor, fontSize: 32, fontWeight: FontWeight.bold)),
-          TextSpan(text: 'uxeStay-', style: TextStyle(color: AppTheme.primaryColor, fontSize: 32, fontWeight: FontWeight.bold)),
-        ],
       ),
     );
   }
 
-  Widget _buildSocialButton(String label, IconData icon, {VoidCallback? onTap, bool isLoading = false}) {
+  Widget _buildLogo() {
+    return const Text(
+      'Athithigriha',
+      style: TextStyle(
+        color: AppTheme.primaryColor,
+        fontSize: 32,
+        fontWeight: FontWeight.bold,
+      ),
+    );
+  }
+
+  Widget _buildSocialButton(
+    String label,
+    IconData icon, {
+    VoidCallback? onTap,
+    bool isLoading = false,
+  }) {
     return SizedBox(
       width: double.infinity,
       height: 56,
       child: OutlinedButton.icon(
-        onPressed: isLoading ? () {} : (onTap ?? () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('$label coming soon!')),
-          );
-        }),
-        icon: isLoading 
-          ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-          : Icon(icon, size: 20, color: AppTheme.primaryColor),
-        label: Text(label, style: const TextStyle(color: AppTheme.primaryColor, fontWeight: FontWeight.w600)),
+        onPressed: isLoading
+            ? () {}
+            : (onTap ??
+                  () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('$label coming soon!')),
+                    );
+                  }),
+        icon: isLoading
+            ? const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : Icon(icon, size: 20, color: AppTheme.primaryColor),
+        label: Text(
+          label,
+          style: const TextStyle(
+            color: AppTheme.primaryColor,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
         style: OutlinedButton.styleFrom(
           side: const BorderSide(color: AppTheme.mutedColor),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
         ),
       ),
     );

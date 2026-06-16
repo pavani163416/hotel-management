@@ -9,10 +9,12 @@ class FirebaseAuthLinkHandlerPage extends StatefulWidget {
   const FirebaseAuthLinkHandlerPage({super.key, required this.emailLink});
 
   @override
-  State<FirebaseAuthLinkHandlerPage> createState() => _FirebaseAuthLinkHandlerPageState();
+  State<FirebaseAuthLinkHandlerPage> createState() =>
+      _FirebaseAuthLinkHandlerPageState();
 }
 
-class _FirebaseAuthLinkHandlerPageState extends State<FirebaseAuthLinkHandlerPage> {
+class _FirebaseAuthLinkHandlerPageState
+    extends State<FirebaseAuthLinkHandlerPage> {
   @override
   void initState() {
     super.initState();
@@ -23,7 +25,7 @@ class _FirebaseAuthLinkHandlerPageState extends State<FirebaseAuthLinkHandlerPag
 
   void _handleEmailLink() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    
+
     // Construct the absolute link if GoRouter stripped the host
     String absoluteLink = widget.emailLink;
     if (!absoluteLink.startsWith('https://')) {
@@ -31,12 +33,14 @@ class _FirebaseAuthLinkHandlerPageState extends State<FirebaseAuthLinkHandlerPag
     }
 
     final success = await authProvider.signInWithEmailLink(absoluteLink);
-    
+
     if (mounted) {
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Email verified successfully! Welcome to LuxeStay.'),
+            content: Text(
+              'Email verified successfully! Welcome to Athithigriha.',
+            ),
             backgroundColor: Colors.green,
           ),
         );
@@ -77,10 +81,7 @@ class _FirebaseAuthLinkHandlerPageState extends State<FirebaseAuthLinkHandlerPag
             const SizedBox(height: 8),
             Text(
               'Please wait while we secure your account',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[500],
-              ),
+              style: TextStyle(fontSize: 14, color: Colors.grey[500]),
             ),
           ],
         ),

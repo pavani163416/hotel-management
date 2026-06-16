@@ -6,7 +6,12 @@ class StepperWidget extends StatelessWidget {
   final int currentStep;
   const StepperWidget({super.key, required this.currentStep});
 
-  static const List<String> steps = ["Selection", "Guest Details", "Review", "Payment"];
+  static const List<String> steps = [
+    "Selection",
+    "Guest Details",
+    "Review",
+    "Payment",
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -18,8 +23,12 @@ class StepperWidget extends StatelessWidget {
           return Expanded(
             child: Row(
               children: [
-                _buildStepCircle(index, index < currentStep, index == currentStep),
-                if (index < steps.length - 1) 
+                _buildStepCircle(
+                  index,
+                  index < currentStep,
+                  index == currentStep,
+                ),
+                if (index < steps.length - 1)
                   Expanded(child: _buildConnector(index < currentStep)),
               ],
             ),
@@ -36,16 +45,24 @@ class StepperWidget extends StatelessWidget {
           width: 32,
           height: 32,
           decoration: BoxDecoration(
-            color: isDone || isActive ? AppTheme.accentColor : AppTheme.mutedColor.withOpacity(0.3),
+            color: isDone || isActive
+                ? AppTheme.accentColor
+                : AppTheme.mutedColor.withOpacity(0.3),
             shape: BoxShape.circle,
           ),
           child: Center(
             child: isDone
-                ? const Icon(LucideIcons.check, size: 16, color: AppTheme.primaryColor)
+                ? const Icon(
+                    LucideIcons.check,
+                    size: 16,
+                    color: AppTheme.primaryColor,
+                  )
                 : Text(
                     '${index + 1}',
                     style: TextStyle(
-                      color: isDone || isActive ? AppTheme.primaryColor : Colors.grey,
+                      color: isDone || isActive
+                          ? AppTheme.primaryColor
+                          : Colors.grey,
                       fontWeight: FontWeight.bold,
                       fontSize: 12,
                     ),

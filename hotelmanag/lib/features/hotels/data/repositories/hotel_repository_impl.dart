@@ -20,10 +20,12 @@ class HotelRepositoryImpl implements HotelRepository {
   Future<void> _saveToCache(List<HotelEntity> hotels) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final json = jsonEncode(hotels.map((h) {
-        if (h is HotelModel) return h.toJson();
-        return h.toJson();
-      }).toList());
+      final json = jsonEncode(
+        hotels.map((h) {
+          if (h is HotelModel) return h.toJson();
+          return h.toJson();
+        }).toList(),
+      );
       await prefs.setString(_kHotelCacheKey, json);
     } catch (e) {
       debugPrint('Hotel cache write error: $e');
@@ -37,7 +39,9 @@ class HotelRepositoryImpl implements HotelRepository {
       final raw = prefs.getString(_kHotelCacheKey);
       if (raw == null || raw.isEmpty) return [];
       final List decoded = jsonDecode(raw) as List;
-      return decoded.map((e) => HotelModel.fromJson(e as Map<String, dynamic>)).toList();
+      return decoded
+          .map((e) => HotelModel.fromJson(e as Map<String, dynamic>))
+          .toList();
     } catch (e) {
       debugPrint('Hotel cache read error: $e');
       return [];
@@ -60,7 +64,8 @@ class HotelRepositoryImpl implements HotelRepository {
         return Right(cached);
       }
       // No cache either — return error
-      String message = 'Unable to connect. Please check your internet connection.';
+      String message =
+          'Unable to connect. Please check your internet connection.';
       if (e.response?.data is Map) {
         message = e.response?.data['message'] ?? message;
       }
@@ -103,9 +108,18 @@ class HotelRepositoryImpl implements HotelRepository {
 
   @override
   Future<Either<Failure, HotelEntity>> submitReview(
-      String hotelId, String author, int rating, String comment) async {
+    String hotelId,
+    String author,
+    int rating,
+    String comment,
+  ) async {
     try {
-      final hotel = await _remoteDataSource.submitReview(hotelId, author, rating, comment);
+      final hotel = await _remoteDataSource.submitReview(
+        hotelId,
+        author,
+        rating,
+        comment,
+      );
       // Update cache with the new review
       final cached = await _loadFromCache();
       final idx = cached.indexWhere((h) => h.id == hotelId);

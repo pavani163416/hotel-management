@@ -27,7 +27,7 @@ class PaymentPage extends StatefulWidget {
 class _PaymentPageState extends State<PaymentPage> {
   final _idFormKey = GlobalKey<FormState>();
   final _paymentFormKey = GlobalKey<FormState>();
-  
+
   String _selectedMethod = 'card';
   String _selectedGuest = 'lead';
   String _selectedIdType = 'Aadhaar Card';
@@ -62,7 +62,7 @@ class _PaymentPageState extends State<PaymentPage> {
       _razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, _handlePaymentError);
       _razorpay.on(Razorpay.EVENT_EXTERNAL_WALLET, _handleExternalWallet);
     }
-    
+
     _cardNumberController = TextEditingController();
     _upiIdController = TextEditingController();
     _cardHolderController = TextEditingController();
@@ -86,11 +86,14 @@ class _PaymentPageState extends State<PaymentPage> {
   void _handlePaymentSuccess(PaymentSuccessResponse response) async {
     try {
       final api = sl<ApiService>();
-      await api.post('payments/verify', data: {
-        'razorpay_order_id': response.orderId ?? _currentOrderId,
-        'razorpay_payment_id': response.paymentId,
-        'razorpay_signature': response.signature,
-      });
+      await api.post(
+        'payments/verify',
+        data: {
+          'razorpay_order_id': response.orderId ?? _currentOrderId,
+          'razorpay_payment_id': response.paymentId,
+          'razorpay_signature': response.signature,
+        },
+      );
       if (mounted) {
         setState(() => _isProcessingPayment = false);
         try {
@@ -106,7 +109,10 @@ class _PaymentPageState extends State<PaymentPage> {
       if (mounted) {
         setState(() => _isProcessingPayment = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Payment verification failed'), backgroundColor: Colors.redAccent),
+          const SnackBar(
+            content: Text('Payment verification failed'),
+            backgroundColor: Colors.redAccent,
+          ),
         );
       }
     }
@@ -117,15 +123,18 @@ class _PaymentPageState extends State<PaymentPage> {
     try {
       if (_currentOrderId != null || _currentBookingId != null) {
         final api = sl<ApiService>();
-        await api.post('payments/cancel', data: {
-          'orderId': _currentOrderId,
-          'bookingId': _currentBookingId,
-        });
+        await api.post(
+          'payments/cancel',
+          data: {'orderId': _currentOrderId, 'bookingId': _currentBookingId},
+        );
       }
     } catch (_) {}
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Payment failed: ${response.message}'), backgroundColor: Colors.redAccent),
+        SnackBar(
+          content: Text('Payment failed: ${response.message}'),
+          backgroundColor: Colors.redAccent,
+        ),
       );
     }
   }
@@ -140,13 +149,15 @@ class _PaymentPageState extends State<PaymentPage> {
       _isProcessingPayment = true;
       _errorMessage = null; // TC-FE-045: Clear previous error on new attempt
     });
-    
+
     String selectedGuestId = '';
     if (_selectedGuest == 'lead') {
       selectedGuestId = provider.leadGuest['id']?.trim() ?? '';
     } else if (_selectedGuest.startsWith('adult_')) {
       final index = int.tryParse(_selectedGuest.split('_')[1]);
-      if (index != null && index >= 0 && index < provider.additionalAdults.length) {
+      if (index != null &&
+          index >= 0 &&
+          index < provider.additionalAdults.length) {
         selectedGuestId = provider.additionalAdults[index]['id']?.trim() ?? '';
       }
     }
@@ -159,17 +170,25 @@ class _PaymentPageState extends State<PaymentPage> {
       isPaymentValid = false;
       setState(() => _isProcessingPayment = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select your bank'), backgroundColor: Colors.redAccent),
+        const SnackBar(
+          content: Text('Please select your bank'),
+          backgroundColor: Colors.redAccent,
+        ),
       );
       return;
     }
 
     if (provider.total > 5000) {
-      final authenticated = await BiometricHelper.authenticate(reason: 'Confirm your identity for high-value payment');
+      final authenticated = await BiometricHelper.authenticate(
+        reason: 'Confirm your identity for high-value payment',
+      );
       if (!authenticated) {
         if (mounted) setState(() => _isProcessingPayment = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Authentication required to proceed with payment'), backgroundColor: Colors.redAccent),
+          const SnackBar(
+            content: Text('Authentication required to proceed with payment'),
+            backgroundColor: Colors.redAccent,
+          ),
         );
         return;
       }
@@ -190,12 +209,13 @@ class _PaymentPageState extends State<PaymentPage> {
         if (parts.length == 2) {
           final month = int.tryParse(parts[0]) ?? 0;
           final year = int.tryParse(parts[1]) ?? 0;
-          
+
           final now = DateTime.now();
           final currentYear = now.year % 100;
           final currentMonth = now.month;
 
-          if (year < currentYear || (year == currentYear && month < currentMonth)) {
+          if (year < currentYear ||
+              (year == currentYear && month < currentMonth)) {
             setState(() {
               _isProcessingPayment = false;
               _errorMessage = 'Card has expired. Please use a valid card.';
@@ -214,18 +234,16 @@ class _PaymentPageState extends State<PaymentPage> {
       if (!hasId) {
         final newId = _idNumberController.text.trim();
         if (_selectedGuest == 'lead') {
-          provider.updateLeadGuest({
-            ...provider.leadGuest,
-            'id': newId,
-          });
+          provider.updateLeadGuest({...provider.leadGuest, 'id': newId});
         } else if (_selectedGuest.startsWith('adult_')) {
           final index = int.tryParse(_selectedGuest.split('_')[1]);
-          if (index != null && index >= 0 && index < provider.additionalAdults.length) {
-            final updatedAdults = List<Map<String, String>>.from(provider.additionalAdults);
-            updatedAdults[index] = {
-              ...updatedAdults[index],
-              'id': newId,
-            };
+          if (index != null &&
+              index >= 0 &&
+              index < provider.additionalAdults.length) {
+            final updatedAdults = List<Map<String, String>>.from(
+              provider.additionalAdults,
+            );
+            updatedAdults[index] = {...updatedAdults[index], 'id': newId};
             provider.setAdditionalGuests(updatedAdults, provider.children);
           }
         }
@@ -238,12 +256,12 @@ class _PaymentPageState extends State<PaymentPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Payment Declined: Simulated transaction failure.'),
-            backgroundColor: Colors.redAccent
+            backgroundColor: Colors.redAccent,
           ),
         );
         return;
       }
-      
+
       final booking = await provider.completeBooking(_selectedMethod);
 
       // If booking creation failed, surface the error and unblock navigation
@@ -251,7 +269,9 @@ class _PaymentPageState extends State<PaymentPage> {
         if (mounted) {
           setState(() {
             _isProcessingPayment = false;
-            _errorMessage = provider.error ?? 'Booking failed. Please check your details and try again.';
+            _errorMessage =
+                provider.error ??
+                'Booking failed. Please check your details and try again.';
           });
           final errorMsg = provider.error ?? 'Booking failed';
           if (errorMsg.toLowerCase().contains('booked') ||
@@ -261,11 +281,17 @@ class _PaymentPageState extends State<PaymentPage> {
               context: context,
               barrierDismissible: false,
               builder: (context) => AlertDialog(
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(24),
+                ),
                 backgroundColor: Colors.white,
                 title: const Row(
                   children: [
-                    Icon(Icons.calendar_today_outlined, color: Colors.redAccent, size: 24),
+                    Icon(
+                      Icons.calendar_today_outlined,
+                      color: Colors.redAccent,
+                      size: 24,
+                    ),
                     SizedBox(width: 12),
                     Expanded(
                       child: Text(
@@ -281,7 +307,10 @@ class _PaymentPageState extends State<PaymentPage> {
                 ),
                 content: Text(
                   '$errorMsg\n\nWould you like to change your booking dates or select a different room type?',
-                  style: const TextStyle(fontSize: 14, color: AppTheme.primaryColor),
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: AppTheme.primaryColor,
+                  ),
                 ),
                 actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                 actions: [
@@ -293,28 +322,44 @@ class _PaymentPageState extends State<PaymentPage> {
                           backgroundColor: AppTheme.primaryColor,
                           foregroundColor: Colors.white,
                           elevation: 0,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                           padding: const EdgeInsets.symmetric(vertical: 14),
                         ),
                         onPressed: () {
                           Navigator.pop(context);
                           context.go('/booking');
                         },
-                        child: const Text('Change Dates', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                        child: const Text(
+                          'Change Dates',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
                       ),
                       const SizedBox(height: 8),
                       OutlinedButton(
                         style: OutlinedButton.styleFrom(
                           foregroundColor: AppTheme.primaryColor,
                           side: const BorderSide(color: AppTheme.primaryColor),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                           padding: const EdgeInsets.symmetric(vertical: 14),
                         ),
                         onPressed: () {
                           Navigator.pop(context);
                           context.go('/hotels');
                         },
-                        child: const Text('Select Different Room', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                        child: const Text(
+                          'Select Different Room',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -333,15 +378,21 @@ class _PaymentPageState extends State<PaymentPage> {
         _currentBookingId = booking.id;
         try {
           final api = sl<ApiService>();
-          final res = await api.post('payments/create-order', data: {'bookingId': booking.id});
+          final res = await api.post(
+            'payments/create-order',
+            data: {'bookingId': booking.id},
+          );
           final data = res.data;
-          
+
           if (data['success'] == true) {
             _currentOrderId = data['orderId'];
-            
+
             var prefill = <String, String>{};
             if (provider.leadGuest['phone']?.isNotEmpty == true) {
-              prefill['contact'] = provider.leadGuest['phone']!.replaceAll(' ', '');
+              prefill['contact'] = provider.leadGuest['phone']!.replaceAll(
+                ' ',
+                '',
+              );
             }
             if (provider.leadGuest['email']?.isNotEmpty == true) {
               prefill['email'] = provider.leadGuest['email']!.trim();
@@ -351,21 +402,28 @@ class _PaymentPageState extends State<PaymentPage> {
             }
 
             var options = <String, dynamic>{
-              'key': data['key'] ?? 'rzp_test_dummy', 
+              'key': data['key'] ?? 'rzp_test_dummy',
               'amount': (data['amount'] as num).toInt(),
               'currency': data['currency'] ?? 'INR',
-              'name': 'LuxeStay',
+              'name': 'Athithigriha',
               'description': 'Booking Payment',
               'order_id': _currentOrderId,
             };
-            
+
             if (prefill.isNotEmpty) {
               options['prefill'] = prefill;
             }
-            
+
             if (kIsWeb) {
               // Mock payment success for web
-              _handlePaymentSuccess(PaymentSuccessResponse('mock_payment_id', _currentOrderId, 'mock_signature', null));
+              _handlePaymentSuccess(
+                PaymentSuccessResponse(
+                  'mock_payment_id',
+                  _currentOrderId,
+                  'mock_signature',
+                  null,
+                ),
+              );
             } else {
               _razorpay.open(options);
             }
@@ -375,25 +433,34 @@ class _PaymentPageState extends State<PaymentPage> {
         } catch (e) {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Could not initialize payment gateway.'), backgroundColor: Colors.redAccent),
+              const SnackBar(
+                content: Text('Could not initialize payment gateway.'),
+                backgroundColor: Colors.redAccent,
+              ),
             );
           }
         }
       } else {
         if (mounted) {
           final errorMsg = provider.error ?? 'Booking failed';
-          if (errorMsg.toLowerCase().contains('booked') || 
-              errorMsg.toLowerCase().contains('occupied') || 
+          if (errorMsg.toLowerCase().contains('booked') ||
+              errorMsg.toLowerCase().contains('occupied') ||
               errorMsg.toLowerCase().contains('dates')) {
             showDialog(
               context: context,
               barrierDismissible: false,
               builder: (context) => AlertDialog(
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(24),
+                ),
                 backgroundColor: Colors.white,
                 title: const Row(
                   children: [
-                    Icon(Icons.calendar_today_outlined, color: Colors.redAccent, size: 24),
+                    Icon(
+                      Icons.calendar_today_outlined,
+                      color: Colors.redAccent,
+                      size: 24,
+                    ),
                     SizedBox(width: 12),
                     Expanded(
                       child: Text(
@@ -409,7 +476,10 @@ class _PaymentPageState extends State<PaymentPage> {
                 ),
                 content: Text(
                   '$errorMsg\n\nWould you like to change your booking dates or select a different room type?',
-                  style: const TextStyle(fontSize: 14, color: AppTheme.primaryColor),
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: AppTheme.primaryColor,
+                  ),
                 ),
                 actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                 actions: [
@@ -421,28 +491,48 @@ class _PaymentPageState extends State<PaymentPage> {
                           backgroundColor: AppTheme.primaryColor,
                           foregroundColor: Colors.white,
                           elevation: 0,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                           padding: const EdgeInsets.symmetric(vertical: 14),
                         ),
                         onPressed: () {
                           Navigator.pop(context); // Close dialog
-                          context.go('/booking'); // Navigate back to date selection step
+                          context.go(
+                            '/booking',
+                          ); // Navigate back to date selection step
                         },
-                        child: const Text('Change Dates', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                        child: const Text(
+                          'Change Dates',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
                       ),
                       const SizedBox(height: 8),
                       OutlinedButton(
                         style: OutlinedButton.styleFrom(
                           foregroundColor: AppTheme.primaryColor,
                           side: const BorderSide(color: AppTheme.primaryColor),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                           padding: const EdgeInsets.symmetric(vertical: 14),
                         ),
                         onPressed: () {
                           Navigator.pop(context); // Close dialog
-                          context.go('/hotels'); // Navigate to hotels list page to choose another room
+                          context.go(
+                            '/hotels',
+                          ); // Navigate to hotels list page to choose another room
                         },
-                        child: const Text('Select Different Room', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                        child: const Text(
+                          'Select Different Room',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -451,14 +541,20 @@ class _PaymentPageState extends State<PaymentPage> {
             );
           } else {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(errorMsg), backgroundColor: Colors.redAccent),
+              SnackBar(
+                content: Text(errorMsg),
+                backgroundColor: Colors.redAccent,
+              ),
             );
           }
         }
       }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill in all mandatory fields'), backgroundColor: Colors.redAccent),
+        const SnackBar(
+          content: Text('Please fill in all mandatory fields'),
+          backgroundColor: Colors.redAccent,
+        ),
       );
     }
   }
@@ -483,27 +579,47 @@ class _PaymentPageState extends State<PaymentPage> {
           context: context,
           barrierDismissible: false,
           builder: (ctx) => AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
             backgroundColor: Colors.white,
             title: const Row(
               children: [
-                Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 28),
+                Icon(
+                  Icons.warning_amber_rounded,
+                  color: Colors.orange,
+                  size: 28,
+                ),
                 SizedBox(width: 10),
-                Text('Payment In Progress',
-                    style: TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+                Text(
+                  'Payment In Progress',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.primaryColor,
+                  ),
+                ),
               ],
             ),
             content: const Text(
               'A payment is currently being processed.\n\n'
               'Leaving this screen now may result in you being charged without seeing a confirmation. '
               'Please wait for the payment to complete.',
-              style: TextStyle(fontSize: 14, color: AppTheme.primaryColor, height: 1.5),
+              style: TextStyle(
+                fontSize: 14,
+                color: AppTheme.primaryColor,
+                height: 1.5,
+              ),
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(ctx).pop(),
-                child: const Text('Stay on Page',
-                    style: TextStyle(color: AppTheme.primaryColor, fontWeight: FontWeight.bold)),
+                child: const Text(
+                  'Stay on Page',
+                  style: TextStyle(
+                    color: AppTheme.primaryColor,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
             ],
           ),
@@ -513,106 +629,137 @@ class _PaymentPageState extends State<PaymentPage> {
         children: [
           MainLayout(
             child: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const StepperWidget(currentStep: 3),
-              const SizedBox(height: 24),
-              const Text(
-                'Payment',
-                style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: AppTheme.primaryColor, fontFamily: 'Serif'),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Icon(LucideIcons.lock, size: 14, color: AppTheme.primaryColor.withOpacity(0.5)),
-                  const SizedBox(width: 8),
-                  Text('Secure 256-bit SSL encrypted', style: TextStyle(color: AppTheme.primaryColor.withOpacity(0.5), fontSize: 13)),
-                ],
-              ),
-              const SizedBox(height: 32),
-              
-              if (_errorMessage != null)
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(16),
-                  margin: const EdgeInsets.only(bottom: 24),
-                  decoration: BoxDecoration(
-                    color: Colors.redAccent.withOpacity(0.1),
-                    border: Border.all(color: Colors.redAccent),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.error_outline, color: Colors.redAccent),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          _errorMessage!,
-                          style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                    ],
-                  ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24.0,
+                  vertical: 32,
                 ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const StepperWidget(currentStep: 3),
+                    const SizedBox(height: 24),
+                    const Text(
+                      'Payment',
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.primaryColor,
+                        fontFamily: 'Serif',
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Icon(
+                          LucideIcons.lock,
+                          size: 14,
+                          color: AppTheme.primaryColor.withOpacity(0.5),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Secure 256-bit SSL encrypted',
+                          style: TextStyle(
+                            color: AppTheme.primaryColor.withOpacity(0.5),
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 32),
 
-
-              LayoutBuilder(
-                builder: (context, constraints) {
-                  final isWide = constraints.maxWidth > 800;
-                  return Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        flex: 3,
-                        child: Column(
+                    if (_errorMessage != null)
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        margin: const EdgeInsets.only(bottom: 24),
+                        decoration: BoxDecoration(
+                          color: Colors.redAccent.withOpacity(0.1),
+                          border: Border.all(color: Colors.redAccent),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
                           children: [
-                            Form(key: _idFormKey, child: _buildGuestIdentityVerification(provider)),
-                            const SizedBox(height: 24),
-                            _buildPaymentMethodSelector(),
-                            const SizedBox(height: 24),
-                            Form(
-                              key: _paymentFormKey,
-                              child: Column(
-                                children: [
-                                  if (_selectedMethod == 'card') _buildCardForm(provider),
-                                  if (_selectedMethod == 'upi') _buildUpiForm(provider),
-                                  if (_selectedMethod == 'bank') _buildNetBankingForm(provider),
-                                ],
+                            const Icon(
+                              Icons.error_outline,
+                              color: Colors.redAccent,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                _errorMessage!,
+                                style: const TextStyle(
+                                  color: Colors.redAccent,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                           ],
                         ),
                       ),
-                      if (isWide) const SizedBox(width: 32),
-                      if (isWide)
-                        Expanded(
-                          flex: 2,
-                          child: _buildFinalSummary(context, provider),
-                        ),
-                    ],
-                  );
-                }
+
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        final isWide = constraints.maxWidth > 800;
+                        return Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              flex: 3,
+                              child: Column(
+                                children: [
+                                  Form(
+                                    key: _idFormKey,
+                                    child: _buildGuestIdentityVerification(
+                                      provider,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 24),
+                                  _buildPaymentMethodSelector(),
+                                  const SizedBox(height: 24),
+                                  Form(
+                                    key: _paymentFormKey,
+                                    child: Column(
+                                      children: [
+                                        if (_selectedMethod == 'card')
+                                          _buildCardForm(provider),
+                                        if (_selectedMethod == 'upi')
+                                          _buildUpiForm(provider),
+                                        if (_selectedMethod == 'bank')
+                                          _buildNetBankingForm(provider),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            if (isWide) const SizedBox(width: 32),
+                            if (isWide)
+                              Expanded(
+                                flex: 2,
+                                child: _buildFinalSummary(context, provider),
+                              ),
+                          ],
+                        );
+                      },
+                    ),
+
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        if (constraints.maxWidth <= 800) {
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 32),
+                            child: _buildFinalSummary(context, provider),
+                          );
+                        }
+                        return const SizedBox.shrink();
+                      },
+                    ),
+                    const SizedBox(height: 100),
+                  ],
+                ),
               ),
-              
-              LayoutBuilder(
-                builder: (context, constraints) {
-                  if (constraints.maxWidth <= 800) {
-                    return Padding(
-                      padding: const EdgeInsets.only(top: 32),
-                      child: _buildFinalSummary(context, provider),
-                    );
-                  }
-                  return const SizedBox.shrink();
-                }
-              ),
-              const SizedBox(height: 100),
-            ],
-          ),
-        ),
-      ),
+            ),
           ),
           if (provider.isLoading)
             Positioned.fill(
@@ -626,7 +773,11 @@ class _PaymentPageState extends State<PaymentPage> {
                       SizedBox(height: 24),
                       Text(
                         'Processing Payment...',
-                        style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       SizedBox(height: 8),
                       Text(
@@ -646,13 +797,15 @@ class _PaymentPageState extends State<PaymentPage> {
 
   Widget _buildGuestIdentityVerification(BookingProvider provider) {
     final leadName = provider.leadGuest['name'] ?? 'Guest';
-    
+
     String selectedGuestId = '';
     if (_selectedGuest == 'lead') {
       selectedGuestId = provider.leadGuest['id']?.trim() ?? '';
     } else if (_selectedGuest.startsWith('adult_')) {
       final index = int.tryParse(_selectedGuest.split('_')[1]);
-      if (index != null && index >= 0 && index < provider.additionalAdults.length) {
+      if (index != null &&
+          index >= 0 &&
+          index < provider.additionalAdults.length) {
         selectedGuestId = provider.additionalAdults[index]['id']?.trim() ?? '';
       }
     }
@@ -660,7 +813,11 @@ class _PaymentPageState extends State<PaymentPage> {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24), border: Border.all(color: AppTheme.mutedColor)),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppTheme.mutedColor),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -668,26 +825,53 @@ class _PaymentPageState extends State<PaymentPage> {
             children: [
               Icon(LucideIcons.checkCircle, size: 18, color: Colors.blueAccent),
               SizedBox(width: 12),
-              Text('Guest Identity Verification', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+              Text(
+                'Guest Identity Verification',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.primaryColor,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 8),
-          Text('Required by Indian hotel regulations (MHA guidelines). Your ID is used for check-in only and is not stored digitally.', style: TextStyle(fontSize: 11, color: AppTheme.primaryColor.withOpacity(0.5))),
-          Text('SELECT GUEST FOR VERIFICATION *', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.primaryColor.withOpacity(0.4), letterSpacing: 1)),
+          Text(
+            'Required by Indian hotel regulations (MHA guidelines). Your ID is used for check-in only and is not stored digitally.',
+            style: TextStyle(
+              fontSize: 11,
+              color: AppTheme.primaryColor.withOpacity(0.5),
+            ),
+          ),
+          Text(
+            'SELECT GUEST FOR VERIFICATION *',
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+              color: AppTheme.primaryColor.withOpacity(0.4),
+              letterSpacing: 1,
+            ),
+          ),
           const SizedBox(height: 16),
           _buildGuestOption('lead', leadName.toUpperCase(), true),
           const SizedBox(height: 12),
-          
+
           ...provider.additionalAdults.asMap().entries.map((entry) {
             final index = entry.key;
             final guest = entry.value;
-            final name = guest['name']?.isNotEmpty == true ? guest['name']! : 'ADULT ${index + 1}';
+            final name = guest['name']?.isNotEmpty == true
+                ? guest['name']!
+                : 'ADULT ${index + 1}';
             return Padding(
               padding: const EdgeInsets.only(bottom: 12),
-              child: _buildGuestOption('adult_$index', name.toUpperCase(), false),
+              child: _buildGuestOption(
+                'adult_$index',
+                name.toUpperCase(),
+                false,
+              ),
             );
           }),
-          
+
           if (selectedGuestId.isNotEmpty) ...[
             _buildLabel('GOVT ID ON FILE'),
             const SizedBox(height: 8),
@@ -701,13 +885,20 @@ class _PaymentPageState extends State<PaymentPage> {
               ),
               child: Text(
                 selectedGuestId,
-                style: const TextStyle(fontSize: 14, color: AppTheme.primaryColor, fontWeight: FontWeight.w600),
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: AppTheme.primaryColor,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
             const SizedBox(height: 12),
             Text(
               'ID already entered in guest details, so no extra Government ID input is required here.',
-              style: TextStyle(fontSize: 10, color: AppTheme.primaryColor.withOpacity(0.6)),
+              style: TextStyle(
+                fontSize: 10,
+                color: AppTheme.primaryColor.withOpacity(0.6),
+              ),
             ),
             const SizedBox(height: 12),
           ] else ...[
@@ -723,12 +914,20 @@ class _PaymentPageState extends State<PaymentPage> {
                 child: DropdownButton<String>(
                   isExpanded: true,
                   value: _selectedIdType,
-                  items: ['Aadhaar Card', 'PAN Card', 'Voter ID', 'Passport'].map((String value) {
-                    return DropdownMenuItem<String>(
-                      value: value,
-                      child: Text(value, style: const TextStyle(fontSize: 14, color: AppTheme.primaryColor)),
-                    );
-                  }).toList(),
+                  items: ['Aadhaar Card', 'PAN Card', 'Voter ID', 'Passport']
+                      .map((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(
+                            value,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: AppTheme.primaryColor,
+                            ),
+                          ),
+                        );
+                      })
+                      .toList(),
                   onChanged: (v) => setState(() {
                     _selectedIdType = v!;
                     _idNumberController.clear(); // clear previous tracking
@@ -740,7 +939,9 @@ class _PaymentPageState extends State<PaymentPage> {
             _buildLabel('${_selectedIdType.toUpperCase()} NUMBER *'),
             const SizedBox(height: 8),
             _buildTextField(
-              _selectedIdType == 'Aadhaar Card' ? 'XXXX XXXX XXXX' : 'Enter your $_selectedIdType number', 
+              _selectedIdType == 'Aadhaar Card'
+                  ? 'XXXX XXXX XXXX'
+                  : 'Enter your $_selectedIdType number',
               required: true,
               controller: _idNumberController,
             ),
@@ -748,12 +949,19 @@ class _PaymentPageState extends State<PaymentPage> {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(LucideIcons.info, size: 12, color: AppTheme.primaryColor.withOpacity(0.4)),
+                Icon(
+                  LucideIcons.info,
+                  size: 12,
+                  color: AppTheme.primaryColor.withOpacity(0.4),
+                ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     'As per Ministry of Home Affairs guidelines, hotels are required to collect a valid government-issued photo ID at check-in.',
-                    style: TextStyle(fontSize: 10, color: AppTheme.primaryColor.withOpacity(0.4)),
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: AppTheme.primaryColor.withOpacity(0.4),
+                    ),
                   ),
                 ),
               ],
@@ -770,18 +978,59 @@ class _PaymentPageState extends State<PaymentPage> {
       onTap: () => setState(() => _selectedGuest = id),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), border: Border.all(color: isSelected ? AppTheme.primaryColor : AppTheme.mutedColor)),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? AppTheme.primaryColor : AppTheme.mutedColor,
+          ),
+        ),
         child: Row(
           children: [
             Container(
               width: 18,
               height: 18,
-              decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: isSelected ? AppTheme.primaryColor : Colors.grey[400]!)),
-              child: isSelected ? Center(child: Container(width: 10, height: 10, decoration: const BoxDecoration(shape: BoxShape.circle, color: AppTheme.primaryColor))) : null,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: isSelected ? AppTheme.primaryColor : Colors.grey[400]!,
+                ),
+              ),
+              child: isSelected
+                  ? Center(
+                      child: Container(
+                        width: 10,
+                        height: 10,
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: AppTheme.primaryColor,
+                        ),
+                      ),
+                    )
+                  : null,
             ),
             const SizedBox(width: 12),
-            Expanded(child: Text(name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.primaryColor))),
-            if (isLead) Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2), decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(4)), child: const Text('Lead Guest', style: TextStyle(fontSize: 9, color: Colors.grey))),
+            Expanded(
+              child: Text(
+                name,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.primaryColor,
+                ),
+              ),
+            ),
+            if (isLead)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.grey[100],
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: const Text(
+                  'Lead Guest',
+                  style: TextStyle(fontSize: 9, color: Colors.grey),
+                ),
+              ),
           ],
         ),
       ),
@@ -813,12 +1062,29 @@ class _PaymentPageState extends State<PaymentPage> {
         },
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 16),
-          decoration: BoxDecoration(color: isSelected ? Colors.grey[50] : Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: isSelected ? AppTheme.primaryColor : AppTheme.mutedColor)),
+          decoration: BoxDecoration(
+            color: isSelected ? Colors.grey[50] : Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isSelected ? AppTheme.primaryColor : AppTheme.mutedColor,
+            ),
+          ),
           child: Column(
             children: [
-              Icon(icon, size: 20, color: isSelected ? AppTheme.primaryColor : Colors.grey),
+              Icon(
+                icon,
+                size: 20,
+                color: isSelected ? AppTheme.primaryColor : Colors.grey,
+              ),
               const SizedBox(height: 8),
-              Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: isSelected ? AppTheme.primaryColor : Colors.grey)),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: isSelected ? AppTheme.primaryColor : Colors.grey,
+                ),
+              ),
             ],
           ),
         ),
@@ -830,21 +1096,48 @@ class _PaymentPageState extends State<PaymentPage> {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24), border: Border.all(color: AppTheme.mutedColor)),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppTheme.mutedColor),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildLabel('CARD NUMBER *'),
           const SizedBox(height: 8),
-          _buildTextField('1234 5678 9012 3456', required: true, controller: _cardNumberController, customValidator: AppValidators.validateCardNumber),
+          _buildTextField(
+            '1234 5678 9012 3456',
+            required: true,
+            controller: _cardNumberController,
+            customValidator: AppValidators.validateCardNumber,
+          ),
           const SizedBox(height: 24),
           _buildLabel('CARDHOLDER NAME *'),
           const SizedBox(height: 8),
-          _buildTextField('John Doe', required: true, controller: _cardHolderController),
+          _buildTextField(
+            'John Doe',
+            required: true,
+            controller: _cardHolderController,
+          ),
           const SizedBox(height: 24),
           Row(
             children: [
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('EXPIRY *'), const SizedBox(height: 8), _buildTextField('MM/YY', required: true, controller: _expiryController, customValidator: AppValidators.validateExpiry)])),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildLabel('EXPIRY *'),
+                    const SizedBox(height: 8),
+                    _buildTextField(
+                      'MM/YY',
+                      required: true,
+                      controller: _expiryController,
+                      customValidator: AppValidators.validateExpiry,
+                    ),
+                  ],
+                ),
+              ),
               const SizedBox(width: 16),
               Expanded(
                 child: Column(
@@ -870,7 +1163,12 @@ class _PaymentPageState extends State<PaymentPage> {
           const SizedBox(height: 32),
           _buildPayButton(provider),
           const SizedBox(height: 16),
-          const Center(child: Text('Tip: use any card ending in 0000 to simulate a declined payment', style: TextStyle(fontSize: 10, color: Colors.grey))),
+          const Center(
+            child: Text(
+              'Tip: use any card ending in 0000 to simulate a declined payment',
+              style: TextStyle(fontSize: 10, color: Colors.grey),
+            ),
+          ),
         ],
       ),
     );
@@ -880,17 +1178,30 @@ class _PaymentPageState extends State<PaymentPage> {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24), border: Border.all(color: AppTheme.mutedColor)),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppTheme.mutedColor),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildLabel('UPI ID *'),
           const SizedBox(height: 8),
-          _buildTextField('yourname@bank', required: true, controller: _upiIdController),
+          _buildTextField(
+            'yourname@bank',
+            required: true,
+            controller: _upiIdController,
+          ),
           const SizedBox(height: 32),
           _buildPayButton(provider),
           const SizedBox(height: 16),
-          const Center(child: Text('Tip: use any card ending in 0000 to simulate a declined payment', style: TextStyle(fontSize: 10, color: Colors.grey))),
+          const Center(
+            child: Text(
+              'Tip: use any card ending in 0000 to simulate a declined payment',
+              style: TextStyle(fontSize: 10, color: Colors.grey),
+            ),
+          ),
         ],
       ),
     );
@@ -900,7 +1211,11 @@ class _PaymentPageState extends State<PaymentPage> {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24), border: Border.all(color: AppTheme.mutedColor)),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppTheme.mutedColor),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -909,20 +1224,39 @@ class _PaymentPageState extends State<PaymentPage> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             decoration: BoxDecoration(
-              border: Border.all(color: _selectedBank == null ? Colors.redAccent.withOpacity(0.5) : AppTheme.mutedColor),
+              border: Border.all(
+                color: _selectedBank == null
+                    ? Colors.redAccent.withOpacity(0.5)
+                    : AppTheme.mutedColor,
+              ),
               borderRadius: BorderRadius.circular(10),
             ),
             child: DropdownButtonHideUnderline(
               child: DropdownButton<String>(
                 isExpanded: true,
                 value: _selectedBank,
-                hint: const Text('Choose your bank', style: TextStyle(fontSize: 14, color: Colors.grey)),
-                items: ['State Bank of India', 'HDFC Bank', 'ICICI Bank', 'Axis Bank'].map((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value, style: const TextStyle(fontSize: 14, color: AppTheme.primaryColor)),
-                  );
-                }).toList(),
+                hint: const Text(
+                  'Choose your bank',
+                  style: TextStyle(fontSize: 14, color: Colors.grey),
+                ),
+                items:
+                    [
+                      'State Bank of India',
+                      'HDFC Bank',
+                      'ICICI Bank',
+                      'Axis Bank',
+                    ].map((String value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(
+                          value,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: AppTheme.primaryColor,
+                          ),
+                        ),
+                      );
+                    }).toList(),
                 onChanged: (v) => setState(() => _selectedBank = v),
               ),
             ),
@@ -930,7 +1264,12 @@ class _PaymentPageState extends State<PaymentPage> {
           const SizedBox(height: 32),
           _buildPayButton(provider),
           const SizedBox(height: 16),
-          const Center(child: Text('Tip: use any card ending in 0000 to simulate a declined payment', style: TextStyle(fontSize: 10, color: Colors.grey))),
+          const Center(
+            child: Text(
+              'Tip: use any card ending in 0000 to simulate a declined payment',
+              style: TextStyle(fontSize: 10, color: Colors.grey),
+            ),
+          ),
         ],
       ),
     );
@@ -943,10 +1282,14 @@ class _PaymentPageState extends State<PaymentPage> {
       child: ElevatedButton(
         onPressed: provider.isLoading ? null : () => _processPayment(provider),
         style: ElevatedButton.styleFrom(
-          backgroundColor: isDark ? const Color(0xFFEAE5DC) : const Color(0xFF454F5E),
+          backgroundColor: isDark
+              ? const Color(0xFFEAE5DC)
+              : const Color(0xFF454F5E),
           foregroundColor: isDark ? const Color(0xFF19222E) : Colors.white,
           padding: const EdgeInsets.symmetric(vertical: 20),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           elevation: 2,
         ),
         child: provider.isLoading
@@ -960,7 +1303,10 @@ class _PaymentPageState extends State<PaymentPage> {
               )
             : Text(
                 'Pay ${context.watch<CurrencyProvider>().format(provider.total)}',
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
               ),
       ),
     );
@@ -970,34 +1316,82 @@ class _PaymentPageState extends State<PaymentPage> {
     final hotel = provider.currentHotel!;
     return Container(
       padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24), border: Border.all(color: AppTheme.mutedColor)),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppTheme.mutedColor),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(hotel.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
-          Text('${provider.selectedRoomType} · ${provider.nights} nights', style: TextStyle(fontSize: 13, color: AppTheme.primaryColor.withOpacity(0.6))),
+          Text(
+            hotel.name,
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: AppTheme.primaryColor,
+            ),
+          ),
+          Text(
+            '${provider.selectedRoomType} · ${provider.nights} nights',
+            style: TextStyle(
+              fontSize: 13,
+              color: AppTheme.primaryColor.withOpacity(0.6),
+            ),
+          ),
           const SizedBox(height: 24),
           const Divider(color: AppTheme.mutedColor),
           const SizedBox(height: 24),
-          _buildPriceRow('Subtotal', context.watch<CurrencyProvider>().format(provider.subtotal)),
-          _buildPriceRow('Service Fee', context.watch<CurrencyProvider>().format(provider.serviceFee)),
-          _buildPriceRow('Taxes (GST)', context.watch<CurrencyProvider>().format(provider.taxes)),
+          _buildPriceRow(
+            'Subtotal',
+            context.watch<CurrencyProvider>().format(provider.subtotal),
+          ),
+          _buildPriceRow(
+            'Service Fee',
+            context.watch<CurrencyProvider>().format(provider.serviceFee),
+          ),
+          _buildPriceRow(
+            'Taxes (GST)',
+            context.watch<CurrencyProvider>().format(provider.taxes),
+          ),
           const SizedBox(height: 24),
           const Divider(color: AppTheme.mutedColor),
           const SizedBox(height: 24),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Total', style: TextStyle(fontSize: 14, color: AppTheme.primaryColor)),
-              Text(context.watch<CurrencyProvider>().format(provider.total), style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+              const Text(
+                'Total',
+                style: TextStyle(fontSize: 14, color: AppTheme.primaryColor),
+              ),
+              Text(
+                context.watch<CurrencyProvider>().format(provider.total),
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.primaryColor,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 48),
-          const Text('SAVED TO DATABASE ON PAYMENT', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 0.5)),
+          const Text(
+            'SAVED TO DATABASE ON PAYMENT',
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey,
+              letterSpacing: 0.5,
+            ),
+          ),
           const SizedBox(height: 16),
           _buildCheckItem('Guest profile (name, email, phone)'),
-          if (provider.additionalAdults.isNotEmpty) _buildCheckItem('${provider.additionalAdults.length} additional adult(s)'),
-          if (provider.children.isNotEmpty) _buildCheckItem('${provider.children.length} child(ren)'),
+          if (provider.additionalAdults.isNotEmpty)
+            _buildCheckItem(
+              '${provider.additionalAdults.length} additional adult(s)',
+            ),
+          if (provider.children.isNotEmpty)
+            _buildCheckItem('${provider.children.length} child(ren)'),
           _buildCheckItem('Booking dates & pricing'),
           _buildCheckItem('Room marked as Booked'),
         ],
@@ -1006,15 +1400,54 @@ class _PaymentPageState extends State<PaymentPage> {
   }
 
   Widget _buildPriceRow(String label, String value) {
-    return Padding(padding: const EdgeInsets.only(bottom: 12), child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(label, style: TextStyle(fontSize: 14, color: AppTheme.primaryColor.withOpacity(0.6))), Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppTheme.primaryColor))]));
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 14,
+              color: AppTheme.primaryColor.withOpacity(0.6),
+            ),
+          ),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: AppTheme.primaryColor,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildCheckItem(String text) {
-    return Padding(padding: const EdgeInsets.only(bottom: 8), child: Row(children: [const Icon(LucideIcons.check, size: 10, color: Colors.orangeAccent), const SizedBox(width: 8), Text(text, style: const TextStyle(fontSize: 11, color: Colors.grey))]));
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          const Icon(LucideIcons.check, size: 10, color: Colors.orangeAccent),
+          const SizedBox(width: 8),
+          Text(text, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+        ],
+      ),
+    );
   }
 
   Widget _buildLabel(String text) {
-    return Text(text, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.primaryColor.withOpacity(0.5), letterSpacing: 0.5));
+    return Text(
+      text,
+      style: TextStyle(
+        fontSize: 10,
+        fontWeight: FontWeight.bold,
+        color: AppTheme.primaryColor.withOpacity(0.5),
+        letterSpacing: 0.5,
+      ),
+    );
   }
 
   Widget _buildTextField(
@@ -1028,7 +1461,9 @@ class _PaymentPageState extends State<PaymentPage> {
     String? counterText,
   }) {
     return TextFormField(
-      key: ValueKey(hint), // Forces Flutter to preserve unique state per textfield hint
+      key: ValueKey(
+        hint,
+      ), // Forces Flutter to preserve unique state per textfield hint
       controller: controller,
       keyboardType: keyboardType,
       inputFormatters: inputFormatters,
@@ -1048,10 +1483,25 @@ class _PaymentPageState extends State<PaymentPage> {
         hintStyle: TextStyle(color: Colors.grey[300], fontSize: 14),
         filled: true,
         fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppTheme.mutedColor)),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppTheme.mutedColor)),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppTheme.primaryColor, width: 1.2)),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: AppTheme.mutedColor),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: AppTheme.mutedColor),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(
+            color: AppTheme.primaryColor,
+            width: 1.2,
+          ),
+        ),
         errorStyle: const TextStyle(fontSize: 10, color: Colors.redAccent),
       ),
     );

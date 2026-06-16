@@ -13,7 +13,8 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 }
 
 class PushNotificationService {
-  static final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
+  static final FirebaseMessaging _firebaseMessaging =
+      FirebaseMessaging.instance;
   static final FlutterLocalNotificationsPlugin _localNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
 
@@ -48,10 +49,9 @@ class PushNotificationService {
     // Initialize local notifications for foreground popups with sounds
     const AndroidInitializationSettings initializationSettingsAndroid =
         AndroidInitializationSettings('@mipmap/ic_launcher');
-    
-    const InitializationSettings initializationSettings = InitializationSettings(
-      android: initializationSettingsAndroid,
-    );
+
+    const InitializationSettings initializationSettings =
+        InitializationSettings(android: initializationSettingsAndroid);
 
     await _localNotificationsPlugin.initialize(
       settings: initializationSettings,
@@ -64,7 +64,8 @@ class PushNotificationService {
     const AndroidNotificationChannel channel = AndroidNotificationChannel(
       'high_importance_channel', // id
       'High Importance Notifications', // title
-      description: 'This channel is used for important notifications.', // description
+      description:
+          'This channel is used for important notifications.', // description
       importance: Importance.high,
       playSound: true,
       enableVibration: true,
@@ -72,15 +73,17 @@ class PushNotificationService {
 
     await _localNotificationsPlugin
         .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>()
+          AndroidFlutterLocalNotificationsPlugin
+        >()
         ?.createNotificationChannel(channel);
 
     // Update foreground presentation options for Apple (iOS)
-    await FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(
-      alert: true,
-      badge: true,
-      sound: true,
-    );
+    await FirebaseMessaging.instance
+        .setForegroundNotificationPresentationOptions(
+          alert: true,
+          badge: true,
+          sound: true,
+        );
 
     // Listen to messages while in foreground
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
@@ -93,8 +96,10 @@ class PushNotificationService {
       } catch (_) {}
 
       // If it's an offer notification, show popup
-      final isOffer = (message.data['type'] == 'offer' ||
-          (message.notification?.title?.toLowerCase().contains('offer') ?? false));
+      final isOffer =
+          (message.data['type'] == 'offer' ||
+          (message.notification?.title?.toLowerCase().contains('offer') ??
+              false));
       if (isOffer) {
         popup.showNotificationPopup(
           title: message.notification?.title ?? 'Special Offer',
@@ -105,7 +110,9 @@ class PushNotificationService {
       }
 
       if (message.notification != null) {
-        debugPrint('Message also contained a notification: ${message.notification}');
+        debugPrint(
+          'Message also contained a notification: ${message.notification}',
+        );
         _showLocalNotification(message, channel);
       }
     });
@@ -129,7 +136,10 @@ class PushNotificationService {
     });
   }
 
-  static void _showLocalNotification(RemoteMessage message, AndroidNotificationChannel channel) {
+  static void _showLocalNotification(
+    RemoteMessage message,
+    AndroidNotificationChannel channel,
+  ) {
     RemoteNotification? notification = message.notification;
     AndroidNotification? android = message.notification?.android;
 
@@ -153,18 +163,23 @@ class PushNotificationService {
     }
   }
 
-  static Future<void> showLocalNotification({required String title, required String body}) async {
-    const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
-      'high_importance_channel',
-      'High Importance Notifications',
-      channelDescription: 'This channel is used for important notifications.',
-      importance: Importance.high,
-      priority: Priority.high,
-      icon: '@mipmap/ic_launcher',
-      playSound: true,
-      enableVibration: true,
-    );
-    
+  static Future<void> showLocalNotification({
+    required String title,
+    required String body,
+  }) async {
+    const AndroidNotificationDetails androidDetails =
+        AndroidNotificationDetails(
+          'high_importance_channel',
+          'High Importance Notifications',
+          channelDescription:
+              'This channel is used for important notifications.',
+          importance: Importance.high,
+          priority: Priority.high,
+          icon: '@mipmap/ic_launcher',
+          playSound: true,
+          enableVibration: true,
+        );
+
     await _localNotificationsPlugin.show(
       id: DateTime.now().millisecondsSinceEpoch ~/ 1000,
       title: title,
@@ -177,18 +192,23 @@ class PushNotificationService {
   @pragma('vm:entry-point')
   static Future<void> handleBackgroundMessage(RemoteMessage message) async {
     debugPrint('Handling a background message: ${message.messageId}');
-    final isOffer = (message.data['type'] == 'offer' ||
-        (message.notification?.title?.toLowerCase().contains('offer') ?? false));
+    final isOffer =
+        (message.data['type'] == 'offer' ||
+        (message.notification?.title?.toLowerCase().contains('offer') ??
+            false));
     if (isOffer) {
       // Show a local notification with sound and popup
-      _showLocalNotification(message, const AndroidNotificationChannel(
-        'high_importance_channel',
-        'High Importance Notifications',
-        description: 'This channel is used for important notifications.',
-        importance: Importance.high,
-        playSound: true,
-        enableVibration: true,
-      ));
+      _showLocalNotification(
+        message,
+        const AndroidNotificationChannel(
+          'high_importance_channel',
+          'High Importance Notifications',
+          description: 'This channel is used for important notifications.',
+          importance: Importance.high,
+          playSound: true,
+          enableVibration: true,
+        ),
+      );
       // Play sound
       try {
         audio_helper.triggerNotificationChime();

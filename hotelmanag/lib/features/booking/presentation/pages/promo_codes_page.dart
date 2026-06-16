@@ -30,10 +30,11 @@ class _PromoCodesPageState extends State<PromoCodesPage> {
 
     final validCoupons = promoProvider.validCoupons.where((c) {
       if (c.firstTimeOnly && bookingProvider.bookings.isNotEmpty) return false;
-      
+
       if (_searchQuery.isNotEmpty) {
         final query = _searchQuery.toLowerCase();
-        if (!c.code.toLowerCase().contains(query) && !c.description.toLowerCase().contains(query)) {
+        if (!c.code.toLowerCase().contains(query) &&
+            !c.description.toLowerCase().contains(query)) {
           return false;
         }
       }
@@ -43,7 +44,14 @@ class _PromoCodesPageState extends State<PromoCodesPage> {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: const Text('Available Offers', style: TextStyle(color: Colors.black87, fontSize: 18, fontWeight: FontWeight.w600)),
+        title: const Text(
+          'Available Offers',
+          style: TextStyle(
+            color: Colors.black87,
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
@@ -64,7 +72,10 @@ class _PromoCodesPageState extends State<PromoCodesPage> {
               },
               decoration: InputDecoration(
                 hintText: 'Search promo codes...',
-                prefixIcon: const Icon(LucideIcons.search, color: AppTheme.primaryColor),
+                prefixIcon: const Icon(
+                  LucideIcons.search,
+                  color: AppTheme.primaryColor,
+                ),
                 suffixIcon: _searchQuery.isNotEmpty
                     ? IconButton(
                         icon: const Icon(LucideIcons.x, size: 18),
@@ -96,25 +107,43 @@ class _PromoCodesPageState extends State<PromoCodesPage> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(LucideIcons.ticket, size: 64, color: Colors.grey[300]),
+                        Icon(
+                          LucideIcons.ticket,
+                          size: 64,
+                          color: Colors.grey[300],
+                        ),
                         const SizedBox(height: 16),
-                        Text('No offers match your search', style: TextStyle(color: Colors.grey[500], fontSize: 16)),
+                        Text(
+                          'No offers match your search',
+                          style: TextStyle(
+                            color: Colors.grey[500],
+                            fontSize: 16,
+                          ),
+                        ),
                       ],
                     ),
                   )
                 : ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
                     itemCount: validCoupons.length,
                     itemBuilder: (context, index) {
                       final coupon = validCoupons[index];
-                      final isApplied = bookingProvider.appliedPromoCode == coupon.code;
-                      
+                      final isApplied =
+                          bookingProvider.appliedPromoCode == coupon.code;
+
                       return Container(
                         margin: const EdgeInsets.only(bottom: 16),
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: isApplied ? AppTheme.primaryColor : Colors.grey[200]!),
+                          border: Border.all(
+                            color: isApplied
+                                ? AppTheme.primaryColor
+                                : Colors.grey[200]!,
+                          ),
                           boxShadow: [
                             BoxShadow(
                               color: Colors.black.withOpacity(0.02),
@@ -137,43 +166,71 @@ class _PromoCodesPageState extends State<PromoCodesPage> {
                                   Container(
                                     padding: const EdgeInsets.all(12),
                                     decoration: BoxDecoration(
-                                      color: isApplied ? AppTheme.primaryColor.withOpacity(0.1) : Colors.orange.withOpacity(0.1),
+                                      color: isApplied
+                                          ? AppTheme.primaryColor.withOpacity(
+                                              0.1,
+                                            )
+                                          : Colors.orange.withOpacity(0.1),
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: Icon(
                                       LucideIcons.tag,
-                                      color: isApplied ? AppTheme.primaryColor : Colors.orange,
+                                      color: isApplied
+                                          ? AppTheme.primaryColor
+                                          : Colors.orange,
                                     ),
                                   ),
                                   const SizedBox(width: 16),
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Wrap(
-                                          crossAxisAlignment: WrapCrossAlignment.center,
+                                          crossAxisAlignment:
+                                              WrapCrossAlignment.center,
                                           spacing: 8,
                                           runSpacing: 4,
                                           children: [
                                             Text(
                                               coupon.code,
-                                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 16,
+                                              ),
                                             ),
                                             if (isApplied)
                                               Container(
-                                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 6,
+                                                      vertical: 2,
+                                                    ),
                                                 decoration: BoxDecoration(
-                                                  color: AppTheme.primaryColor.withOpacity(0.1),
-                                                  borderRadius: BorderRadius.circular(4),
+                                                  color: AppTheme.primaryColor
+                                                      .withOpacity(0.1),
+                                                  borderRadius:
+                                                      BorderRadius.circular(4),
                                                 ),
-                                                child: const Text('APPLIED', style: TextStyle(fontSize: 10, color: AppTheme.primaryColor, fontWeight: FontWeight.bold)),
-                                              )
+                                                child: const Text(
+                                                  'APPLIED',
+                                                  style: TextStyle(
+                                                    fontSize: 10,
+                                                    color:
+                                                        AppTheme.primaryColor,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                              ),
                                           ],
                                         ),
                                         const SizedBox(height: 4),
                                         Text(
                                           coupon.description,
-                                          style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                                          style: TextStyle(
+                                            color: Colors.grey[600],
+                                            fontSize: 13,
+                                          ),
                                         ),
                                       ],
                                     ),

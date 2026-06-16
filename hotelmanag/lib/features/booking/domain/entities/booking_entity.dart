@@ -19,7 +19,7 @@ class BookingEntity extends Equatable {
   final double? subtotal;
   final String? paymentMethod;
   final int? nights;
-  
+
   // Custom Guest Snapshot & Additional Guests info
   final String? guestId;
   final String? guestEmail;
@@ -107,28 +107,28 @@ class BookingEntity extends Equatable {
 
   @override
   List<Object?> get props => [
-        id,
-        roomId,
-        hotelName,
-        checkIn,
-        checkOut,
-        status,
-        totalAmount,
-        imageUrl,
-        guestName,
-        roomNumber,
-        createdAt,
-        city,
-        roomType,
-        pricePerNight,
-        taxes,
-        subtotal,
-        paymentMethod,
-        nights,
-        guestId,
-        guestEmail,
-        guestPhone,
-        additionalAdults,
-        additionalChildren,
-      ];
+    id,
+    roomId,
+    hotelName,
+    checkIn,
+    checkOut,
+    status,
+    totalAmount,
+    imageUrl,
+    guestName,
+    roomNumber,
+    createdAt,
+    city,
+    roomType,
+    pricePerNight,
+    taxes,
+    subtotal,
+    paymentMethod,
+    nights,
+    guestId,
+    guestEmail,
+    guestPhone,
+    additionalAdults,
+    additionalChildren,
+  ];
 }

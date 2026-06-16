@@ -14,7 +14,9 @@ class WelcomePage extends StatelessWidget {
           Container(
             decoration: const BoxDecoration(
               image: DecorationImage(
-                image: NetworkImage('https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?q=80&w=1000'),
+                image: NetworkImage(
+                  'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?q=80&w=1000',
+                ),
                 fit: BoxFit.cover,
               ),
             ),
@@ -34,13 +36,16 @@ class WelcomePage extends StatelessWidget {
           ),
           // Content
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 64.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 32.0,
+              vertical: 64.0,
+            ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 const Spacer(),
                 const Text(
-                  'LuxeStay',
+                  'Athithigriha',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 48,
@@ -66,9 +71,17 @@ class WelcomePage extends StatelessWidget {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white,
                       foregroundColor: AppTheme.primaryColor,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
                     ),
-                    child: const Text('Log In', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                    child: const Text(
+                      'Log In',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                      ),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -78,23 +91,40 @@ class WelcomePage extends StatelessWidget {
                   child: ElevatedButton(
                     onPressed: () => context.push('/register'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFA67C52), // Brown color from screenshot
+                      backgroundColor: const Color(
+                        0xFFA67C52,
+                      ), // Brown color from screenshot
                       foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
                     ),
-                    child: const Text('Register', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                    child: const Text(
+                      'Register',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                      ),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 24),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Text('Don\'t have an account? ', style: TextStyle(color: Colors.white70)),
+                    const Text(
+                      'Don\'t have an account? ',
+                      style: TextStyle(color: Colors.white70),
+                    ),
                     GestureDetector(
                       onTap: () => context.push('/register'),
                       child: const Text(
                         'Register',
-                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, decoration: TextDecoration.underline),
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          decoration: TextDecoration.underline,
+                        ),
                       ),
                     ),
                   ],

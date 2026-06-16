@@ -23,7 +23,8 @@ class CustomRecaptcha extends StatefulWidget {
   State<CustomRecaptcha> createState() => _CustomRecaptchaState();
 }
 
-class _CustomRecaptchaState extends State<CustomRecaptcha> with SingleTickerProviderStateMixin {
+class _CustomRecaptchaState extends State<CustomRecaptcha>
+    with SingleTickerProviderStateMixin {
   bool _isChecked = false;
   bool _isVerified = false;
   bool _isChallengeVisible = false;
@@ -66,12 +67,12 @@ class _CustomRecaptchaState extends State<CustomRecaptcha> with SingleTickerProv
     setState(() {
       _isChecked = true;
     });
-    
+
     _spinController.repeat();
 
     // Simulate network delay for checking risk score
     await Future.delayed(const Duration(milliseconds: 800));
-    
+
     if (mounted) {
       _spinController.stop();
       setState(() {
@@ -82,7 +83,7 @@ class _CustomRecaptchaState extends State<CustomRecaptcha> with SingleTickerProv
 
   void _submitAnswer() {
     if (_answerController.text.trim().isEmpty) return;
-    
+
     widget.onSolved(_answerController.text.trim());
     setState(() {
       _isChallengeVisible = false;
@@ -123,28 +124,36 @@ class _CustomRecaptchaState extends State<CustomRecaptcha> with SingleTickerProv
                   decoration: BoxDecoration(
                     color: Colors.white,
                     border: Border.all(
-                      color: _isVerified ? Colors.transparent : const Color(0xFFC1C1C1),
+                      color: _isVerified
+                          ? Colors.transparent
+                          : const Color(0xFFC1C1C1),
                       width: 2,
                     ),
                     borderRadius: BorderRadius.circular(2),
                   ),
                   child: _isVerified
-                      ? const Icon(Icons.check, color: Color(0xFF009E55), size: 24)
+                      ? const Icon(
+                          Icons.check,
+                          color: Color(0xFF009E55),
+                          size: 24,
+                        )
                       : _isChecked && !_isChallengeVisible
-                          ? RotationTransition(
-                              turns: _spinController,
-                              child: const Padding(
-                                padding: EdgeInsets.all(2.0),
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF4285F4)),
-                                ),
+                      ? RotationTransition(
+                          turns: _spinController,
+                          child: const Padding(
+                            padding: EdgeInsets.all(2.0),
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Color(0xFF4285F4),
                               ),
-                            )
-                          : null,
+                            ),
+                          ),
+                        )
+                      : null,
                 ),
                 const SizedBox(width: 12),
-                
+
                 // Label
                 const Text(
                   "I'm not a robot",
@@ -154,9 +163,9 @@ class _CustomRecaptchaState extends State<CustomRecaptcha> with SingleTickerProv
                     color: Color(0xFF555555),
                   ),
                 ),
-                
+
                 const Spacer(),
-                
+
                 // Right side reCAPTCHA logo
                 Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -169,14 +178,26 @@ class _CustomRecaptchaState extends State<CustomRecaptcha> with SingleTickerProv
                       child: Stack(
                         alignment: Alignment.center,
                         children: [
-                          Icon(LucideIcons.refreshCw, size: 24, color: const Color(0xFF4285F4).withOpacity(0.8)),
-                          Icon(LucideIcons.shieldCheck, size: 12, color: const Color(0xFF0F9D58).withOpacity(0.9)),
+                          Icon(
+                            LucideIcons.refreshCw,
+                            size: 24,
+                            color: const Color(0xFF4285F4).withOpacity(0.8),
+                          ),
+                          Icon(
+                            LucideIcons.shieldCheck,
+                            size: 12,
+                            color: const Color(0xFF0F9D58).withOpacity(0.9),
+                          ),
                         ],
                       ),
                     ),
                     const Text(
                       'reCAPTCHA',
-                      style: TextStyle(fontSize: 10, color: Color(0xFF555555), fontWeight: FontWeight.w500),
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: Color(0xFF555555),
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                     const Text(
                       'Privacy - Terms',
@@ -206,10 +227,20 @@ class _CustomRecaptchaState extends State<CustomRecaptcha> with SingleTickerProv
           margin: EdgeInsets.only(top: _isChallengeVisible ? 12 : 0),
           decoration: BoxDecoration(
             color: Colors.white,
-            border: Border.all(color: _isChallengeVisible ? const Color(0xFF4285F4) : Colors.transparent),
+            border: Border.all(
+              color: _isChallengeVisible
+                  ? const Color(0xFF4285F4)
+                  : Colors.transparent,
+            ),
             borderRadius: BorderRadius.circular(3),
             boxShadow: _isChallengeVisible
-                ? [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4))]
+                ? [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ]
                 : [],
           ),
           child: ClipRect(
@@ -228,13 +259,28 @@ class _CustomRecaptchaState extends State<CustomRecaptcha> with SingleTickerProv
                         children: [
                           const Text(
                             'Solve the challenge below',
-                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
                           ),
                           InkWell(
                             onTap: widget.isLoading ? null : widget.onRefresh,
                             child: widget.isLoading
-                                ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                                : const Icon(Icons.refresh, color: Colors.white, size: 20),
+                                ? const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : const Icon(
+                                    Icons.refresh,
+                                    color: Colors.white,
+                                    size: 20,
+                                  ),
                           ),
                         ],
                       ),
@@ -248,7 +294,10 @@ class _CustomRecaptchaState extends State<CustomRecaptcha> with SingleTickerProv
                         border: Border.all(color: Colors.grey.shade300),
                       ),
                       child: widget.captchaChallenge.trim().startsWith('<svg')
-                          ? SvgPicture.string(widget.captchaChallenge, fit: BoxFit.contain)
+                          ? SvgPicture.string(
+                              widget.captchaChallenge,
+                              fit: BoxFit.contain,
+                            )
                           : Center(
                               child: Text(
                                 widget.captchaChallenge,
@@ -270,7 +319,10 @@ class _CustomRecaptchaState extends State<CustomRecaptcha> with SingleTickerProv
                             decoration: const InputDecoration(
                               hintText: 'Enter characters',
                               isDense: true,
-                              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                              contentPadding: EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 12,
+                              ),
                               border: OutlineInputBorder(),
                             ),
                             onSubmitted: (_) => _submitAnswer(),
@@ -282,7 +334,10 @@ class _CustomRecaptchaState extends State<CustomRecaptcha> with SingleTickerProv
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF4285F4),
                             foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 12,
+                              horizontal: 16,
+                            ),
                           ),
                           child: const Text('Verify'),
                         ),

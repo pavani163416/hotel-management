@@ -10,15 +10,15 @@ import '../../../../core/providers/booking_provider.dart';
 
 // Same country codes as the website's AuthModal
 const List<(String, String)> _countryCodes = [
-  ('+1',   'USA/Canada'),
-  ('+7',   'Kazakhstan'),
-  ('+36',  'Hungary'),
-  ('+39',  'Italy'),
-  ('+44',  'UK'),
-  ('+62',  'Indonesia'),
-  ('+81',  'Japan'),
-  ('+91',  'India'),
-  ('+98',  'Iran'),
+  ('+1', 'USA/Canada'),
+  ('+7', 'Kazakhstan'),
+  ('+36', 'Hungary'),
+  ('+39', 'Italy'),
+  ('+44', 'UK'),
+  ('+62', 'Indonesia'),
+  ('+81', 'Japan'),
+  ('+91', 'India'),
+  ('+98', 'Iran'),
   ('+224', 'Guinea'),
   ('+245', 'Guinea-Bissau'),
   ('+254', 'Kenya'),
@@ -55,13 +55,13 @@ class PhoneAuthBottomSheet extends StatefulWidget {
 
 class _PhoneAuthBottomSheetState extends State<PhoneAuthBottomSheet> {
   final _phoneController = TextEditingController();
-  final _otpController   = TextEditingController();
+  final _otpController = TextEditingController();
 
-  String _countryCode     = '+91';
-  bool   _otpSent         = false;
-  String _otpMessage      = '';
-  String _error           = '';
-  int    _resendCooldown  = 0;
+  String _countryCode = '+91';
+  bool _otpSent = false;
+  String _otpMessage = '';
+  String _error = '';
+  int _resendCooldown = 0;
   Timer? _timer;
 
   @override
@@ -86,14 +86,21 @@ class _PhoneAuthBottomSheetState extends State<PhoneAuthBottomSheet> {
   }
 
   String? _validatePhone() {
-    final clean = _phoneController.text.trim().replaceAll(RegExp(r'[\s\-()]'), '');
+    final clean = _phoneController.text.trim().replaceAll(
+      RegExp(r'[\s\-()]'),
+      '',
+    );
     if (clean.isEmpty) return 'Phone number is required.';
-    if (!RegExp(r'^\d+$').hasMatch(clean)) return 'Phone number must contain only digits.';
+    if (!RegExp(r'^\d+$').hasMatch(clean))
+      return 'Phone number must contain only digits.';
     if (_countryCode == '+91') {
-      if (clean.length != 10) return 'Indian phone numbers must be exactly 10 digits.';
-      if (!RegExp(r'^[6-9]').hasMatch(clean)) return 'Indian mobile numbers must start with 6, 7, 8, or 9.';
+      if (clean.length != 10)
+        return 'Indian phone numbers must be exactly 10 digits.';
+      if (!RegExp(r'^[6-9]').hasMatch(clean))
+        return 'Indian mobile numbers must start with 6, 7, 8, or 9.';
     } else {
-      if (clean.length < 7 || clean.length > 15) return 'Phone number must be between 7 and 15 digits.';
+      if (clean.length < 7 || clean.length > 15)
+        return 'Phone number must be between 7 and 15 digits.';
     }
     return null;
   }
@@ -106,7 +113,9 @@ class _PhoneAuthBottomSheetState extends State<PhoneAuthBottomSheet> {
       return;
     }
 
-    final phone = _countryCode + _phoneController.text.trim().replaceAll(RegExp(r'[\s\-()]'), '');
+    final phone =
+        _countryCode +
+        _phoneController.text.trim().replaceAll(RegExp(r'[\s\-()]'), '');
     final auth = Provider.of<AuthProvider>(context, listen: false);
     final result = await auth.sendPhoneOtp(phone);
 
@@ -122,13 +131,16 @@ class _PhoneAuthBottomSheetState extends State<PhoneAuthBottomSheet> {
           _otpController.text = devOtp;
           _otpMessage = 'DEV MODE: Your phone verification code is $devOtp';
         } else {
-          _otpMessage = 'OTP sent. Please check your phone and enter the code below.';
+          _otpMessage =
+              'OTP sent. Please check your phone and enter the code below.';
         }
         _error = '';
       });
       _startResendTimer();
     } else {
-      setState(() => _error = auth.error ?? 'Unable to send OTP. Please try again.');
+      setState(
+        () => _error = auth.error ?? 'Unable to send OTP. Please try again.',
+      );
     }
   }
 
@@ -146,9 +158,14 @@ class _PhoneAuthBottomSheetState extends State<PhoneAuthBottomSheet> {
       return;
     }
 
-    final phone = _countryCode + _phoneController.text.trim().replaceAll(RegExp(r'[\s\-()]'), '');
-    final auth  = Provider.of<AuthProvider>(context, listen: false);
-    final success = await auth.verifyPhoneOtp(phone, _otpController.text.trim());
+    final phone =
+        _countryCode +
+        _phoneController.text.trim().replaceAll(RegExp(r'[\s\-()]'), '');
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+    final success = await auth.verifyPhoneOtp(
+      phone,
+      _otpController.text.trim(),
+    );
 
     if (!mounted) return;
 
@@ -158,7 +175,10 @@ class _PhoneAuthBottomSheetState extends State<PhoneAuthBottomSheet> {
       // TC-FE-022: Removed imperative context.go('/'), relying on GoRouter redirect logic.
     } else {
       _otpController.clear();
-      setState(() => _error = auth.error ?? 'OTP verification failed. Please try again.');
+      setState(
+        () =>
+            _error = auth.error ?? 'OTP verification failed. Please try again.',
+      );
     }
   }
 
@@ -168,11 +188,16 @@ class _PhoneAuthBottomSheetState extends State<PhoneAuthBottomSheet> {
     final auth = Provider.of<AuthProvider>(context);
 
     return Container(
-      padding: EdgeInsets.only(left: 24, right: 24, top: 24, bottom: 24 + bottomInset),
+      padding: EdgeInsets.only(
+        left: 24,
+        right: 24,
+        top: 24,
+        bottom: 24 + bottomInset,
+      ),
       decoration: const BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.only(
-          topLeft:  Radius.circular(28),
+          topLeft: Radius.circular(28),
           topRight: Radius.circular(28),
         ),
       ),
@@ -183,8 +208,12 @@ class _PhoneAuthBottomSheetState extends State<PhoneAuthBottomSheet> {
           // Drag handle
           Center(
             child: Container(
-              width: 48, height: 5,
-              decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(10)),
+              width: 48,
+              height: 5,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(10),
+              ),
             ),
           ),
           const SizedBox(height: 24),
@@ -192,7 +221,11 @@ class _PhoneAuthBottomSheetState extends State<PhoneAuthBottomSheet> {
           // Title
           Text(
             _otpSent ? 'Verify Phone Number' : 'Continue with Phone',
-            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
+            style: const TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: AppTheme.primaryColor,
+            ),
           ),
           const SizedBox(height: 8),
           Text(
@@ -219,14 +252,25 @@ class _PhoneAuthBottomSheetState extends State<PhoneAuthBottomSheet> {
                     child: DropdownButton<String>(
                       value: _countryCode,
                       items: _countryCodes
-                          .map((e) => DropdownMenuItem(
-                                value: e.$1,
-                                child: Text('${e.$1} ${e.$2}',
-                                    style: const TextStyle(fontSize: 13, color: AppTheme.primaryColor)),
-                              ))
+                          .map(
+                            (e) => DropdownMenuItem(
+                              value: e.$1,
+                              child: Text(
+                                '${e.$1} ${e.$2}',
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  color: AppTheme.primaryColor,
+                                ),
+                              ),
+                            ),
+                          )
                           .toList(),
-                      onChanged: (v) => setState(() => _countryCode = v ?? '+91'),
-                      style: const TextStyle(fontSize: 14, color: AppTheme.primaryColor),
+                      onChanged: (v) =>
+                          setState(() => _countryCode = v ?? '+91'),
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: AppTheme.primaryColor,
+                      ),
                     ),
                   ),
                 ),
@@ -238,19 +282,31 @@ class _PhoneAuthBottomSheetState extends State<PhoneAuthBottomSheet> {
                     inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     decoration: InputDecoration(
                       hintText: 'Mobile number',
-                      hintStyle: TextStyle(color: AppTheme.primaryColor.withOpacity(0.4)),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      hintStyle: TextStyle(
+                        color: AppTheme.primaryColor.withOpacity(0.4),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14,
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
-                        borderSide: const BorderSide(color: AppTheme.mutedColor),
+                        borderSide: const BorderSide(
+                          color: AppTheme.mutedColor,
+                        ),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
-                        borderSide: const BorderSide(color: AppTheme.mutedColor),
+                        borderSide: const BorderSide(
+                          color: AppTheme.mutedColor,
+                        ),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
-                        borderSide: const BorderSide(color: AppTheme.primaryColor, width: 2),
+                        borderSide: const BorderSide(
+                          color: AppTheme.primaryColor,
+                          width: 2,
+                        ),
                       ),
                     ),
                   ),
@@ -267,16 +323,29 @@ class _PhoneAuthBottomSheetState extends State<PhoneAuthBottomSheet> {
               keyboardType: TextInputType.number,
               maxLength: 6,
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              style: const TextStyle(fontSize: 20, letterSpacing: 8, fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
+              style: const TextStyle(
+                fontSize: 20,
+                letterSpacing: 8,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.primaryColor,
+              ),
               decoration: InputDecoration(
                 labelText: 'OTP Code',
                 hintText: '••••••',
                 counterText: '',
-                prefixIcon: const Icon(LucideIcons.lock, color: AppTheme.accentColor),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                prefixIcon: const Icon(
+                  LucideIcons.lock,
+                  color: AppTheme.accentColor,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
-                  borderSide: const BorderSide(color: AppTheme.primaryColor, width: 2),
+                  borderSide: const BorderSide(
+                    color: AppTheme.primaryColor,
+                    width: 2,
+                  ),
                 ),
               ),
             ),
@@ -285,7 +354,10 @@ class _PhoneAuthBottomSheetState extends State<PhoneAuthBottomSheet> {
             if (_otpMessage.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(bottom: 8),
-                child: Text(_otpMessage, style: TextStyle(fontSize: 13, color: Colors.grey[700])),
+                child: Text(
+                  _otpMessage,
+                  style: TextStyle(fontSize: 13, color: Colors.grey[700]),
+                ),
               ),
             // Resend row
             Row(
@@ -300,15 +372,25 @@ class _PhoneAuthBottomSheetState extends State<PhoneAuthBottomSheet> {
                     _timer?.cancel();
                     _resendCooldown = 0;
                   }),
-                  child: const Text('Change Number', style: TextStyle(color: Colors.grey, fontSize: 13)),
+                  child: const Text(
+                    'Change Number',
+                    style: TextStyle(color: Colors.grey, fontSize: 13),
+                  ),
                 ),
                 TextButton(
-                  onPressed: _resendCooldown > 0 || auth.isLoading ? null : _sendOtp,
+                  onPressed: _resendCooldown > 0 || auth.isLoading
+                      ? null
+                      : _sendOtp,
                   child: Text(
-                    _resendCooldown > 0 ? 'Resend in ${_resendCooldown}s' : 'Resend SMS',
+                    _resendCooldown > 0
+                        ? 'Resend in ${_resendCooldown}s'
+                        : 'Resend SMS',
                     style: TextStyle(
-                      color: (_resendCooldown > 0 || auth.isLoading) ? Colors.grey : AppTheme.accentColor,
-                      fontSize: 13, fontWeight: FontWeight.bold,
+                      color: (_resendCooldown > 0 || auth.isLoading)
+                          ? Colors.grey
+                          : AppTheme.accentColor,
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
@@ -321,7 +403,14 @@ class _PhoneAuthBottomSheetState extends State<PhoneAuthBottomSheet> {
           if (_error.isNotEmpty) ...[
             Padding(
               padding: const EdgeInsets.only(bottom: 12),
-              child: Text(_error, style: const TextStyle(color: Colors.red, fontSize: 13, fontWeight: FontWeight.w500)),
+              child: Text(
+                _error,
+                style: const TextStyle(
+                  color: Colors.red,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
             ),
           ],
 
@@ -330,18 +419,32 @@ class _PhoneAuthBottomSheetState extends State<PhoneAuthBottomSheet> {
             width: double.infinity,
             height: 56,
             child: ElevatedButton(
-              onPressed: auth.isLoading ? null : (_otpSent ? _verifyOtp : _sendOtp),
+              onPressed: auth.isLoading
+                  ? null
+                  : (_otpSent ? _verifyOtp : _sendOtp),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.primaryColor,
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
                 elevation: 0,
               ),
               child: auth.isLoading
-                  ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                  ? const SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
                   : Text(
                       _otpSent ? 'Verify & Sign In' : 'Send OTP',
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
                     ),
             ),
           ),
@@ -351,7 +454,10 @@ class _PhoneAuthBottomSheetState extends State<PhoneAuthBottomSheet> {
           Center(
             child: TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Prefer email? Sign in', style: TextStyle(color: AppTheme.primaryColor, fontSize: 13)),
+              child: const Text(
+                'Prefer email? Sign in',
+                style: TextStyle(color: AppTheme.primaryColor, fontSize: 13),
+              ),
             ),
           ),
         ],

@@ -23,7 +23,9 @@ class _BookingPageState extends State<BookingPage> {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: isCheckIn ? provider.checkIn : provider.checkOut,
-      firstDate: isCheckIn ? DateTime.now() : provider.checkIn.add(const Duration(days: 1)),
+      firstDate: isCheckIn
+          ? DateTime.now()
+          : provider.checkIn.add(const Duration(days: 1)),
       lastDate: DateTime(2101),
       builder: (context, child) {
         return Theme(
@@ -54,7 +56,7 @@ class _BookingPageState extends State<BookingPage> {
   /// TC-FE-043: Validates chronological date order before navigating to guest
   /// details. Blocks the API call if checkout is on or before checkin.
   void _confirmDates(BookingProvider provider) {
-    final checkIn  = provider.checkIn;
+    final checkIn = provider.checkIn;
     final checkOut = provider.checkOut;
 
     // Guard 1: checkout must not be before checkin
@@ -70,9 +72,10 @@ class _BookingPageState extends State<BookingPage> {
     }
 
     // Guard 2: same-day checkout is not allowed (minimum 1 night stay)
-    final isSameDay = checkOut.year  == checkIn.year  &&
-                      checkOut.month == checkIn.month &&
-                      checkOut.day   == checkIn.day;
+    final isSameDay =
+        checkOut.year == checkIn.year &&
+        checkOut.month == checkIn.month &&
+        checkOut.day == checkIn.day;
     if (isSameDay) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -108,12 +111,20 @@ class _BookingPageState extends State<BookingPage> {
               const SizedBox(height: 16),
               const Text(
                 'Your Selection',
-                style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: AppTheme.primaryColor, fontFamily: 'Serif'),
+                style: TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.primaryColor,
+                  fontFamily: 'Serif',
+                ),
               ),
               const SizedBox(height: 8),
               Text(
                 'Confirm your stay details before continuing.',
-                style: TextStyle(color: AppTheme.primaryColor.withOpacity(0.5), fontSize: 14),
+                style: TextStyle(
+                  color: AppTheme.primaryColor.withOpacity(0.5),
+                  fontSize: 14,
+                ),
               ),
               const SizedBox(height: 32),
               _buildMainSelectionCard(provider),
@@ -154,7 +165,7 @@ class _BookingPageState extends State<BookingPage> {
               memCacheHeight: 380,
             ),
           ),
-          
+
           Padding(
             padding: const EdgeInsets.all(24),
             child: Column(
@@ -162,30 +173,44 @@ class _BookingPageState extends State<BookingPage> {
               children: [
                 Text(
                   hotel.name,
-                  style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.primaryColor,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Row(
                   children: [
-                    Icon(LucideIcons.mapPin, size: 14, color: AppTheme.primaryColor.withOpacity(0.6)),
+                    Icon(
+                      LucideIcons.mapPin,
+                      size: 14,
+                      color: AppTheme.primaryColor.withOpacity(0.6),
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       hotel.location,
-                      style: TextStyle(color: AppTheme.primaryColor.withOpacity(0.6), fontSize: 14),
+                      style: TextStyle(
+                        color: AppTheme.primaryColor.withOpacity(0.6),
+                        fontSize: 14,
+                      ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 24),
                 const Divider(color: AppTheme.mutedColor),
                 const SizedBox(height: 24),
-                
+
                 LayoutBuilder(
                   builder: (context, constraints) {
                     return Wrap(
                       spacing: 32,
                       runSpacing: 24,
                       children: [
-                        _buildSection('ROOM', Text(provider.selectedRoomType, style: _valueStyle())),
+                        _buildSection(
+                          'ROOM',
+                          Text(provider.selectedRoomType, style: _valueStyle()),
+                        ),
                         _buildSection(
                           'DATES',
                           Column(
@@ -202,40 +227,63 @@ class _BookingPageState extends State<BookingPage> {
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              _buildCounterRow(LucideIcons.moon, '${provider.nights} nights', () {
-                                if (provider.nights > 1) {
-                                  provider.updateDates(provider.checkIn, provider.checkOut.subtract(const Duration(days: 1)));
-                                }
-                              }, () {
-                                provider.updateDates(provider.checkIn, provider.checkOut.add(const Duration(days: 1)));
-                              }),
-                              const SizedBox(height: 12),
-                              _buildCounterRow(LucideIcons.users, '${provider.guests} guests', () {
-                                if (provider.guests > 1) provider.updateGuests(provider.guests - 1);
-                              }, () {
-                                if (provider.guests < 8) {
-                                  provider.updateGuests(provider.guests + 1);
-                                } else {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Maximum 8 guests allowed'),
-                                      behavior: SnackBarBehavior.floating,
+                              _buildCounterRow(
+                                LucideIcons.moon,
+                                '${provider.nights} nights',
+                                () {
+                                  if (provider.nights > 1) {
+                                    provider.updateDates(
+                                      provider.checkIn,
+                                      provider.checkOut.subtract(
+                                        const Duration(days: 1),
+                                      ),
+                                    );
+                                  }
+                                },
+                                () {
+                                  provider.updateDates(
+                                    provider.checkIn,
+                                    provider.checkOut.add(
+                                      const Duration(days: 1),
                                     ),
                                   );
-                                }
-                              }),
+                                },
+                              ),
+                              const SizedBox(height: 12),
+                              _buildCounterRow(
+                                LucideIcons.users,
+                                '${provider.guests} guests',
+                                () {
+                                  if (provider.guests > 1)
+                                    provider.updateGuests(provider.guests - 1);
+                                },
+                                () {
+                                  if (provider.guests < 8) {
+                                    provider.updateGuests(provider.guests + 1);
+                                  } else {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          'Maximum 8 guests allowed',
+                                        ),
+                                        behavior: SnackBarBehavior.floating,
+                                      ),
+                                    );
+                                  }
+                                },
+                              ),
                             ],
                           ),
                         ),
                       ],
                     );
-                  }
+                  },
                 ),
-                
+
                 const SizedBox(height: 32),
                 const Divider(color: AppTheme.mutedColor),
                 const SizedBox(height: 24),
-                
+
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -243,10 +291,22 @@ class _BookingPageState extends State<BookingPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Subtotal (${provider.nights} nights)', style: const TextStyle(fontSize: 12, color: Colors.grey)),
                           Text(
-                            context.watch<CurrencyProvider>().format(provider.subtotal),
-                            style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
+                            'Subtotal (${provider.nights} nights)',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey,
+                            ),
+                          ),
+                          Text(
+                            context.watch<CurrencyProvider>().format(
+                              provider.subtotal,
+                            ),
+                            style: const TextStyle(
+                              fontSize: 32,
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.primaryColor,
+                            ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -258,12 +318,23 @@ class _BookingPageState extends State<BookingPage> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppTheme.primaryColor,
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 32,
+                          vertical: 20,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                       child: const Row(
                         children: [
-                          Text('Continue', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                          Text(
+                            'Continue',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
                           SizedBox(width: 8),
                           Icon(LucideIcons.arrowRight, size: 18),
                         ],
@@ -285,11 +356,20 @@ class _BookingPageState extends State<BookingPage> {
       children: [
         Row(
           children: [
-            Icon(_getIconForLabel(label), size: 14, color: AppTheme.primaryColor.withOpacity(0.4)),
+            Icon(
+              _getIconForLabel(label),
+              size: 14,
+              color: AppTheme.primaryColor.withOpacity(0.4),
+            ),
             const SizedBox(width: 8),
             Text(
               label,
-              style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.primaryColor.withOpacity(0.4), letterSpacing: 1),
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.primaryColor.withOpacity(0.4),
+                letterSpacing: 1,
+              ),
             ),
           ],
         ),
@@ -301,10 +381,14 @@ class _BookingPageState extends State<BookingPage> {
 
   IconData _getIconForLabel(String label) {
     switch (label) {
-      case 'ROOM': return LucideIcons.bed;
-      case 'DATES': return LucideIcons.calendar;
-      case 'DURATION': return LucideIcons.clock;
-      default: return LucideIcons.info;
+      case 'ROOM':
+        return LucideIcons.bed;
+      case 'DATES':
+        return LucideIcons.calendar;
+      case 'DURATION':
+        return LucideIcons.clock;
+      default:
+        return LucideIcons.info;
     }
   }
 
@@ -320,25 +404,45 @@ class _BookingPageState extends State<BookingPage> {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(DateFormat('dd - MM - yyyy').format(date), style: const TextStyle(fontSize: 13, color: AppTheme.primaryColor)),
+            Text(
+              DateFormat('dd - MM - yyyy').format(date),
+              style: const TextStyle(
+                fontSize: 13,
+                color: AppTheme.primaryColor,
+              ),
+            ),
             const SizedBox(width: 12),
-            Icon(LucideIcons.calendar, size: 14, color: AppTheme.primaryColor.withOpacity(0.4)),
+            Icon(
+              LucideIcons.calendar,
+              size: 14,
+              color: AppTheme.primaryColor.withOpacity(0.4),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildCounterRow(IconData icon, String text, VoidCallback? onMinus, VoidCallback? onPlus, {bool isReadOnly = false}) {
+  Widget _buildCounterRow(
+    IconData icon,
+    String text,
+    VoidCallback? onMinus,
+    VoidCallback? onPlus, {
+    bool isReadOnly = false,
+  }) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         if (!isReadOnly) _buildCounterBtn(LucideIcons.minus, onMinus!),
-        if (isReadOnly) Icon(icon, size: 14, color: AppTheme.primaryColor.withOpacity(0.4)),
+        if (isReadOnly)
+          Icon(icon, size: 14, color: AppTheme.primaryColor.withOpacity(0.4)),
         const SizedBox(width: 12),
         SizedBox(
           width: 70,
-          child: Text(text, style: const TextStyle(fontSize: 14, color: AppTheme.primaryColor)),
+          child: Text(
+            text,
+            style: const TextStyle(fontSize: 14, color: AppTheme.primaryColor),
+          ),
         ),
         if (!isReadOnly) _buildCounterBtn(LucideIcons.plus, onPlus!),
       ],
@@ -354,10 +458,18 @@ class _BookingPageState extends State<BookingPage> {
           border: Border.all(color: AppTheme.mutedColor),
           shape: BoxShape.circle,
         ),
-        child: Icon(icon, size: 12, color: AppTheme.primaryColor.withOpacity(0.4)),
+        child: Icon(
+          icon,
+          size: 12,
+          color: AppTheme.primaryColor.withOpacity(0.4),
+        ),
       ),
     );
   }
 
-  TextStyle _valueStyle() => const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.primaryColor);
+  TextStyle _valueStyle() => const TextStyle(
+    fontSize: 14,
+    fontWeight: FontWeight.w600,
+    color: AppTheme.primaryColor,
+  );
 }

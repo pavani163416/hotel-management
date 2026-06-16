@@ -11,15 +11,15 @@ import 'dart:math';
 
 /// Country codes — mirrors web AuthModal COUNTRY_CODES list.
 const _countryCodes = [
-  ('+1',   'USA/Canada'),
-  ('+7',   'Kazakhstan'),
-  ('+36',  'Hungary'),
-  ('+39',  'Italy'),
-  ('+44',  'UK'),
-  ('+62',  'Indonesia'),
-  ('+81',  'Japan'),
-  ('+91',  'India'),
-  ('+98',  'Iran'),
+  ('+1', 'USA/Canada'),
+  ('+7', 'Kazakhstan'),
+  ('+36', 'Hungary'),
+  ('+39', 'Italy'),
+  ('+44', 'UK'),
+  ('+62', 'Indonesia'),
+  ('+81', 'Japan'),
+  ('+91', 'India'),
+  ('+98', 'Iran'),
   ('+224', 'Guinea'),
   ('+245', 'Guinea-Bissau'),
   ('+254', 'Kenya'),
@@ -46,21 +46,21 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
-  final _nameController     = TextEditingController();
-  final _emailController    = TextEditingController();
-  final _phoneController    = TextEditingController();
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _cityController     = TextEditingController();
-  final _captchaController  = TextEditingController();
+  final _cityController = TextEditingController();
+  final _captchaController = TextEditingController();
 
-  bool   _obscurePassword = true;
-  String _countryCode     = '+91';
+  bool _obscurePassword = true;
+  String _countryCode = '+91';
   String? _passwordError;
 
   // CAPTCHA state
-  String _captchaId        = '';
+  String _captchaId = '';
   String _captchaChallenge = '';
-  bool   _captchaLoading   = false;
+  bool _captchaLoading = false;
 
   @override
   void initState() {
@@ -81,7 +81,10 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   Future<void> _fetchCaptcha() async {
-    setState(() { _captchaLoading = true; _captchaController.clear(); });
+    setState(() {
+      _captchaLoading = true;
+      _captchaController.clear();
+    });
     final auth = Provider.of<AuthProvider>(context, listen: false);
     final result = await auth.fetchCaptcha();
     if (result != null) {
@@ -102,7 +105,8 @@ class _RegisterPageState extends State<RegisterPage> {
   String? _validatePhone(String phone, String cc) {
     final clean = phone.replaceAll(RegExp(r'[\s\-()]'), '');
     if (clean.isEmpty) return 'Phone number is required.';
-    if (!RegExp(r'^\d+$').hasMatch(clean)) return 'Phone number must contain only digits.';
+    if (!RegExp(r'^\d+$').hasMatch(clean))
+      return 'Phone number must contain only digits.';
     if (clean.length != 10) return 'Phone number must be exactly 10 digits.';
     return null;
   }
@@ -112,18 +116,24 @@ class _RegisterPageState extends State<RegisterPage> {
       _passwordError = null;
     });
 
-    final name     = _nameController.text.trim();
-    final email    = _emailController.text.trim().toLowerCase();
-    final phone    = _phoneController.text.trim();
+    final name = _nameController.text.trim();
+    final email = _emailController.text.trim().toLowerCase();
+    final phone = _phoneController.text.trim();
     final password = _passwordController.text;
-    final city     = _cityController.text.trim();
+    final city = _cityController.text.trim();
 
     // ── Validation (centralized) ────────────────────────────────
     final nameErr = AppValidators.validateName(name);
-    if (nameErr != null) { _showSnack(nameErr); return; }
+    if (nameErr != null) {
+      _showSnack(nameErr);
+      return;
+    }
 
     final emailErr = AppValidators.validateEmail(email);
-    if (emailErr != null) { _showSnack(emailErr); return; }
+    if (emailErr != null) {
+      _showSnack(emailErr);
+      return;
+    }
 
     if (password.length < 8) {
       setState(() {
@@ -143,21 +153,30 @@ class _RegisterPageState extends State<RegisterPage> {
     }
 
     final phoneErr = AppValidators.validatePhone(phone);
-    if (phoneErr != null) { _showSnack(phoneErr); return; }
+    if (phoneErr != null) {
+      _showSnack(phoneErr);
+      return;
+    }
 
     if (_captchaId.isEmpty || _captchaController.text.trim().isEmpty) {
       _showSnack('Please complete the security check.');
       return;
     }
 
-    final fullPhone = '$_countryCode${phone.replaceAll(RegExp(r'[\s\-()]'), '')}';
-    final auth      = context.read<AuthProvider>();
+    final fullPhone =
+        '$_countryCode${phone.replaceAll(RegExp(r'[\s\-()]'), '')}';
+    final auth = context.read<AuthProvider>();
 
     await auth.register(
-      name, email, password, fullPhone,
-      city:          city.isEmpty ? null : city,
-      captchaId:     _captchaId.isNotEmpty ? _captchaId : null,
-      captchaAnswer: _captchaController.text.trim().isNotEmpty ? _captchaController.text.trim() : null,
+      name,
+      email,
+      password,
+      fullPhone,
+      city: city.isEmpty ? null : city,
+      captchaId: _captchaId.isNotEmpty ? _captchaId : null,
+      captchaAnswer: _captchaController.text.trim().isNotEmpty
+          ? _captchaController.text.trim()
+          : null,
     );
 
     if (!mounted) return;
@@ -182,10 +201,10 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   Widget build(BuildContext context) {
     final pw = _passwordController.text;
-    final bool lenOk      = pw.length >= 8 && pw.length <= 15;
-    final bool upperOk    = RegExp(r'[A-Z]').hasMatch(pw);
-    final bool numberOk   = RegExp(r'[0-9]').hasMatch(pw);
-    final bool specialOk  = RegExp(r'[^A-Za-z0-9]').hasMatch(pw);
+    final bool lenOk = pw.length >= 8 && pw.length <= 15;
+    final bool upperOk = RegExp(r'[A-Z]').hasMatch(pw);
+    final bool numberOk = RegExp(r'[0-9]').hasMatch(pw);
+    final bool specialOk = RegExp(r'[^A-Za-z0-9]').hasMatch(pw);
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -202,7 +221,11 @@ class _RegisterPageState extends State<RegisterPage> {
               border: Border.all(color: AppTheme.mutedColor),
             ),
             child: IconButton(
-              icon: const Icon(Icons.chevron_left, color: AppTheme.primaryColor, size: 24),
+              icon: const Icon(
+                Icons.chevron_left,
+                color: AppTheme.primaryColor,
+                size: 24,
+              ),
               onPressed: () => context.go('/welcome'),
             ),
           ),
@@ -215,19 +238,25 @@ class _RegisterPageState extends State<RegisterPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // ── Logo ─────────────────────────────────
-              Center(
-                child: RichText(
-                  text: const TextSpan(children: [
-                    TextSpan(text: 'L', style: TextStyle(color: Color(0xFFA67C52), fontSize: 32, fontWeight: FontWeight.bold)),
-                    TextSpan(text: 'uxeStay', style: TextStyle(color: AppTheme.primaryColor, fontSize: 32, fontWeight: FontWeight.bold)),
-                  ]),
+              const Center(
+                child: Text(
+                  'Athithigriha',
+                  style: TextStyle(
+                    color: AppTheme.primaryColor,
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
               const SizedBox(height: 12),
               const Center(
                 child: Text(
                   'Create an Account',
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.primaryColor,
+                  ),
                 ),
               ),
               const SizedBox(height: 28),
@@ -272,15 +301,25 @@ class _RegisterPageState extends State<RegisterPage> {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppTheme.accentColor, width: 1.5),
+                    borderSide: const BorderSide(
+                      color: AppTheme.accentColor,
+                      width: 1.5,
+                    ),
                   ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
                   suffixIcon: IconButton(
                     icon: Icon(
-                      _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                      color: AppTheme.primaryColor.withOpacity(0.5), size: 20,
+                      _obscurePassword
+                          ? Icons.visibility_off_outlined
+                          : Icons.visibility_outlined,
+                      color: AppTheme.primaryColor.withOpacity(0.5),
+                      size: 20,
                     ),
-                    onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                    onPressed: () =>
+                        setState(() => _obscurePassword = !_obscurePassword),
                   ),
                 ),
               ),
@@ -294,9 +333,9 @@ class _RegisterPageState extends State<RegisterPage> {
                 mainAxisSpacing: 4,
                 crossAxisSpacing: 4,
                 children: [
-                  _strengthCheck(lenOk,     '8–15 characters'),
-                  _strengthCheck(upperOk,   '1 capital letter'),
-                  _strengthCheck(numberOk,  '1 number'),
+                  _strengthCheck(lenOk, '8–15 characters'),
+                  _strengthCheck(upperOk, '1 capital letter'),
+                  _strengthCheck(numberOk, '1 number'),
                   _strengthCheck(specialOk, '1 special character'),
                 ],
               ),
@@ -318,11 +357,19 @@ class _RegisterPageState extends State<RegisterPage> {
                       child: DropdownButton<String>(
                         value: _countryCode,
                         isDense: true,
-                        items: _countryCodes.map((c) => DropdownMenuItem(
-                          value: c.$1,
-                          child: Text('${c.$1}', style: const TextStyle(fontSize: 13)),
-                        )).toList(),
-                        onChanged: (v) => setState(() => _countryCode = v ?? '+91'),
+                        items: _countryCodes
+                            .map(
+                              (c) => DropdownMenuItem(
+                                value: c.$1,
+                                child: Text(
+                                  '${c.$1}',
+                                  style: const TextStyle(fontSize: 13),
+                                ),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: (v) =>
+                            setState(() => _countryCode = v ?? '+91'),
                       ),
                     ),
                   ),
@@ -331,12 +378,21 @@ class _RegisterPageState extends State<RegisterPage> {
                     child: TextFormField(
                       controller: _phoneController,
                       maxLength: 10,
-                      buildCounter: (context, {required currentLength, required isFocused, maxLength}) => null,
+                      buildCounter:
+                          (
+                            context, {
+                            required currentLength,
+                            required isFocused,
+                            maxLength,
+                          }) => null,
                       autofillHints: const [AutofillHints.telephoneNumber],
                       keyboardType: TextInputType.phone,
                       decoration: InputDecoration(
                         hintText: '555 000 0000',
-                        hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
+                        hintStyle: TextStyle(
+                          color: Colors.grey[400],
+                          fontSize: 14,
+                        ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: BorderSide(color: Colors.grey.shade300),
@@ -347,9 +403,15 @@ class _RegisterPageState extends State<RegisterPage> {
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: AppTheme.accentColor, width: 1.5),
+                          borderSide: const BorderSide(
+                            color: AppTheme.accentColor,
+                            width: 1.5,
+                          ),
                         ),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
+                        ),
                       ),
                     ),
                   ),
@@ -369,85 +431,144 @@ class _RegisterPageState extends State<RegisterPage> {
 
               // ── CAPTCHA ───────────────────────────────
               Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text('Security Check',
-                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.black87)),
-                        InkWell(
-                          onTap: _captchaLoading ? null : _fetchCaptcha,
-                          borderRadius: BorderRadius.circular(4),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-                            child: Row(
-                              children: [
-                                _captchaLoading
-                                  ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black54))
-                                  : const Icon(Icons.refresh, size: 14, color: Colors.black54),
-                                const SizedBox(width: 4),
-                                const Text('New challenge', style: TextStyle(fontSize: 12, color: Colors.black54, fontWeight: FontWeight.w500)),
-                              ],
-                            ),
-                          ),
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Security Check',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87,
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Container(
-                      height: 64,
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.05), // match bg-black/5
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.black.withOpacity(0.1)), // match border-black/10
                       ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: Center(
-                          child: _captchaChallenge.trim().startsWith('<svg') 
-                            ? SvgPicture.string(_captchaChallenge, fit: BoxFit.contain)
-                            : Text(_captchaChallenge == 'ERROR' ? 'Failed to load CAPTCHA' : _captchaChallenge,
+                      InkWell(
+                        onTap: _captchaLoading ? null : _fetchCaptcha,
+                        borderRadius: BorderRadius.circular(4),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 4,
+                            vertical: 4,
+                          ),
+                          child: Row(
+                            children: [
+                              _captchaLoading
+                                  ? const SizedBox(
+                                      width: 14,
+                                      height: 14,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.black54,
+                                      ),
+                                    )
+                                  : const Icon(
+                                      Icons.refresh,
+                                      size: 14,
+                                      color: Colors.black54,
+                                    ),
+                              const SizedBox(width: 4),
+                              const Text(
+                                'New challenge',
                                 style: TextStyle(
-                                  fontFamily: _captchaChallenge == 'ERROR' ? 'sans-serif' : 'monospace',
-                                  fontSize: _captchaChallenge == 'ERROR' ? 14 : 24,
-                                  letterSpacing: _captchaChallenge == 'ERROR' ? 0 : 8,
-                                  fontWeight: _captchaChallenge == 'ERROR' ? FontWeight.w500 : FontWeight.w800,
-                                  color: _captchaChallenge == 'ERROR' ? Colors.red : Colors.black87,
+                                  fontSize: 12,
+                                  color: Colors.black54,
+                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
+                            ],
+                          ),
                         ),
                       ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    height: 64,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.05), // match bg-black/5
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: Colors.black.withOpacity(0.1),
+                      ), // match border-black/10
                     ),
-                    const SizedBox(height: 8),
-                    TextFormField(
-                      controller: _captchaController,
-                      keyboardType: TextInputType.text,
-                      style: const TextStyle(fontSize: 14, color: Colors.black87),
-                      decoration: InputDecoration(
-                        hintText: 'Type the characters above',
-                        hintStyle: TextStyle(color: Colors.black.withOpacity(0.4), fontSize: 14),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                        fillColor: Colors.white.withOpacity(0.5), // match bg-white/50
-                        filled: true,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: Colors.black.withOpacity(0.1)),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: Colors.black.withOpacity(0.1)),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Colors.black), // match focus:border-black
-                        ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Center(
+                        child: _captchaChallenge.trim().startsWith('<svg')
+                            ? SvgPicture.string(
+                                _captchaChallenge,
+                                fit: BoxFit.contain,
+                              )
+                            : Text(
+                                _captchaChallenge == 'ERROR'
+                                    ? 'Failed to load CAPTCHA'
+                                    : _captchaChallenge,
+                                style: TextStyle(
+                                  fontFamily: _captchaChallenge == 'ERROR'
+                                      ? 'sans-serif'
+                                      : 'monospace',
+                                  fontSize: _captchaChallenge == 'ERROR'
+                                      ? 14
+                                      : 24,
+                                  letterSpacing: _captchaChallenge == 'ERROR'
+                                      ? 0
+                                      : 8,
+                                  fontWeight: _captchaChallenge == 'ERROR'
+                                      ? FontWeight.w500
+                                      : FontWeight.w800,
+                                  color: _captchaChallenge == 'ERROR'
+                                      ? Colors.red
+                                      : Colors.black87,
+                                ),
+                              ),
                       ),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 16),
+                  ),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: _captchaController,
+                    keyboardType: TextInputType.text,
+                    style: const TextStyle(fontSize: 14, color: Colors.black87),
+                    decoration: InputDecoration(
+                      hintText: 'Type the characters above',
+                      hintStyle: TextStyle(
+                        color: Colors.black.withOpacity(0.4),
+                        fontSize: 14,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14,
+                      ),
+                      fillColor: Colors.white.withOpacity(
+                        0.5,
+                      ), // match bg-white/50
+                      filled: true,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: Colors.black.withOpacity(0.1),
+                        ),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: Colors.black.withOpacity(0.1),
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                          color: Colors.black,
+                        ), // match focus:border-black
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
 
               // ── Submit ────────────────────────────────
               const SizedBox(height: 8),
@@ -460,29 +581,49 @@ class _RegisterPageState extends State<RegisterPage> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppTheme.primaryColor,
                       foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
                       elevation: 0,
                     ),
                     child: auth.isLoading
-                        ? const SizedBox(width: 22, height: 22,
-                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
-                        : const Text('Create Account',
-                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                        ? const SizedBox(
+                            width: 22,
+                            height: 22,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2.5,
+                            ),
+                          )
+                        : const Text(
+                            'Create Account',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
                   ),
                 ),
               ),
               const SizedBox(height: 20),
 
               // ── Divider ───────────────────────────────
-              Row(children: [
-                Expanded(child: Divider(color: Colors.grey.shade300)),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: Text('Or continue with',
-                    style: TextStyle(fontSize: 13, color: Colors.grey.shade500)),
-                ),
-                Expanded(child: Divider(color: Colors.grey.shade300)),
-              ]),
+              Row(
+                children: [
+                  Expanded(child: Divider(color: Colors.grey.shade300)),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: Text(
+                      'Or continue with',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey.shade500,
+                      ),
+                    ),
+                  ),
+                  Expanded(child: Divider(color: Colors.grey.shade300)),
+                ],
+              ),
               const SizedBox(height: 16),
 
               // ── Google Sign-In ────────────────────────
@@ -492,23 +633,37 @@ class _RegisterPageState extends State<RegisterPage> {
                   height: 52,
                   child: OutlinedButton.icon(
                     icon: _googleIcon(),
-                    label: const Text('Continue with Google',
-                      style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+                    label: const Text(
+                      'Continue with Google',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 15,
+                      ),
+                    ),
                     onPressed: auth.isLoading
                         ? null
                         : () async {
-                            final ok = await auth.signInWithGoogle();
-                            if (ok && mounted) {
-                              context.read<BookingProvider>().fetchMyBookings();
-                              context.go('/');
-                            } else if (!ok && auth.error != null && mounted) {
+                            final account = await auth.signInWithGoogleClient();
+                            if (account != null && mounted) {
+                              setState(() {
+                                _nameController.text =
+                                    account.displayName ?? '';
+                                _emailController.text = account.email;
+                                _passwordController.text = 'GooglePass@2026';
+                              });
+                              _showSnack(
+                                'Successfully filled details from Google account: ${account.email}. Please enter your phone and solve the CAPTCHA to complete registration.',
+                              );
+                            } else if (auth.error != null && mounted) {
                               _showSnack(auth.error!);
                             }
                           },
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppTheme.primaryColor,
                       side: BorderSide(color: Colors.grey.shade300),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
                     ),
                   ),
                 ),
@@ -521,13 +676,17 @@ class _RegisterPageState extends State<RegisterPage> {
                 height: 52,
                 child: OutlinedButton.icon(
                   icon: const Icon(Icons.smartphone_outlined, size: 18),
-                  label: const Text('Continue with Phone Number',
-                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+                  label: const Text(
+                    'Continue with Phone Number',
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                  ),
                   onPressed: () => PhoneAuthBottomSheet.show(context),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppTheme.primaryColor,
                     side: BorderSide(color: Colors.grey.shade300),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
                   ),
                 ),
               ),
@@ -538,13 +697,23 @@ class _RegisterPageState extends State<RegisterPage> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text('Already have an account? ',
-                      style: TextStyle(color: Colors.grey.shade600, fontSize: 14)),
+                    Text(
+                      'Already have an account? ',
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
+                        fontSize: 14,
+                      ),
+                    ),
                     GestureDetector(
                       onTap: () => context.go('/login'),
-                      child: const Text('Sign In',
-                        style: TextStyle(color: AppTheme.accentColor,
-                          fontWeight: FontWeight.bold, fontSize: 14)),
+                      child: const Text(
+                        'Sign In',
+                        style: TextStyle(
+                          color: AppTheme.accentColor,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -564,11 +733,18 @@ class _RegisterPageState extends State<RegisterPage> {
       padding: const EdgeInsets.only(bottom: 6),
       child: RichText(
         text: TextSpan(
-          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.primaryColor),
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: AppTheme.primaryColor,
+          ),
           children: [
             TextSpan(text: label),
             if (required)
-              const TextSpan(text: ' *', style: TextStyle(color: Colors.red)),
+              const TextSpan(
+                text: ' *',
+                style: TextStyle(color: Colors.red),
+              ),
           ],
         ),
       ),
@@ -600,7 +776,10 @@ class _RegisterPageState extends State<RegisterPage> {
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: AppTheme.accentColor, width: 1.5),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
       ),
     );
   }
@@ -609,7 +788,8 @@ class _RegisterPageState extends State<RegisterPage> {
     return Row(
       children: [
         Container(
-          width: 14, height: 14,
+          width: 14,
+          height: 14,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: ok ? Colors.green : Colors.transparent,
@@ -620,7 +800,8 @@ class _RegisterPageState extends State<RegisterPage> {
               : null,
         ),
         const SizedBox(width: 6),
-        Text(label,
+        Text(
+          label,
           style: TextStyle(
             fontSize: 11,
             color: ok ? Colors.green : Colors.grey.shade500,
@@ -633,7 +814,8 @@ class _RegisterPageState extends State<RegisterPage> {
 
   Widget _googleIcon() {
     return SizedBox(
-      width: 20, height: 20,
+      width: 20,
+      height: 20,
       child: CustomPaint(painter: _GoogleIconPainter()),
     );
   }
@@ -644,7 +826,10 @@ class _GoogleIconPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final paint = Paint()..style = PaintingStyle.fill;
     const paths = [
-      ('#4285F4', 'M 20 12.25 c 0 -0.78 -0.07 -1.53 -0.2 -2.25 H 10 v 4.26 h 5.92 c -0.26 1.37 -1.04 2.53 -2.21 3.31 v 2.77 h 3.57 c 2.08 -1.92 3.28 -4.74 3.28 -8.09 z'),
+      (
+        '#4285F4',
+        'M 20 12.25 c 0 -0.78 -0.07 -1.53 -0.2 -2.25 H 10 v 4.26 h 5.92 c -0.26 1.37 -1.04 2.53 -2.21 3.31 v 2.77 h 3.57 c 2.08 -1.92 3.28 -4.74 3.28 -8.09 z',
+      ),
     ];
     // Simple flat Google G — just paint 4 coloured arcs
     _drawG(canvas, size);

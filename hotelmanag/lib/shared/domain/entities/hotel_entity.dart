@@ -83,7 +83,16 @@ class RoomEntity extends Equatable {
   }
 
   @override
-  List<Object?> get props => [id, name, description, price, capacity, bed, available, features];
+  List<Object?> get props => [
+    id,
+    name,
+    description,
+    price,
+    capacity,
+    bed,
+    available,
+    features,
+  ];
 }
 
 class HotelEntity extends Equatable {
@@ -159,13 +168,19 @@ class HotelEntity extends Equatable {
       rating: (json['rating'] ?? 0).toDouble(),
       reviewCount: (json['reviewCount'] ?? 0).toInt(),
       pricePerNight: (json['pricePerNight'] ?? 0).toDouble(),
-      originalPrice: json['originalPrice'] != null ? (json['originalPrice'] as num).toDouble() : null,
+      originalPrice: json['originalPrice'] != null
+          ? (json['originalPrice'] as num).toDouble()
+          : null,
       discountPct: (json['discountPct'] ?? 0).toDouble(),
       isDeal: json['isDeal'] ?? false,
       imageUrl: json['imageUrl'] ?? json['image'] ?? '',
       description: json['description'] ?? '',
       type: json['type'] ?? 'Hotel',
-      coords: (json['coords'] as List?)?.map((e) => (e as num).toDouble()).toList() ?? [0.0, 0.0],
+      coords:
+          (json['coords'] as List?)
+              ?.map((e) => (e as num).toDouble())
+              .toList() ??
+          [0.0, 0.0],
       amenities: List<String>.from(json['amenities'] ?? []),
       reviews: (json['reviews'] as List? ?? [])
           .map((r) => ReviewEntity.fromJson(r))
@@ -178,5 +193,24 @@ class HotelEntity extends Equatable {
   }
 
   @override
-  List<Object?> get props => [id, name, location, city, rating, reviewCount, pricePerNight, originalPrice, discountPct, isDeal, imageUrl, description, type, coords, amenities, reviews, rooms, gallery];
+  List<Object?> get props => [
+    id,
+    name,
+    location,
+    city,
+    rating,
+    reviewCount,
+    pricePerNight,
+    originalPrice,
+    discountPct,
+    isDeal,
+    imageUrl,
+    description,
+    type,
+    coords,
+    amenities,
+    reviews,
+    rooms,
+    gallery,
+  ];
 }

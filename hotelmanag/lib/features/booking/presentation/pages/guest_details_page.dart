@@ -118,7 +118,7 @@ class _GuestDetailsPageState extends State<GuestDetailsPage> {
   void _saveAndContinue() {
     if (_formKey.currentState!.validate()) {
       final provider = context.read<BookingProvider>();
-      
+
       provider.updateLeadGuest({
         'name': _leadNameController.text,
         'email': _leadEmailController.text,
@@ -127,19 +127,27 @@ class _GuestDetailsPageState extends State<GuestDetailsPage> {
         'requests': _leadRequestsController.text,
       });
 
-      final adults = _adultControllers.map((c) => {
-        'name': c['name']!.text,
-        'email': c['email']!.text,
-        'phone': c['phone']!.text,
-        'id': c['id']!.text,
-        'requests': c['requests']!.text,
-      }).toList();
+      final adults = _adultControllers
+          .map(
+            (c) => {
+              'name': c['name']!.text,
+              'email': c['email']!.text,
+              'phone': c['phone']!.text,
+              'id': c['id']!.text,
+              'requests': c['requests']!.text,
+            },
+          )
+          .toList();
 
-      final children = _childControllers.map((c) => {
-        'name': c['name']!.text,
-        'id': c['id']!.text,
-        'age': c['age']!.text,
-      }).toList();
+      final children = _childControllers
+          .map(
+            (c) => {
+              'name': c['name']!.text,
+              'id': c['id']!.text,
+              'age': c['age']!.text,
+            },
+          )
+          .toList();
 
       provider.setAdditionalGuests(adults, children);
       provider.updateGuests(1 + adults.length + children.length);
@@ -169,38 +177,50 @@ class _GuestDetailsPageState extends State<GuestDetailsPage> {
                 const SizedBox(height: 24),
                 const Text(
                   'Guest Details',
-                  style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: AppTheme.primaryColor, fontFamily: 'Serif'),
+                  style: TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.primaryColor,
+                    fontFamily: 'Serif',
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   'Enter the lead guest information for this reservation.',
-                  style: TextStyle(color: AppTheme.primaryColor.withOpacity(0.5), fontSize: 14),
+                  style: TextStyle(
+                    color: AppTheme.primaryColor.withOpacity(0.5),
+                    fontSize: 14,
+                  ),
                 ),
                 const SizedBox(height: 32),
-                
+
                 _buildLeadGuestCard(),
-                
+
                 const SizedBox(height: 48),
                 _buildAdultsHeader(),
                 const SizedBox(height: 16),
                 if (_adultControllers.isEmpty)
                   _buildEmptyState('No additional adults.')
                 else
-                  ..._adultControllers.asMap().entries.map((entry) => _buildAdultCard(entry.key)),
-                
+                  ..._adultControllers.asMap().entries.map(
+                    (entry) => _buildAdultCard(entry.key),
+                  ),
+
                 const SizedBox(height: 32),
                 const Divider(color: AppTheme.mutedColor),
                 const SizedBox(height: 32),
-                
+
                 _buildChildrenHeader(),
                 const SizedBox(height: 16),
                 if (_childControllers.isEmpty)
                   _buildEmptyState('No children.')
                 else
-                  ..._childControllers.asMap().entries.map((entry) => _buildChildCard(entry.key)),
-                
+                  ..._childControllers.asMap().entries.map(
+                    (entry) => _buildChildCard(entry.key),
+                  ),
+
                 const SizedBox(height: 60),
-                
+
                 Align(
                   alignment: Alignment.centerRight,
                   child: ElevatedButton(
@@ -208,13 +228,24 @@ class _GuestDetailsPageState extends State<GuestDetailsPage> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppTheme.primaryColor,
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 40,
+                        vertical: 20,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                     child: const Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text('Continue to Review', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                        Text(
+                          'Continue to Review',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
                         SizedBox(width: 12),
                         Icon(LucideIcons.arrowRight, size: 18),
                       ],
@@ -246,11 +277,25 @@ class _GuestDetailsPageState extends State<GuestDetailsPage> {
             children: [
               Container(
                 padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(color: AppTheme.mutedColor.withOpacity(0.3), shape: BoxShape.circle),
-                child: const Icon(LucideIcons.user, size: 18, color: AppTheme.primaryColor),
+                decoration: BoxDecoration(
+                  color: AppTheme.mutedColor.withOpacity(0.3),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  LucideIcons.user,
+                  size: 18,
+                  color: AppTheme.primaryColor,
+                ),
               ),
               const SizedBox(width: 12),
-              const Text('Lead Guest', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+              const Text(
+                'Lead Guest',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.primaryColor,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 24),
@@ -258,11 +303,20 @@ class _GuestDetailsPageState extends State<GuestDetailsPage> {
           const SizedBox(height: 24),
           _buildLabel('FULL NAME *'),
           const SizedBox(height: 8),
-          _buildTextField('e.g. James Wilson', _leadNameController, required: true),
+          _buildTextField(
+            'e.g. James Wilson',
+            _leadNameController,
+            required: true,
+          ),
           const SizedBox(height: 24),
           _buildLabel('AADHAAR NUMBER *'),
           const SizedBox(height: 8),
-          _buildTextField('12-digit Aadhaar Number', _leadIdController, required: true, isAadhar: true),
+          _buildTextField(
+            '12-digit Aadhaar Number',
+            _leadIdController,
+            required: true,
+            isAadhar: true,
+          ),
           const SizedBox(height: 24),
           Row(
             children: [
@@ -272,7 +326,12 @@ class _GuestDetailsPageState extends State<GuestDetailsPage> {
                   children: [
                     _buildLabel('EMAIL ADDRESS *'),
                     const SizedBox(height: 8),
-                    _buildTextField('you@example.com', _leadEmailController, required: true, isEmail: true),
+                    _buildTextField(
+                      'you@example.com',
+                      _leadEmailController,
+                      required: true,
+                      isEmail: true,
+                    ),
                   ],
                 ),
               ),
@@ -283,7 +342,10 @@ class _GuestDetailsPageState extends State<GuestDetailsPage> {
                   children: [
                     _buildLabel('PHONE NUMBER *'),
                     const SizedBox(height: 8),
-                    _PhoneInputField(controller: _leadPhoneController, required: true),
+                    _PhoneInputField(
+                      controller: _leadPhoneController,
+                      required: true,
+                    ),
                   ],
                 ),
               ),
@@ -292,7 +354,11 @@ class _GuestDetailsPageState extends State<GuestDetailsPage> {
           const SizedBox(height: 24),
           _buildLabel('SPECIAL REQUESTS (OPTIONAL)'),
           const SizedBox(height: 8),
-          _buildTextField('Late check-in, dietary requirements...', _leadRequestsController, maxLines: 3),
+          _buildTextField(
+            'Late check-in, dietary requirements...',
+            _leadRequestsController,
+            maxLines: 3,
+          ),
         ],
       ),
     );
@@ -302,12 +368,25 @@ class _GuestDetailsPageState extends State<GuestDetailsPage> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        const Text('Additional Adults', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+        const Text(
+          'Additional Adults',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: AppTheme.primaryColor,
+          ),
+        ),
         TextButton.icon(
           onPressed: _addAdult,
           icon: const Icon(LucideIcons.plus, size: 16),
           label: const Text('Add Adult'),
-          style: TextButton.styleFrom(foregroundColor: AppTheme.primaryColor, textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+          style: TextButton.styleFrom(
+            foregroundColor: AppTheme.primaryColor,
+            textStyle: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 13,
+            ),
+          ),
         ),
       ],
     );
@@ -330,10 +409,22 @@ class _GuestDetailsPageState extends State<GuestDetailsPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('ADULT ${index + 1}', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.primaryColor.withOpacity(0.6), letterSpacing: 1)),
+              Text(
+                'ADULT ${index + 1}',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.primaryColor.withOpacity(0.6),
+                  letterSpacing: 1,
+                ),
+              ),
               GestureDetector(
                 onTap: () => setState(() => _adultControllers.removeAt(index)),
-                child: const Icon(LucideIcons.trash2, size: 18, color: Colors.grey),
+                child: const Icon(
+                  LucideIcons.trash2,
+                  size: 18,
+                  color: Colors.grey,
+                ),
               ),
             ],
           ),
@@ -344,7 +435,12 @@ class _GuestDetailsPageState extends State<GuestDetailsPage> {
           const SizedBox(height: 24),
           _buildLabel('AADHAAR NUMBER *'),
           const SizedBox(height: 8),
-          _buildTextField('12-digit Aadhaar Number', controllers['id']!, required: true, isAadhar: true),
+          _buildTextField(
+            '12-digit Aadhaar Number',
+            controllers['id']!,
+            required: true,
+            isAadhar: true,
+          ),
           const SizedBox(height: 24),
           Row(
             children: [
@@ -354,7 +450,12 @@ class _GuestDetailsPageState extends State<GuestDetailsPage> {
                   children: [
                     _buildLabel('EMAIL ADDRESS (OPTIONAL)'),
                     const SizedBox(height: 8),
-                    _buildTextField('you@example.com', controllers['email']!, required: false, isEmail: true),
+                    _buildTextField(
+                      'you@example.com',
+                      controllers['email']!,
+                      required: false,
+                      isEmail: true,
+                    ),
                   ],
                 ),
               ),
@@ -365,7 +466,10 @@ class _GuestDetailsPageState extends State<GuestDetailsPage> {
                   children: [
                     _buildLabel('PHONE NUMBER (OPTIONAL)'),
                     const SizedBox(height: 8),
-                    _PhoneInputField(controller: controllers['phone']!, required: false),
+                    _PhoneInputField(
+                      controller: controllers['phone']!,
+                      required: false,
+                    ),
                   ],
                 ),
               ),
@@ -374,7 +478,11 @@ class _GuestDetailsPageState extends State<GuestDetailsPage> {
           const SizedBox(height: 24),
           _buildLabel('SPECIAL REQUESTS (OPTIONAL)'),
           const SizedBox(height: 8),
-          _buildTextField('Dietary requirements...', controllers['requests']!, maxLines: 2),
+          _buildTextField(
+            'Dietary requirements...',
+            controllers['requests']!,
+            maxLines: 2,
+          ),
         ],
       ),
     );
@@ -384,12 +492,25 @@ class _GuestDetailsPageState extends State<GuestDetailsPage> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        const Text('Children', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+        const Text(
+          'Children',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: AppTheme.primaryColor,
+          ),
+        ),
         TextButton.icon(
           onPressed: _addChild,
           icon: const Icon(LucideIcons.plus, size: 16),
           label: const Text('Add Child'),
-          style: TextButton.styleFrom(foregroundColor: AppTheme.primaryColor, textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+          style: TextButton.styleFrom(
+            foregroundColor: AppTheme.primaryColor,
+            textStyle: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 13,
+            ),
+          ),
         ),
       ],
     );
@@ -412,10 +533,22 @@ class _GuestDetailsPageState extends State<GuestDetailsPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('CHILD ${index + 1}', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.primaryColor.withOpacity(0.6), letterSpacing: 1)),
+              Text(
+                'CHILD ${index + 1}',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.primaryColor.withOpacity(0.6),
+                  letterSpacing: 1,
+                ),
+              ),
               GestureDetector(
                 onTap: () => setState(() => _childControllers.removeAt(index)),
-                child: const Icon(LucideIcons.trash2, size: 18, color: Colors.grey),
+                child: const Icon(
+                  LucideIcons.trash2,
+                  size: 18,
+                  color: Colors.grey,
+                ),
               ),
             ],
           ),
@@ -433,7 +566,12 @@ class _GuestDetailsPageState extends State<GuestDetailsPage> {
                   children: [
                     _buildLabel('AADHAAR NUMBER *'),
                     const SizedBox(height: 8),
-                    _buildTextField('12-digit Aadhaar Number', controllers['id']!, required: true, isAadhar: true),
+                    _buildTextField(
+                      '12-digit Aadhaar Number',
+                      controllers['id']!,
+                      required: true,
+                      isAadhar: true,
+                    ),
                   ],
                 ),
               ),
@@ -445,7 +583,11 @@ class _GuestDetailsPageState extends State<GuestDetailsPage> {
                   children: [
                     _buildLabel('AGE *'),
                     const SizedBox(height: 8),
-                    _buildTextField('e.g. 5', controllers['age']!, required: true),
+                    _buildTextField(
+                      'e.g. 5',
+                      controllers['age']!,
+                      required: true,
+                    ),
                   ],
                 ),
               ),
@@ -457,26 +599,62 @@ class _GuestDetailsPageState extends State<GuestDetailsPage> {
   }
 
   Widget _buildEmptyState(String text) {
-    return Padding(padding: const EdgeInsets.symmetric(vertical: 8), child: Text(text, style: TextStyle(color: AppTheme.primaryColor.withOpacity(0.4), fontStyle: FontStyle.italic, fontSize: 14)));
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: AppTheme.primaryColor.withOpacity(0.4),
+          fontStyle: FontStyle.italic,
+          fontSize: 14,
+        ),
+      ),
+    );
   }
 
   Widget _buildLabel(String text) {
-    return Text(text, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.primaryColor.withOpacity(0.5), letterSpacing: 0.5));
+    return Text(
+      text,
+      style: TextStyle(
+        fontSize: 10,
+        fontWeight: FontWeight.bold,
+        color: AppTheme.primaryColor.withOpacity(0.5),
+        letterSpacing: 0.5,
+      ),
+    );
   }
 
-  Widget _buildTextField(String hint, TextEditingController controller, {int maxLines = 1, bool required = false, bool isEmail = false, bool isAadhar = false, bool isPhone = false}) {
+  Widget _buildTextField(
+    String hint,
+    TextEditingController controller, {
+    int maxLines = 1,
+    bool required = false,
+    bool isEmail = false,
+    bool isAadhar = false,
+    bool isPhone = false,
+  }) {
     return TextFormField(
       controller: controller,
       maxLines: maxLines,
       maxLength: isAadhar ? 12 : (isPhone ? 13 : null),
-      inputFormatters: isAadhar ? [FilteringTextInputFormatter.digitsOnly] : (isPhone ? [FilteringTextInputFormatter.allow(RegExp(r'[0-9+]'))] : null),
-      keyboardType: isAadhar ? TextInputType.number : (isEmail ? TextInputType.emailAddress : (isPhone ? TextInputType.phone : TextInputType.text)),
+      inputFormatters: isAadhar
+          ? [FilteringTextInputFormatter.digitsOnly]
+          : (isPhone
+                ? [FilteringTextInputFormatter.allow(RegExp(r'[0-9+]'))]
+                : null),
+      keyboardType: isAadhar
+          ? TextInputType.number
+          : (isEmail
+                ? TextInputType.emailAddress
+                : (isPhone ? TextInputType.phone : TextInputType.text)),
       validator: (value) {
         if (required && (value == null || value.isEmpty)) {
           return 'This field is required';
         }
         if (isEmail && value != null && value.isNotEmpty) {
-          final emailRegex = RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$');
+          final emailRegex = RegExp(
+            r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$',
+          );
           if (!emailRegex.hasMatch(value)) {
             return 'Please enter a valid email';
           }
@@ -500,10 +678,25 @@ class _GuestDetailsPageState extends State<GuestDetailsPage> {
         hintStyle: TextStyle(color: Colors.grey[400], fontSize: 13),
         filled: true,
         fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppTheme.mutedColor)),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppTheme.mutedColor)),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppTheme.primaryColor, width: 1.2)),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: AppTheme.mutedColor),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: AppTheme.mutedColor),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(
+            color: AppTheme.primaryColor,
+            width: 1.2,
+          ),
+        ),
         errorStyle: const TextStyle(fontSize: 11, color: Colors.redAccent),
       ),
     );
@@ -513,7 +706,11 @@ class _GuestDetailsPageState extends State<GuestDetailsPage> {
 class _PhoneInputField extends StatefulWidget {
   final TextEditingController controller;
   final bool required;
-  const _PhoneInputField({Key? key, required this.controller, this.required = false}) : super(key: key);
+  const _PhoneInputField({
+    Key? key,
+    required this.controller,
+    this.required = false,
+  }) : super(key: key);
 
   @override
   State<_PhoneInputField> createState() => _PhoneInputFieldState();
@@ -545,12 +742,12 @@ class _PhoneInputFieldState extends State<_PhoneInputField> {
     } else {
       _numberController.text = text;
     }
-    
+
     // Initial sync
     if (widget.controller.text.isEmpty) {
       widget.controller.text = '$_countryCode ';
     }
-    
+
     _numberController.addListener(_updateMainController);
   }
 
@@ -586,10 +783,25 @@ class _PhoneInputFieldState extends State<_PhoneInputField> {
         hintStyle: TextStyle(color: Colors.grey[400], fontSize: 13),
         filled: true,
         fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppTheme.mutedColor)),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppTheme.mutedColor)),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppTheme.primaryColor, width: 1.2)),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: AppTheme.mutedColor),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: AppTheme.mutedColor),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(
+            color: AppTheme.primaryColor,
+            width: 1.2,
+          ),
+        ),
         errorStyle: const TextStyle(fontSize: 11, color: Colors.redAccent),
         counterText: '',
         prefixIcon: Container(
@@ -601,11 +813,22 @@ class _PhoneInputFieldState extends State<_PhoneInputField> {
           child: DropdownButtonHideUnderline(
             child: DropdownButton<String>(
               value: _countryCode,
-              icon: const Icon(LucideIcons.chevronDown, color: AppTheme.primaryColor, size: 16),
+              icon: const Icon(
+                LucideIcons.chevronDown,
+                color: AppTheme.primaryColor,
+                size: 16,
+              ),
               items: ['+91', '+1', '+44', '+61', '+81'].map((String code) {
                 return DropdownMenuItem<String>(
                   value: code,
-                  child: Text(code, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+                  child: Text(
+                    code,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.primaryColor,
+                    ),
+                  ),
                 );
               }).toList(),
               onChanged: (value) {

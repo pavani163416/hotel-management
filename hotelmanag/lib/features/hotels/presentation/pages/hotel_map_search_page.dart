@@ -30,12 +30,21 @@ class _HotelMapSearchPageState extends State<HotelMapSearchPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final hotels = Provider.of<HotelProvider>(context, listen: false).hotels;
       // Filter hotels with valid coordinates
-      final validHotels = hotels.where((h) => h.coords.length == 2 && (h.coords[0] != 0.0 || h.coords[1] != 0.0)).toList();
-      
+      final validHotels = hotels
+          .where(
+            (h) =>
+                h.coords.length == 2 &&
+                (h.coords[0] != 0.0 || h.coords[1] != 0.0),
+          )
+          .toList();
+
       if (validHotels.isNotEmpty) {
         setState(() {
           _mapHotels = validHotels;
-          _center = LatLng(validHotels.first.coords[0], validHotels.first.coords[1]);
+          _center = LatLng(
+            validHotels.first.coords[0],
+            validHotels.first.coords[1],
+          );
         });
         _mapController.move(_center, 13.0);
       }
@@ -114,15 +123,23 @@ class _HotelMapSearchPageState extends State<HotelMapSearchPage> {
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 200),
                         decoration: BoxDecoration(
-                          color: isSelected ? AppTheme.primaryColor : (isDark ? const Color(0xFF253040) : Colors.white),
+                          color: isSelected
+                              ? AppTheme.primaryColor
+                              : (isDark
+                                    ? const Color(0xFF253040)
+                                    : Colors.white),
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                            color: isSelected ? Colors.white : AppTheme.primaryColor.withOpacity(0.5),
+                            color: isSelected
+                                ? Colors.white
+                                : AppTheme.primaryColor.withOpacity(0.5),
                             width: isSelected ? 2.0 : 1.0,
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(isSelected ? 0.25 : 0.1),
+                              color: Colors.black.withOpacity(
+                                isSelected ? 0.25 : 0.1,
+                              ),
                               blurRadius: isSelected ? 8 : 4,
                               offset: const Offset(0, 3),
                             ),
@@ -132,7 +149,11 @@ class _HotelMapSearchPageState extends State<HotelMapSearchPage> {
                         child: Text(
                           currencyProvider.format(hotel.pricePerNight),
                           style: TextStyle(
-                            color: isSelected ? Colors.white : (isDark ? Colors.white : AppTheme.primaryColor),
+                            color: isSelected
+                                ? Colors.white
+                                : (isDark
+                                      ? Colors.white
+                                      : AppTheme.primaryColor),
                             fontSize: 12.5,
                             fontWeight: FontWeight.bold,
                           ),
@@ -153,9 +174,14 @@ class _HotelMapSearchPageState extends State<HotelMapSearchPage> {
             child: Row(
               children: [
                 CircleAvatar(
-                  backgroundColor: isDark ? const Color(0xFF19222E) : Colors.white,
+                  backgroundColor: isDark
+                      ? const Color(0xFF19222E)
+                      : Colors.white,
                   child: IconButton(
-                    icon: Icon(LucideIcons.arrowLeft, color: Theme.of(context).colorScheme.primary),
+                    icon: Icon(
+                      LucideIcons.arrowLeft,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
                     onPressed: () => context.pop(),
                   ),
                 ),
@@ -178,13 +204,20 @@ class _HotelMapSearchPageState extends State<HotelMapSearchPage> {
                     alignment: Alignment.centerLeft,
                     child: Row(
                       children: [
-                        Icon(LucideIcons.mapPin, size: 16, color: Theme.of(context).colorScheme.primary),
+                        Icon(
+                          LucideIcons.mapPin,
+                          size: 16,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
                         const SizedBox(width: 8),
                         Text(
                           _mapHotels.isNotEmpty
                               ? 'Interactive Stays: ${_mapHotels.length} Found'
                               : 'Searching map...',
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
                         ),
                       ],
                     ),
@@ -250,7 +283,8 @@ class _HotelMapSearchPageState extends State<HotelMapSearchPage> {
                   width: 110,
                   height: double.infinity,
                   fit: BoxFit.cover,
-                  placeholder: (context, url) => Container(color: Colors.grey[200]),
+                  placeholder: (context, url) =>
+                      Container(color: Colors.grey[200]),
                 ),
               ),
               const SizedBox(width: 12),
@@ -264,19 +298,29 @@ class _HotelMapSearchPageState extends State<HotelMapSearchPage> {
                       hotel.name,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13.5,
+                      ),
                     ),
                     const SizedBox(height: 2),
                     Row(
                       children: [
-                        const Icon(LucideIcons.mapPin, size: 10, color: Colors.grey),
+                        const Icon(
+                          LucideIcons.mapPin,
+                          size: 10,
+                          color: Colors.grey,
+                        ),
                         const SizedBox(width: 2),
                         Expanded(
                           child: Text(
                             hotel.city,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: TextStyle(color: Colors.grey[500], fontSize: 10),
+                            style: TextStyle(
+                              color: Colors.grey[500],
+                              fontSize: 10,
+                            ),
                           ),
                         ),
                       ],
@@ -284,11 +328,19 @@ class _HotelMapSearchPageState extends State<HotelMapSearchPage> {
                     const SizedBox(height: 6),
                     Row(
                       children: [
-                        const Icon(LucideIcons.star, size: 10, color: Colors.amber, fill: 1),
+                        const Icon(
+                          LucideIcons.star,
+                          size: 10,
+                          color: Colors.amber,
+                          fill: 1,
+                        ),
                         const SizedBox(width: 2),
                         Text(
                           hotel.rating.toString(),
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 10.5),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 10.5,
+                          ),
                         ),
                       ],
                     ),
@@ -304,7 +356,11 @@ class _HotelMapSearchPageState extends State<HotelMapSearchPage> {
                             fontSize: 13,
                           ),
                         ),
-                        const Icon(LucideIcons.arrowRight, size: 14, color: AppTheme.primaryColor),
+                        const Icon(
+                          LucideIcons.arrowRight,
+                          size: 14,
+                          color: AppTheme.primaryColor,
+                        ),
                       ],
                     ),
                   ],

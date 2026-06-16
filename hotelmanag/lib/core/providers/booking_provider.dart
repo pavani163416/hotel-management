@@ -22,7 +22,7 @@ class BookingProvider extends ChangeNotifier {
   int _guests = 2;
   String _selectedRoomType = 'Deluxe King Room';
   double _selectedRoomPrice = 0.0;
-  
+
   Map<String, String> _leadGuest = {
     'name': '',
     'email': '',
@@ -30,7 +30,7 @@ class BookingProvider extends ChangeNotifier {
     'id': '',
     'requests': '',
   };
-  
+
   List<Map<String, String>> _additionalAdults = [];
   List<Map<String, String>> _children = [];
 
@@ -47,7 +47,7 @@ class BookingProvider extends ChangeNotifier {
   List<BookingEntity> get bookings => _bookings;
   bool get isLoading => _isLoading;
   String? get error => _error;
-  
+
   HotelEntity? get currentHotel => _currentHotel;
   DateTime get checkIn => _checkIn;
   DateTime get checkOut => _checkOut;
@@ -62,7 +62,11 @@ class BookingProvider extends ChangeNotifier {
   String? get promoDescription => _promoDescription;
 
   int get nights => _checkOut.difference(_checkIn).inDays;
-  double get subtotal => (_selectedRoomPrice > 0 ? _selectedRoomPrice : (_currentHotel?.pricePerNight ?? 0)) * nights;
+  double get subtotal =>
+      (_selectedRoomPrice > 0
+          ? _selectedRoomPrice
+          : (_currentHotel?.pricePerNight ?? 0)) *
+      nights;
   double get serviceFee => (subtotal - _discountAmount) * 0.05;
   double get taxes => (subtotal - _discountAmount) * 0.08;
   double get total => (subtotal - _discountAmount) + serviceFee + taxes;
@@ -89,24 +93,30 @@ class BookingProvider extends ChangeNotifier {
   /// TC-FE-041: Securely wipe ALL user-specific booking state on logout so no
   /// PII or booking data leaks to the next authenticated user on this device.
   void reset() {
-    _currentHotel         = null;
-    _selectedRoomType     = 'Deluxe King Room';
-    _selectedRoomPrice    = 0.0;
-    _checkIn  = DateTime.now().add(const Duration(days: 7));
+    _currentHotel = null;
+    _selectedRoomType = 'Deluxe King Room';
+    _selectedRoomPrice = 0.0;
+    _checkIn = DateTime.now().add(const Duration(days: 7));
     _checkOut = DateTime.now().add(const Duration(days: 10));
     _guests = 2;
 
     // Clear all PII
-    _leadGuest = {'name': '', 'email': '', 'phone': '', 'id': '', 'requests': ''};
+    _leadGuest = {
+      'name': '',
+      'email': '',
+      'phone': '',
+      'id': '',
+      'requests': '',
+    };
     _additionalAdults = [];
     _children = [];
 
     // Clear promo / financial data
     _appliedPromoCode = null;
-    _discountAmount   = 0.0;
+    _discountAmount = 0.0;
     _promoDescription = null;
-    _promoType        = 'percentage';
-    _promoValue       = 0.0;
+    _promoType = 'percentage';
+    _promoValue = 0.0;
 
     // Clear booking history and error state
     _bookings = [];
@@ -140,7 +150,7 @@ class BookingProvider extends ChangeNotifier {
       (c) => c!.code.toUpperCase() == normalizedCode,
       orElse: () => null,
     );
-    
+
     if (coupon != null) {
       if (coupon.firstTimeOnly && _bookings.isNotEmpty) {
         _error = '$normalizedCode is for first-time guests only.';
@@ -191,7 +201,10 @@ class BookingProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void setAdditionalGuests(List<Map<String, String>> adults, List<Map<String, String>> children) {
+  void setAdditionalGuests(
+    List<Map<String, String>> adults,
+    List<Map<String, String>> children,
+  ) {
     _additionalAdults = adults;
     _children = children;
     notifyListeners();
@@ -200,18 +213,25 @@ class BookingProvider extends ChangeNotifier {
   // --- Finalize Booking ---
   Future<BookingEntity?> completeBooking(String paymentMethod) async {
     if (_currentHotel == null) return null;
-    
+
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     final prefixMap = const {
-      'h1': 'hdl', 'h2': 'tas', 'h3': 'cbr',
-      'h4': 'apl', 'h5': 'tgm', 'h6': 'scs',
+      'h1': 'hdl',
+      'h2': 'tas',
+      'h3': 'cbr',
+      'h4': 'apl',
+      'h5': 'tgm',
+      'h6': 'scs',
     };
     String prefix = prefixMap[_currentHotel!.id] ?? '';
     if (prefix.isEmpty) {
-      final cleanName = _currentHotel!.name.toLowerCase().replaceAll(RegExp(r'[^a-z]'), '');
+      final cleanName = _currentHotel!.name.toLowerCase().replaceAll(
+        RegExp(r'[^a-z]'),
+        '',
+      );
       prefix = cleanName.length >= 3 ? cleanName.substring(0, 3) : cleanName;
       if (prefix.isEmpty) prefix = 'hh';
     }
@@ -220,36 +240,39 @@ class BookingProvider extends ChangeNotifier {
     final normalizedRoomType = _selectedRoomType.toLowerCase();
     if (normalizedRoomType.contains('suite')) {
       suffix = '102';
-    } else if (normalizedRoomType.contains('penthouse') || 
-               normalizedRoomType.contains('villa') || 
-               normalizedRoomType.contains('bungalow')) {
+    } else if (normalizedRoomType.contains('penthouse') ||
+        normalizedRoomType.contains('villa') ||
+        normalizedRoomType.contains('bungalow')) {
       suffix = '103';
     }
-    
+
     final mappedRoomId = '$prefix-$suffix';
 
-    final data = {
-      'roomId': mappedRoomId,
-      'roomNumber': mappedRoomId,
+    final data = <String, dynamic>{
+      // roomId is sent as hotelStringId so backend can look up the room
+      'hotelStringId': mappedRoomId,
       'hotelId': _currentHotel!.id,
-      'hotelName': _currentHotel!.name,
       'checkIn': _checkIn.toIso8601String(),
       'checkOut': _checkOut.toIso8601String(),
-      'pricePerNight': _selectedRoomPrice,
-      'subtotal': subtotal,
-      'taxes': taxes,
-      'discount': discountAmount,
-      'totalAmount': total,
-      'promoCode': _appliedPromoCode,
-      'paymentMethod': paymentMethod,
-      'guest': {
-        'name': _leadGuest['name']?.isNotEmpty == true ? _leadGuest['name']! : 'Guest',
+      'guests': _guests,
+      if (_appliedPromoCode != null && _appliedPromoCode!.isNotEmpty)
+        'promoCode': _appliedPromoCode,
+      'paymentMode': paymentMethod == 'card'
+          ? 'card'
+          : paymentMethod == 'upi'
+              ? 'upi'
+              : paymentMethod == 'bank_transfer'
+                  ? 'bank_transfer'
+                  : 'online',
+      if (_leadGuest['requests']?.isNotEmpty == true)
+        'specialRequests': _leadGuest['requests'],
+      'guestSnapshot': {
+        'name': _leadGuest['name']?.isNotEmpty == true
+            ? _leadGuest['name']!
+            : 'Guest',
         'email': _leadGuest['email'] ?? '',
         'phone': _leadGuest['phone'] ?? '',
-        'id': _leadGuest['id'] ?? '',
       },
-      'additionalAdults': _additionalAdults,
-      'additionalChildren': _children,
     };
 
     final result = await _bookingRepository.createBooking(data);
@@ -266,7 +289,7 @@ class BookingProvider extends ChangeNotifier {
         _isLoading = false;
         notifyListeners();
         return booking;
-      }
+      },
     );
   }
 
@@ -291,46 +314,55 @@ class BookingProvider extends ChangeNotifier {
         final prefs = await SharedPreferences.getInstance();
         final storedStatuses = prefs.getString('booking_statuses') ?? '{}';
         final Map<String, dynamic> persistedOld = json.decode(storedStatuses);
-        
-        final oldStatuses = {for (var b in _bookings) b.id: b.status.toLowerCase()};
+
+        final oldStatuses = {
+          for (var b in _bookings) b.id: b.status.toLowerCase(),
+        };
         _bookings = List<BookingEntity>.from(bookings);
         _error = null;
         _isLoading = false;
-        
+
         final newStatusesToSave = <String, String>{};
 
         for (var newB in _bookings) {
-           final newStatus = newB.status.toLowerCase();
-           newStatusesToSave[newB.id] = newStatus;
-           
-           final oldStatusMemory = oldStatuses[newB.id];
-           final oldStatusDisk = persistedOld[newB.id]?.toString().toLowerCase();
-           
-           // Check if we have a known old state (either from disk or memory)
-           // and it has changed to a NEW state.
-           final oldStatus = oldStatusMemory ?? oldStatusDisk;
-           
-           if (oldStatus != null && oldStatus != newStatus) {
-              String title = 'Booking Update';
-              String body = 'Your booking at ${newB.hotelName} is now ${newB.status}.';
-              
-              if (newStatus == 'confirmed' || newStatus == 'checkedin') {
-                 title = 'Booking Accepted';
-              } else if (newStatus == 'cancelled' || newStatus == 'rejected') {
-                 title = 'Booking Cancelled/Rejected';
-              }
-              
-              showNotificationPopup(
-                title: title,
-                subtitle: body,
-                icon: Icons.info_outline,
-                iconColor: Colors.blueAccent,
-              );
-              PushNotificationService.showLocalNotification(title: title, body: body);
-           }
+          final newStatus = newB.status.toLowerCase();
+          newStatusesToSave[newB.id] = newStatus;
+
+          final oldStatusMemory = oldStatuses[newB.id];
+          final oldStatusDisk = persistedOld[newB.id]?.toString().toLowerCase();
+
+          // Check if we have a known old state (either from disk or memory)
+          // and it has changed to a NEW state.
+          final oldStatus = oldStatusMemory ?? oldStatusDisk;
+
+          if (oldStatus != null && oldStatus != newStatus) {
+            String title = 'Booking Update';
+            String body =
+                'Your booking at ${newB.hotelName} is now ${newB.status}.';
+
+            if (newStatus == 'confirmed' || newStatus == 'checkedin') {
+              title = 'Booking Accepted';
+            } else if (newStatus == 'cancelled' || newStatus == 'rejected') {
+              title = 'Booking Cancelled/Rejected';
+            }
+
+            showNotificationPopup(
+              title: title,
+              subtitle: body,
+              icon: Icons.info_outline,
+              iconColor: Colors.blueAccent,
+            );
+            PushNotificationService.showLocalNotification(
+              title: title,
+              body: body,
+            );
+          }
         }
-        
-        await prefs.setString('booking_statuses', json.encode(newStatusesToSave));
+
+        await prefs.setString(
+          'booking_statuses',
+          json.encode(newStatusesToSave),
+        );
         notifyListeners();
       },
     );
@@ -343,7 +375,7 @@ class BookingProvider extends ChangeNotifier {
 
     final result = await _bookingRepository.cancelBooking(id);
     _isLoading = false;
-    
+
     return result.fold(
       (failure) {
         _error = failure.message;

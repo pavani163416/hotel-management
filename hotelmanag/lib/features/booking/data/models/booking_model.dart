@@ -45,46 +45,87 @@ class BookingModel extends BookingEntity {
 
   factory BookingModel.fromJson(Map<String, dynamic> json) {
     final checkInDate = _parseDate(json['checkIn'], fallback: DateTime.now());
-    final checkOutDate = _parseDate(json['checkOut'], fallback: DateTime.now().add(const Duration(days: 3)));
-    final createdDate = json['createdAt'] != null ? _parseDate(json['createdAt'], fallback: DateTime.now()) : null;
+    final checkOutDate = _parseDate(
+      json['checkOut'],
+      fallback: DateTime.now().add(const Duration(days: 3)),
+    );
+    final createdDate = json['createdAt'] != null
+        ? _parseDate(json['createdAt'], fallback: DateTime.now())
+        : null;
 
-    final hotelMapName = json['hotelId'] is Map ? json['hotelId']['name']?.toString() : null;
-    final hotelObjName = json['hotel'] is Map ? json['hotel']['name']?.toString() : null;
+    final hotelMapName = json['hotelId'] is Map
+        ? json['hotelId']['name']?.toString()
+        : null;
+    final hotelObjName = json['hotel'] is Map
+        ? json['hotel']['name']?.toString()
+        : null;
 
-    final hotelImage = json['hotelId'] is Map ? (json['hotelId']['image'] ?? json['hotelId']['imageUrl'])?.toString() : null;
-    final roomImages = json['room'] is Map && json['room']['images'] is List && (json['room']['images'] as List).isNotEmpty
+    final hotelImage = json['hotelId'] is Map
+        ? (json['hotelId']['image'] ?? json['hotelId']['imageUrl'])?.toString()
+        : null;
+    final roomImages =
+        json['room'] is Map &&
+            json['room']['images'] is List &&
+            (json['room']['images'] as List).isNotEmpty
         ? json['room']['images'][0]?.toString()
         : null;
 
-    final guestSnapshot = json['guestSnapshot'] is Map ? json['guestSnapshot'] as Map<String, dynamic> : null;
+    final guestSnapshot = json['guestSnapshot'] is Map
+        ? json['guestSnapshot'] as Map<String, dynamic>
+        : null;
     final additionalAdultsList = json['additionalAdults'] is List
-        ? (json['additionalAdults'] as List).map((e) => e is Map ? Map<String, dynamic>.from(e) : <String, dynamic>{}).toList()
+        ? (json['additionalAdults'] as List)
+              .map(
+                (e) => e is Map
+                    ? Map<String, dynamic>.from(e)
+                    : <String, dynamic>{},
+              )
+              .toList()
         : null;
     final additionalChildrenList = json['additionalChildren'] is List
-        ? (json['additionalChildren'] as List).map((e) => e is Map ? Map<String, dynamic>.from(e) : <String, dynamic>{}).toList()
+        ? (json['additionalChildren'] as List)
+              .map(
+                (e) => e is Map
+                    ? Map<String, dynamic>.from(e)
+                    : <String, dynamic>{},
+              )
+              .toList()
         : null;
 
     return BookingModel(
       id: json['id']?.toString() ?? json['_id']?.toString() ?? '',
       roomId: json['roomId']?.toString() ?? '',
-      hotelName: json['hotelName']?.toString() ?? hotelMapName ?? hotelObjName ?? '',
+      hotelName:
+          json['hotelName']?.toString() ?? hotelMapName ?? hotelObjName ?? '',
       checkIn: checkInDate,
       checkOut: checkOutDate,
       status: json['status']?.toString() ?? 'Confirmed',
       totalAmount: (json['totalAmount'] ?? 0).toDouble(),
-      imageUrl: hotelImage ??
+      imageUrl:
+          hotelImage ??
           json['imageUrl']?.toString() ??
           _parseMapField(json['hotel'], 'imageUrl') ??
           _parseMapField(json['hotel'], 'image') ??
           roomImages,
-      guestName: _parseMapField(json['guestSnapshot'], 'name') ?? _parseMapField(json['guest'], 'name') ?? 'Guest',
-      roomNumber: _parseMapField(json['room'], 'roomNumber') ?? json['roomId']?.toString() ?? '',
+      guestName:
+          _parseMapField(json['guestSnapshot'], 'name') ??
+          _parseMapField(json['guest'], 'name') ??
+          'Guest',
+      roomNumber:
+          _parseMapField(json['room'], 'roomNumber') ??
+          json['roomId']?.toString() ??
+          '',
       createdAt: createdDate,
-      city: (json['hotelId'] is Map ? (json['hotelId']['location'] ?? json['hotelId']['city'])?.toString() : null) ??
-            _parseMapField(json['guestSnapshot'], 'city') ??
-            _parseMapField(json['guest'], 'city'),
+      city:
+          (json['hotelId'] is Map
+              ? (json['hotelId']['location'] ?? json['hotelId']['city'])
+                    ?.toString()
+              : null) ??
+          _parseMapField(json['guestSnapshot'], 'city') ??
+          _parseMapField(json['guest'], 'city'),
       roomType: _parseMapField(json['room'], 'type'),
-      pricePerNight: (json['pricePerNight'] ?? json['room']?['pricePerNight'])?.toDouble(),
+      pricePerNight: (json['pricePerNight'] ?? json['room']?['pricePerNight'])
+          ?.toDouble(),
       taxes: json['taxes']?.toDouble(),
       subtotal: json['subtotal']?.toDouble(),
       paymentMethod: json['paymentMethod']?.toString(),

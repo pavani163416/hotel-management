@@ -9,7 +9,7 @@ void injectRecaptchaContainer() {
         container.id = 'recaptcha-container';
         document.body.appendChild(container);
       }
-      '''
+      ''',
     ]);
   } catch (e) {
     // ignore

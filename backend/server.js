@@ -41,6 +41,7 @@ import publicSupportRoutes from "./routes/publicSupportRoutes.js";
 import propertyOwnerRoutes from "./routes/propertyOwnerRoutes.js";
 import sitemapRoutes    from "./routes/sitemapRoutes.js";
 import newsletterRoutes from "./routes/newsletterRoutes.js";
+import chatRoutes       from "./routes/chatRoutes.js";
 import errorHandler     from "./middleware/errorHandler.js";
 import csrfProtection  from "./middleware/csrfProtection.js";
 import { swaggerCspMiddleware } from "./middleware/csp.js";
@@ -208,6 +209,7 @@ const rawOrigins = [
 const allowedOrigins = [
   "https://hotel-management-frontend-puce.vercel.app",
   "https://hotel-management-admin-eta.vercel.app",
+  "https://athithigriha-frontend.vercel.app",
   "http://localhost:5173",
   "http://localhost:3000",
   "http://localhost:8080",
@@ -219,7 +221,9 @@ const STRICT_VERCEL_REGEXES = [
   /^https:\/\/hotel-management-admin-eta-pr-\d+\.vercel\.app$/,
   /^https:\/\/luxestay-frontend-pr-\d+\.vercel\.app$/,
   /^https:\/\/luxestay-admin-pr-\d+\.vercel\.app$/,
-  /^https:\/\/hotel-mgnt-pr-\d+\.vercel\.app$/
+  /^https:\/\/hotel-mgnt-pr-\d+\.vercel\.app$/,
+  /^https:\/\/athithigriha-.*-pr-\d+\.vercel\.app$/,
+  /^https:\/\/athithigriha-.*\.vercel\.app$/
 ];
 
 const isTrustedVercelDomain = (origin) => {
@@ -636,6 +640,7 @@ app.use("/api/maintenance",   maintenanceRoutes);
 app.use("/api",               publicSupportRoutes);
 app.use("/api/owners",        propertyOwnerRoutes);
 app.use("/api/newsletter",    newsletterRoutes);
+app.use("/api/chat",          chatRoutes);
 
 // ── CSP Violation Report endpoint ────────────────────────
 // Browsers send JSON violation reports here when CSP blocks something.

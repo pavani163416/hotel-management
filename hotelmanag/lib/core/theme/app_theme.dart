@@ -6,7 +6,7 @@ class AppTheme {
   // Website Colors (Converted from HSL)
   // Original Mediterranean Colors
   static const Color primaryColor = Color(0xFF454F5E);
-  static const Color accentColor = Color(0xFFF5E6CA);  // Cream
+  static const Color accentColor = Color(0xFFF5E6CA); // Cream
   static const Color backgroundColor = Color(0xFFFFFDF7); // Warm White
   static const Color foregroundColor = Color(0xFF454F5E);
   static const Color mutedColor = Color(0xFFEAE5DC);
@@ -64,10 +64,7 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
-          textStyle: const TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 14,
-          ),
+          textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
         ),
       ),
     );
@@ -76,7 +73,9 @@ class AppTheme {
   // Add dark theme if needed based on frontend css
   static ThemeData get darkTheme {
     const Color darkPrimaryColor = Color(0xFFEAE5DC); // Warm Cream/Off-white
-    const Color darkBackgroundColor = Color(0xFF19222E); // Sleek dark navy slate
+    const Color darkBackgroundColor = Color(
+      0xFF19222E,
+    ); // Sleek dark navy slate
     const Color darkSurfaceColor = Color(0xFF253040); // Card slate
     const Color darkForegroundColor = Color(0xFFFFFDF7);
 
@@ -98,18 +97,19 @@ class AppTheme {
         selectionColor: darkPrimaryColor.withOpacity(0.3),
         selectionHandleColor: darkPrimaryColor,
       ),
-      textTheme: GoogleFonts.outfitTextTheme(ThemeData.dark().textTheme).copyWith(
-        displayLarge: GoogleFonts.outfit(
-          color: darkForegroundColor,
-          fontWeight: FontWeight.bold,
-          letterSpacing: -1.5,
-        ),
-        displayMedium: GoogleFonts.outfit(
-          color: darkForegroundColor,
-          fontWeight: FontWeight.bold,
-          letterSpacing: -1.0,
-        ),
-      ),
+      textTheme: GoogleFonts.outfitTextTheme(ThemeData.dark().textTheme)
+          .copyWith(
+            displayLarge: GoogleFonts.outfit(
+              color: darkForegroundColor,
+              fontWeight: FontWeight.bold,
+              letterSpacing: -1.5,
+            ),
+            displayMedium: GoogleFonts.outfit(
+              color: darkForegroundColor,
+              fontWeight: FontWeight.bold,
+              letterSpacing: -1.0,
+            ),
+          ),
       appBarTheme: const AppBarTheme(
         centerTitle: false,
         backgroundColor: darkBackgroundColor,
@@ -131,10 +131,7 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
-          textStyle: const TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 14,
-          ),
+          textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
         ),
       ),
     );

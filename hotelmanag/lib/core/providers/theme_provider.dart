@@ -46,7 +46,7 @@ class ThemeProvider extends ChangeNotifier {
       _themeMode = ThemeMode.system;
     }
     notifyListeners();
-    
+
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('theme_mode', themeStr);
   }
