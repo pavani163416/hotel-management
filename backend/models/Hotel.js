@@ -58,6 +58,7 @@ const hotelSchema = new mongoose.Schema(
     roomMapEnabled:{ type: Boolean, default: true },
     isActive:      { type: Boolean, default: true },
     ownerId:       { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+    currency:      { type: String, default: "USD" },
   },
   { timestamps: true }
 );

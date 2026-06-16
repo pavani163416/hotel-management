@@ -253,6 +253,7 @@ const Payment = () => {
           color: "#0F172A",
         },
         handler: async function (response: any) {
+          if (processingTimerRef.current) clearTimeout(processingTimerRef.current);
           setProcessing(true);
           try {
             const verifyRes = await verifyPaymentSignature({
@@ -289,20 +290,18 @@ const Payment = () => {
           }
         },
         modal: {
-          ondismiss: function () {
-            // Clear the processing safety timeout
-            if (processingTimerRef.current) clearTimeout(processingTimerRef.current);
-            // User dismissed Razorpay — cancel the booking, release the room, go to hotels
-            setProcessing(false);
-            // Fire-and-forget: cancel backend booking and release room (be defensive if order not set)
-            try {
-              const orderId = rzpOrder?.orderId || rzpOrder?.order_id || null;
-              if (orderId || mongoBookingId) {
-                cancelPaymentOrder({ orderId: orderId || undefined, bookingId: mongoBookingId || undefined }).catch(() => {});
-              }
-            } catch (_) { /* ignore */ }
-            // Redirect to hotels with a query param so hotels page can show a toast
-            nav("/hotels?payment=cancelled");
+          ondismiss: () => {
+            setTimeout(() => {
+              if (processingTimerRef.current) clearTimeout(processingTimerRef.current);
+              setProcessing(false);
+              try {
+                const orderId = rzpOrder?.orderId || rzpOrder?.order_id || null;
+                if (orderId || mongoBookingId) {
+                  cancelPaymentOrder({ orderId: orderId || undefined, bookingId: mongoBookingId || undefined }).catch(() => {});
+                }
+              } catch (_) { /* ignore */ }
+              nav("/hotels?payment=cancelled");
+            }, 50);
           },
         },
       };
@@ -450,7 +449,7 @@ const Payment = () => {
             </div>
 
             {/* ── Payment Method Tabs ────────────────────── */}
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <MethodBtn active={method === "card"}       onClick={() => setMethod("card")}       icon={<CreditCard />} label="Card" />
               <MethodBtn active={method === "upi"}        onClick={() => setMethod("upi")}        icon={<Smartphone />} label="UPI" />
               <MethodBtn active={method === "netbanking"} onClick={() => setMethod("netbanking")} icon={<Building2 />}  label="Net Banking" />
@@ -465,7 +464,7 @@ const Payment = () => {
                   <Field label="Cardholder Name">
                     <input value={card.name} onChange={(e) => setCard({ ...card, name: e.target.value })} placeholder="John Doe" className="input" />
                   </Field>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid sm:grid-cols-2 gap-4">
                     <Field label="Expiry">
                       <input value={card.expiry} onChange={(e) => setCard({ ...card, expiry: e.target.value })} placeholder="MM/YY" className="input" />
                     </Field>

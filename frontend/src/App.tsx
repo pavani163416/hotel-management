@@ -42,6 +42,7 @@ import CookiePolicy from "./pages/CookiePolicy";
 import Contact from "./pages/Contact";
 import OwnerPortal from "./pages/OwnerPortal";
 import SupportCentre from "./pages/SupportCentre";
+import NetworkStatus from "./components/NetworkStatus";
 
 const queryClient = new QueryClient();
 
@@ -55,6 +56,7 @@ const App = () => (
         <CurrencyProvider>
         <BookingProvider>
         <WishlistProvider>
+          <NetworkStatus />
           <ScrollToTop />
           <Routes>
             {/* ── Public routes ─────────────────────── */}

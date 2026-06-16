@@ -45,7 +45,7 @@ const GuestDetails = () => {
                   placeholder="you@example.com" className="w-full px-4 py-2.5 border border-border rounded-lg outline-none focus:ring-2 focus:ring-primary focus:border-primary text-sm" />
               </Field>
               <Field label="Phone Number" error={errors.phone?.message}>
-                <input {...register("phone", { required: "Please enter a valid phone", pattern: { value: /^\+?\d{7,15}$/, message: "Please enter a valid phone number" } })}
+                <input {...register("phone", { required: "Enter a valid number", pattern: { value: /^\+?\d{7,15}$/, message: "Enter a valid number" } })}
                   placeholder="+919876543210 or 9876543210" className="w-full px-4 py-2.5 border border-border rounded-lg outline-none focus:ring-2 focus:ring-primary focus:border-primary text-sm" />
               </Field>
             </div>
@@ -79,7 +79,7 @@ const GuestDetails = () => {
                           className="w-full px-4 py-2.5 border border-border rounded-lg outline-none focus:ring-2 focus:ring-primary focus:border-primary text-sm" />
                       </Field>
                       <Field label="Aadhaar Number (Govt ID)" error={errors.adults?.[index]?.id?.message}>
-                        <input {...register(`adults.${index}.id`, { required: "Aadhaar number is required", pattern: { value: /^\d{12}$/, message: "Must be a 12-digit number" } })} placeholder="12-digit Aadhaar number"
+                        <input {...register(`adults.${index}.id`, { required: "Enter a valid number", pattern: { value: /^\d{12}$/, message: "Enter a valid number" } })} placeholder="12-digit Aadhaar number"
                           className="w-full px-4 py-2.5 border border-border rounded-lg outline-none focus:ring-2 focus:ring-primary focus:border-primary text-sm" />
                       </Field>
                     </div>
@@ -89,7 +89,7 @@ const GuestDetails = () => {
                           placeholder="you@example.com" className="w-full px-4 py-2.5 border border-border rounded-lg outline-none focus:ring-2 focus:ring-primary focus:border-primary text-sm" />
                       </Field>
                       <Field label="Phone Number" error={errors.adults?.[index]?.phone?.message}>
-                        <input {...register(`adults.${index}.phone`, { required: "Please enter a valid phone", pattern: { value: /^\+?\d{7,15}$/, message: "Please enter a valid phone number" } })}
+                        <input {...register(`adults.${index}.phone`, { required: "Enter a valid number", pattern: { value: /^\+?\d{7,15}$/, message: "Enter a valid number" } })}
                           placeholder="+919876543210 or 9876543210" className="w-full px-4 py-2.5 border border-border rounded-lg outline-none focus:ring-2 focus:ring-primary focus:border-primary text-sm" />
                       </Field>
                     </div>
@@ -127,11 +127,11 @@ const GuestDetails = () => {
                         className="w-full px-4 py-2.5 border border-border rounded-lg outline-none focus:ring-2 focus:ring-primary focus:border-primary text-sm" />
                     </Field>
                     <Field label="Age" error={errors.children?.[index]?.age?.message}>
-                      <input type="number" {...register(`children.${index}.age`, { required: "Required", min: 0, max: 17 })} placeholder="e.g. 5"
+                      <input type="number" {...register(`children.${index}.age`, { required: "Enter a valid number", min: { value: 0, message: "Enter a valid number" }, max: { value: 17, message: "Enter a valid number" }, valueAsNumber: true })} placeholder="e.g. 5"
                         className="w-full px-4 py-2.5 border border-border rounded-lg outline-none focus:ring-2 focus:ring-primary focus:border-primary text-sm" />
                     </Field>
                     <Field label="Aadhaar Number (Govt ID)" error={errors.children?.[index]?.id?.message}>
-                      <input {...register(`children.${index}.id`, { required: "Aadhaar is required", pattern: { value: /^\d{12}$/, message: "Must be a 12-digit number" } })} placeholder="12-digit Aadhaar"
+                      <input {...register(`children.${index}.id`, { required: "Enter a valid number", pattern: { value: /^\d{12}$/, message: "Enter a valid number" } })} placeholder="12-digit Aadhaar"
                         className="w-full px-4 py-2.5 border border-border rounded-lg outline-none focus:ring-2 focus:ring-primary focus:border-primary text-sm" />
                     </Field>
                   </div>

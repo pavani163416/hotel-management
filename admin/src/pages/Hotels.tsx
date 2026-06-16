@@ -58,6 +58,7 @@ export default function Hotels() {
       suite: { total: 5, price: 12000 },
       penthouse: { total: 2, price: 20000 },
     } as Record<string, { total: number; price: number }>,
+    currency: "USD" as "USD" | "INR" | "EUR" | "GBP" | "AED" | "AUD" | "SGD",
   });
 
   const [selectedState, setSelectedState] = useState("");
@@ -150,7 +151,8 @@ export default function Hotels() {
         deluxe: { total: 10, price: 8000 },
         suite: { total: 5, price: 12000 },
         penthouse: { total: 2, price: 20000 },
-      }
+      },
+      currency: "USD",
     });
     setSelectedState("");
     setSelectedCity("");
@@ -177,7 +179,8 @@ export default function Hotels() {
         deluxe: { total: 10, price: 8000 },
         suite: { total: 5, price: 12000 },
         penthouse: { total: 2, price: 20000 },
-      }
+      },
+      currency: (h as any).currency || "USD",
     });
     setSelectedState(statePart);
     setSelectedCity(cityPart);
@@ -365,6 +368,7 @@ export default function Hotels() {
       country: form.country.toUpperCase(),
       roomInventory: form.roomInventory,
       totalRooms,
+      currency: form.currency,
     };
 
     // Only include rooms/reviews when creating a new hotel
@@ -856,6 +860,21 @@ export default function Hotels() {
                 className="w-full px-3 py-2.5 border border-border rounded-lg text-sm outline-none focus:border-primary" />
               <p className="text-[10px] text-muted mt-1">Paste the Google Maps link to show on the property page.</p>
             </div>
+            
+            <div>
+              <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">Currency</label>
+              <select value={form.currency} onChange={(e) => setForm({ ...form, currency: e.target.value as any })}
+                className="w-full px-3 py-2.5 border border-border rounded-lg text-sm outline-none focus:border-primary bg-background text-text-primary">
+                <option value="USD">USD ($)</option>
+                <option value="INR">INR (₹)</option>
+                <option value="EUR">EUR (€)</option>
+                <option value="GBP">GBP (£)</option>
+                <option value="AED">AED (د.إ)</option>
+                <option value="AUD">AUD (A$)</option>
+                <option value="SGD">SGD (S$)</option>
+              </select>
+            </div>
+
             <div className="border border-border rounded-xl p-4 space-y-3">
               <p className="text-xs font-semibold text-muted uppercase tracking-wider">Room Inventory & Pricing</p>
               <div className="space-y-3">
@@ -884,7 +903,7 @@ export default function Hotels() {
                       />
                     </div>
                     <div>
-                      <label className="block text-[10px] text-muted uppercase tracking-wider mb-1">Price Per Room ($)</label>
+                      <label className="block text-[10px] text-muted uppercase tracking-wider mb-1">Price Per Room ({form.currency})</label>
                       <input
                         type="number"
                         min="0"

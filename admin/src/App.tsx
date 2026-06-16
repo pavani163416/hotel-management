@@ -60,9 +60,12 @@ function AuthenticatedProviders({ children }: { children: React.ReactNode }) {
   );
 }
 
+import NetworkStatus from "@/components/NetworkStatus";
+
 export default function App() {
   return (
     <AdminProvider>
+      <NetworkStatus />
       <BrowserRouter>
         <Routes>
           {/* ── Public ── */}

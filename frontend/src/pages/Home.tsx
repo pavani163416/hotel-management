@@ -237,7 +237,7 @@ const Home = () => {
                 List Your Property →
               </Link>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid sm:grid-cols-2 gap-4">
               {[
                 { emoji: "🌍", title: "Global Reach", text: "Connect with travelers from 45+ countries" },
                 { emoji: "📊", title: "Revenue Tracking", text: "Real-time bookings and earnings dashboard" },

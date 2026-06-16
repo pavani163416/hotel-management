@@ -116,7 +116,7 @@ const Review = () => {
                 <div className="flex-1">
                   <h3 className="font-display text-xl font-bold">{selectedHotel.name}</h3>
                   <p className="text-sm text-muted-foreground">{selectedHotel.location}</p>
-                  <div className="grid grid-cols-2 gap-3 mt-3 text-sm">
+                  <div className="grid sm:grid-cols-2 gap-3 mt-3 text-sm">
                     <Row label="Check-in" value={search.checkIn} />
                     <Row label="Check-out" value={search.checkOut} />
                     <Row label="Room" value={selectedRoom.name} />

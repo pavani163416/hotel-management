@@ -1811,12 +1811,21 @@ router.post("/resend-otp", otpRateLimiter, async (req, res, next) => {
       });
     }
 
-    const user = await User.findOne({ email: normalEmail });
+    let user = await User.findOne({ email: normalEmail });
+    let isPending = false;
+    let userName = user ? user.name : "Guest";
+
     if (!user) {
-      return res.status(404).json({ success: false, message: "User not found." });
+      const pendingRaw = await cacheGet(`pending_user_${normalEmail}`);
+      if (!pendingRaw) {
+        return res.status(404).json({ success: false, message: "User not found or registration session expired." });
+      }
+      const pendingUser = JSON.parse(pendingRaw);
+      userName = pendingUser.name;
+      isPending = true;
     }
 
-    if (user.isVerified) {
+    if (user && user.isVerified) {
       return res.status(400).json({ success: false, message: "Email is already verified." });
     }
 
@@ -1825,7 +1834,7 @@ router.post("/resend-otp", otpRateLimiter, async (req, res, next) => {
     await cacheSet(`otp_${normalEmail}`, otp, 300);
     await cacheSet(`cooldown_${normalEmail}`, "true", 60);
 
-    const otpEmailPayload = { to: normalEmail, name: user.name, otp };
+    const otpEmailPayload = { to: normalEmail, name: userName, otp };
     try {
       await sendOtpEmail(otpEmailPayload);
     } catch (emailErr) {

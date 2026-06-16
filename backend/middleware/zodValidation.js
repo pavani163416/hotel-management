@@ -237,6 +237,7 @@ const createPriceRequest = z.object({
 
 // ── Review Schema ─────────────────────────────────────────────────────────────
 const addReview = z.object({
+  author:  z.string().trim().optional(),
   rating:  z.number().int().min(1).max(5),
   comment: z.string().min(5, "Comment must be at least 5 characters").max(1000).trim(),
 }).strict();
