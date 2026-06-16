@@ -45,7 +45,7 @@ const GuestDetails = () => {
                   placeholder="you@example.com" className="w-full px-4 py-2.5 border border-border rounded-lg outline-none focus:ring-2 focus:ring-primary focus:border-primary text-sm" />
               </Field>
               <Field label="Phone Number" error={errors.phone?.message}>
-                <input {...register("phone", { required: "Enter a valid number", pattern: { value: /^\+?\d{7,15}$/, message: "Enter a valid number" } })}
+                <input {...register("phone", { required: "Phone number is required", pattern: { value: /^\+?\d{7,15}$/, message: "Format: +91 98765 43210" } })}
                   placeholder="+919876543210 or 9876543210" className="w-full px-4 py-2.5 border border-border rounded-lg outline-none focus:ring-2 focus:ring-primary focus:border-primary text-sm" />
               </Field>
             </div>
@@ -89,7 +89,7 @@ const GuestDetails = () => {
                           placeholder="you@example.com" className="w-full px-4 py-2.5 border border-border rounded-lg outline-none focus:ring-2 focus:ring-primary focus:border-primary text-sm" />
                       </Field>
                       <Field label="Phone Number" error={errors.adults?.[index]?.phone?.message}>
-                        <input {...register(`adults.${index}.phone`, { required: "Enter a valid number", pattern: { value: /^\+?\d{7,15}$/, message: "Enter a valid number" } })}
+                        <input {...register(`adults.${index}.phone`, { required: "Phone number is required", pattern: { value: /^\+?\d{7,15}$/, message: "Format: +91 98765 43210" } })}
                           placeholder="+919876543210 or 9876543210" className="w-full px-4 py-2.5 border border-border rounded-lg outline-none focus:ring-2 focus:ring-primary focus:border-primary text-sm" />
                       </Field>
                     </div>

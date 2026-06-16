@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, useRef, ReactNode } from "react";
 import socket from "@/services/socket";
 
-import { API } from "@/services/api";
+import api, { API } from "@/services/api";
 
 export type Hotel = {
   id: string;
@@ -61,17 +61,20 @@ export const HotelsProvider = ({ children }: { children: ReactNode }) => {
     abortRef.current = new AbortController();
 
     setLoading(true);
-    fetch(`${API}/hotels`, {
+    api.get("/hotels", {
       signal: abortRef.current.signal,
     })
-      .then((r) => r.json())
       .then((data) => {
+        // api interceptor unwraps res to res.data
         if (Array.isArray(data?.data)) {
           setHotels(data.data.map(mapBackend));
+        } else if (Array.isArray(data)) {
+          setHotels(data.map(mapBackend));
         }
       })
       .catch((err) => {
-        if (err.name === "AbortError") return;
+        if (err.name === "CanceledError" || err.name === "AbortError") return;
+        console.error("Failed to fetch hotels:", err);
       })
       .finally(() => setLoading(false));
   };

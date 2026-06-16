@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useCallback, useEffect, useRef, ReactNode } from "react";
 import socket from "@/services/socket";
 
-import { API } from "@/services/api";
+import api, { API } from "@/services/api";
 
 export type Payment = {
   transactionId: string;
@@ -143,17 +143,10 @@ export const BookingsProvider = ({ children }: { children: ReactNode }) => {
     lastFetchAt.current = Date.now();
     setLoading(true);
 
-    const token = localStorage.getItem("luxe_admin_token");
-    fetch(`${API}/bookings?limit=500`, {
-      headers: {
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
+    api.get("/bookings", {
+      params: { limit: 500 },
       signal: controller.signal,
     })
-      .then((r) => {
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        return r.json();
-      })
       .then((data) => {
         const raw: any[] = Array.isArray(data?.data)
           ? data.data
@@ -169,13 +162,11 @@ export const BookingsProvider = ({ children }: { children: ReactNode }) => {
         );
       })
       .catch((err) => {
-        if (err.name === "AbortError") return; // intentional cancel — ignore
-        // Network error — keep current state, stop loading
+        if (err.name === "CanceledError" || err.name === "AbortError") return;
+        console.error("Failed to fetch bookings:", err);
       })
       .finally(() => {
-        if (seq === fetchSeq.current && !controller.signal.aborted) {
-          setLoading(false);
-        }
+        if (seq === fetchSeq.current) setLoading(false);
       });
   }, []);
 

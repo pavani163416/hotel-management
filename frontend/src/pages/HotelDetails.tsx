@@ -168,6 +168,10 @@ const HotelDetails = () => {
       setErr("Please fill in your name and review.");
       return;
     }
+    if (reviewRating < 1 || reviewRating > 5) {
+      setErr("Please select a star rating.");
+      return;
+    }
     try {
       setErr("");
       await submitReview(hotel!.id, {
