@@ -33,5 +33,5 @@
         { "key": "Cross-Origin-Resource-Policy",  "value": "same-origin" }
       ]
     }
-  }
+  ]
 }
