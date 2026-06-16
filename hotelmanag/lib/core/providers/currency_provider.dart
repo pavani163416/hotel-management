@@ -33,7 +33,7 @@ class CurrencyProvider extends ChangeNotifier {
 
   Future<void> _loadCurrency() async {
     final prefs = await SharedPreferences.getInstance();
-    final saved = prefs.getString('luxe_currency');
+    final saved = prefs.getString('athithigriha_currency');
     if (saved != null && rates.containsKey(saved)) {
       _currency = saved;
     } else {
@@ -47,7 +47,7 @@ class CurrencyProvider extends ChangeNotifier {
     if (rates.containsKey(code)) {
       _currency = code;
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('luxe_currency', code);
+      await prefs.setString('athithigriha_currency', code);
       notifyListeners();
     }
   }

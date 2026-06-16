@@ -8,7 +8,7 @@
     <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" tools:node="remove" />
 
     <application
-        android:label="hotelmanag"
+        android:label="Athithigriha"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:enableOnBackInvokedCallback="true"

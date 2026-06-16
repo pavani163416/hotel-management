@@ -134,7 +134,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      title: 'HotelManag',
+      title: 'Athithigriha',
       debugShowCheckedModeBanner: false,
       scrollBehavior: MyScrollBehavior(),
       theme: AppTheme.lightTheme,

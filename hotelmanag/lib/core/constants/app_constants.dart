@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 class AppConstants {
-  static const String appName = 'HotelManag';
+  static const String appName = 'Athithigriha';
 
   // ── Environment-driven API Configuration ──────────────────────────
   static const String _productionApiUrl =
