@@ -254,8 +254,9 @@ const corsOptions = {
     const allowed = isValidOrigin(origin);
     console.log("CORS Check - Allowed:", allowed);
     
-    // TEMPORARY VERIFICATION STEP: Allow all origins unconditionally
-    return callback(null, true);
+    if (!origin) return callback(null, true);
+    if (allowed) return callback(null, true);
+    callback(new Error("Not allowed by CORS"));
   },
   methods:        ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
@@ -278,6 +279,8 @@ app.use(helmet({
     includeSubDomains: true,
     preload:           true,
   } : false,
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  crossOriginOpenerPolicy: { policy: "unsafe-none" },
   noSniff:              true,
   frameguard:           { action: "deny" },
   hidePoweredBy:        true,
