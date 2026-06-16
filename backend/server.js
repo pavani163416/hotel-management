@@ -219,6 +219,8 @@ const allowedOrigins = [
 const STRICT_VERCEL_REGEXES = [
   /^https:\/\/hotel-management-frontend-pr-\d+\.vercel\.app$/,
   /^https:\/\/hotel-management-admin-eta-pr-\d+\.vercel\.app$/,
+  /^https:\/\/hotel-management-frontend-.*\.vercel\.app$/,
+  /^https:\/\/hotel-management-admin-.*\.vercel\.app$/,
   /^https:\/\/luxestay-frontend-pr-\d+\.vercel\.app$/,
   /^https:\/\/luxestay-admin-pr-\d+\.vercel\.app$/,
   /^https:\/\/hotel-mgnt-pr-\d+\.vercel\.app$/,
