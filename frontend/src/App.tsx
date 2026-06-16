@@ -29,6 +29,7 @@ import Payment from "./pages/Payment";
 import Confirmation from "./pages/Confirmation";
 import History from "./pages/History";
 import Profile from "./pages/Profile";
+import Halls from "./pages/Halls";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 import Notifications from "./pages/Notifications";
@@ -97,6 +98,7 @@ const App = () => (
             {/* ── These handle their own inline auth UI ─ */}
             <Route path="/history" element={<History />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/halls" element={<Halls />} />
             <Route path="/reset-password" element={<ResetPassword />} />
 
             <Route path="*" element={<NotFound />} />

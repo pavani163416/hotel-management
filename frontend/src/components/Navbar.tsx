@@ -390,6 +390,9 @@ const Navbar = () => {
                       <Link to="/profile" className="w-full cursor-pointer min-h-[44px]">Profile</Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
+                      <Link to="/halls" className="w-full cursor-pointer min-h-[44px]">Book a Hall</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
                       <Link to="/owner-portal" className="w-full cursor-pointer flex items-center gap-1.5 text-primary hover:text-accent font-medium min-h-[44px]">
                         <Building2 className="w-3.5 h-3.5" /> {user?.role === "owner" ? "Owner Dashboard" : "List Property"}
                       </Link>
@@ -517,6 +520,7 @@ const Navbar = () => {
           {/* Authenticated Links */}
           {user && (
             <>
+              <button onClick={() => handleMenuNavigation("/halls")} className={`px-4 py-3 min-h-[44px] flex items-center text-base font-medium rounded-lg transition-base ${location.pathname === "/halls" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-primary"}`}>Book a Hall</button>
               <button onClick={() => handleMenuNavigation("/history")} className={`px-4 py-3 min-h-[44px] flex items-center text-base font-medium rounded-lg transition-base ${location.pathname === "/history" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-primary"}`}>History</button>
             </>
           )}
