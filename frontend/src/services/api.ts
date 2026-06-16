@@ -146,6 +146,32 @@ export const getRoomByNumber = async (roomNumber: string) => {
   return Array.isArray(data?.data) && data.data.length > 0 ? data.data[0] : null;
 };
 
+export const getHotelById = async (hotelId: string) => {
+  const { data } = await api.get(`/hotels/${hotelId}`);
+  return data;
+};
+
+export const getHotelHalls = async (hotelId: string) => {
+  const { data } = await api.get(`/hotels/${hotelId}/halls`);
+  return data;
+};
+
+export const bookHotelHall = async (
+  hotelId: string,
+  hallId: string,
+  payload: {
+    eventName: string;
+    date: string;
+    startTime: string;
+    endTime: string;
+    capacity: number;
+    notes?: string;
+  }
+) => {
+  const { data } = await api.post(`/hotels/${hotelId}/halls/${hallId}/book`, payload);
+  return data;
+};
+
 /** PATCH /api/rooms/:id — update room status */
 export const updateRoomStatus = async (
   roomId: string,

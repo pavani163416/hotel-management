@@ -124,6 +124,12 @@ router.route("/:id")
   .patch(protect, validateOwnership("Hotel"), validate(schemas.updateHotel), updateHotel)
   .delete(protect, validateOwnership("Hotel"), deleteHotel);
 
+router.route("/:id/halls")
+  .get(getHotelHalls);
+
+router.route("/:id/halls/:hallId/book")
+  .post(protect, bookHotelHall);
+
 router.route("/:id/reviews")
   .post(protect, validate(schemas.addReview), addReviewToHotel);
 

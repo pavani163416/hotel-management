@@ -1487,7 +1487,7 @@ router.post("/notify-manager", protect, async (req, res, next) => {
     await Notification.insertMany(notifications);
 
     // Broadcast via Socket.IO if available
-    const { io } = global;
+    const io = req.app?.get("io") || global?.io;
     if (io) {
       const payload = {
         role: "manager",

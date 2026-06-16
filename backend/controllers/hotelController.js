@@ -1,6 +1,9 @@
+import mongoose from "mongoose";
 import Hotel from "../models/Hotel.js";
 import Room from "../models/Room.js";
 import Booking from "../models/Booking.js";
+import FunctionHall from "../models/FunctionHall.js";
+import { sendNotification } from "../utils/notificationService.js";
 import { broadcastHotels } from "../routes/sseRoutes.js";
 import connectAdminDB from "../config/adminDb.js";
 import HotelSnapshotModel from "../models/admin/HotelSnapshot.js";
@@ -82,6 +85,18 @@ export const getHotels = async (req, res, next) => {
   }
 };
 
+const findHotelByIdentifier = async (identifier) => {
+  if (!identifier) return null;
+  let hotel = null;
+  if (mongoose.Types.ObjectId.isValid(identifier)) {
+    hotel = await Hotel.findById(identifier);
+  }
+  if (!hotel) {
+    hotel = await Hotel.findOne({ hotelId: identifier, isActive: true });
+  }
+  return hotel;
+};
+
 // GET /api/hotels/:id
 export const getHotelById = async (req, res, next) => {
   try {
@@ -91,7 +106,7 @@ export const getHotelById = async (req, res, next) => {
       return res.status(200).json({ success: true, data: cached, cached: true });
     }
 
-    const hotel = await Hotel.findOne({ hotelId: req.params.id, isActive: true });
+    const hotel = await findHotelByIdentifier(req.params.id);
     if (!hotel) return res.status(404).json({ success: false, message: "Hotel not found" });
 
     const roomsArray = await getDynamicRoomsForHotel(hotel.hotelId);
@@ -102,6 +117,115 @@ export const getHotelById = async (req, res, next) => {
 
     await cacheSet(cacheKey, enrichedHotel, CACHE_TTL.HOTEL_STATS);
     res.status(200).json({ success: true, data: enrichedHotel });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getHotelHalls = async (req, res, next) => {
+  try {
+    const hotel = await findHotelByIdentifier(req.params.id);
+    if (!hotel) {
+      return res.status(404).json({ success: false, message: "Hotel not found" });
+    }
+
+    const filter = { isActive: true, $or: [] };
+    filter.$or.push({ hotelStringId: hotel.hotelId });
+    if (hotel._id) filter.$or.push({ hotelId: hotel._id });
+
+    const halls = await FunctionHall.find(filter).sort({ name: 1 }).lean();
+    res.status(200).json({ success: true, count: halls.length, data: halls });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const bookHotelHall = async (req, res, next) => {
+  try {
+    const hotel = await findHotelByIdentifier(req.params.id);
+    if (!hotel) {
+      return res.status(404).json({ success: false, message: "Hotel not found" });
+    }
+
+    const hall = await FunctionHall.findOne({
+      _id: req.params.hallId,
+      isActive: true,
+      $or: [
+        { hotelStringId: hotel.hotelId },
+        { hotelId: hotel._id },
+      ],
+    });
+
+    if (!hall) {
+      return res.status(404).json({ success: false, message: "Function hall not found" });
+    }
+
+    const { eventName, date, startTime, endTime, capacity, notes } = req.body;
+    if (!eventName || !date || !startTime || !endTime || !capacity) {
+      return res.status(400).json({ success: false, message: "eventName, date, startTime, endTime and capacity are required" });
+    }
+
+    const normalizedDate = new Date(date);
+    if (Number.isNaN(normalizedDate.getTime())) {
+      return res.status(400).json({ success: false, message: "Invalid event date" });
+    }
+
+    const timePattern = /^\d{2}:\d{2}$/;
+    if (!timePattern.test(startTime) || !timePattern.test(endTime)) {
+      return res.status(400).json({ success: false, message: "Start time and end time must be in HH:MM format" });
+    }
+    if (startTime >= endTime) {
+      return res.status(400).json({ success: false, message: "End time must be after start time" });
+    }
+
+    const capacityValue = Number(capacity);
+    if (!Number.isFinite(capacityValue) || capacityValue < 1) {
+      return res.status(400).json({ success: false, message: "Capacity must be a positive number" });
+    }
+    if (capacityValue > hall.capacity) {
+      return res.status(400).json({ success: false, message: `Capacity cannot exceed hall capacity of ${hall.capacity}` });
+    }
+
+    const bookingDate = normalizedDate.toISOString().slice(0, 10);
+    const hasOverlap = (hall.bookings || []).some((existing) => {
+      if (existing.status === "Cancelled") return false;
+      const existingDate = new Date(existing.date).toISOString().slice(0, 10);
+      if (existingDate !== bookingDate) return false;
+      return startTime < existing.endTime && endTime > existing.startTime;
+    });
+
+    if (hasOverlap) {
+      return res.status(409).json({
+        success: false,
+        message: "This hall is already booked for the selected date and time slot.",
+        code: "HALL_SLOT_CONFLICT",
+      });
+    }
+
+    const organizer = String(req.user?.name || req.user?.email || "Guest").trim();
+    const bookingPayload = {
+      eventName: String(eventName).trim(),
+      organizer,
+      date: normalizedDate,
+      startTime,
+      endTime,
+      capacity: capacityValue,
+      status: "Pending",
+      notes: String(notes || "").trim(),
+      bookedAt: new Date(),
+    };
+
+    hall.bookings.push(bookingPayload);
+    await hall.save();
+
+    await sendNotification({
+      role: "manager",
+      hotelId: hotel.hotelId || String(hotel._id),
+      message: `New function hall booking request for ${hall.name} on ${bookingDate}.`,
+      type: "booking",
+    }).catch(() => {});
+
+    res.status(201).json({ success: true, message: "Function hall booking request submitted", data: hall });
   } catch (error) {
     next(error);
   }
