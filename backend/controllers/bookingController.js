@@ -337,6 +337,7 @@ export const createBooking = async (req, res, next) => {
     const isStaffCreated = ["admin", "super admin", "controller", "manager"].includes(userRole);
     const isCashPayment = paymentMethod && paymentMethod.toLowerCase() === "cash";
     const bookingStatus = (isStaffCreated || isCashPayment) ? "Confirmed" : "Pending";
+    const bookingPaymentStatus = (isStaffCreated || isCashPayment) ? "PAID" : "PENDING";
 
     const [booking] = await Booking.create(
       [
@@ -361,6 +362,7 @@ export const createBooking = async (req, res, next) => {
           promoCode: promoCode || null,
           totalAmount,
           paymentMethod: paymentMethod || "card",
+          paymentStatus: bookingPaymentStatus,
           specialRequests: specialRequests ? String(specialRequests).replace(/</g, "&lt;").replace(/>/g, "&gt;") : "",
           hotelName: req.body.hotelName || resolveHotelName(room.roomNumber) || "",
           roomType: targetRoomType,
@@ -772,11 +774,19 @@ export const cancelBooking = async (req, res, next) => {
     booking.cancellationReason = req.body.reason || "Cancelled by guest";
     await booking.save();
 
-    // Update payment status to "Cancelled" for consistency
-    await Payment.updateMany(
+    // Update pending payment records to "CANCELLED" for consistency
+    const paymentUpdateResult = await Payment.updateMany(
       { bookingId: booking._id, status: "PENDING" },
       { status: "CANCELLED", cancelledAt: new Date() }
-    ).catch(err => logger.warn("Failed to update payment status on booking cancellation", { error: err.message }));
+    ).catch(err => {
+      logger.warn("Failed to update payment status on booking cancellation", { error: err.message });
+      return null;
+    });
+
+    if (paymentUpdateResult?.modifiedCount > 0 && booking.paymentStatus === "PENDING") {
+      booking.paymentStatus = "FAILED";
+      await booking.save();
+    }
 
     // Write audit log
     AuditLog.create({

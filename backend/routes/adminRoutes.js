@@ -1472,10 +1472,11 @@ router.post("/notify-manager", protect, async (req, res, next) => {
 
     // Create notifications for all managers of the hotel
     const Notification = mongoose.model("Notification");
+    const hotelRoomId = hotel.hotelId || hotel._id.toString();
     const notifications = managers.map(manager => ({
       userId: manager._id.toString(),
-      hotelId: hotel._id.toString(),
-      role: "Manager",
+      hotelId: hotelRoomId,
+      role: "manager",
       message: message,
       type: "assistance",
       priority: priority || "medium",
@@ -1488,14 +1489,15 @@ router.post("/notify-manager", protect, async (req, res, next) => {
     // Broadcast via Socket.IO if available
     const { io } = global;
     if (io) {
-      managers.forEach(manager => {
-        io.to(`manager_${manager._id.toString()}`).emit("notification_created", {
-          type: "assistance",
-          message: message,
-          priority: priority || "medium",
-          timestamp: new Date()
-        });
-      });
+      const payload = {
+        role: "manager",
+        hotelId: hotelRoomId,
+        message,
+        type: "assistance",
+        priority: priority || "medium",
+        createdAt: new Date(),
+      };
+      io.to(`hotel:${hotelRoomId}`).emit("notification", payload);
     }
 
     res.json({ 
