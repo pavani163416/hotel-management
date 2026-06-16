@@ -32,4 +32,13 @@ router.post("/subscribe", async (req, res, next) => {
   }
 });
 
+router.get("/", async (req, res, next) => {
+  try {
+    const subscribers = await NewsletterSubscriber.find().sort({ createdAt: -1 });
+    res.status(200).json({ success: true, data: subscribers });
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default router;

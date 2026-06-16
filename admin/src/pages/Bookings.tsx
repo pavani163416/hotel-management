@@ -114,6 +114,7 @@ export default function Bookings() {
   const [nbCheckIn, setNbCheckIn] = useState("");
   const [nbCheckOut, setNbCheckOut] = useState("");
   const [nbAmount, setNbAmount] = useState("");
+  const [nbPaymentMethod, setNbPaymentMethod] = useState("Credit Card");
 
   const filtered = bookings.filter((b) => {
     if (!b) return false;
@@ -184,6 +185,7 @@ export default function Bookings() {
       checkOut: nbCheckOut,
       nights,
       totalAmount: parseFloat(nbAmount) || 0,
+      paymentMethod: nbPaymentMethod,
       status: "Confirmed",
       property: nbProperty,
     });
@@ -200,7 +202,7 @@ export default function Bookings() {
     if (!detailBooking) return;
     setCancelling(true);
     try {
-      await apiCancelBooking(detailBooking.id, "Cancelled by admin");
+      await apiCancelBooking(detailBooking._id, "Cancelled by admin");
       updateStatus(detailBooking.id, "Cancelled");
     } catch {
       updateStatus(detailBooking.id, "Cancelled");
@@ -583,6 +585,16 @@ export default function Bookings() {
                 <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">Total Amount ($) *</label>
                 <input required type="number" min="0" value={nbAmount} onChange={(e) => setNbAmount(e.target.value)} placeholder="e.g. 1200"
                   className="w-full border border-border rounded-lg px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10" />
+              </div>
+              <div className="col-span-2">
+                <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">Payment Method *</label>
+                <select value={nbPaymentMethod} onChange={(e) => setNbPaymentMethod(e.target.value)}
+                  className="w-full border border-border rounded-lg px-3 py-2.5 text-sm outline-none focus:border-primary">
+                  <option value="Credit Card">Credit Card</option>
+                  <option value="UPI">UPI</option>
+                  <option value="Bank Transfer">Bank Transfer</option>
+                  <option value="Cash">Cash</option>
+                </select>
               </div>
             </div>
             <button type="submit"

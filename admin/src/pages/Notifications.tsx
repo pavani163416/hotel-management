@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Search, X, Bell, Clock, CheckCircle, Eye,
   MessageSquare, DollarSign, CalendarCheck, ShieldAlert,
@@ -9,7 +9,7 @@ import AdminLayout from "@/components/AdminLayout";
 import Topbar from "@/components/Topbar";
 import PageHeader from "@/components/PageHeader";
 import StatsCard from "@/components/StatsCard";
-import { getNotifications, markNotificationRead, createNotification } from "@/services/api";
+import { getNotifications, markNotificationRead, createNotification, getSubscribers } from "@/services/api";
 import socket from "@/services/socket";
 import { useSocket } from "@/hooks/useSocket";
 
@@ -29,6 +29,39 @@ export default function Notifications() {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState<"notifications" | "subscribers">((searchParams.get("tab") as any) || "notifications");
+
+  useEffect(() => {
+    const tab = searchParams.get("tab") as any;
+    if (tab === "notifications" || tab === "subscribers") {
+      setActiveTab(tab);
+    }
+  }, [searchParams]);
+
+  const [subscribers, setSubscribers] = useState<any[]>([]);
+  const [loadingSubscribers, setLoadingSubscribers] = useState(false);
+
+  const fetchSubscribers = useCallback(async () => {
+    setLoadingSubscribers(true);
+    try {
+      const res: any = await getSubscribers();
+      setSubscribers(res?.data || []);
+    } catch (err: any) {
+      console.error(err);
+    } finally {
+      setLoadingSubscribers(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === "subscribers") {
+      fetchSubscribers();
+    } else {
+      fetchNotifications();
+    }
+  }, [activeTab, fetchNotifications, fetchSubscribers]);
   
   // Filters
   const [search, setSearch] = useState("");
@@ -89,9 +122,7 @@ export default function Notifications() {
     }
   }, []);
 
-  useEffect(() => {
-    fetchNotifications();
-  }, [fetchNotifications]);
+  // fetchNotifications is now called by useEffect monitoring activeTab
 
   const handleIncomingNotification = useCallback((data: NotificationItem) => {
     setNotifications(prev => [data, ...prev.filter(item => item._id !== data._id)].slice(0, 100));
@@ -203,6 +234,9 @@ export default function Notifications() {
     if (n.message?.toLowerCase().includes("property owner") || n.message?.toLowerCase().includes("property application") || n.message?.toLowerCase().includes("owners")) {
       return { label: "Review Application", path: "/owners" };
     }
+    if (n.message?.toLowerCase().includes("newsletter subscription")) {
+      return { label: "View Subscribers", path: "/notifications?tab=subscribers" };
+    }
     if (n.message?.toLowerCase().includes("public support ticket")) {
       const match = n.message.match(/TKT-\d+/);
       return { label: "View Ticket", path: match ? `/public-support?search=${match[0]}` : "/public-support" };
@@ -250,6 +284,62 @@ export default function Notifications() {
           }
         />
 
+        {/* Tabs */}
+        <div className="flex border-b border-border mb-6">
+          <button
+            onClick={() => { setActiveTab("notifications"); setSearchParams({ tab: "notifications" }); }}
+            className={`px-4 py-2 text-sm font-semibold transition-colors border-b-2 ${
+              activeTab === "notifications"
+                ? "border-primary text-primary"
+                : "border-transparent text-muted hover:text-bright"
+            }`}
+          >
+            System Notifications
+          </button>
+          <button
+            onClick={() => { setActiveTab("subscribers"); setSearchParams({ tab: "subscribers" }); }}
+            className={`px-4 py-2 text-sm font-semibold transition-colors border-b-2 ${
+              activeTab === "subscribers"
+                ? "border-primary text-primary"
+                : "border-transparent text-muted hover:text-bright"
+            }`}
+          >
+            Subscribers
+          </button>
+        </div>
+
+        {activeTab === "subscribers" ? (
+          <div className="bg-white rounded-xl border border-border shadow-card overflow-hidden"
+            style={{ background: "rgba(255,255,255,0.03)", borderColor: "rgba(255,255,255,0.08)" }}>
+            <div className="px-5 py-4 border-b border-border" style={{ borderColor: "rgba(255,255,255,0.08)" }}>
+              <h3 className="text-sm font-semibold text-bright">Newsletter Subscribers</h3>
+            </div>
+            <div className="divide-y divide-border" style={{ borderColor: "rgba(255,255,255,0.08)" }}>
+              {loadingSubscribers ? (
+                <div className="p-12 text-center text-muted text-sm">Loading subscribers...</div>
+              ) : subscribers.length === 0 ? (
+                <div className="p-12 text-center text-muted text-sm">No subscribers found.</div>
+              ) : (
+                subscribers.map((sub: any) => (
+                  <div key={sub._id} className="p-4 flex items-center justify-between hover:bg-white/5 transition-colors">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-primary/20 grid place-items-center text-primary font-bold">
+                        {sub.email.charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-bright">{sub.email}</p>
+                        <p className="text-xs text-muted">
+                          Subscribed: {new Date(sub.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        ) : (
+          <>
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
           <StatsCard
@@ -599,6 +689,8 @@ export default function Notifications() {
             </div>
           )}
         </div>
+        </>
+        )}
       </div>
     </AdminLayout>
   );

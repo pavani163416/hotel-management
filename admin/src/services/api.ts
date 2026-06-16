@@ -139,6 +139,8 @@ export const createNotification = (data: {
   type?: string;
 }) => api.post("/notifications", data);
 
+export const getSubscribers = () => api.get("/newsletter");
+
 export const getAdminPriceRequests = (params?: Record<string, any>) =>
   api.get("/admin/price-requests", { params });
 export const approvePriceRequest = (id: string, note?: string) =>

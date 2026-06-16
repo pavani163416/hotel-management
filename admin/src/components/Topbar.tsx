@@ -152,6 +152,12 @@ export default function Topbar({ searchPlaceholder }: Props) {
       return;
     }
 
+    // Check if newsletter subscription
+    if (n.message?.toLowerCase().includes("newsletter subscription")) {
+      navigate("/notifications?tab=subscribers");
+      return;
+    }
+
     // Check if public support ticket notification
     if (n.message?.toLowerCase().includes("public support ticket")) {
       const match = n.message.match(/TKT-\d+/);
