@@ -420,7 +420,7 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
     }
   }
 
-  Future<bool> signInWithGoogle({bool isRegister = false}) async {
+  Future<bool> signInWithGoogle() async {
     try {
       debugPrint('[GoogleSignIn] Starting Google Sign-In flow...');
       _isLoading = true;
@@ -469,10 +469,7 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
       }
 
       debugPrint('[GoogleSignIn] Sending token to backend for verification...');
-      final res = await _authRepository.signInWithGoogle(
-        idToken,
-        action: isRegister ? 'register' : 'login',
-      );
+      final res = await _authRepository.signInWithGoogle(idToken);
       debugPrint('[GoogleSignIn] Backend response received.');
 
       return res.fold(
@@ -505,29 +502,6 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
       _isLoading = false;
       notifyListeners();
       return false;
-    }
-  }
-
-  Future<GoogleSignInAccount?> signInWithGoogleClient() async {
-    try {
-      debugPrint('[GoogleSignIn] Starting client-only Google Sign-In flow...');
-      _isLoading = true;
-      _error = null;
-      notifyListeners();
-
-      // Sign out from any current session to force account picker
-      await _googleSignIn.signOut().catchError((_) {});
-
-      final GoogleSignInAccount? account = await _googleSignIn.signIn();
-      _isLoading = false;
-      notifyListeners();
-      return account;
-    } catch (e, stack) {
-      debugPrint('[GoogleSignIn] Client-only Sign-In Exception: $e\n$stack');
-      _error = e.toString();
-      _isLoading = false;
-      notifyListeners();
-      return null;
     }
   }
 

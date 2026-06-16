@@ -19,7 +19,7 @@ abstract class AuthRemoteDataSource {
   });
   Future<AuthResponse> verifyOtp(String email, String code);
   Future<String?> resendOtp(String email);
-  Future<AuthResponse> signInWithGoogle(String idToken, {String? action});
+  Future<AuthResponse> signInWithGoogle(String idToken);
   Future<AuthResponse> signInWithFirebase(
     String idToken, {
     String? name,
@@ -220,13 +220,10 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   }
 
   @override
-  Future<AuthResponse> signInWithGoogle(String idToken, {String? action}) async {
+  Future<AuthResponse> signInWithGoogle(String idToken) async {
     final response = await _apiService.post(
       'auth/google',
-      data: {
-        'idToken': idToken,
-        if (action != null) 'action': action,
-      },
+      data: {'idToken': idToken},
     );
 
     final data = response.data['data'];

@@ -490,9 +490,7 @@ class _LoginPageState extends State<LoginPage> {
                           ? () {}
                           : () async {
                               setState(() => _isGoogleLoggingIn = true);
-                              final success = await auth.signInWithGoogle(
-                                isRegister: false,
-                              );
+                              final success = await auth.signInWithGoogle();
                               if (mounted) {
                                 setState(() => _isGoogleLoggingIn = false);
                               }
@@ -554,12 +552,26 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Widget _buildLogo() {
-    return const Text(
-      'Athithigriha',
-      style: TextStyle(
-        color: AppTheme.primaryColor,
-        fontSize: 32,
-        fontWeight: FontWeight.bold,
+    return RichText(
+      text: const TextSpan(
+        children: [
+          TextSpan(
+            text: 'L',
+            style: TextStyle(
+              color: AppTheme.primaryColor,
+              fontSize: 32,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          TextSpan(
+            text: 'uxeStay-',
+            style: TextStyle(
+              color: AppTheme.primaryColor,
+              fontSize: 32,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
       ),
     );
   }

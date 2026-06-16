@@ -238,13 +238,27 @@ class _RegisterPageState extends State<RegisterPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // ── Logo ─────────────────────────────────
-              const Center(
-                child: Text(
-                  'Athithigriha',
-                  style: TextStyle(
-                    color: AppTheme.primaryColor,
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
+              Center(
+                child: RichText(
+                  text: const TextSpan(
+                    children: [
+                      TextSpan(
+                        text: 'L',
+                        style: TextStyle(
+                          color: Color(0xFFA67C52),
+                          fontSize: 32,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      TextSpan(
+                        text: 'uxeStay',
+                        style: TextStyle(
+                          color: AppTheme.primaryColor,
+                          fontSize: 32,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -643,18 +657,11 @@ class _RegisterPageState extends State<RegisterPage> {
                     onPressed: auth.isLoading
                         ? null
                         : () async {
-                            final account = await auth.signInWithGoogleClient();
-                            if (account != null && mounted) {
-                              setState(() {
-                                _nameController.text =
-                                    account.displayName ?? '';
-                                _emailController.text = account.email;
-                                _passwordController.text = 'GooglePass@2026';
-                              });
-                              _showSnack(
-                                'Successfully filled details from Google account: ${account.email}. Please enter your phone and solve the CAPTCHA to complete registration.',
-                              );
-                            } else if (auth.error != null && mounted) {
+                            final ok = await auth.signInWithGoogle();
+                            if (ok && mounted) {
+                              context.read<BookingProvider>().fetchMyBookings();
+                              context.go('/');
+                            } else if (!ok && auth.error != null && mounted) {
                               _showSnack(auth.error!);
                             }
                           },

@@ -25,9 +25,8 @@ abstract class AuthRepository {
   Future<Either<Failure, String?>> resendOtp(String email);
   Future<Either<Failure, (String, String)?>> fetchCaptcha();
   Future<Either<Failure, (UserEntity, String)>> signInWithGoogle(
-    String idToken, {
-    String? action,
-  });
+    String idToken,
+  );
   Future<Either<Failure, (UserEntity, String)>> signInWithFirebase(
     String idToken, {
     String? name,

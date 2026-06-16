@@ -248,31 +248,30 @@ class BookingProvider extends ChangeNotifier {
 
     final mappedRoomId = '$prefix-$suffix';
 
-    final data = <String, dynamic>{
-      // roomId is sent as hotelStringId so backend can look up the room
-      'hotelStringId': mappedRoomId,
+    final data = {
+      'roomId': mappedRoomId,
+      'roomNumber': mappedRoomId,
       'hotelId': _currentHotel!.id,
+      'hotelName': _currentHotel!.name,
       'checkIn': _checkIn.toIso8601String(),
       'checkOut': _checkOut.toIso8601String(),
-      'guests': _guests,
-      if (_appliedPromoCode != null && _appliedPromoCode!.isNotEmpty)
-        'promoCode': _appliedPromoCode,
-      'paymentMode': paymentMethod == 'card'
-          ? 'card'
-          : paymentMethod == 'upi'
-              ? 'upi'
-              : paymentMethod == 'bank_transfer'
-                  ? 'bank_transfer'
-                  : 'online',
-      if (_leadGuest['requests']?.isNotEmpty == true)
-        'specialRequests': _leadGuest['requests'],
-      'guestSnapshot': {
+      'pricePerNight': _selectedRoomPrice,
+      'subtotal': subtotal,
+      'taxes': taxes,
+      'discount': discountAmount,
+      'totalAmount': total,
+      'promoCode': _appliedPromoCode,
+      'paymentMethod': paymentMethod,
+      'guest': {
         'name': _leadGuest['name']?.isNotEmpty == true
             ? _leadGuest['name']!
             : 'Guest',
         'email': _leadGuest['email'] ?? '',
         'phone': _leadGuest['phone'] ?? '',
+        'id': _leadGuest['id'] ?? '',
       },
+      'additionalAdults': _additionalAdults,
+      'additionalChildren': _children,
     };
 
     final result = await _bookingRepository.createBooking(data);

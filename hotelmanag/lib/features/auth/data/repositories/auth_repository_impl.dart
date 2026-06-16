@@ -151,11 +151,10 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<Either<Failure, (UserEntity, String)>> signInWithGoogle(
-    String idToken, {
-    String? action,
-  }) async {
+    String idToken,
+  ) async {
     try {
-      final authResponse = await _remoteDataSource.signInWithGoogle(idToken, action: action);
+      final authResponse = await _remoteDataSource.signInWithGoogle(idToken);
       return Right((authResponse.user, authResponse.token));
     } on DioException catch (e) {
       String message = 'Google login failed';
