@@ -236,7 +236,8 @@ const isTrustedVercelDomain = (origin) => {
 const isValidOrigin = (origin) => {
   if (!origin || origin === "null" || origin === "undefined") return false;
   if (allowedOrigins.includes(origin)) return true;
-  // Dynamic Vercel subdomains allowed for PR deployments
+  // Dynamic Vercel subdomains allowed for PR deployments and branching
+  if (origin.endsWith('.vercel.app')) return true;
   if (isTrustedVercelDomain(origin)) return true;
   return false;
 };
