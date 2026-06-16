@@ -135,7 +135,7 @@ class _SplashScreenState extends State<SplashScreen>
                             constraints: const BoxConstraints(maxWidth: 360),
                             padding: const EdgeInsets.symmetric(
                               vertical: 48,
-                              horizontal: 24,
+                              horizontal: 16,
                             ),
                             decoration: BoxDecoration(
                               color: Colors.white.withOpacity(0.04),
@@ -180,16 +180,21 @@ class _SplashScreenState extends State<SplashScreen>
                                 ),
                                 const SizedBox(height: 28),
                                 // Title with GoogleFonts.cinzel
-                                Text(
-                                  'ATHITHIGRIHA',
-                                  textAlign: TextAlign.center,
-                                  style: GoogleFonts.cinzel(
-                                    textStyle: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 30,
-                                      fontWeight: FontWeight.w400,
-                                      letterSpacing: 6,
-                                      height: 1.2,
+                                FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(
+                                    'ATHITHIGRIHA',
+                                    maxLines: 1,
+                                    softWrap: false,
+                                    textAlign: TextAlign.center,
+                                    style: GoogleFonts.cinzel(
+                                      textStyle: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 26,
+                                        fontWeight: FontWeight.w400,
+                                        letterSpacing: 3,
+                                        height: 1.2,
+                                      ),
                                     ),
                                   ),
                                 ),
