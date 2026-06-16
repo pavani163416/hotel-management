@@ -1440,4 +1440,70 @@ router.delete("/property-owners/:ownerId/hotels/:hotelId", protect, async (req, 
   } catch (e) { next(e); }
 });
 
+// ── Send Alert to Manager ──────────────────────────────────────
+// POST /api/admin/notify-manager  { hotelId, message, priority }
+router.post("/notify-manager", protect, async (req, res, next) => {
+  try {
+    const { hotelId, message, priority } = req.body;
+
+    // Validate inputs
+    if (!hotelId || !message) {
+      return res.status(400).json({ error: "hotelId and message are required" });
+    }
+
+    // Find hotel
+    const hotel = await Hotel.findOne({ hotelId });
+    if (!hotel) {
+      return res.status(404).json({ error: "Hotel not found" });
+    }
+
+    // Find managers assigned to this hotel
+    const Manager = mongoose.model("Manager");
+    const managers = await Manager.find({
+      $or: [
+        { assignedHotelId: hotelId },
+        { hotelObjectId: hotel._id }
+      ]
+    }).lean();
+
+    if (!managers || managers.length === 0) {
+      return res.status(404).json({ error: "No managers assigned to this hotel" });
+    }
+
+    // Create notifications for all managers of the hotel
+    const Notification = mongoose.model("Notification");
+    const notifications = managers.map(manager => ({
+      userId: manager._id.toString(),
+      hotelId: hotel._id.toString(),
+      role: "Manager",
+      message: message,
+      type: "assistance",
+      priority: priority || "medium",
+      isRead: false,
+      createdAt: new Date()
+    }));
+
+    await Notification.insertMany(notifications);
+
+    // Broadcast via Socket.IO if available
+    const { io } = global;
+    if (io) {
+      managers.forEach(manager => {
+        io.to(`manager_${manager._id.toString()}`).emit("notification_created", {
+          type: "assistance",
+          message: message,
+          priority: priority || "medium",
+          timestamp: new Date()
+        });
+      });
+    }
+
+    res.json({ 
+      success: true, 
+      message: `Alert sent to ${managers.length} manager(s)`,
+      notificationsCreated: managers.length 
+    });
+  } catch (e) { next(e); }
+});
+
 export default router;

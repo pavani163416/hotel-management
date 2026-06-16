@@ -35,8 +35,12 @@ const ROOM_TYPES  = ["All", "Standard", "Deluxe", "Suite", "Penthouse", "Villa"]
 
 const DAYS_SHORT = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
 const MONTHS_FULL = ["January","February","March","April","May","June","July","August","September","October","November","December"];
-
-const formatAadhaar = (aadhaar?: string) => {
+  
+  // Ensure calendar displays current date properly
+  const today = new Date();
+  const todayYear = today.getFullYear();
+  const todayMonth = today.getMonth();
+  const todayDate = today.getDate();
   if (!aadhaar) return "";
   const cleaned = aadhaar.replace(/\s/g, "");
   if (cleaned.length < 4) return cleaned;
@@ -480,18 +484,19 @@ export default function Bookings() {
             {Array.from({ length: daysInMonth }).map((_, i) => {
               const day = i + 1;
               const dayBookings = bookingsOnDay(day);
-              const isToday = new Date().toDateString() === new Date(calYear, calMonth, day).toDateString();
+              const isToday = todayYear === calYear && todayMonth === calMonth && todayDate === day;
               return (
                 <div key={day}
-                  className={`min-h-[72px] rounded-xl p-1.5 border transition-colors ${
-                    isToday ? "border-gold/40 bg-gold/10" : "border-white/5 hover:bg-white/5"
-                  }`}>
+                  className={`min-h-[72px] rounded-xl p-1.5 border transition-colors cursor-pointer ${
+                    isToday ? "border-gold/50 bg-gold/15 ring-2 ring-gold/30" : "border-white/5 hover:bg-white/5"
+                  }`}
+                  onClick={() => { setCalDate(new Date(calYear, calMonth, day)); }}>
                   <span className={`text-xs font-semibold block mb-1 ${isToday ? "text-gold" : "text-bright"}`}>
                     {day}
                   </span>
                   <div className="space-y-0.5">
                     {dayBookings.slice(0, 3).map((b) => (
-                      <button key={b._id} onClick={() => { setSelected(b); setView("list"); }}
+                      <button key={b._id} onClick={(e) => { e.stopPropagation(); setSelected(b); setView("list"); }}
                         className={`w-full text-left px-1.5 py-0.5 rounded text-[10px] font-medium text-white truncate ${statusDot[b.status] || "bg-muted"}`}>
                         {b.guestSnapshot?.name?.split(" ")[0] || "Guest"}
                       </button>

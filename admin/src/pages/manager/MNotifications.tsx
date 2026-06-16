@@ -200,6 +200,26 @@ export default function MNotifications() {
     return null;
   };
 
+  const handleNotificationClick = async (n: NotificationItem) => {
+    // Mark as read first
+    if (!n.isRead) {
+      try {
+        await markNotificationRead(n._id);
+        setNotifications(prev =>
+          prev.map(item => item._id === n._id ? { ...item, isRead: true } : item)
+        );
+      } catch (err) {
+        console.error("Failed to mark notification as read", err);
+      }
+    }
+
+    // Then navigate to the appropriate page
+    const target = getActionTarget(n);
+    if (target) {
+      navigate(target.path);
+    }
+  };
+
   return (
     <ManagerLayout>
       <div className="space-y-6">
@@ -543,7 +563,7 @@ export default function MNotifications() {
                       
                       {target && (
                         <button
-                          onClick={() => navigate(target.path)}
+                          onClick={() => handleNotificationClick(notif)}
                           className="flex items-center gap-1.5 text-xs font-semibold text-bright bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-lg border border-white/10 transition-colors"
                         >
                           <Eye className="w-3.5 h-3.5" />

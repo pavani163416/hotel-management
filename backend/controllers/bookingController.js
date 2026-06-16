@@ -7,6 +7,7 @@ import Hotel from "../models/Hotel.js";
 import Guest from "../models/Guest.js";
 import AdditionalGuest from "../models/AdditionalGuest.js";
 import CancellationRefund from "../models/CancellationRefund.js";
+import Payment from "../models/Payment.js";
 import Coupon from "../models/Coupon.js";
 import AuditLog from "../models/AuditLog.js";
 import { broadcastBookingUpdate } from "../routes/wsRoutes.js";
@@ -328,6 +329,15 @@ export const createBooking = async (req, res, next) => {
       hotelImage = hotel?.image || "";
     }
 
+    // Determine booking status:
+    // - Admin/Manager/Controller created bookings are auto-confirmed (no payment required)
+    // - Cash payments are auto-confirmed
+    // - Credit card payments require payment confirmation (Pending status)
+    const userRole = req.user?.role?.toLowerCase() || "customer";
+    const isStaffCreated = ["admin", "super admin", "controller", "manager"].includes(userRole);
+    const isCashPayment = paymentMethod && paymentMethod.toLowerCase() === "cash";
+    const bookingStatus = (isStaffCreated || isCashPayment) ? "Confirmed" : "Pending";
+
     const [booking] = await Booking.create(
       [
         {
@@ -357,7 +367,7 @@ export const createBooking = async (req, res, next) => {
           hotelStringId: room.hotelStringId || null,
           hotelImage,
           hotelId: actualHotel ? actualHotel._id : (room.hotelId || null),
-          status: (paymentMethod && paymentMethod.toLowerCase() === "cash") ? "Confirmed" : "Pending",
+          status: bookingStatus,
         },
       ],
       { session }
@@ -761,6 +771,12 @@ export const cancelBooking = async (req, res, next) => {
     booking.cancelledAt = new Date();
     booking.cancellationReason = req.body.reason || "Cancelled by guest";
     await booking.save();
+
+    // Update payment status to "Cancelled" for consistency
+    await Payment.updateMany(
+      { bookingId: booking._id, status: "PENDING" },
+      { status: "CANCELLED", cancelledAt: new Date() }
+    ).catch(err => logger.warn("Failed to update payment status on booking cancellation", { error: err.message }));
 
     // Write audit log
     AuditLog.create({

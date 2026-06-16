@@ -134,10 +134,15 @@ export default function Topbar({ searchPlaceholder }: Props) {
   const unreadCount = notifications.filter((n) => !n.isRead).length;
   const liveCount      = liveAlerts.length;
 
-  const openNotification = (n: NotificationItem) => {
+  const openNotification = async (n: NotificationItem) => {
+    // Mark as read first
     if (!n.isRead) {
       setNotifications((prev) => prev.map((item) => item._id === n._id ? { ...item, isRead: true } : item));
-      markNotificationRead(n._id).catch(() => {});
+      try {
+        await markNotificationRead(n._id);
+      } catch (err) {
+        console.error("Failed to mark notification as read", err);
+      }
     }
     setShowNotifs(false);
 
@@ -158,6 +163,7 @@ export default function Topbar({ searchPlaceholder }: Props) {
       return;
     }
 
+    // Default navigation based on notification type
     navigate(n.type === "price"
       ? (admin?.role === "Manager" ? "/m/pricing" : "/price-requests")
       : n.type === "assistance" ? "/m/dashboard"
