@@ -243,10 +243,22 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
           ? response.data
           : (response.data?['data'] ?? {});
       return d as Map<String, dynamic>?;
+    } on DioException catch (e) {
+      String message =
+          'Unable to send OTP. Please check the number and try again.';
+      if (e.response != null) {
+        if (e.response?.data is Map) {
+          message = e.response?.data['message'] ?? message;
+        } else if (e.response?.data is String) {
+          message = e.response?.data!;
+        }
+      }
+      _error = message;
+      _isLoading = false;
+      notifyListeners();
+      return null;
     } catch (e) {
-      _error = e.toString().contains('message')
-          ? e.toString()
-          : 'Unable to send OTP. Please check the number and try again.';
+      _error = e.toString();
       _isLoading = false;
       notifyListeners();
       return null;
@@ -280,8 +292,21 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
       notifyListeners();
       _registerFcmToken();
       return true;
+    } on DioException catch (e) {
+      String message = 'OTP verification failed. Please try again.';
+      if (e.response != null) {
+        if (e.response?.data is Map) {
+          message = e.response?.data['message'] ?? message;
+        } else if (e.response?.data is String) {
+          message = e.response?.data!;
+        }
+      }
+      _error = message;
+      _isLoading = false;
+      notifyListeners();
+      return false;
     } catch (e) {
-      _error = 'OTP verification failed. Please try again.';
+      _error = e.toString();
       _isLoading = false;
       notifyListeners();
       return false;
