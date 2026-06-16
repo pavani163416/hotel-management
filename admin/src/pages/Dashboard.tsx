@@ -452,11 +452,13 @@ export default function Dashboard() {
               <div>
                 <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">{t("Check-in *")}</label>
                 <input required type="date" value={nbCheckIn} onChange={(e) => setNbCheckIn(e.target.value)}
+                  min={new Date().toISOString().split("T")[0]}
                   className="w-full border border-border rounded-lg px-3 py-2.5 text-sm outline-none focus:border-primary" />
               </div>
               <div>
                 <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">{t("Check-out *")}</label>
                 <input required type="date" value={nbCheckOut} onChange={(e) => setNbCheckOut(e.target.value)}
+                  min={nbCheckIn || new Date().toISOString().split("T")[0]}
                   className="w-full border border-border rounded-lg px-3 py-2.5 text-sm outline-none focus:border-primary" />
               </div>
               <div>

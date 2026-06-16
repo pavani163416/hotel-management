@@ -55,13 +55,7 @@ export default function Notifications() {
     }
   }, []);
 
-  useEffect(() => {
-    if (activeTab === "subscribers") {
-      fetchSubscribers();
-    } else {
-      fetchNotifications();
-    }
-  }, [activeTab, fetchNotifications, fetchSubscribers]);
+
   
   // Filters
   const [search, setSearch] = useState("");
@@ -122,7 +116,13 @@ export default function Notifications() {
     }
   }, []);
 
-  // fetchNotifications is now called by useEffect monitoring activeTab
+  useEffect(() => {
+    if (activeTab === "subscribers") {
+      fetchSubscribers();
+    } else {
+      fetchNotifications();
+    }
+  }, [activeTab, fetchNotifications, fetchSubscribers]);
 
   const handleIncomingNotification = useCallback((data: NotificationItem) => {
     setNotifications(prev => [data, ...prev.filter(item => item._id !== data._id)].slice(0, 100));

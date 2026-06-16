@@ -12,7 +12,7 @@ import StatsCard from "@/components/StatsCard";
 import StatusBadge from "@/components/StatusBadge";
 import Modal from "@/components/Modal";
 import { useBookings, Booking } from "@/context/BookingsContext";
-import { cancelBooking as apiCancelBooking, getBookingById as apiGetBookingById } from "@/services/api";
+import { cancelBooking as apiCancelBooking, getBookingById as apiGetBookingById, createBooking } from "@/services/api";
 
 // Map room number initials → hotel name
 // Room numbers follow pattern: initials-number (e.g. hdl-101, tas-101, apl-101)
@@ -173,29 +173,42 @@ export default function Bookings() {
     URL.revokeObjectURL(url);
   };
 
-  const handleNewBookingSubmit = (e: React.FormEvent) => {
+  const handleNewBookingSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const checkInDate = new Date(nbCheckIn);
     const checkOutDate = new Date(nbCheckOut);
     const nights = Math.max(1, Math.round((checkOutDate.getTime() - checkInDate.getTime()) / 86400000));
-    addBooking({
-      guestSnapshot: { name: nbGuest, email: nbEmail },
-      room: { type: nbRoom, roomNumber: nbProperty },
-      checkIn: nbCheckIn,
-      checkOut: nbCheckOut,
-      nights,
-      totalAmount: parseFloat(nbAmount) || 0,
-      paymentMethod: nbPaymentMethod,
-      status: "Confirmed",
-      property: nbProperty,
-    });
-    setNbSubmitted(true);
-    setTimeout(() => {
-      setShowNewBooking(false);
-      setNbSubmitted(false);
-      setNbGuest(""); setNbEmail(""); setNbProperty("");
-      setNbRoom("Deluxe"); setNbCheckIn(""); setNbCheckOut(""); setNbAmount("");
-    }, 1200);
+    const resolvedPPN = Math.round((parseFloat(nbAmount) || 0) / nights) || 100;
+    
+    try {
+      await createBooking({
+        roomId: nbRoom,          // room type used as identifier; backend resolves to physical room
+        roomTypeId: nbRoom,
+        hotelName: nbProperty,
+        hotelId: null,           // backend handles resolution if null
+        guest: {
+          name: nbGuest,
+          email: nbEmail,
+        },
+        checkIn: nbCheckIn,
+        checkOut: nbCheckOut,
+        totalAmount: parseFloat(nbAmount) || 0,
+        subtotal: parseFloat(nbAmount) || 0,
+        pricePerNight: resolvedPPN,
+        paymentMethod: nbPaymentMethod,
+      });
+      refetch(); // refresh bookings list from backend
+      setNbSubmitted(true);
+      setTimeout(() => {
+        setShowNewBooking(false);
+        setNbSubmitted(false);
+        setNbGuest(""); setNbEmail(""); setNbProperty("");
+        setNbRoom("Deluxe"); setNbCheckIn(""); setNbCheckOut(""); setNbAmount("");
+      }, 1200);
+    } catch (err: any) {
+      console.error("Failed to create booking:", err);
+      alert(err.message || "Failed to create booking");
+    }
   };
 
   const handleCancel = async () => {
@@ -574,11 +587,13 @@ export default function Bookings() {
               <div>
                 <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">Check-in *</label>
                 <input required type="date" value={nbCheckIn} onChange={(e) => setNbCheckIn(e.target.value)}
+                  min={new Date().toISOString().split("T")[0]}
                   className="w-full border border-border rounded-lg px-3 py-2.5 text-sm outline-none focus:border-primary" />
               </div>
               <div>
                 <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">Check-out *</label>
                 <input required type="date" value={nbCheckOut} onChange={(e) => setNbCheckOut(e.target.value)}
+                  min={nbCheckIn || new Date().toISOString().split("T")[0]}
                   className="w-full border border-border rounded-lg px-3 py-2.5 text-sm outline-none focus:border-primary" />
               </div>
               <div className="col-span-2">
