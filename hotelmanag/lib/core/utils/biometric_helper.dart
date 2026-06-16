@@ -20,8 +20,11 @@ class BiometricHelper {
 
       final bool didAuthenticate = await auth.authenticate(
         localizedReason: reason,
-        biometricOnly: true,
-        persistAcrossBackgrounding: true,
+        options: const AuthenticationOptions(
+          biometricOnly: false,
+          stickyAuth: true,
+          useErrorDialogs: true,
+        ),
       );
       return didAuthenticate;
     } on PlatformException catch (e) {
