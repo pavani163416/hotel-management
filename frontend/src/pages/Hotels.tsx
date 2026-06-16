@@ -138,61 +138,65 @@ const Hotels = () => {
         <div className="container py-8">
           <div className="grid lg:grid-cols-[22%_1fr] xl:grid-cols-[24%_1fr] gap-8">
           {/* SIDEBAR */}
-          <aside className="lg:sticky lg:top-20 lg:self-start space-y-5 lg:max-h-[calc(100dvh-6rem)] lg:overflow-y-auto pr-1 lg:flex-shrink-0">
-            <div className="rounded-xl border border-border overflow-hidden bg-card">
-              <div className="h-60 relative">
+          <aside className="lg:self-start lg:flex-shrink-0 w-full">
+            <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
+              <div className="h-48 relative border-b border-border">
                 <HotelMap hotels={filtered} onHotelClick={(id) => nav(`/hotel/${id}`)} />
+                <button onClick={() => setMapOpen(true)} className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-background/95 backdrop-blur px-4 py-2 rounded-full text-xs font-semibold text-primary shadow-md flex items-center gap-2 hover:scale-105 transition-transform border border-border/50">
+                  <Maximize2 className="w-3.5 h-3.5" /> Explore Map
+                </button>
               </div>
-              <button onClick={() => setMapOpen(true)} className="w-full flex items-center justify-center gap-2 py-3 text-xs font-semibold text-primary border-t border-border hover:bg-secondary transition-base">
-                <Maximize2 className="w-3.5 h-3.5" /> Explore Map
-              </button>
+
+              <div className="p-5">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="font-display text-lg font-bold text-primary">
+                    Filters {activeFilterCount > 0 && <span className="text-xs text-accent">({activeFilterCount})</span>}
+                  </h2>
+                  <button onClick={clearAll} className="text-xs text-brown font-semibold hover:text-accent transition-base">Clear all</button>
+                </div>
+
+                <div className="space-y-6">
+                  <FilterCard title="Price Range">
+                    <div className="flex items-center justify-between text-sm font-medium text-primary mb-2">
+                      <span className="text-muted-foreground text-xs">{format(0)}</span><span>{format(maxPrice)}</span>
+                    </div>
+                    <input type="range" min={100} max={5000} step={50} value={maxPrice} onChange={(e) => setMaxPrice(Number(e.target.value))} className="w-full accent-primary" />
+                  </FilterCard>
+
+                  <FilterCard title="Property Type">
+                    <div className="flex flex-wrap gap-2">
+                      {PROPERTY_TYPES.map((t) => {
+                        const active = types.includes(t);
+                        return (
+                          <button key={t} onClick={() => toggle(t, setTypes, types)}
+                            className={`text-xs px-3.5 py-1.5 rounded-full border transition-all ${active ? "bg-primary text-primary-foreground border-primary shadow-sm" : "bg-background text-primary border-border hover:border-primary/40 hover:bg-secondary"}`}>
+                            {t}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </FilterCard>
+
+                  <FilterCard title="Minimum Rating">
+                    {[0, 3, 4, 4.5].map((r) => (
+                      <label key={r} className="flex items-center gap-3 py-1.5 cursor-pointer group">
+                        <input type="radio" name="rating" checked={minRating === r} onChange={() => setMinRating(r)} className="accent-primary w-4 h-4 cursor-pointer" />
+                        <span className="text-sm text-primary group-hover:text-accent transition-colors">{r === 0 ? "Any" : `${r}+ stars`}</span>
+                      </label>
+                    ))}
+                  </FilterCard>
+
+                  <FilterCard title="Amenities">
+                    {ALL_AMENITIES.map((a) => (
+                      <label key={a} className="flex items-center gap-3 py-1.5 cursor-pointer group">
+                        <input type="checkbox" checked={amenities.includes(a)} onChange={() => toggle(a, setAmenities, amenities)} className="accent-primary w-4 h-4 rounded cursor-pointer" />
+                        <span className="text-sm text-primary group-hover:text-accent transition-colors">{a}</span>
+                      </label>
+                    ))}
+                  </FilterCard>
+                </div>
+              </div>
             </div>
-
-            <div className="flex items-center justify-between px-1">
-              <h2 className="font-display text-lg font-bold text-primary">
-                Filters {activeFilterCount > 0 && <span className="text-xs text-accent">({activeFilterCount})</span>}
-              </h2>
-              <button onClick={clearAll} className="text-xs text-brown font-semibold hover:text-accent transition-base">Clear all</button>
-            </div>
-
-            <FilterCard title="Price Range">
-              <div className="flex items-center justify-between text-sm font-medium text-primary mb-2">
-                <span className="text-muted-foreground text-xs">{format(0)}</span><span>{format(maxPrice)}</span>
-              </div>
-              <input type="range" min={100} max={5000} step={50} value={maxPrice} onChange={(e) => setMaxPrice(Number(e.target.value))} className="w-full accent-primary" />
-            </FilterCard>
-
-            <FilterCard title="Property Type">
-              <div className="flex flex-wrap gap-1.5">
-                {PROPERTY_TYPES.map((t) => {
-                  const active = types.includes(t);
-                  return (
-                    <button key={t} onClick={() => toggle(t, setTypes, types)}
-                      className={`text-xs px-3 py-1.5 rounded-full border transition-base ${active ? "bg-primary text-primary-foreground border-primary" : "bg-background text-primary border-border hover:border-brown"}`}>
-                      {t}
-                    </button>
-                  );
-                })}
-              </div>
-            </FilterCard>
-
-            <FilterCard title="Minimum Rating">
-              {[0, 3, 4, 4.5].map((r) => (
-                <label key={r} className="flex items-center gap-2 py-1.5 cursor-pointer">
-                  <input type="radio" name="rating" checked={minRating === r} onChange={() => setMinRating(r)} className="accent-primary" />
-                  <span className="text-sm text-primary">{r === 0 ? "Any" : `${r}+ stars`}</span>
-                </label>
-              ))}
-            </FilterCard>
-
-            <FilterCard title="Amenities">
-              {ALL_AMENITIES.map((a) => (
-                <label key={a} className="flex items-center gap-2 py-1.5 cursor-pointer">
-                  <input type="checkbox" checked={amenities.includes(a)} onChange={() => toggle(a, setAmenities, amenities)} className="accent-primary" />
-                  <span className="text-sm text-primary">{a}</span>
-                </label>
-              ))}
-            </FilterCard>
           </aside>
 
           {/* RIGHT */}
@@ -329,8 +333,8 @@ const Hotels = () => {
 };
 
 const FilterCard = ({ title, children }: { title: string; children: React.ReactNode }) => (
-  <div className="bg-card border border-border rounded-xl p-4">
-    <h3 className="font-semibold text-primary mb-3 text-sm">{title}</h3>
+  <div className="pb-6 border-b border-border/60 last:border-0 last:pb-0">
+    <h3 className="font-semibold text-primary mb-4 text-sm tracking-wide">{title}</h3>
     {children}
   </div>
 );
