@@ -35,12 +35,8 @@ const ROOM_TYPES  = ["All", "Standard", "Deluxe", "Suite", "Penthouse", "Villa"]
 
 const DAYS_SHORT = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
 const MONTHS_FULL = ["January","February","March","April","May","June","July","August","September","October","November","December"];
-  
-  // Ensure calendar displays current date properly
-  const today = new Date();
-  const todayYear = today.getFullYear();
-  const todayMonth = today.getMonth();
-  const todayDate = today.getDate();
+
+const formatAadhaar = (aadhaar?: string) => {
   if (!aadhaar) return "";
   const cleaned = aadhaar.replace(/\s/g, "");
   if (cleaned.length < 4) return cleaned;
@@ -48,6 +44,12 @@ const MONTHS_FULL = ["January","February","March","April","May","June","July","A
 };
 
 export default function Bookings() {
+  // Ensure calendar displays current date properly
+  const today = new Date();
+  const todayYear = today.getFullYear();
+  const todayMonth = today.getMonth();
+  const todayDate = today.getDate();
+
   const [bookings, setBookings]   = useState<Booking[]>([]);
   const [loading, setLoading]     = useState(true);
   const [view, setView]           = useState<"list" | "calendar">("list");
