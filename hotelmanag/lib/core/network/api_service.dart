@@ -19,8 +19,6 @@ class ApiService {
     _dio.options.receiveTimeout = const Duration(seconds: 30);
     _dio.options.sendTimeout = const Duration(seconds: 30); // TC-053 Fix
     _dio.options.headers['Content-Type'] = 'application/json';
-    _dio.options.headers['Origin'] =
-        'https://hotel-management-frontend-puce.vercel.app';
 
     if (!kIsWeb) {
       _dio.httpClientAdapter = IOHttpClientAdapter(

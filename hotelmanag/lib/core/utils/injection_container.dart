@@ -14,6 +14,8 @@ import '../providers/auth_provider.dart';
 import '../providers/hotel_provider.dart';
 import '../providers/booking_provider.dart';
 import '../providers/notification_provider.dart';
+import '../providers/theme_provider.dart';
+import '../providers/favorites_provider.dart';
 import '../providers/promo_provider.dart';
 
 final sl = GetIt.instance;
@@ -52,4 +54,6 @@ Future<void> init() async {
   sl.registerLazySingleton(() => PromoProvider(sl()));
   // NotificationProvider needs ApiService to fetch /api/notifications
   sl.registerLazySingleton(() => NotificationProvider(sl<ApiService>()));
+  sl.registerLazySingleton(() => ThemeProvider());
+  sl.registerLazySingleton(() => FavoritesProvider());
 }

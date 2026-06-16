@@ -29,8 +29,10 @@ class MainLayout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
+      backgroundColor: theme.scaffoldBackgroundColor,
       extendBody: true,
       appBar: (showNavbar && showAppBar) ? _buildAppBar(context) : null,
       body: Stack(
@@ -41,12 +43,14 @@ class MainLayout extends StatelessWidget {
             constraints: BoxConstraints(
               minHeight: MediaQuery.of(context).size.height,
             ),
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [AppTheme.backgroundColor, AppTheme.accentColor],
-                stops: [0.7, 1.0],
+                colors: isDark
+                    ? [theme.scaffoldBackgroundColor, theme.colorScheme.surface]
+                    : [theme.scaffoldBackgroundColor, AppTheme.accentColor],
+                stops: const [0.7, 1.0],
               ),
             ),
             child: isScrollable
@@ -59,9 +63,9 @@ class MainLayout extends StatelessWidget {
               bottom: 86 + MediaQuery.of(context).padding.bottom,
               child: FloatingActionButton(
                 onPressed: () => _openChatbot(context),
-                backgroundColor: AppTheme.primaryColor,
+                backgroundColor: theme.colorScheme.primary,
                 elevation: 6,
-                child: const Icon(LucideIcons.sparkles, color: Colors.white),
+                child: Icon(LucideIcons.sparkles, color: theme.colorScheme.onPrimary),
               ),
             ),
         ],
@@ -74,10 +78,12 @@ class MainLayout extends StatelessWidget {
               padding: const EdgeInsets.only(top: 16),
               child: FloatingActionButton.small(
                 onPressed: () => context.pop(),
-                backgroundColor: Colors.white.withOpacity(0.9),
-                child: const Icon(
+                backgroundColor: isDark
+                    ? theme.colorScheme.surface.withOpacity(0.9)
+                    : Colors.white.withOpacity(0.9),
+                child: Icon(
                   LucideIcons.arrowLeft,
-                  color: AppTheme.primaryColor,
+                  color: theme.colorScheme.primary,
                 ),
               ),
             )
@@ -87,15 +93,19 @@ class MainLayout extends StatelessWidget {
   }
 
   PreferredSizeWidget _buildAppBar(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return AppBar(
-      backgroundColor: Colors.white.withOpacity(0.9),
+      backgroundColor: isDark 
+          ? theme.scaffoldBackgroundColor.withOpacity(0.9) 
+          : Colors.white.withOpacity(0.9),
       elevation: 0,
       title: InkWell(
         onTap: () => context.go('/'),
-        child: const Text(
+        child: Text(
           'Athithigriha',
           style: TextStyle(
-            color: AppTheme.primaryColor,
+            color: theme.colorScheme.primary,
             fontWeight: FontWeight.bold,
             fontSize: 20,
           ),
@@ -109,9 +119,9 @@ class MainLayout extends StatelessWidget {
             return Stack(
               children: [
                 IconButton(
-                  icon: const Icon(
+                  icon: Icon(
                     LucideIcons.bell,
-                    color: AppTheme.primaryColor,
+                    color: theme.colorScheme.primary,
                     size: 22,
                   ),
                   onPressed: () {
@@ -152,16 +162,17 @@ class MainLayout extends StatelessWidget {
             return DropdownButtonHideUnderline(
               child: DropdownButton<String>(
                 value: currencyProvider.currency,
-                icon: const Icon(
+                icon: Icon(
                   LucideIcons.chevronDown,
-                  color: AppTheme.primaryColor,
+                  color: theme.colorScheme.primary,
                   size: 16,
                 ),
-                style: const TextStyle(
-                  color: AppTheme.primaryColor,
+                style: TextStyle(
+                  color: theme.colorScheme.primary,
                   fontSize: 13,
                   fontWeight: FontWeight.bold,
                 ),
+                dropdownColor: theme.colorScheme.surface,
                 onChanged: (String? newValue) {
                   if (newValue != null) {
                     currencyProvider.setCurrency(newValue);
@@ -180,9 +191,9 @@ class MainLayout extends StatelessWidget {
           },
         ),
         IconButton(
-          icon: const Icon(
+          icon: Icon(
             LucideIcons.user,
-            color: AppTheme.primaryColor,
+            color: theme.colorScheme.primary,
             size: 22,
           ),
           onPressed: () => context.go('/profile'),
@@ -193,6 +204,8 @@ class MainLayout extends StatelessWidget {
   }
 
   Widget _buildBottomNav(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final location = GoRouterState.of(context).matchedLocation;
     int currentIndex = 0;
     if (location == '/')
@@ -207,11 +220,11 @@ class MainLayout extends StatelessWidget {
     return Container(
       height: 70 + MediaQuery.of(context).padding.bottom,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? theme.colorScheme.surface : Colors.white,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withOpacity(isDark ? 0.2 : 0.04),
             blurRadius: 20,
             offset: const Offset(0, -4),
           ),
@@ -267,6 +280,7 @@ class MainLayout extends StatelessWidget {
     String label,
     bool isSelected,
   ) {
+    final theme = Theme.of(context);
     return Expanded(
       child: InkWell(
         onTap: () {
@@ -291,8 +305,8 @@ class MainLayout extends StatelessWidget {
               isSelected ? filledIcon : outlineIcon,
               size: 24,
               color: isSelected
-                  ? AppTheme.primaryColor
-                  : Colors.black.withOpacity(0.3),
+                  ? theme.colorScheme.primary
+                  : theme.colorScheme.onSurface.withOpacity(0.4),
             ),
             const SizedBox(height: 4),
             Text(
@@ -301,8 +315,8 @@ class MainLayout extends StatelessWidget {
                 fontSize: 10,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                 color: isSelected
-                    ? AppTheme.primaryColor
-                    : Colors.black.withOpacity(0.3),
+                    ? theme.colorScheme.primary
+                    : theme.colorScheme.onSurface.withOpacity(0.4),
               ),
             ),
           ],

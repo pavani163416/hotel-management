@@ -326,6 +326,9 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
       try {
         final userData = jsonDecode(userDataString) as Map<String, dynamic>;
         _user = UserModel.fromJson(userData);
+        try {
+          sl<FavoritesProvider>().loadFavoritesForCurrentUser();
+        } catch (_) {}
       } catch (e) {}
     }
   }
@@ -342,6 +345,9 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
       try {
         final userData = jsonDecode(userDataString) as Map<String, dynamic>;
         _user = UserModel.fromJson(userData);
+        try {
+          sl<FavoritesProvider>().loadFavoritesForCurrentUser();
+        } catch (_) {}
         notifyListeners();
       } catch (e) {}
     }
@@ -432,6 +438,10 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
 
       try {
         sl<BookingProvider>().reset();
+      } catch (_) {}
+
+      try {
+        sl<FavoritesProvider>().loadFavoritesForCurrentUser();
       } catch (_) {}
 
       try {
@@ -676,6 +686,9 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
       );
       final userJson = jsonEncode(userModel.toJson());
       await storage.write(key: 'user_data', value: userJson);
+      try {
+        sl<FavoritesProvider>().loadFavoritesForCurrentUser();
+      } catch (_) {}
     } catch (e) {}
   }
 

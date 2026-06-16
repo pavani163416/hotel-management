@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../features/booking/domain/repositories/booking_repository.dart';
@@ -14,6 +15,19 @@ class BookingProvider extends ChangeNotifier {
   List<BookingEntity> _bookings = [];
   bool _isLoading = false;
   String? _error;
+  Timer? _pollingTimer;
+
+  void startPolling({int intervalSeconds = 10}) {
+    _pollingTimer?.cancel();
+    fetchMyBookings();
+    _pollingTimer = Timer.periodic(Duration(seconds: intervalSeconds), (timer) {
+      fetchMyBookings();
+    });
+  }
+
+  void stopPolling() {
+    _pollingTimer?.cancel();
+  }
 
   // --- Current Booking State ---
   HotelEntity? _currentHotel;
@@ -399,5 +413,11 @@ class BookingProvider extends ChangeNotifier {
         return true;
       },
     );
+  }
+
+  @override
+  void dispose() {
+    stopPolling();
+    super.dispose();
   }
 }

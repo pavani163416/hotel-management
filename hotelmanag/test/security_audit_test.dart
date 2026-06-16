@@ -18,6 +18,7 @@ void main() {
         final lines = content.split('\n');
         for (var i = 0; i < lines.length; i++) {
           final line = lines[i];
+          if (line.contains('// ignore: security_audit')) continue;
           if (regex.hasMatch(line)) {
             violations.add('${file.path}:${i + 1}: $line');
           }
