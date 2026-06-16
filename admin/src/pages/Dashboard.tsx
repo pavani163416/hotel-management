@@ -38,11 +38,13 @@ export default function Dashboard() {
   const [nbGuest, setNbGuest] = useState("");
   const [nbEmail, setNbEmail] = useState("");
   const [nbAadhaar, setNbAadhaar] = useState("");
+  const [nbPhone, setNbPhone] = useState("");
   const [nbProperty, setNbProperty] = useState("");
   const [nbRoom, setNbRoom] = useState("Deluxe");
   const [nbCheckIn, setNbCheckIn] = useState("");
   const [nbCheckOut, setNbCheckOut] = useState("");
   const [nbAmount, setNbAmount] = useState("");
+  const [nbCurrency, setNbCurrency] = useState("$");
   const [nbPaymentMethod, setNbPaymentMethod] = useState("Credit Card");
   const [nbPricePerNight, setNbPricePerNight] = useState("");
 
@@ -140,6 +142,7 @@ export default function Dashboard() {
           name: nbGuest,
           email: nbEmail,
           id: nbAadhaar,
+          phone: nbPhone,
         },
         checkIn: nbCheckIn,
         checkOut: nbCheckOut,
@@ -157,6 +160,7 @@ export default function Dashboard() {
         setNbProperty(hotels[0]?.name || "");
         setNbRoom("Deluxe"); setNbCheckIn(""); setNbCheckOut("");
         setNbAmount(""); setNbPricePerNight(""); setNbError("");
+        setNbPhone(""); setNbCurrency("$");
         navigate("/bookings");
       }, 1200);
     } catch (err: any) {
@@ -423,6 +427,12 @@ export default function Dashboard() {
                   className="w-full border border-border rounded-lg px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10" />
               </div>
               <div className="col-span-2">
+                <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">{t("Phone Number *")}</label>
+                <input required type="tel" value={nbPhone} onChange={(e) => setNbPhone(e.target.value)}
+                  placeholder="+91..."
+                  className="w-full border border-border rounded-lg px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10" />
+              </div>
+              <div className="col-span-2">
                 <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">{t("Aadhaar Number *")} <span className="text-muted normal-case font-normal">(12 digits)</span></label>
                 <input required value={nbAadhaar} onChange={(e) => setNbAadhaar(e.target.value.replace(/\D/g, "").slice(0, 12))}
                   placeholder="12-digit Aadhaar" pattern="[0-9]{12}" maxLength={12}
@@ -467,11 +477,20 @@ export default function Dashboard() {
                   placeholder="e.g. 200"
                   className="w-full border border-border rounded-lg px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10" />
               </div>
-              <div>
-                <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">{t("Total Amount ($) *")}</label>
-                <input required type="number" min="0" value={nbAmount} onChange={(e) => setNbAmount(e.target.value)}
-                  placeholder="e.g. 1200"
-                  className="w-full border border-border rounded-lg px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10" />
+              <div className="col-span-2">
+                <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">{t(`Total Amount (${nbCurrency}) *`)}</label>
+                <div className="flex gap-2">
+                  <select value={nbCurrency} onChange={(e) => setNbCurrency(e.target.value)}
+                    className="w-20 border border-border rounded-lg px-2 text-sm outline-none focus:border-primary bg-surface-3 cursor-pointer">
+                    <option value="$">$</option>
+                    <option value="₹">₹</option>
+                    <option value="€">€</option>
+                    <option value="£">£</option>
+                  </select>
+                  <input required type="number" min="0" value={nbAmount} onChange={(e) => setNbAmount(e.target.value)}
+                    placeholder="e.g. 1200"
+                    className="flex-1 w-full border border-border rounded-lg px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10" />
+                </div>
               </div>
               <div className="col-span-2">
                 <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">Payment Method *</label>

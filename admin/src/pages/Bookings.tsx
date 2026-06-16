@@ -109,11 +109,14 @@ export default function Bookings() {
   // New booking form
   const [nbGuest, setNbGuest] = useState("");
   const [nbEmail, setNbEmail] = useState("");
+  const [nbAadhaar, setNbAadhaar] = useState("");
+  const [nbPhone, setNbPhone] = useState("");
   const [nbProperty, setNbProperty] = useState("");
   const [nbRoom, setNbRoom] = useState("Deluxe");
   const [nbCheckIn, setNbCheckIn] = useState("");
   const [nbCheckOut, setNbCheckOut] = useState("");
   const [nbAmount, setNbAmount] = useState("");
+  const [nbCurrency, setNbCurrency] = useState("$");
   const [nbPaymentMethod, setNbPaymentMethod] = useState("Credit Card");
 
   const filtered = bookings.filter((b) => {
@@ -189,6 +192,8 @@ export default function Bookings() {
         guest: {
           name: nbGuest,
           email: nbEmail,
+          id: nbAadhaar,
+          phone: nbPhone,
         },
         checkIn: nbCheckIn,
         checkOut: nbCheckOut,
@@ -202,8 +207,9 @@ export default function Bookings() {
       setTimeout(() => {
         setShowNewBooking(false);
         setNbSubmitted(false);
-        setNbGuest(""); setNbEmail(""); setNbProperty("");
+        setNbGuest(""); setNbEmail(""); setNbProperty(""); setNbAadhaar("");
         setNbRoom("Deluxe"); setNbCheckIn(""); setNbCheckOut(""); setNbAmount("");
+        setNbPhone(""); setNbCurrency("$");
       }, 1200);
     } catch (err: any) {
       console.error("Failed to create booking:", err);
@@ -567,6 +573,18 @@ export default function Bookings() {
                 <input required type="email" value={nbEmail} onChange={(e) => setNbEmail(e.target.value)} placeholder="guest@email.com"
                   className="w-full border border-border rounded-lg px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10" />
               </div>
+              <div className="col-span-2">
+                <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">Phone Number *</label>
+                <input required type="tel" value={nbPhone} onChange={(e) => setNbPhone(e.target.value)}
+                  placeholder="+91..."
+                  className="w-full border border-border rounded-lg px-3 py-2.5 text-sm outline-none focus:border-primary" />
+              </div>
+              <div className="col-span-2">
+                <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">Aadhaar Number * <span className="text-muted normal-case font-normal">(12 digits)</span></label>
+                <input required value={nbAadhaar} onChange={(e) => setNbAadhaar(e.target.value.replace(/\D/g, "").slice(0, 12))}
+                  placeholder="12-digit Aadhaar" pattern="[0-9]{12}" maxLength={12}
+                  className="w-full border border-border rounded-lg px-3 py-2.5 text-sm outline-none focus:border-primary" />
+              </div>
               <div>
                 <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">Property *</label>
                 <select value={nbProperty} onChange={(e) => setNbProperty(e.target.value)}
@@ -597,9 +615,19 @@ export default function Bookings() {
                   className="w-full border border-border rounded-lg px-3 py-2.5 text-sm outline-none focus:border-primary" />
               </div>
               <div className="col-span-2">
-                <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">Total Amount ($) *</label>
-                <input required type="number" min="0" value={nbAmount} onChange={(e) => setNbAmount(e.target.value)} placeholder="e.g. 1200"
-                  className="w-full border border-border rounded-lg px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10" />
+                <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">Total Amount ({nbCurrency}) *</label>
+                <div className="flex gap-2">
+                  <select value={nbCurrency} onChange={(e) => setNbCurrency(e.target.value)}
+                    className="w-20 border border-border rounded-lg px-2 text-sm outline-none focus:border-primary bg-surface-3 cursor-pointer">
+                    <option value="$">$</option>
+                    <option value="₹">₹</option>
+                    <option value="€">€</option>
+                    <option value="£">£</option>
+                  </select>
+                  <input required type="number" min="0" value={nbAmount} onChange={(e) => setNbAmount(e.target.value)}
+                    placeholder="e.g. 1200"
+                    className="flex-1 w-full border border-border rounded-lg px-3 py-2.5 text-sm outline-none focus:border-primary" />
+                </div>
               </div>
               <div className="col-span-2">
                 <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">Payment Method *</label>
