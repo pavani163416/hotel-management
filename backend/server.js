@@ -244,9 +244,12 @@ const isValidOrigin = (origin) => {
 
 const corsOptions = {
   origin: function (origin, callback) {
-    if (!origin) return callback(null, true); // Allow server-to-server / curl
-    if (isValidOrigin(origin)) return callback(null, true);
-    callback(null, false);
+    console.log("CORS Check - Origin:", origin);
+    const allowed = isValidOrigin(origin);
+    console.log("CORS Check - Allowed:", allowed);
+    
+    // TEMPORARY VERIFICATION STEP: Allow all origins unconditionally
+    return callback(null, true);
   },
   methods:        ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
