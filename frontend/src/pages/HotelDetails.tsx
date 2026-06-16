@@ -168,6 +168,10 @@ const HotelDetails = () => {
       setErr("Please fill in your name and review.");
       return;
     }
+    if (reviewText.trim().length < 5) {
+      setErr("Review must be at least 5 characters long.");
+      return;
+    }
     if (reviewRating < 1 || reviewRating > 5) {
       setErr("Please select a star rating.");
       return;
