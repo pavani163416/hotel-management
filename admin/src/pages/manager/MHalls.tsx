@@ -6,7 +6,7 @@ import {
 import ManagerLayout from "@/components/ManagerLayout";
 import Modal from "@/components/Modal";
 import StatusBadge from "@/components/StatusBadge";
-import { getManagerHalls, createManagerHall, updateManagerHall } from "@/services/api";
+import { getManagerHalls, createManagerHall, updateManagerHall, getHotels } from "@/services/api";
 
 type HallEvent = {
   id: string;
@@ -31,17 +31,39 @@ const emptyForm = {
   capacity: "50", status: "Pending", notes: "",
 };
 
+const emptyHallForm = {
+  name: "", capacity: "100", pricePerDay: "1000",
+};
+
 export default function Halls() {
+  const [hotels, setHotels] = useState<any[]>([]);
+  const [selectedHotelId, setSelectedHotelId] = useState<string>("");
+
   const [halls, setHalls]       = useState<any[]>([]);
   const [events, setEvents]     = useState<HallEvent[]>([]);
   const [loading, setLoading]   = useState(true);
   const [view, setView]         = useState<"calendar" | "list">("calendar");
   const [currentDate, setCurrentDate] = useState(new Date());
+  
   const [showAdd, setShowAdd]   = useState(false);
+  const [showAddHall, setShowAddHall] = useState(false);
   const [editEvent, setEditEvent] = useState<HallEvent | null>(null);
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
+  
   const [form, setForm]         = useState({ ...emptyForm });
+  const [hallForm, setHallForm] = useState({ ...emptyHallForm });
   const [success, setSuccess]   = useState(false);
+
+  useEffect(() => {
+    getHotels().then((res: any) => {
+      const data = res?.data || res?.data?.data || [];
+      const actualData = Array.isArray(data) ? data : (data.data || []);
+      setHotels(actualData);
+      if (actualData.length > 0) {
+        setSelectedHotelId(actualData[0]._id || actualData[0].id);
+      }
+    }).catch(() => {});
+  }, []);
 
   const year  = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -52,31 +74,19 @@ export default function Halls() {
   const nextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
 
   const loadHalls = useCallback(async () => {
+    if (!selectedHotelId) return;
+    setLoading(true);
     try {
-      const res: any = await getManagerHalls();
-      let data = res?.data || [];
-      
-      // Seed default halls if none exist
-      if (data.length === 0) {
-        const defaults = [
-          { name: "Grand Ballroom", capacity: 300, pricePerDay: 1500 },
-          { name: "Crystal Hall", capacity: 150, pricePerDay: 800 },
-          { name: "Garden Pavilion", capacity: 100, pricePerDay: 600 },
-          { name: "Boardroom A", capacity: 20, pricePerDay: 300 }
-        ];
-        await Promise.all(
-          defaults.map((h) => createManagerHall(h))
-        );
-        const res2: any = await getManagerHalls();
-        data = res2?.data || [];
-      }
+      const res: any = await getManagerHalls({ hotelId: selectedHotelId });
+      const data = res?.data || [];
       
       setHalls(data);
-      if (data.length > 0 && !form.hallName) {
-        setForm((f) => ({ ...f, hallName: data[0].name }));
+      if (data.length > 0) {
+        setForm((f) => ({ ...f, hallName: f.hallName || data[0].name }));
+      } else {
+        setForm((f) => ({ ...f, hallName: "" }));
       }
       
-      // Extract bookings
       const allEvents: HallEvent[] = [];
       data.forEach((hall: any) => {
         (hall.bookings || []).forEach((b: any) => {
@@ -102,7 +112,7 @@ export default function Halls() {
     } finally {
       setLoading(false);
     }
-  }, [form.hallName]);
+  }, [selectedHotelId]);
 
   useEffect(() => {
     loadHalls();
@@ -114,6 +124,26 @@ export default function Halls() {
   };
 
   const selectedDayEvents = selectedDay ? events.filter((e) => e.date === selectedDay) : [];
+
+  const handleSaveHall = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedHotelId) return;
+    try {
+      await createManagerHall({
+        name: hallForm.name,
+        capacity: Number(hallForm.capacity),
+        pricePerDay: Number(hallForm.pricePerDay),
+        hotelId: selectedHotelId
+      });
+      setSuccess(true);
+      await loadHalls();
+      setTimeout(() => {
+        setShowAddHall(false);
+        setHallForm({ ...emptyHallForm });
+        setSuccess(false);
+      }, 1000);
+    } catch { /* silent */ }
+  };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -183,10 +213,25 @@ export default function Halls() {
   return (
     <ManagerLayout>
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-xl font-bold text-bright">Halls & Events</h1>
-          <p className="text-sm text-dim mt-0.5">{events.length} events scheduled</p>
+      <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
+        <div className="flex items-center gap-4">
+          <div>
+            <h1 className="text-xl font-bold text-bright">Halls & Events</h1>
+            <p className="text-sm text-dim mt-0.5">{events.length} events scheduled</p>
+          </div>
+          {hotels.length > 0 && (
+            <select
+              value={selectedHotelId}
+              onChange={(e) => setSelectedHotelId(e.target.value)}
+              className="glass-select border border-white/10 rounded-xl px-3 py-2 text-sm outline-none font-medium ml-4 max-w-[200px]"
+            >
+              {hotels.map((h: any) => (
+                <option key={h._id || h.id} value={h._id || h.id}>
+                  {h.name}
+                </option>
+              ))}
+            </select>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <div className="flex items-center border border-white/10 rounded-xl overflow-hidden bg-white/5">
@@ -208,8 +253,16 @@ export default function Halls() {
             </button>
           </div>
           <button
-            onClick={() => { setForm({ ...emptyForm }); setShowAdd(true); }}
+            onClick={() => { setHallForm({ ...emptyHallForm }); setShowAddHall(true); }}
+            className="flex items-center gap-2 bg-white/10 text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-white/20 transition-colors"
+          >
+            <Plus className="w-4 h-4" /> Add Hall
+          </button>
+          <button
+            onClick={() => { setForm({ ...emptyForm, hallName: halls[0]?.name || "" }); setShowAdd(true); }}
             className="flex items-center gap-2 bg-primary text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-primary-dark transition-colors"
+            disabled={halls.length === 0}
+            title={halls.length === 0 ? "Add a hall first" : ""}
           >
             <Plus className="w-4 h-4" /> Book Hall
           </button>
@@ -309,6 +362,7 @@ export default function Halls() {
                     <button
                       onClick={() => { setForm({ ...emptyForm, date: selectedDay }); setShowAdd(true); }}
                       className="mt-3 text-xs text-gold font-semibold hover:underline"
+                      disabled={halls.length === 0}
                     >
                       + Book a hall
                     </button>
@@ -404,12 +458,60 @@ export default function Halls() {
                   </td>
                 </tr>
               ))}
+              {events.length === 0 && (
+                <tr>
+                  <td colSpan={8} className="text-center py-8 text-dim">No events found for this hotel.</td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
       )}
 
-      {/* Add / Edit Modal */}
+      {/* Add Hall Modal */}
+      <Modal
+        isOpen={showAddHall}
+        onClose={() => { setShowAddHall(false); setSuccess(false); }}
+        title="Add New Hall"
+        size="md"
+      >
+        {success ? (
+          <div className="flex flex-col items-center py-8 gap-3">
+            <div className="w-12 h-12 rounded-full grid place-items-center"
+              style={{ background: "rgba(16,185,129,0.15)", border: "1px solid rgba(16,185,129,0.3)" }}>
+              <Check className="w-6 h-6 text-success" />
+            </div>
+            <p className="font-semibold text-bright">Hall Added!</p>
+          </div>
+        ) : (
+          <form onSubmit={handleSaveHall} className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold text-dim uppercase tracking-wider mb-1">Hall Name *</label>
+              <input required value={hallForm.name} onChange={(e) => setHallForm({ ...hallForm, name: e.target.value })}
+                placeholder="e.g. Grand Ballroom"
+                className="w-full border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-gold bg-white/5 text-bright placeholder:text-dim" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-dim uppercase tracking-wider mb-1">Capacity</label>
+                <input required type="number" min="1" value={hallForm.capacity} onChange={(e) => setHallForm({ ...hallForm, capacity: e.target.value })}
+                  className="w-full border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-gold bg-white/5 text-bright" />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-dim uppercase tracking-wider mb-1">Price / Day</label>
+                <input required type="number" min="0" value={hallForm.pricePerDay} onChange={(e) => setHallForm({ ...hallForm, pricePerDay: e.target.value })}
+                  className="w-full border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-gold bg-white/5 text-bright" />
+              </div>
+            </div>
+            <button type="submit"
+              className="w-full bg-white/10 text-white py-3 rounded-xl font-semibold text-sm hover:bg-white/20 transition-colors">
+              Add Hall
+            </button>
+          </form>
+        )}
+      </Modal>
+
+      {/* Add / Edit Event Modal */}
       <Modal
         isOpen={showAdd || !!editEvent}
         onClose={() => { setShowAdd(false); setEditEvent(null); setSuccess(false); }}
@@ -436,8 +538,9 @@ export default function Halls() {
               <div>
                 <label className="block text-xs font-semibold text-dim uppercase tracking-wider mb-1">Hall *</label>
                 <select value={form.hallName} onChange={(e) => setForm({ ...form, hallName: e.target.value })}
-                  className="w-full glass-select border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none">
-                  {halls.map((h: any) => <option key={h._id} value={h.name}>{h.name}</option>)}
+                  className="w-full glass-select border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none bg-dark"
+                  required>
+                  {halls.map((h: any) => <option key={h._id} value={h.name} className="text-black">{h.name}</option>)}
                 </select>
               </div>
               <div>
@@ -469,10 +572,10 @@ export default function Halls() {
               <div>
                 <label className="block text-xs font-semibold text-dim uppercase tracking-wider mb-1">Status</label>
                 <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}
-                  className="w-full glass-select border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none">
-                  <option>Pending</option>
-                  <option>Confirmed</option>
-                  <option>Cancelled</option>
+                  className="w-full glass-select border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none bg-dark">
+                  <option className="text-black">Pending</option>
+                  <option className="text-black">Confirmed</option>
+                  <option className="text-black">Cancelled</option>
                 </select>
               </div>
               <div className="col-span-2">

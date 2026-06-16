@@ -601,10 +601,18 @@ export const getManagerAdditionalGuests = async (req, res, next) => {
 export const getManagerHalls = async (req, res, next) => {
   try {
     const filter = { isActive:true };
-    const orClauses = [];
-    if (req.scopedHotelId)       orClauses.push({ hotelStringId: req.scopedHotelId });
-    if (req.scopedHotelObjectId) orClauses.push({ hotelId: req.scopedHotelObjectId });
-    if (orClauses.length) filter.$or = orClauses;
+    const { hotelId } = req.query;
+    if (hotelId) {
+      filter.$or = [
+        { hotelStringId: hotelId },
+        ...(mongoose.Types.ObjectId.isValid(hotelId) ? [{ hotelId }] : [])
+      ];
+    } else {
+      const orClauses = [];
+      if (req.scopedHotelId)       orClauses.push({ hotelStringId: req.scopedHotelId });
+      if (req.scopedHotelObjectId) orClauses.push({ hotelId: req.scopedHotelObjectId });
+      if (orClauses.length) filter.$or = orClauses;
+    }
     const halls = await FunctionHall.find(filter).sort({ name:1 });
     res.status(200).json({ success:true, count:halls.length, data:halls });
   } catch (err) { next(err); }
@@ -613,11 +621,12 @@ export const getManagerHalls = async (req, res, next) => {
 // ── POST /api/manager/halls ───────────────────────────────
 export const createManagerHall = async (req, res, next) => {
   try {
+    const hId = req.body.hotelId || req.scopedHotelId;
     const hall = await FunctionHall.create({
       ...req.body,
-      hotelStringId: req.scopedHotelId,
-      hotelId: req.scopedHotelObjectId || null,
-      hotelName: req.scopedHotelName,
+      hotelStringId: hId,
+      hotelId: mongoose.Types.ObjectId.isValid(hId) ? hId : (req.scopedHotelObjectId || null),
+      hotelName: req.body.hotelName || req.scopedHotelName,
     });
     res.status(201).json({ success:true, message:"Hall created", data:hall });
   } catch (err) { next(err); }
@@ -628,7 +637,7 @@ export const updateManagerHall = async (req, res, next) => {
   try {
     const hall = await FunctionHall.findById(req.params.id);
     if (!hall) return res.status(404).json({ success:false, message:"Hall not found" });
-    if (hall.hotelStringId && hall.hotelStringId !== req.scopedHotelId)
+    if (req.manager?.role === "Manager" && hall.hotelStringId && hall.hotelStringId !== req.scopedHotelId)
       return res.status(403).json({ success:false, message:"Unauthorized: This hall does not belong to your hotel.", code:"HOTEL_ACCESS_DENIED" });
     if (req.body.booking) {
       hall.bookings.push(req.body.booking);

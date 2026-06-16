@@ -387,14 +387,18 @@ const Navbar = () => {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-48">
                     <DropdownMenuItem asChild>
-                      <Link to="/profile" className="w-full cursor-pointer min-h-[44px]">Profile</Link>
+                      <Link to="/profile" className="w-full cursor-pointer min-h-[44px] flex items-center">
+                        <UserCircle className="w-4 h-4 mr-2" /> Profile
+                      </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link to="/halls" className="w-full cursor-pointer min-h-[44px]">Book a Hall</Link>
+                      <Link to="/halls" className="w-full cursor-pointer min-h-[44px] flex items-center">
+                        <Building2 className="w-4 h-4 mr-2" /> Book a Hall
+                      </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link to="/owner-portal" className="w-full cursor-pointer flex items-center gap-1.5 text-primary hover:text-accent font-medium min-h-[44px]">
-                        <Building2 className="w-3.5 h-3.5" /> {user?.role === "owner" ? "Owner Dashboard" : "List Property"}
+                      <Link to="/owner-portal" className="w-full cursor-pointer flex items-center text-primary hover:text-accent font-medium min-h-[44px]">
+                        <Building2 className="w-4 h-4 mr-2" /> {user?.role === "owner" ? "Owner Dashboard" : "List Property"}
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem
