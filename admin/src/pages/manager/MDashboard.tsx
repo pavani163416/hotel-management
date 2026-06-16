@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import ManagerLayout from "@/components/ManagerLayout";
 import StatusBadge from "@/components/StatusBadge";
-import { getManagerStats, getManagerBookings, getManagerRooms, getManagerPriceRequests } from "@/services/api";
+import { getManagerStats, getManagerBookings, getManagerRooms, getManagerPriceRequests, getNotifications } from "@/services/api";
 import { useSocket } from "@/hooks/useSocket";
 import { useNavigate } from "react-router-dom";
 
@@ -69,11 +69,30 @@ function loadAlerts() {
     const raw = localStorage.getItem(ALERTS_KEY);
     if (raw) return JSON.parse(raw);
   } catch {}
-  return []; // start empty — no demo/fake alerts
+  return [];
 }
 
-function saveAlerts(alerts: { id: string; type: string; msg: string; time: string; priority: string }[]) {
+function saveAlerts(alerts: any[]) {
   try { localStorage.setItem(ALERTS_KEY, JSON.stringify(alerts)); } catch {}
+}
+
+function normalizeNotificationToAlert(data: any) {
+  const typeMap: Record<string, string> = {
+    manager:    "vip",
+    booking:    "booking",
+    system:     "maintenance",
+    assistance: "assistance",
+    price:      "payment",
+  };
+
+  return {
+    id:       data._id || data.id || Date.now().toString(),
+    type:     typeMap[data.type] || "booking",
+    msg:      data.message || data.msg || "",
+    time:     "just now",
+    priority: data.priority || (data.type === "assistance" ? "high" : "medium"),
+    fullData: data,
+  };
 }
 
 export default function Dashboard() {
@@ -96,16 +115,30 @@ export default function Dashboard() {
   const load = useCallback(async (showRefresh = false) => {
     if (showRefresh) setRefreshing(true);
     try {
-      const [sR, bR, rR, pR]: any[] = await Promise.allSettled([
-        getManagerStats(), 
-        getManagerBookings(), 
+      const [sR, bR, rR, pR, nR]: any[] = await Promise.allSettled([
+        getManagerStats(),
+        getManagerBookings(),
         getManagerRooms(),
-        getManagerPriceRequests()
+        getManagerPriceRequests(),
+        getNotifications(),
       ]);
       if (sR.status === "fulfilled") setStats(sR.value?.data);
       if (bR.status === "fulfilled") setBookings(bR.value?.data || []);
       if (rR.status === "fulfilled") setRooms(rR.value?.data || []);
       if (pR.status === "fulfilled") setPriceRequests(pR.value?.data || []);
+      if (nR.status === "fulfilled") {
+        const serverAlerts = Array.isArray(nR.value?.data)
+          ? nR.value.data.map(normalizeNotificationToAlert)
+          : [];
+        setAlerts((prev) => {
+          const merged = [
+            ...serverAlerts,
+            ...prev.filter((a: any) => !serverAlerts.some((item: any) => item.id === a.id)),
+          ].slice(0, 7);
+          saveAlerts(merged);
+          return merged;
+        });
+      }
     } catch { /* use whatever loaded */ }
     setLoading(false);
     setRefreshing(false);
@@ -130,26 +163,9 @@ export default function Dashboard() {
     const handler = (e: Event) => {
       const data = (e as CustomEvent).detail;
       if (!data?.message) return;
-      const typeMap: Record<string, string> = {
-        manager:    "vip",
-        booking:    "booking",
-        system:     "maintenance",
-        assistance: "assistance",
-        price:      "payment",
-      };
-      const priority = data.type === "manager" ? "high" : "medium";
+      const alert = normalizeNotificationToAlert(data);
       setAlerts((prev: any[]) => {
-        const next = [
-          {
-            id:       data._id || Date.now().toString(),
-            type:     typeMap[data.type] || "booking",
-            msg:      data.message,
-            time:     "just now",
-            priority,
-            fullData: data,
-          },
-          ...prev.filter((a: any) => a.id !== data._id).slice(0, 7),
-        ];
+        const next = [alert, ...prev.filter((a: any) => a.id !== alert.id)].slice(0, 7);
         saveAlerts(next);
         return next;
       });
