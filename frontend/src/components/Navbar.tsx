@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
-import { Bell, Hotel, UserCircle, LogOut, Mail, CheckCircle2, Building2, Heart, Menu, X } from "lucide-react";
+import { Bell, Hotel, UserCircle, LogOut, Mail, CheckCircle2, Building2, Heart, Menu, X, PackageSearch } from "lucide-react";
 import { useBooking } from "@/context/BookingContext";
 import { useWishlist } from "@/context/WishlistContext";
 import { AuthModal } from "@/components/AuthModal";
@@ -60,6 +60,8 @@ const Navbar = () => {
   // Track whether the modal was open so we know when it just closed
   const wasAuthOpen = useRef(false);
   const notificationRef = useRef<HTMLDivElement>(null);
+  const mobileMenuRef = useRef<HTMLDivElement>(null);
+  const mobileLogoRef = useRef<HTMLButtonElement>(null);
 
   const handleMenuNavigation = (route: string) => {
     setMobileMenuOpen(false);
@@ -71,10 +73,19 @@ const Navbar = () => {
       if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
         setShowNotifications(false);
       }
+      if (
+        mobileMenuOpen &&
+        mobileMenuRef.current &&
+        !mobileMenuRef.current.contains(event.target as Node) &&
+        mobileLogoRef.current &&
+        !mobileLogoRef.current.contains(event.target as Node)
+      ) {
+        setMobileMenuOpen(false);
+      }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  }, [mobileMenuOpen]);
 
   useEffect(() => {
     if (mobileMenuOpen) {
@@ -266,14 +277,6 @@ const Navbar = () => {
     const msg = n.message.toLowerCase();
     if (n.type === "booking" || msg.includes("booking") || msg.includes("confirm") || msg.includes("cancel")) {
       navigate("/history");
-    } else if (
-      msg.includes("owner") || 
-      msg.includes("application") || 
-      msg.includes("approved") || 
-      msg.includes("rejected") || 
-      msg.includes("partner")
-    ) {
-      navigate("/owner-portal");
     }
   };
 
@@ -285,9 +288,10 @@ const Navbar = () => {
         <div className="flex items-center">
           {/* Mobile Logo Button (opens menu drawer) */}
           <button 
-            onClick={() => setMobileMenuOpen(true)}
+            ref={mobileLogoRef}
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="flex items-center gap-2 font-display font-bold text-lg text-primary md:hidden min-h-[44px] outline-none"
-            aria-label="Open menu"
+            aria-label="Toggle menu"
           >
             <span className="grid place-items-center w-8 h-8 rounded-lg bg-primary text-primary-foreground shrink-0">
               <Hotel className="w-4 h-4" />
@@ -401,10 +405,7 @@ const Navbar = () => {
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link to="/owner-portal" className="w-full cursor-pointer flex items-center text-primary hover:text-accent font-medium min-h-[44px]">
-                        <Building2 className="w-4 h-4 mr-2" /> {user?.role === "owner" ? "Owner Dashboard" : "List Property"}
-                      </Link>
-                    </DropdownMenuItem>
+
                     <DropdownMenuItem
                       onClick={async () => {
                         if (!hasActiveStay) return;
@@ -489,107 +490,89 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* Mobile Drawer (Hamburger Menu) */}
-      <div 
-        className={`fixed inset-0 z-50 bg-background/80 backdrop-blur-sm transition-opacity duration-300 md:hidden ${mobileMenuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}
-        onClick={() => setMobileMenuOpen(false)}
-      />
-      <div 
-        className={`fixed top-0 left-0 bottom-0 z-50 w-[80vw] max-w-sm bg-card border-r border-border shadow-luxe transition-transform duration-300 ease-in-out md:hidden flex flex-col ${mobileMenuOpen ? "translate-x-0" : "-translate-x-full"}`}
-      >
-        <div className="flex items-center justify-between p-4 border-b border-border">
-          <Link to="/" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 font-display font-bold text-lg text-primary">
-            <span className="grid place-items-center w-8 h-8 rounded-lg bg-primary text-primary-foreground shrink-0">
-              <Hotel className="w-4 h-4" />
-            </span>
-            AthithiGriha
-          </Link>
-          <button 
-            onClick={() => setMobileMenuOpen(false)} 
-            className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg hover:bg-accent/10 transition-base text-muted-foreground"
-            aria-label="Close menu"
+      {/* Mobile Dropdown Menu */}
+      {mobileMenuOpen && (
+        <>
+          {/* Backdrop below the header */}
+          <div 
+            className="fixed inset-x-0 bottom-0 top-16 z-40 bg-black/20 backdrop-blur-sm md:hidden"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+          <div 
+            ref={mobileMenuRef}
+            className="absolute top-16 left-0 right-0 z-50 bg-background border-b border-border shadow-luxe md:hidden flex flex-col py-4 px-6 gap-2 max-h-[80dvh] overflow-y-auto"
           >
-            <X className="w-6 h-6" />
-          </button>
-        </div>
+            {user && (
+              <div className="px-3 py-3 mb-2 bg-secondary/50 rounded-xl">
+                <p className="font-semibold text-primary text-base">{user.name}</p>
+                <p className="text-sm text-muted-foreground truncate">{user.email}</p>
+              </div>
+            )}
 
-        <div className="flex-1 overflow-y-auto py-4 px-3 flex flex-col gap-1 relative z-50">
-          {user && (
-            <div className="px-3 py-4 mb-2 bg-secondary/50 rounded-xl">
-              <p className="font-semibold text-primary">{user.name}</p>
-              <p className="text-sm text-muted-foreground truncate">{user.email}</p>
-            </div>
-          )}
+            {/* Common Links */}
+            <button onClick={() => handleMenuNavigation("/")} className={`px-4 py-3 min-h-[44px] flex items-center text-base font-semibold rounded-lg transition-base ${location.pathname === "/" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-primary"}`}>Home</button>
+            <button onClick={() => handleMenuNavigation("/hotels")} className={`px-4 py-3 min-h-[44px] flex items-center text-base font-semibold rounded-lg transition-base ${location.pathname === "/hotels" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-primary"}`}>Hotels</button>
 
-          {/* Common Links for everyone */}
-          <button onClick={() => handleMenuNavigation("/")} className={`px-4 py-3 min-h-[44px] flex items-center text-base font-medium rounded-lg transition-base ${location.pathname === "/" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-primary"}`}>Home</button>
-          <button onClick={() => handleMenuNavigation("/hotels")} className={`px-4 py-3 min-h-[44px] flex items-center text-base font-medium rounded-lg transition-base ${location.pathname === "/hotels" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-primary"}`}>Hotels</button>
+            {/* Authenticated Links */}
+            {user && (
+              <>
+                <button onClick={() => handleMenuNavigation("/halls")} className={`px-4 py-3 min-h-[44px] flex items-center text-base font-semibold rounded-lg transition-base ${location.pathname === "/halls" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-primary"}`}>Book a Hall</button>
+                <button onClick={() => handleMenuNavigation("/history")} className={`px-4 py-3 min-h-[44px] flex items-center text-base font-semibold rounded-lg transition-base ${location.pathname === "/history" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-primary"}`}>History</button>
+              </>
+            )}
 
-          {/* Authenticated Links */}
-          {user && (
-            <>
-              <button onClick={() => handleMenuNavigation("/halls")} className={`px-4 py-3 min-h-[44px] flex items-center text-base font-medium rounded-lg transition-base ${location.pathname === "/halls" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-primary"}`}>Book a Hall</button>
-              <button onClick={() => handleMenuNavigation("/history")} className={`px-4 py-3 min-h-[44px] flex items-center text-base font-medium rounded-lg transition-base ${location.pathname === "/history" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-primary"}`}>History</button>
-            </>
-          )}
-
-          {/* Common Links 2 */}
-          <button onClick={() => handleMenuNavigation("/wishlist")} className="px-4 py-3 min-h-[44px] flex items-center justify-between text-base font-medium text-muted-foreground hover:bg-secondary hover:text-primary rounded-lg transition-base">
-            Wishlist <Heart className="w-4 h-4" />
-          </button>
-
-          {user && (
-            <button onClick={() => { setMobileMenuOpen(false); setShowNotifications(true); }} className="px-4 py-3 min-h-[44px] flex items-center justify-between text-base font-medium text-muted-foreground hover:bg-secondary hover:text-primary rounded-lg transition-base">
-              Notifications
-              {unreadCount > 0 && <span className="bg-accent text-accent-foreground text-xs font-bold px-2 py-0.5 rounded-full">{unreadCount}</span>}
+            {/* Common Links 2 */}
+            <button onClick={() => handleMenuNavigation("/wishlist")} className="px-4 py-3 min-h-[44px] flex items-center justify-between text-base font-semibold text-muted-foreground hover:bg-secondary hover:text-primary rounded-lg transition-base">
+              Wishlist <Heart className="w-4 h-4" />
             </button>
-          )}
 
-          <button onClick={() => handleMenuNavigation("/support-centre")} className={`px-4 py-3 min-h-[44px] flex items-center text-base font-medium rounded-lg transition-base ${location.pathname === "/support-centre" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-primary"}`}>Support</button>
+            {user && (
+              <button onClick={() => { setMobileMenuOpen(false); setShowNotifications(true); }} className="px-4 py-3 min-h-[44px] flex items-center justify-between text-base font-semibold text-muted-foreground hover:bg-secondary hover:text-primary rounded-lg transition-base">
+                Notifications
+                {unreadCount > 0 && <span className="bg-accent text-accent-foreground text-xs font-bold px-2 py-0.5 rounded-full">{unreadCount}</span>}
+              </button>
+            )}
 
-          {!user && (
-            <button onClick={() => handleMenuNavigation("/contact")} className="px-4 py-3 min-h-[44px] flex items-center text-base font-medium text-muted-foreground hover:bg-secondary hover:text-primary rounded-lg transition-base">
-              Contact Admin
-            </button>
-          )}
+            <button onClick={() => handleMenuNavigation("/support-centre")} className={`px-4 py-3 min-h-[44px] flex items-center text-base font-semibold rounded-lg transition-base ${location.pathname === "/support-centre" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-primary"}`}>Support</button>
 
-          <div className="my-2 h-px bg-border/50" />
+            {!user && (
+              <button onClick={() => handleMenuNavigation("/contact")} className="px-4 py-3 min-h-[44px] flex items-center text-base font-semibold text-muted-foreground hover:bg-secondary hover:text-primary rounded-lg transition-base">
+                Contact Admin
+              </button>
+            )}
 
-          {/* Bottom Actions */}
-          {user ? (
-            <>
-              <button onClick={() => handleMenuNavigation("/profile")} className="px-4 py-3 min-h-[44px] flex items-center text-base font-medium text-muted-foreground hover:bg-secondary hover:text-primary rounded-lg transition-base">
-                Profile
-              </button>
-              <button onClick={() => handleMenuNavigation("/owner-portal")} className="px-4 py-3 min-h-[44px] flex items-center text-base font-medium text-muted-foreground hover:bg-secondary hover:text-primary rounded-lg transition-base">
-                Dashboard
-              </button>
-              <button onClick={() => handleMenuNavigation("/history")} className="px-4 py-3 min-h-[44px] flex items-center text-base font-medium text-muted-foreground hover:bg-secondary hover:text-primary rounded-lg transition-base">
-                My Bookings
-              </button>
-              <button onClick={() => { setMobileMenuOpen(false); handleLogout(); }} className="px-4 py-3 min-h-[44px] flex items-center text-base font-medium text-destructive hover:bg-destructive/10 rounded-lg transition-base mt-2">
-                Log out
-              </button>
-            </>
-          ) : (
-            <div className="flex flex-col gap-2 px-2">
-              <button onClick={() => { setMobileMenuOpen(false); openAuth("signin"); }} className="w-full min-h-[44px] flex items-center justify-center font-semibold rounded-lg bg-secondary text-primary hover:bg-secondary/80 transition-base">
-                Sign In
-              </button>
-              <button onClick={() => { setMobileMenuOpen(false); openAuth("signup"); }} className="w-full min-h-[44px] flex items-center justify-center font-semibold rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-base">
-                Sign Up
-              </button>
+            <div className="my-1 h-px bg-border/50" />
+
+            {/* Bottom Actions */}
+            {user ? (
+              <>
+                <button onClick={() => handleMenuNavigation("/profile")} className="px-4 py-3 min-h-[44px] flex items-center text-base font-semibold text-muted-foreground hover:bg-secondary hover:text-primary rounded-lg transition-base">
+                  Profile
+                </button>
+                <button onClick={() => { setMobileMenuOpen(false); handleLogout(); }} className="px-4 py-3 min-h-[44px] flex items-center text-base font-semibold text-destructive hover:bg-destructive/10 rounded-lg transition-base mt-1">
+                  Log out
+                </button>
+              </>
+            ) : (
+              <div className="flex flex-col gap-2 pt-2">
+                <button onClick={() => { setMobileMenuOpen(false); openAuth("signin"); }} className="w-full min-h-[44px] flex items-center justify-center font-bold rounded-lg bg-secondary text-primary hover:bg-secondary/80 transition-base">
+                  Sign In
+                </button>
+                <button onClick={() => { setMobileMenuOpen(false); openAuth("signup"); }} className="w-full min-h-[44px] flex items-center justify-center font-bold rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-base">
+                  Sign Up
+                </button>
+              </div>
+            )}
+
+            <div className="my-1 h-px bg-border/50" />
+            
+            <div className="px-4 py-3 min-h-[44px] flex items-center justify-between">
+              <span className="text-base font-semibold text-muted-foreground">Currency</span>
+              <CurrencySwitcher />
             </div>
-          )}
-
-          <div className="my-2 h-px bg-border/50" />
-          
-          <div className="px-4 py-3 min-h-[44px] flex items-center justify-between">
-            <span className="text-base font-medium text-muted-foreground">Currency</span>
-            <CurrencySwitcher />
           </div>
-        </div>
-      </div>
+        </>
+      )}
 
       <AuthModal
         isOpen={authOpen}

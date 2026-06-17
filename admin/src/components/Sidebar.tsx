@@ -18,13 +18,12 @@ const links = [
   { to: "/analytics",     icon: BarChart3,       label: "Analytics" },
   { to: "/insights",      icon: Lightbulb,       label: "Insights" },
   { to: "/managers",      icon: UserCog,         label: "Managers" },
-  { to: "/owners",        icon: KeyRound,        label: "Property Owners" },
   { to: "/coupons",       icon: Tag,             label: "Coupons & Offers" },
   { to: "/top-deals",    icon: Flame,           label: "Top Deals" },
   { to: "/notifications", icon: Bell,            label: "Notifications" },
 ];
 
-const topLevel = new Set(["/dashboard", "/hotels", "/rooms", "/hotel-map", "/bookings", "/payments", "/guests", "/revenue", "/analytics", "/insights", "/managers", "/owners", "/coupons", "/top-deals", "/notifications"]);
+const topLevel = new Set(["/dashboard", "/hotels", "/rooms", "/hotel-map", "/bookings", "/payments", "/guests", "/revenue", "/analytics", "/insights", "/managers", "/coupons", "/top-deals", "/notifications"]);
 
 export default function Sidebar() {
   const { admin, theme, t, sidebarOpen, setSidebarOpen } = useAdmin();

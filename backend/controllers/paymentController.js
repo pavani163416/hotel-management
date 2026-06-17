@@ -197,9 +197,69 @@ export const verifyPayment = async (req, res, next) => {
 
     logger.info("Payment signature verified successfully", { razorpay_order_id, paymentId: payment._id });
 
+    // Confirm booking immediately during signature verification as fallback/sync step
+    if (payment.status !== "SUCCESS") {
+      payment.status = "SUCCESS";
+      payment.razorpayPaymentId = razorpay_payment_id;
+      payment.capturedAt = new Date();
+      await payment.save();
+
+      const booking = await Booking.findById(payment.bookingId);
+      if (booking) {
+        booking.paymentStatus = "PAID";
+        booking.status = "Confirmed";
+        await booking.save();
+        
+        // Write Audit Log
+        await logAudit({
+          req,
+          userId: payment.userId,
+          role: "customer",
+          action: "PAYMENT_CAPTURED_SYNC",
+          details: {
+            bookingId: booking._id,
+            paymentId: payment._id,
+            timestamp: new Date(),
+          }
+        });
+
+        // Send confirmation email
+        sendBookingConfirmation({
+          to:          booking.guestSnapshot?.email,
+          guestName:   booking.guestSnapshot?.name,
+          hotelName:   booking.hotelName || "Unknown Hotel",
+          bookingRef:  booking.bookingRef,
+          checkIn:     booking.checkIn,
+          checkOut:    booking.checkOut,
+          nights:      booking.nights,
+          roomType:    booking.roomType,
+          totalAmount: booking.totalAmount,
+        }).catch((err) => logger.warn("Failed to send verification confirmation email", { error: err.message }));
+
+        // Emit Socket event to update clients immediately
+        const io = req.app.get("io");
+        if (io) {
+          const userRoom = `user:${booking.userId || booking.guestSnapshot?.id || booking.guest}`;
+          let targetEmitter = io.to(userRoom);
+          if (booking.guestSnapshot?.email) {
+            targetEmitter = targetEmitter.to(`user:${booking.guestSnapshot.email.toLowerCase()}`);
+          }
+          targetEmitter = targetEmitter
+            .to("role:admin")
+            .to("role:super admin")
+            .to("role:controller");
+          if (booking.hotelStringId) {
+            targetEmitter = targetEmitter.to(`hotel:${booking.hotelStringId}`);
+          }
+          targetEmitter.emit("booking_update", { _id: booking._id, status: "Confirmed", roomId: booking.room });
+          io.emit("payment_update", { _id: payment._id, status: "SUCCESS" });
+        }
+      }
+    }
+
     return res.status(200).json({
       success: true,
-      message: "Payment signature verified successfully. Awaiting authoritative webhook reconciliation.",
+      message: "Payment signature verified and booking confirmed successfully.",
     });
   } catch (error) {
     logger.error("Error during payment verification", { error: error.message, razorpay_order_id: req.body?.razorpay_order_id });
@@ -401,6 +461,7 @@ export const processWebhook = async (req, res, next) => {
       "payment.failed",
       "refund.created",
       "refund.processed",
+      "refund.failed",
       "order.paid"
     ];
 
@@ -526,6 +587,9 @@ export const processWebhook = async (req, res, next) => {
             totalAmount: booking.totalAmount,
           }).catch((err) => logger.warn("Failed to send webhook confirmation email", { error: err.message }));
         }
+      } else if (!payment.webhookVerified) {
+        payment.webhookVerified = true;
+        await payment.save();
       }
     } else if (eventType === "payment.failed") {
       const paymentEntity = payload?.payment?.entity;
@@ -691,6 +755,70 @@ export const processWebhook = async (req, res, next) => {
             io.emit("payment_update", { _id: payment._id, status: "REFUNDED" });
             io.emit("roomStatusUpdate", { roomId: booking.room, hotelStringId: booking.hotelStringId });
           }
+        }
+      }
+    } else if (eventType === "refund.failed") {
+      const refundEntity = payload?.refund?.entity;
+      const razorpayPaymentId = refundEntity?.payment_id;
+      const refundId = refundEntity?.id;
+
+      const payment = await Payment.findOne({ razorpayPaymentId });
+      if (!payment) {
+        logger.warn(`Payment record not found for webhook refund.failed`, { razorpayPaymentId });
+        await WebhookEvent.deleteOne({ eventId });
+        return res.status(404).json({ success: false, message: "Payment record not found." });
+      }
+
+      payment.status = "SUCCESS";
+      payment.failureReason = `Refund failed: ${refundId}`;
+      await payment.save();
+
+      const booking = await Booking.findById(payment.bookingId);
+      if (booking) {
+        booking.paymentStatus = "PAID";
+        booking.status = "Confirmed";
+        await booking.save();
+
+        await logAudit({
+          req,
+          userId: payment.userId,
+          role: "customer",
+          action: "REFUND_FAILED",
+          details: {
+            bookingId: booking._id,
+            paymentId: payment._id,
+            event: eventType,
+            timestamp: new Date(),
+            refundId
+          }
+        });
+
+        sendNotification({
+          userId: booking.guestSnapshot?.email || payment.userId,
+          role: "customer",
+          message: `Refund failed for booking ${booking.bookingRef}.`,
+          type: "booking"
+        }).catch(() => {});
+
+        if (io) {
+          const userRoom = `user:${booking.userId || booking.guestSnapshot?.id || booking.guest}`;
+          let targetEmitter = io.to(userRoom);
+          if (booking.guestSnapshot?.email) {
+            targetEmitter = targetEmitter.to(`user:${booking.guestSnapshot.email.toLowerCase()}`);
+          }
+          targetEmitter = targetEmitter
+            .to("role:admin")
+            .to("role:super admin")
+            .to("role:controller");
+          if (booking.hotelStringId) {
+            targetEmitter = targetEmitter.to(`hotel:${booking.hotelStringId}`);
+          }
+          if (booking.hotelId) {
+            targetEmitter = targetEmitter.to(`hotel:${booking.hotelId}`);
+          }
+
+          targetEmitter.emit("booking_update", { _id: booking._id, status: "Confirmed" });
+          io.emit("payment_update", { _id: payment._id, status: "SUCCESS" });
         }
       }
     } else if (eventType === "payment.authorized") {

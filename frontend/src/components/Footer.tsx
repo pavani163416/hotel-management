@@ -119,14 +119,13 @@ const Footer = () => (
         </div>
 
         {/* Company */}
-        <div>
+        <div className="text-right md:text-left flex flex-col items-end md:items-start">
           <h4 className="text-primary-foreground/90 text-sm font-semibold uppercase tracking-wider mb-4">Company</h4>
-          <ul className="space-y-2.5 text-primary-foreground/70 text-sm">
+          <ul className="space-y-2.5 text-primary-foreground/70 text-sm w-full">
             {[
               { label: "About Us",            to: "/about" },
               { label: "Contact Us",          to: "/contact" },
               { label: "Support Centre",      to: "/support-centre" },
-              { label: "List Your Property",  to: "/owner-portal" },
             ].map(({ label, to }) => (
               <li key={to}>
                 <Link to={to} className="hover:text-primary-foreground transition-colors">{label}</Link>

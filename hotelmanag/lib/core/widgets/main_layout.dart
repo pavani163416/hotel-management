@@ -9,8 +9,6 @@ import '../providers/booking_provider.dart';
 import '../providers/hotel_provider.dart';
 import '../providers/currency_provider.dart';
 import 'package:provider/provider.dart';
-import 'chatbot_bottom_sheet.dart';
-
 class MainLayout extends StatelessWidget {
   final Widget child;
   final bool showNavbar;

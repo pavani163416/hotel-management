@@ -191,69 +191,35 @@ const Home = () => {
         </div>
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[...hotels].sort((a, b) => (b.activeBookings || 0) - (a.activeBookings || 0)).slice(0, 6).map((h) => (
-            <button key={h.id} onClick={() => nav(`/hotel/${h.id}`)} className="group text-left animate-fade-in hover:-translate-y-1 transition-base">
-              <div className="relative aspect-[4/3] overflow-hidden rounded-2xl mb-3 shadow-elegant hover:shadow-luxe transition-base">
-                <img src={h.image} alt={h.name} loading="lazy"
-                  className="w-full h-full object-cover group-hover:scale-105 transition-base duration-500" />
-                <button
-                  onClick={(e) => { e.stopPropagation(); toggleWishlist(h.id); }}
-                  className="absolute top-3 left-3 bg-background/95 backdrop-blur w-8 h-8 rounded-full grid place-items-center hover:scale-110 transition-transform shadow-md border border-border/50"
-                  aria-label="Add to wishlist"
-                >
-                  <Heart className={`w-4 h-4 ${isWishlisted(h.id) ? "fill-red-500 text-red-500" : "text-muted-foreground"}`} />
-                </button>
-              </div>
-              <div className="flex items-start justify-between gap-2">
-                <div>
-                  <h3 className="font-semibold text-primary group-hover:text-accent transition-base">{h.name}</h3>
-                  <p className="text-sm text-muted-foreground">{h.location}</p>
+            <div key={h.id} className="group text-left animate-fade-in hover:-translate-y-1 transition-base">
+              <Link to={`/hotel/${h.id}`} className="block">
+                <div className="relative aspect-[4/3] overflow-hidden rounded-2xl mb-3 shadow-elegant hover:shadow-luxe transition-base">
+                  <img src={h.image} alt={h.name} loading="lazy"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-base duration-500" />
+                  <button
+                    type="button"
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleWishlist(h.id); }}
+                    className="absolute top-3 left-3 bg-background/95 backdrop-blur w-8 h-8 rounded-full grid place-items-center hover:scale-110 transition-transform shadow-md border border-border/50"
+                    aria-label="Add to wishlist"
+                  >
+                    <Heart className={`w-4 h-4 ${isWishlisted(h.id) ? "fill-red-500 text-red-500" : "text-muted-foreground"}`} />
+                  </button>
                 </div>
-                <p className="text-sm font-semibold text-primary whitespace-nowrap">
-                  From {format(h.pricePerNight)}<span className="text-muted-foreground font-normal">/night</span>
-                </p>
-              </div>
-            </button>
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <h3 className="font-semibold text-primary group-hover:text-accent transition-base">{h.name}</h3>
+                    <p className="text-sm text-muted-foreground">{h.location}</p>
+                  </div>
+                  <p className="text-sm font-semibold text-primary whitespace-nowrap">
+                    From {format(h.pricePerNight)}<span className="text-muted-foreground font-normal">/night</span>
+                  </p>
+                </div>
+              </Link>
+            </div>
           ))}
         </div>
       </section>
 
-      {/* Owner CTA Section */}
-      <section className="container py-16">
-        <div className="bg-gradient-to-br from-[#1c1815] to-[#2c221a] rounded-3xl p-10 md:p-14 text-primary-foreground relative overflow-hidden shadow-2xl">
-          <div className="absolute inset-0 opacity-20 pointer-events-none" style={{ backgroundImage: "radial-gradient(circle at 80% 20%, #d4a373 0%, transparent 60%)" }} />
-          <div className="relative grid md:grid-cols-2 gap-10 items-center">
-            <div>
-              <span className="inline-block bg-white/10 text-[#f5ebd7] text-xs font-semibold uppercase tracking-widest px-3 py-1.5 rounded-full mb-4">
-                Partner with AthithiGriha
-              </span>
-              <h2 className="font-display text-3xl md:text-4xl font-bold mb-4 leading-tight text-white">
-                Own a Hotel or Resort?
-              </h2>
-              <p className="text-white/80 text-lg mb-6">
-                Partner with AthithiGriha and reach thousands of travelers. List your property and grow your revenue.
-              </p>
-              <Link to="/owner-portal"
-                className="inline-flex items-center gap-2 bg-[#d4a373] text-[#1c1815] font-semibold px-6 py-3.5 rounded-xl hover:bg-[#e6b685] transition-base text-sm shadow-md">
-                List Your Property →
-              </Link>
-            </div>
-            <div className="grid sm:grid-cols-2 gap-4">
-              {[
-                { emoji: "🌍", title: "Global Reach", text: "Connect with travelers from 45+ countries" },
-                { emoji: "📊", title: "Revenue Tracking", text: "Real-time bookings and earnings dashboard" },
-                { emoji: "🔒", title: "Secure Onboarding", text: "Verified KYC process for trusted partners" },
-                { emoji: "🤝", title: "Dedicated Support", text: "Partner success team available 24/7" },
-              ].map((b) => (
-                <div key={b.title} className="bg-white/5 rounded-2xl p-4 backdrop-blur-sm border border-white/10">
-                  <div className="text-2xl mb-2">{b.emoji}</div>
-                  <div className="font-semibold text-sm mb-1 text-white">{b.title}</div>
-                  <p className="text-white/60 text-xs leading-relaxed">{b.text}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
     </Layout>
   );
 };

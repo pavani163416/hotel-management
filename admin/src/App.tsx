@@ -28,7 +28,6 @@ import TopDeals      from "@/pages/TopDeals";
 import Notifications from "@/pages/Notifications";
 import PriceRequests from "@/pages/PriceRequests";
 import Settings    from "@/pages/Settings";
-import Owners      from "@/pages/Owners";
 import PublicSupportList from "@/pages/Support/PublicSupportList";
 import PublicSupportDetails from "@/pages/Support/PublicSupportDetails";
 
@@ -99,8 +98,7 @@ export default function App() {
             <Route path="/notifications" element={<Notifications />} />
             <Route path="/price-requests" element={<PriceRequests />} />
             <Route path="/settings" element={<Settings />} />
-            <Route path="/owners" element={<Owners />} />
-            <Route path="/public-support" element={<Navigate to="/owners?tab=support" replace />} />
+            <Route path="/public-support" element={<PublicSupportList />} />
             <Route path="/public-support/:id" element={<PublicSupportDetails />} />
 
             <Route path="/m/dashboard" element={<MDashboard />} />

@@ -178,17 +178,12 @@ class _ProfilePageState extends State<ProfilePage> {
                 const SizedBox(height: 16),
                 _buildCustomerSupportCard(context),
                 const SizedBox(height: 16),
+
                 _buildSettingItem(
                   LucideIcons.clipboardList,
                   'In-Room Service Requests',
                   'Request room service, housekeeping, or repairs',
                   onTap: () => context.push('/in-room-services'),
-                ),
-                _buildSettingItem(
-                  LucideIcons.helpCircle,
-                  'Lost & Found Reports',
-                  'Report lost or found belongings during your stay',
-                  onTap: () => context.push('/lost-and-found'),
                 ),
                 const SizedBox(height: 24),
                 _buildLogoutButton(),

@@ -405,10 +405,11 @@ const HotelDetails = () => {
                       </div>
                       <div className="flex flex-col items-stretch gap-1 md:min-w-[140px]">
                         {isSoldOut ? (
-                          /* Sold out button — styled to match screenshot */
-                          <button disabled
-                            className="bg-secondary text-muted-foreground cursor-not-allowed px-4 py-2.5 rounded-lg font-semibold text-sm border border-border">
-                            Sold out
+                          <button
+                            disabled
+                            className="bg-secondary text-muted-foreground px-4 py-2.5 rounded-lg font-semibold text-sm border border-border cursor-not-allowed"
+                          >
+                            Sold Out
                           </button>
                         ) : (
                           <button

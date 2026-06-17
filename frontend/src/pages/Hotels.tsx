@@ -139,7 +139,7 @@ const Hotels = () => {
         <div className="container py-6 flex-1 overflow-hidden min-h-0">
           <div className="grid lg:grid-cols-[22%_1fr] xl:grid-cols-[24%_1fr] gap-6 lg:gap-8 h-full">
           {/* SIDEBAR */}
-          <aside className={`flex flex-col space-y-5 lg:h-full lg:overflow-hidden pr-1 ${
+          <aside className={`flex flex-col space-y-5 lg:h-full lg:overflow-y-auto pr-1 ${
             mobileFiltersOpen ? "fixed inset-0 z-[100] bg-background p-4 overflow-y-auto" : "hidden lg:block"
           }`}>
             {mobileFiltersOpen && (

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/providers/currency_provider.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
@@ -12,7 +13,6 @@ import 'package:shimmer/shimmer.dart';
 import '../../../../core/providers/booking_provider.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/providers/favorites_provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
@@ -137,6 +137,8 @@ class _HotelDetailsPageState extends State<HotelDetailsPage>
         ),
       );
     }
+
+
 
     return MainLayout(
       child: SingleChildScrollView(
@@ -997,31 +999,16 @@ class _HotelDetailsPageState extends State<HotelDetailsPage>
                         Expanded(
                           flex: 2,
                           child: row.isSoldOut
-                              ? Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 14,
-                                    vertical: 10,
+                              ? ElevatedButton(
+                                  onPressed: null,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.grey.withOpacity(0.15),
+                                    foregroundColor: Colors.grey,
+                                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                                    elevation: 0,
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                   ),
-                                  decoration: BoxDecoration(
-                                    color: isDark
-                                        ? const Color(0xFF2A3545)
-                                        : const Color(0xFFEEEEEE),
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(
-                                      color: isDark
-                                          ? Colors.white10
-                                          : Colors.grey.shade300,
-                                    ),
-                                  ),
-                                  child: Text(
-                                    'Sold Out',
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.grey[500],
-                                    ),
-                                  ),
+                                  child: const Text('Sold Out', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                                 )
                               : ElevatedButton(
                                   onPressed: () {
@@ -1270,30 +1257,16 @@ class _HotelDetailsPageState extends State<HotelDetailsPage>
                           ],
                         ),
                         row.isSoldOut
-                            ? Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 20,
-                                  vertical: 12,
+                            ? ElevatedButton(
+                                onPressed: null,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.grey.withOpacity(0.15),
+                                  foregroundColor: Colors.grey,
+                                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                                  elevation: 0,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                 ),
-                                decoration: BoxDecoration(
-                                  color: isDark
-                                      ? const Color(0xFF2A3545)
-                                      : const Color(0xFFEEEEEE),
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(
-                                    color: isDark
-                                        ? Colors.white10
-                                        : Colors.grey.shade300,
-                                  ),
-                                ),
-                                child: Text(
-                                  'Sold Out',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.grey[500],
-                                  ),
-                                ),
+                                child: const Text('Sold Out', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                               )
                             : ElevatedButton(
                                 onPressed: () {

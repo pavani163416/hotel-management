@@ -43,7 +43,7 @@ const ownerApplicationSchema = new mongoose.Schema(
     ],
     status: {
       type: String,
-      enum: ["pending", "approved", "rejected"],
+      enum: ["pending", "approved", "rejected", "processing_upload", "suspended"],
       default: "pending",
     },
     kycStatus: {

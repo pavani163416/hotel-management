@@ -175,7 +175,6 @@ const SupportCentre = () => {
         issueType: form.category || "Other",
         subject: form.subject.trim() || "Support Request",
         message: form.message.trim(),
-        message: form.message.trim(),
       });
       setSuccess(true);
       setForm({ name: "", email: "", category: "", subject: "", message: "" });

@@ -2,51 +2,41 @@ import mongoose from "mongoose";
 
 const auditLogSchema = new mongoose.Schema(
   {
-    userId: {
-      type: String,
-      required: true,
-      index: true,
-    },
-    role: {
-      type: String,
-      required: true,
-      index: true,
-    },
     action: {
       type: String,
       required: true,
       index: true,
     },
-    ip: {
+    targetType: {
+      type: String, // e.g., 'Waitlist', 'LostFoundRequest', 'TripPlan', 'Report'
+      required: true,
+    },
+    targetId: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: false,
+    },
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User", // Can be customer, owner, or admin
+      required: false,
+    },
+    role: {
       type: String,
-      default: "unknown",
+      enum: ["customer", "owner", "admin", "superadmin", "system"],
+      default: "system",
     },
     details: {
-      type: mongoose.Schema.Types.Mixed,
+      type: mongoose.Schema.Types.Mixed, // flexible payload
       default: {},
     },
+    ipAddress: {
+      type: String,
+    },
   },
-  {
-    timestamps: true,
-    strict: false,
-  }
+  { timestamps: true }
 );
 
-auditLogSchema.pre("validate", function(next) {
-  if (!this.action) {
-    this.action = this.get("event") || this.get("action") || "UNKNOWN";
-  }
-  if (!this.userId) {
-    this.userId = this.get("userEmail") || "anonymous";
-  }
-  if (!this.role) {
-    this.role = "ANONYMOUS";
-  }
-  if (!this.ip) {
-    this.ip = this.get("ipAddress") || "unknown";
-  }
-  next();
-});
+// Index for auto-expiration (e.g. 1 year retention by default)
+auditLogSchema.index({ createdAt: 1 }, { expireAfterSeconds: 31536000 });
 
-const AuditLog = mongoose.model("AuditLog", auditLogSchema);
-export default AuditLog;
+export default mongoose.models.AuditLog || mongoose.model("AuditLog", auditLogSchema);

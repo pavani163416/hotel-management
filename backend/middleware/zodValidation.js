@@ -240,6 +240,7 @@ const createPriceRequest = z.object({
 const addReview = z.object({
   rating:  z.number().int().min(1).max(5),
   comment: z.string().max(1000).trim(),
+  author:  z.string().max(200).trim().optional(), // sent by Flutter mobile app, stored optionally
 });
 
 const editReview = z.object({

@@ -265,7 +265,7 @@ const History = () => {
                       </button>
                       {b.status === "Confirmed" && (
                         <button onClick={() => { setCancelTarget(b); setCancelReason(""); setCancelOther(""); }}
-                          className="text-destructive text-xs font-semibold hover:underline">
+                          className="text-destructive text-xs font-semibold hover:underline mt-1">
                           Cancel Booking
                         </button>
                       )}
