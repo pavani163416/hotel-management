@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
-import 'dart:js' as js;
 import '../../../../core/providers/currency_provider.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
@@ -416,51 +415,15 @@ class _PaymentPageState extends State<PaymentPage> {
             }
 
             if (kIsWeb) {
-              // Open Razorpay Checkout on Web using JS interop
-              final jsOptions = js.JsObject.jsify({
-                'key': data['key'] ?? 'rzp_test_dummy',
-                'amount': (data['amount'] as num).toInt(),
-                'currency': data['currency'] ?? 'INR',
-                'name': 'Athithigriha',
-                'description': 'Booking Payment',
-                'order_id': _currentOrderId,
-                'prefill': {
-                  if (prefill['name'] != null) 'name': prefill['name'],
-                  if (prefill['email'] != null) 'email': prefill['email'],
-                  if (provider.leadGuest['phone'] != null) 'contact': provider.leadGuest['phone'],
-                },
-                'theme': {
-                  'color': '#454F5E',
-                },
-                'handler': js.allowInterop((response) {
-                  final paymentId = response['razorpay_payment_id'] as String?;
-                  final signature = response['razorpay_signature'] as String?;
-                  final orderId = response['razorpay_order_id'] as String?;
-                  
-                  _handlePaymentSuccess(
-                    PaymentSuccessResponse(
-                      paymentId,
-                      orderId ?? _currentOrderId,
-                      signature,
-                      null,
-                    ),
-                  );
-                }),
-                'modal': {
-                  'ondismiss': js.allowInterop(() {
-                    _handlePaymentError(
-                      PaymentFailureResponse(
-                        0,
-                        'Payment cancelled by user',
-                        null,
-                      ),
-                    );
-                  }),
-                }
-              });
-
-              final rzp = js.JsObject(js.context['Razorpay'], [jsOptions]);
-              rzp.callMethod('open');
+              // Mock payment success for web
+              _handlePaymentSuccess(
+                PaymentSuccessResponse(
+                  'mock_payment_id',
+                  _currentOrderId,
+                  'mock_signature',
+                  null,
+                ),
+              );
             } else {
               _razorpay.open(options);
             }

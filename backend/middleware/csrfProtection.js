@@ -70,12 +70,6 @@ const csrfProtection = (req, res, next) => {
   // Safe methods don't mutate state — skip check
   if (SAFE_METHODS.has(req.method)) return next();
 
-  // Bypass CSRF checks for Bearer authenticated requests (mobile/API clients)
-  const authHeader = req.headers["authorization"];
-  if (authHeader && authHeader.toLowerCase().startsWith("bearer ")) {
-    return next();
-  }
-
   // Bypass CSRF validation for webhook routes and CSP violation reports
   if (req.path.startsWith("/webhooks") || req.path.startsWith("/api/webhooks") || req.path === "/csp-report") {
     return next();

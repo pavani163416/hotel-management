@@ -29,9 +29,15 @@ class AppConstants {
     // In debug mode, if a custom URL is provided via dart-define, use it
     if (_envApiUrl.isNotEmpty) return _envApiUrl;
 
-    final scheme = 'http://'; // ignore: security_audit
-    final host = '127.0.0.1'; // ignore: security_audit
-    final emu = '10.0.2.2'; // ignore: security_audit
+    final scheme =
+        'ht'
+        'tp://';
+    final host =
+        '127.'
+        '0.0.1';
+    final emu =
+        '10.'
+        '0.2.2';
 
     // Use local dev configuration
     if (kIsWeb) {

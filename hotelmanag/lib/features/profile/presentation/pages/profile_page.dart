@@ -16,7 +16,6 @@ import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:shimmer/shimmer.dart';
 import '../../../../core/utils/biometric_helper.dart';
-import '../../../../core/utils/validators.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -50,25 +49,10 @@ class _ProfilePageState extends State<ProfilePage> {
   final TextEditingController _upiIdController = TextEditingController();
   final TextEditingController _bankNameController = TextEditingController();
   String _selectedPaymentType = 'debit';
-  bool _twoFactorEnabled = false;
-
-  Future<void> _loadPreferences() async {
-    final prefs = await SharedPreferences.getInstance();
-    if (mounted) {
-      setState(() {
-        _pushNotifications = prefs.getBool('push_notifications') ?? true;
-        _emailUpdates = prefs.getBool('email_updates') ?? true;
-        _promotions = prefs.getBool('promotions') ?? false;
-        _twoFactorEnabled = prefs.getBool('two_factor_enabled') ?? false;
-        _currentLanguage = prefs.getString('app_language') ?? 'English (US)';
-      });
-    }
-  }
 
   @override
   void initState() {
     super.initState();
-    _loadPreferences();
     final user = Provider.of<AuthProvider>(context, listen: false).user;
     _nameController = TextEditingController(text: user?.name ?? '');
     _emailController = TextEditingController(text: user?.email ?? '');
@@ -157,8 +141,6 @@ class _ProfilePageState extends State<ProfilePage> {
                 const SizedBox(
                   height: 100,
                 ), // Spacing to account for overlapping profile header
-                _buildLoyaltyCard(),
-                const SizedBox(height: 24),
                 _buildSectionTitle('Account Settings'),
                 const SizedBox(height: 16),
                 _buildSettingItem(
@@ -190,12 +172,6 @@ class _ProfilePageState extends State<ProfilePage> {
                   'Security',
                   'Password, 2FA',
                   onTap: () => _showSecurity(context),
-                ),
-                _buildSettingItem(
-                  LucideIcons.globe,
-                  'Language',
-                  _currentLanguage,
-                  onTap: () => _showLanguagePicker(context),
                 ),
                 const SizedBox(height: 32),
                 _buildSectionTitle('Support & Help'),
@@ -640,7 +616,7 @@ class _ProfilePageState extends State<ProfilePage> {
         final pointsToNextTier = nextTierPoints - points;
 
         return Container(
-          margin: const EdgeInsets.only(top: 16),
+          margin: const EdgeInsets.only(top: 180),
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
             color: AppTheme.primaryColor,
@@ -764,7 +740,6 @@ class _ProfilePageState extends State<ProfilePage> {
     String title,
     String subtitle, {
     VoidCallback? onTap,
-    Widget? trailing,
   }) {
     final isDark = Theme.of(context).colorScheme.brightness == Brightness.dark;
     final cardColor = isDark ? const Color(0xFF253040) : Colors.white;
@@ -813,7 +788,7 @@ class _ProfilePageState extends State<ProfilePage> {
           subtitle,
           style: TextStyle(color: subColor, fontSize: 12),
         ),
-        trailing: trailing ?? Icon(LucideIcons.chevronRight, size: 18, color: arrowColor),
+        trailing: Icon(LucideIcons.chevronRight, size: 18, color: arrowColor),
         onTap:
             onTap ??
             () {
@@ -966,11 +941,9 @@ class _ProfilePageState extends State<ProfilePage> {
                         color: Theme.of(context).colorScheme.primary,
                       )
                     : null,
-                onTap: () async {
-                  final prefs = await SharedPreferences.getInstance();
-                  await prefs.setString('app_language', lang);
+                onTap: () {
                   setState(() => _currentLanguage = lang);
-                  if (context.mounted) Navigator.pop(context);
+                  Navigator.pop(context);
                 },
               ),
             ),
@@ -1100,49 +1073,11 @@ class _ProfilePageState extends State<ProfilePage> {
                 _showChangePasswordDialog(context);
               },
             ),
-            const SizedBox(height: 12),
-            StatefulBuilder(
-              builder: (context, setModalState) {
-                return _buildSettingItem(
-                  LucideIcons.shieldAlert,
-                  'Two-Factor Authentication (2FA)',
-                  'Secure your account with two-factor verification',
-                  trailing: Switch(
-                    value: _twoFactorEnabled,
-                    activeColor: Theme.of(context).colorScheme.primary,
-                    onChanged: (val) {
-                      setModalState(() {
-                        _twoFactorEnabled = val;
-                      });
-                      setState(() {
-                        _twoFactorEnabled = val;
-                      });
-                      _toggleTwoFactor(val);
-                    },
-                  ),
-                );
-              },
-            ),
             const SizedBox(height: 32),
           ],
         ),
       ),
     );
-  }
-
-  void _toggleTwoFactor(bool value) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('two_factor_enabled', value);
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(value
-              ? 'Two-Factor Authentication enabled successfully!'
-              : 'Two-Factor Authentication disabled.'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    }
   }
 
   void _showChangePasswordDialog(BuildContext context) {
@@ -1203,7 +1138,13 @@ class _ProfilePageState extends State<ProfilePage> {
                   obscureText: true,
                   prefixIcon: LucideIcons.lock,
                   controller: newPasswordController,
-                  validator: AppValidators.validatePassword,
+                  validator: (val) {
+                    if (val == null || val.isEmpty)
+                      return 'New password is required';
+                    if (val.length < 6)
+                      return 'Password must be at least 6 characters';
+                    return null;
+                  },
                 ),
                 const SizedBox(height: 16),
                 CustomTextField(
@@ -1422,26 +1363,20 @@ class _ProfilePageState extends State<ProfilePage> {
                   width: double.infinity,
                   height: 52,
                   child: ElevatedButton(
-                    onPressed: () async {
-                      final prefs = await SharedPreferences.getInstance();
-                      await prefs.setBool('push_notifications', localPush);
-                      await prefs.setBool('email_updates', localEmail);
-                      await prefs.setBool('promotions', localPromo);
+                    onPressed: () {
                       setState(() {
                         _pushNotifications = localPush;
                         _emailUpdates = localEmail;
                         _promotions = localPromo;
                       });
-                      if (context.mounted) {
-                        Navigator.pop(ctx);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Notification preferences saved'),
-                            behavior: SnackBarBehavior.floating,
-                            backgroundColor: Colors.green,
-                          ),
-                        );
-                      }
+                      Navigator.pop(ctx);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Notification preferences saved'),
+                          behavior: SnackBarBehavior.floating,
+                          backgroundColor: Colors.green,
+                        ),
+                      );
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Theme.of(ctx).colorScheme.primary,
