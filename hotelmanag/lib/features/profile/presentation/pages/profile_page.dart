@@ -178,6 +178,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 const SizedBox(height: 16),
                 _buildCustomerSupportCard(context),
                 const SizedBox(height: 16),
+
                 _buildSettingItem(
                   LucideIcons.clipboardList,
                   'In-Room Service Requests',

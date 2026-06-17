@@ -277,14 +277,6 @@ const Navbar = () => {
     const msg = n.message.toLowerCase();
     if (n.type === "booking" || msg.includes("booking") || msg.includes("confirm") || msg.includes("cancel")) {
       navigate("/history");
-    } else if (
-      msg.includes("owner") || 
-      msg.includes("application") || 
-      msg.includes("approved") || 
-      msg.includes("rejected") || 
-      msg.includes("partner")
-    ) {
-      navigate("/owner-portal");
     }
   };
 
@@ -413,10 +405,7 @@ const Navbar = () => {
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link to="/owner-portal" className="w-full cursor-pointer flex items-center text-primary hover:text-accent font-medium min-h-[44px]">
-                        <Building2 className="w-4 h-4 mr-2" /> List Your Property
-                      </Link>
-                    </DropdownMenuItem>
+
                     <DropdownMenuItem
                       onClick={async () => {
                         if (!hasActiveStay) return;
@@ -559,9 +548,6 @@ const Navbar = () => {
               <>
                 <button onClick={() => handleMenuNavigation("/profile")} className="px-4 py-3 min-h-[44px] flex items-center text-base font-semibold text-muted-foreground hover:bg-secondary hover:text-primary rounded-lg transition-base">
                   Profile
-                </button>
-                <button onClick={() => handleMenuNavigation("/owner-portal")} className="px-4 py-3 min-h-[44px] flex items-center text-base font-semibold text-muted-foreground hover:bg-secondary hover:text-primary rounded-lg transition-base">
-                  List Your Property
                 </button>
                 <button onClick={() => { setMobileMenuOpen(false); handleLogout(); }} className="px-4 py-3 min-h-[44px] flex items-center text-base font-semibold text-destructive hover:bg-destructive/10 rounded-lg transition-base mt-1">
                   Log out

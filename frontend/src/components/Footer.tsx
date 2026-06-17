@@ -126,7 +126,6 @@ const Footer = () => (
               { label: "About Us",            to: "/about" },
               { label: "Contact Us",          to: "/contact" },
               { label: "Support Centre",      to: "/support-centre" },
-              { label: "List Your Property",  to: "/owner-portal" },
             ].map(({ label, to }) => (
               <li key={to}>
                 <Link to={to} className="hover:text-primary-foreground transition-colors">{label}</Link>

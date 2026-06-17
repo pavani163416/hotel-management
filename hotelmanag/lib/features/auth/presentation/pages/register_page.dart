@@ -490,10 +490,10 @@ class _RegisterPageState extends State<RegisterPage> {
                     height: 80,
                     width: double.infinity,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF0EBE1), // Warm beige - matches CAPTCHA background
+                      color: const Color(0xFFEFECE6), // Match light beige background
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: const Color(0xFFD5D2C8),
+                        color: const Color(0xFFD5D2C8), // Match beige border
                       ),
                     ),
                     child: ClipRRect(
@@ -501,7 +501,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       child: Center(
                         child: _captchaChallenge.trim().startsWith('<svg')
                             ? Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
+                                padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
                                 child: SvgPicture.string(
                                   _captchaChallenge,
                                   fit: BoxFit.contain,
@@ -512,11 +512,21 @@ class _RegisterPageState extends State<RegisterPage> {
                                     ? 'Failed to load CAPTCHA'
                                     : _captchaChallenge,
                                 style: TextStyle(
-                                  fontFamily: 'monospace',
-                                  fontSize: 24,
-                                  letterSpacing: 8,
-                                  fontWeight: FontWeight.w800,
-                                  color: _captchaChallenge == 'ERROR' ? Colors.red : Colors.black87,
+                                  fontFamily: _captchaChallenge == 'ERROR'
+                                      ? 'sans-serif'
+                                      : 'monospace',
+                                  fontSize: _captchaChallenge == 'ERROR'
+                                      ? 14
+                                      : 24,
+                                  letterSpacing: _captchaChallenge == 'ERROR'
+                                      ? 0
+                                      : 8,
+                                  fontWeight: _captchaChallenge == 'ERROR'
+                                      ? FontWeight.w500
+                                      : FontWeight.w800,
+                                  color: _captchaChallenge == 'ERROR'
+                                      ? Colors.red
+                                      : Colors.black87,
                                 ),
                               ),
                       ),

@@ -22,6 +22,7 @@ import '../../features/profile/presentation/pages/favorites_page.dart';
 import '../../features/hotels/presentation/pages/hotel_map_search_page.dart';
 import '../../features/profile/presentation/pages/in_room_services_page.dart';
 
+
 import '../utils/injection_container.dart' as di;
 import '../providers/auth_provider.dart';
 
@@ -46,6 +47,7 @@ class AppRouter {
   static const String promoCodes = '/promo-codes';
   static const String mapSearch = '/map-search';
   static const String inRoomServices = '/in-room-services';
+
 
   static GoRouter createRouter(AuthProvider authProvider) {
     return GoRouter(
@@ -167,6 +169,7 @@ class AppRouter {
           path: inRoomServices,
           builder: (context, state) => const InRoomServicesPage(),
         ),
+
       ],
     );
   }

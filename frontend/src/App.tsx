@@ -41,7 +41,6 @@ import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import CookiePolicy from "./pages/CookiePolicy";
 import Contact from "./pages/Contact";
-import OwnerPortal from "./pages/OwnerPortal";
 import SupportCentre from "./pages/SupportCentre";
 import NetworkStatus from "./components/NetworkStatus";
 
@@ -74,7 +73,6 @@ const App = () => (
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/cookie-policy" element={<CookiePolicy />} />
             <Route path="/contact" element={<Contact />} />
-            <Route path="/owner-portal" element={<OwnerPortal />} />
             <Route path="/support-centre" element={<SupportCentre />} />
 
             {/* ── Protected routes (must be signed in) ─ */}

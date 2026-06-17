@@ -428,7 +428,7 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
   const [captchaChallenge, setCaptchaChallenge] = useState("");
   const [captchaAnswer, setCaptchaAnswer] = useState("");
   const [captchaLoading, setCaptchaLoading] = useState(false);
-  const showCaptcha = !window.location.pathname.includes('/owner-portal') && !window.location.pathname.includes('/support-centre');
+  const showCaptcha = !window.location.pathname.includes('/support-centre');
 
   useEffect(() => {
     let timer: any;

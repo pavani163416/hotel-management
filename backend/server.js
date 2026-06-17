@@ -38,7 +38,7 @@ import assistanceRoutes from "./routes/assistanceRoutes.js";
 import roomTypeRoutes from "./routes/roomTypeRoutes.js";
 import maintenanceRoutes from "./routes/maintenanceRoutes.js";
 import publicSupportRoutes from "./routes/publicSupportRoutes.js";
-import propertyOwnerRoutes from "./routes/propertyOwnerRoutes.js";
+
 import sitemapRoutes    from "./routes/sitemapRoutes.js";
 import newsletterRoutes from "./routes/newsletterRoutes.js";
 import chatRoutes       from "./routes/chatRoutes.js";
@@ -641,7 +641,7 @@ app.use("/api/notifications", notificationRoutes);
 app.use("/api/maintenance",   maintenanceRoutes);
 app.use("/api/admin",         adminRoutes);
 app.use("/api",               publicSupportRoutes);
-app.use("/api/owners",        propertyOwnerRoutes);
+
 app.use("/api/newsletter",    newsletterRoutes);
 app.use("/api/chat",          chatRoutes);
 
