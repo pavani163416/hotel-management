@@ -409,7 +409,7 @@ router.get("/captcha", async (req, res) => {
 // ── POST /api/auth/register ───────────────────────────────
 router.post("/register", authLimiter, validateRegisterPayload, async (req, res, next) => {
   try {
-    const { name, email, password, phone, city } = req.body;
+    const { name, email, password, phone, city, captchaId, captchaAnswer, captchaToken } = req.body;
 
     if (!name || !email || !password || !phone) {
       return res.status(400).json({

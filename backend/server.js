@@ -220,6 +220,7 @@ const allowedOrigins = [
   "https://hotel-management-frontend-puce.vercel.app",
   "https://hotel-management-admin-eta.vercel.app",
   "https://hotel-management-admin-ten.vercel.app",
+  "https://hotel-management-frontend-blue-nine.vercel.app",
   "https://athithigriha-frontend.vercel.app",
   "http://localhost:5173",
   "http://localhost:3000",
