@@ -56,7 +56,7 @@ type AuthModalProps = {
   defaultMode?: "signin" | "signup";
 };
 
-function AuthModalInner({ isOpen, onClose, defaultMode, mode, setMode, loading, setLoading, error, setError, email, setEmail, password, setPassword, name, setName, phone, setPhone, countryCode, setCountryCode, city, setCity, otpSent, setOtpSent, verificationCode, setVerificationCode, otpMessage, setOtpMessage, resendCooldown, setResendCooldown, showContactAdmin, setShowContactAdmin, resetForm, handleOpenChange, handleSignIn, handleSignUp, finishAuth, handleSendPhoneOTP, handleVerifyPhoneOTP, handleVerifyEmailOTP, handleResendEmailOTP, renderAuthOptions, handleForgotPassword, captchaId, captchaChallenge, captchaAnswer, setCaptchaAnswer, captchaLoading, fetchCaptcha }: any) {
+function AuthModalInner({ isOpen, onClose, defaultMode, mode, setMode, loading, setLoading, error, setError, email, setEmail, password, setPassword, name, setName, phone, setPhone, countryCode, setCountryCode, city, setCity, otpSent, setOtpSent, verificationCode, setVerificationCode, otpMessage, setOtpMessage, resendCooldown, setResendCooldown, showContactAdmin, setShowContactAdmin, resetForm, handleOpenChange, handleSignIn, handleSignUp, finishAuth, handleSendPhoneOTP, handleVerifyPhoneOTP, handleVerifyEmailOTP, handleResendEmailOTP, renderAuthOptions, handleForgotPassword, captchaId, captchaChallenge, captchaAnswer, setCaptchaAnswer, captchaLoading, fetchCaptcha, user }: any) {
   // We extract the Google Login hook into a child component wrapped in GoogleOAuthProvider
   const login = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
@@ -126,8 +126,10 @@ function AuthModalInner({ isOpen, onClose, defaultMode, mode, setMode, loading, 
         <form onSubmit={handleSignIn} className="space-y-4 mt-4">
           <div className="space-y-2">
             <label className="block text-sm font-medium">Email Address</label>
-            <input type="email" value={email} onChange={e => setEmail(e.target.value)}
-              className="w-full px-4 py-2 border border-border rounded-lg outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+            <input type="email" value={email} onChange={e => !user && setEmail(e.target.value)}
+              readOnly={!!user}
+              disabled={!!user}
+              className={`w-full px-4 py-2 border border-border rounded-lg outline-none focus:ring-2 focus:ring-primary focus:border-primary ${!!user ? 'bg-secondary/80 cursor-not-allowed opacity-70' : ''}`}
               placeholder="name@example.com" autoComplete="email" />
           </div>
           <div className="space-y-2">
@@ -404,7 +406,7 @@ function AuthModalInner({ isOpen, onClose, defaultMode, mode, setMode, loading, 
 }
 
 export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModalProps) {
-  const { setUser, refreshUser } = useBooking();
+  const { user, setUser, refreshUser } = useBooking();
   const [mode, setMode]         = useState<"signin" | "signup" | "phone" | "verify_email_otp" | "forgot_password">(defaultMode);
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState("");
@@ -448,6 +450,9 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
         setOtpMessage("Your account is pending verification. Please verify your email to continue.");
       } else {
         setMode(defaultMode);
+        if (user && defaultMode === "signin") {
+          setEmail(user.email);
+        }
       }
       setError("");
       if (showCaptcha) fetchCaptcha(); // load a fresh CAPTCHA every time the modal opens
@@ -683,6 +688,7 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <GoogleOAuthProvider clientId={clientId}>
         <AuthModalInner 
+          user={user}
           isOpen={isOpen} onClose={onClose} defaultMode={defaultMode} 
           mode={mode} setMode={setMode} loading={loading} setLoading={setLoading}
           error={error} setError={setError} email={email} setEmail={setEmail}

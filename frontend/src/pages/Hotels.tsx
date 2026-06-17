@@ -135,11 +135,11 @@ const Hotels = () => {
         </div>
       )}
 
-      <div className="bg-gradient-to-br from-secondary via-background to-secondary/50 min-h-dvh">
-        <div className="container py-8">
-          <div className="grid lg:grid-cols-[22%_1fr] xl:grid-cols-[24%_1fr] gap-8">
+      <div className="bg-gradient-to-br from-secondary via-background to-secondary/50 h-[calc(100dvh-4rem)] overflow-hidden flex flex-col">
+        <div className="container py-6 flex-1 overflow-hidden min-h-0">
+          <div className="grid lg:grid-cols-[22%_1fr] xl:grid-cols-[24%_1fr] gap-6 lg:gap-8 h-full">
           {/* SIDEBAR */}
-          <aside className={`lg:sticky lg:top-20 lg:self-start space-y-5 lg:max-h-[calc(100dvh-6rem)] lg:overflow-y-auto pr-1 lg:flex-shrink-0 ${
+          <aside className={`flex flex-col space-y-5 lg:h-full lg:overflow-hidden pr-1 ${
             mobileFiltersOpen ? "fixed inset-0 z-[100] bg-background p-4 overflow-y-auto" : "hidden lg:block"
           }`}>
             {mobileFiltersOpen && (
@@ -210,7 +210,7 @@ const Hotels = () => {
           </aside>
 
           {/* RIGHT */}
-          <section className="space-y-8 min-w-0">
+          <section className="space-y-6 min-w-0 h-full overflow-y-auto pr-2 pb-10">
             {deals.length > 0 && <TopDeals deals={deals} onView={(id) => nav(`/hotel/${id}`)} format={format} wishlist={wishlist} toggleWishlist={toggleWishlist} nav={nav} />}
 
             <div className="flex items-end justify-between gap-3 flex-wrap">

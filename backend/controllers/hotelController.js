@@ -259,50 +259,19 @@ export const addReviewToHotel = async (req, res, next) => {
 
     // Note: Captcha/security check removed for review submissions (UX improvement).
 
-    // Require a completed stay before accepting a review.
+    // Require authentication before accepting a review.
     const userId   = req.user?._id || req.user?.id;
     const guestId  = req.user?.guestId;
     const userEmail = req.user?.email?.toLowerCase().trim();
     const author = String(req.user?.name || req.user?.fullName || userEmail?.split("@")[0] || "Guest").trim();
-    const userEmailRegex = userEmail
-      ? new RegExp(`^${userEmail.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, "i")
-      : null;
 
     if (!userId && !guestId && !userEmail) {
       return res.status(401).json({ success: false, message: "Authentication required to submit a review." });
-    }
-    if (!guestId && !userEmail) {
-      return res.status(403).json({
-        success: false,
-        message: "We could not match your account to a completed booking for this hotel.",
-        code: "REVIEW_BOOKING_REQUIRED",
-      });
     }
 
     const hotel = await Hotel.findOne({ hotelId: req.params.id, isActive: true });
     if (!hotel) {
       return res.status(404).json({ success: false, message: "Hotel not found" });
-    }
-
-    const REVIEWED_STATUSES = ["Completed", "CheckedOut"];
-    const bookingFilter = {
-      $or: [
-        ...(guestId  ? [{ guest: guestId }]       : []),
-        ...(userEmailRegex ? [{ "guestSnapshot.email": userEmailRegex }] : []),
-      ].filter(Boolean),
-      $and: [
-        { $or: [{ hotelStringId: hotel.hotelId }, { hotelId: hotel._id }] }
-      ],
-      status: { $in: REVIEWED_STATUSES },
-    };
-
-    const hasBooking = await Booking.findOne(bookingFilter).select("_id").lean();
-    if (!hasBooking) {
-      return res.status(403).json({
-        success: false,
-        message: "You can only review hotels where you have completed a stay.",
-        code: "REVIEW_BOOKING_REQUIRED",
-      });
     }
 
     // One review per user per hotel, keyed by userId or email.

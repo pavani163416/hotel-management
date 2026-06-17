@@ -685,7 +685,20 @@ router.post("/login", loginLimiter, validateLoginPayload, async (req, res, next)
       });
     }
 
-    const normalEmail = email.toLowerCase().trim();
+    let normalEmail = email.toLowerCase().trim();
+
+    // If user is already authenticated via cookie, override the email to enforce consistency
+    const token = req.cookies?.luxe_customer_token || req.cookies?.luxe_token;
+    if (token) {
+      try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || "your-secret-key");
+        if (decoded && decoded.email) {
+          normalEmail = decoded.email.toLowerCase().trim();
+        }
+      } catch (err) {
+        // Token invalid or expired, continue with provided email
+      }
+    }
 
     const allowedDomains = ["gmail.com", "yahoo.com", "outlook.com", "hotmail.com", "icloud.com"];
     const emailDomain = normalEmail.split('@')[1];
