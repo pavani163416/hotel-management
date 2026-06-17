@@ -2,6 +2,7 @@
 /// This file is imported only when `dart.library.js_interop` is available.
 
 import 'dart:js_interop';
+import 'dart:js_interop_unsafe';
 
 @JS('Razorpay')
 extension type _RazorpayJS._(JSObject _) implements JSObject {
