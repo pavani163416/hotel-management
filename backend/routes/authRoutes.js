@@ -696,6 +696,8 @@ router.post("/login", loginLimiter, validateLoginPayload, async (req, res, next)
       });
     }
 
+    const { captchaId: loginCaptchaId, captchaAnswer: loginCaptchaAnswer, captchaToken: loginCaptchaToken } = req.body;
+    
     if (loginCaptchaToken || (loginCaptchaId && loginCaptchaAnswer)) {
       const loginCaptchaValid = await verifyCaptchaOrToken({
         captchaId: loginCaptchaId,
