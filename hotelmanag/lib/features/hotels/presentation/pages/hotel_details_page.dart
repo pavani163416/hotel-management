@@ -465,71 +465,26 @@ class _HotelDetailsPageState extends State<HotelDetailsPage>
   }
 
   Widget _buildHeader(BuildContext context, HotelEntity hotel, bool isDark) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Text(
                 hotel.name,
                 style: TextStyle(
-                  fontSize: 28,
+                  fontSize: 26,
                   fontWeight: FontWeight.bold,
                   color: Theme.of(context).colorScheme.onSurface,
                   fontFamily: 'Serif',
                   height: 1.2,
                 ),
               ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Icon(
-                    LucideIcons.mapPin,
-                    size: 16,
-                    color: AppTheme.accentColor,
-                  ),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      hotel.location,
-                      style: TextStyle(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.onSurface.withOpacity(0.6),
-                        fontSize: 14,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-        Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              decoration: BoxDecoration(
-                color: isDark
-                    ? const Color(0xFF253040)
-                    : const Color(0xFFE5E0D8).withOpacity(0.7),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                '${hotel.rating} (${hotel.reviews.length} reviews)',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.primary,
-                  fontSize: 12,
-                ),
-              ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 16),
             Consumer<FavoritesProvider>(
               builder: (context, provider, child) {
                 final isFav = provider.isFavorite(hotel);
@@ -553,6 +508,59 @@ class _HotelDetailsPageState extends State<HotelDetailsPage>
                   ),
                 );
               },
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Icon(
+              LucideIcons.mapPin,
+              size: 16,
+              color: AppTheme.accentColor,
+            ),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Text(
+                hotel.location,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                  fontSize: 14,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: isDark
+                    ? const Color(0xFF253040)
+                    : const Color(0xFFE5E0D8).withOpacity(0.7),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    LucideIcons.star,
+                    size: 12,
+                    color: Colors.amber[700],
+                    fill: 1.0,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    '${hotel.rating} (${hotel.reviews.length} reviews)',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.primary,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -1878,10 +1886,9 @@ class _HotelDetailsPageState extends State<HotelDetailsPage>
                 child: Padding(
                   padding: const EdgeInsets.only(right: 8.0),
                   child: Icon(
-                    LucideIcons.star,
-                    color: isFilled ? AppTheme.accentColor : Colors.grey[400],
-                    size: 24,
-                    fill: isFilled ? 1.0 : 0.0,
+                    isFilled ? Icons.star : Icons.star_border,
+                    color: isFilled ? Colors.amber[600] : Colors.grey[400],
+                    size: 28,
                   ),
                 ),
               );
