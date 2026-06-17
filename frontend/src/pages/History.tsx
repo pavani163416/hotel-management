@@ -264,12 +264,6 @@ const History = () => {
                         View Details
                       </button>
                       {b.status === "Confirmed" && (
-                        <button onClick={() => nav(`/trip-planner/${b.id}`)}
-                          className="border border-accent text-accent hover:bg-accent/10 px-4 py-2 rounded-lg text-sm font-semibold transition-base">
-                          Plan Trip
-                        </button>
-                      )}
-                      {b.status === "Confirmed" && (
                         <button onClick={() => { setCancelTarget(b); setCancelReason(""); setCancelOther(""); }}
                           className="text-destructive text-xs font-semibold hover:underline mt-1">
                           Cancel Booking

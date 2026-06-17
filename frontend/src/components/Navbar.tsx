@@ -418,16 +418,6 @@ const Navbar = () => {
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link to="/my-waitlists" className="flex items-center gap-3 px-4 py-2.5 text-sm text-text-primary hover:bg-surface-2 transition-colors">
-                        <Clock className="w-4 h-4 text-text-secondary" /> My Waitlists
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link to="/lost-found" className="flex items-center gap-3 px-4 py-2.5 text-sm text-text-primary hover:bg-surface-2 transition-colors">
-                        <PackageSearch className="w-4 h-4 text-text-secondary" /> Lost & Found
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
                       <Link to="/owner-portal" className="w-full cursor-pointer flex items-center text-primary hover:text-accent font-medium min-h-[44px]">
                         <Building2 className="w-4 h-4 mr-2" /> List Your Property
                       </Link>

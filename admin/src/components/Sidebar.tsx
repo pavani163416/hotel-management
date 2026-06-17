@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, Hotel, BedDouble, CalendarCheck,
-  Users, BarChart3, Building2, DollarSign, CreditCard, Lightbulb, ArrowLeft, UserCog, Tag, Flame, Map, BadgeDollarSign, LifeBuoy, Bell, KeyRound, Clock3, PackageSearch
+  Users, BarChart3, Building2, DollarSign, CreditCard, Lightbulb, ArrowLeft, UserCog, Tag, Flame, Map, BadgeDollarSign, LifeBuoy, Bell, KeyRound
 } from "lucide-react";
 import { useAdmin } from "@/context/AdminContext";
 
@@ -21,8 +21,6 @@ const links = [
   { to: "/owners",        icon: KeyRound,        label: "Property Owners" },
   { to: "/coupons",       icon: Tag,             label: "Coupons & Offers" },
   { to: "/top-deals",    icon: Flame,           label: "Top Deals" },
-  { to: "/waitlist",      icon: Clock3,          label: "Waitlists" },
-  { to: "/lost-found",    icon: PackageSearch,   label: "Lost & Found" },
   { to: "/notifications", icon: Bell,            label: "Notifications" },
 ];
 

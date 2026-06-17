@@ -22,7 +22,6 @@ import {
   ACTIVE_BOOKING_STATUSES,
 } from "../services/roomAllocationService.js";
 import { acquireLock, releaseLock } from "../cache/redisCache.js";
-import { processWaitlistForHotelAndDates } from "./waitlistController.js";
 import { enqueueEmailJob } from "../queues/emailQueue.js";
 
 const nonCriticalCatch = (context, metadata) => (err) => {
@@ -800,12 +799,6 @@ export const cancelBooking = async (req, res, next) => {
         reason: booking.cancellationReason,
       }
     }).catch(() => {});
-
-    // TRIGGER WAITLIST
-    if (booking.hotelId && booking.checkIn && booking.checkOut) {
-      processWaitlistForHotelAndDates(booking.hotelId, booking.checkIn, booking.checkOut)
-        .catch(err => logger.warn("Failed to process waitlist after cancellation", { error: err.message }));
-    }
 
     // ── Update HotelSnapshot atomically (outside transaction, non-blocking) ──
     if (booking.hotelStringId) {
