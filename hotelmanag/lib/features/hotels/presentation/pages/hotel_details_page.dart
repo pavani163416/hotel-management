@@ -12,9 +12,10 @@ import 'package:shimmer/shimmer.dart';
 import '../../../../core/providers/booking_provider.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/providers/favorites_provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import '../../../../core/utils/injection_container.dart';
+import '../../../waitlist/domain/repositories/waitlist_repository.dart';
 
 class _RoomRow {
   final RoomEntity room;
@@ -135,6 +136,37 @@ class _HotelDetailsPageState extends State<HotelDetailsPage>
             ],
           ),
         ),
+      );
+    }
+
+    Future<void> joinWaitlist(HotelEntity h) async {
+      final ap = context.read<AuthProvider>();
+      if (!ap.isAuthenticated) {
+        context.push('/login');
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Joining waitlist...')),
+      );
+      final repo = sl<WaitlistRepository>();
+      final result = await repo.joinWaitlist({
+        'hotelId': h.id,
+        'checkIn': DateTime.now().add(const Duration(days: 1)).toIso8601String(),
+        'checkOut': DateTime.now().add(const Duration(days: 2)).toIso8601String(),
+      });
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      result.fold(
+        (failure) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(failure.message), backgroundColor: Colors.red),
+          );
+        },
+        (success) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Successfully joined waitlist!'), backgroundColor: Colors.green),
+          );
+        }
       );
     }
 
@@ -997,31 +1029,17 @@ class _HotelDetailsPageState extends State<HotelDetailsPage>
                         Expanded(
                           flex: 2,
                           child: row.isSoldOut
-                              ? Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 14,
-                                    vertical: 10,
+                              ? ElevatedButton(
+                                  onPressed: () => joinWaitlist(hotel),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.orange.withOpacity(0.1),
+                                    foregroundColor: Colors.orange,
+                                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                                    elevation: 0,
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                    side: const BorderSide(color: Colors.orange),
                                   ),
-                                  decoration: BoxDecoration(
-                                    color: isDark
-                                        ? const Color(0xFF2A3545)
-                                        : const Color(0xFFEEEEEE),
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(
-                                      color: isDark
-                                          ? Colors.white10
-                                          : Colors.grey.shade300,
-                                    ),
-                                  ),
-                                  child: Text(
-                                    'Sold Out',
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.grey[500],
-                                    ),
-                                  ),
+                                  child: const Text('Join Waitlist', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                                 )
                               : ElevatedButton(
                                   onPressed: () {
@@ -1270,30 +1288,17 @@ class _HotelDetailsPageState extends State<HotelDetailsPage>
                           ],
                         ),
                         row.isSoldOut
-                            ? Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 20,
-                                  vertical: 12,
+                            ? ElevatedButton(
+                                onPressed: () => joinWaitlist(hotel),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.orange.withOpacity(0.1),
+                                  foregroundColor: Colors.orange,
+                                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                                  elevation: 0,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                  side: const BorderSide(color: Colors.orange),
                                 ),
-                                decoration: BoxDecoration(
-                                  color: isDark
-                                      ? const Color(0xFF2A3545)
-                                      : const Color(0xFFEEEEEE),
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(
-                                    color: isDark
-                                        ? Colors.white10
-                                        : Colors.grey.shade300,
-                                  ),
-                                ),
-                                child: Text(
-                                  'Sold Out',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.grey[500],
-                                  ),
-                                ),
+                                child: const Text('Join Waitlist', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                               )
                             : ElevatedButton(
                                 onPressed: () {

@@ -1,53 +1,36 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:provider/provider.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/providers/auth_provider.dart';
+import '../../../../core/utils/injection_container.dart';
+import '../../../lost_found/presentation/bloc/lost_found_bloc.dart';
+import '../../../lost_found/domain/entities/lost_found_entity.dart';
 
-class LostFoundItem {
-  final String title;
-  final String description;
-  final String location;
-  final String date;
-  final String status;
-
-  const LostFoundItem({
-    required this.title,
-    required this.description,
-    required this.location,
-    required this.date,
-    required this.status,
-  });
-
-  Map<String, dynamic> toJson() => {
-    'title': title,
-    'description': description,
-    'location': location,
-    'date': date,
-    'status': status,
-  };
-
-  factory LostFoundItem.fromJson(Map<String, dynamic> json) => LostFoundItem(
-    title: json['title'] ?? '',
-    description: json['description'] ?? '',
-    location: json['location'] ?? '',
-    date: json['date'] ?? '',
-    status: json['status'] ?? '',
-  );
-}
-
-class LostAndFoundPage extends StatefulWidget {
+class LostAndFoundPage extends StatelessWidget {
   const LostAndFoundPage({super.key});
 
   @override
-  State<LostAndFoundPage> createState() => _LostAndFoundPageState();
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (_) => sl<LostFoundBloc>()..add(FetchLostFoundEvent()),
+      child: const _LostAndFoundView(),
+    );
+  }
 }
 
-class _LostAndFoundPageState extends State<LostAndFoundPage>
+class _LostAndFoundView extends StatefulWidget {
+  const _LostAndFoundView();
+
+  @override
+  State<_LostAndFoundView> createState() => _LostAndFoundViewState();
+}
+
+class _LostAndFoundViewState extends State<_LostAndFoundView>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final _formKey = GlobalKey<FormState>();
@@ -72,8 +55,6 @@ class _LostAndFoundPageState extends State<LostAndFoundPage>
     'Other',
   ];
 
-  List<LostFoundItem> _catalog = [];
-
   @override
   void initState() {
     super.initState();
@@ -91,58 +72,6 @@ class _LostAndFoundPageState extends State<LostAndFoundPage>
         _phoneController.text = user.phone ?? '';
       }
     });
-
-    _loadCatalog();
-  }
-
-  Future<void> _loadCatalog() async {
-    final prefs = await SharedPreferences.getInstance();
-    final data = prefs.getString('lost_found_catalog');
-    if (data != null) {
-      final decoded = json.decode(data) as List;
-      setState(() {
-        _catalog = decoded.map((item) => LostFoundItem.fromJson(item)).toList();
-      });
-    } else {
-      final initial = [
-        const LostFoundItem(
-          title: 'Black Leather Wallet',
-          description: 'Contains ID card under name J. Doe, plus credit cards',
-          location: 'Poolside Deck Chair',
-          date: 'June 14, 2026',
-          status: 'Found by Staff',
-        ),
-        const LostFoundItem(
-          title: 'Apple iPhone Charger',
-          description: 'White USB-C charging adapter and cable',
-          location: 'Lobby seating area near piano',
-          date: 'June 13, 2026',
-          status: 'Returned to Guest',
-        ),
-        const LostFoundItem(
-          title: 'Gold Wedding Ring',
-          description: 'Engraved with initials A&B, polished finish',
-          location: 'Gym locker rooms',
-          date: 'June 15, 2026',
-          status: 'Lost / Pending Match',
-        ),
-      ];
-      setState(() {
-        _catalog = initial;
-      });
-      await prefs.setString(
-        'lost_found_catalog',
-        json.encode(initial.map((i) => i.toJson()).toList()),
-      );
-    }
-  }
-
-  Future<void> _saveCatalog() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(
-      'lost_found_catalog',
-      json.encode(_catalog.map((i) => i.toJson()).toList()),
-    );
   }
 
   @override
@@ -170,37 +99,21 @@ class _LostAndFoundPageState extends State<LostAndFoundPage>
     }
   }
 
-  void _handleSubmit() async {
+  void _handleSubmit() {
     if (!_formKey.currentState!.validate()) return;
 
-    final newItem = LostFoundItem(
-      title: _itemNameController.text.trim(),
-      description: _descController.text.trim(),
-      location: _locationController.text.trim(),
-      date: DateFormat('MMMM dd, yyyy').format(_selectedDate),
-      status: _isLostType ? 'Lost / Pending Match' : 'Found / Pending Match',
-    );
+    final data = {
+      'type': _isLostType ? 'Lost' : 'Found',
+      'itemName': _itemNameController.text.trim(),
+      'category': _selectedCategory,
+      'description': _descController.text.trim(),
+      'location': _locationController.text.trim(),
+      'dateLostFound': _selectedDate.toIso8601String(),
+      'contactName': _nameController.text.trim(),
+      'contactPhone': _phoneController.text.trim(),
+    };
 
-    setState(() {
-      _catalog.insert(0, newItem);
-      _submitted = true;
-    });
-
-    await _saveCatalog();
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'Report registered. Our concierge will review this immediately!',
-        ),
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: Colors.green,
-      ),
-    );
-
-    Future.delayed(const Duration(seconds: 1), () {
-      if (mounted) context.pop();
-    });
+    context.read<LostFoundBloc>().add(SubmitLostFoundEvent(data));
   }
 
   @override
@@ -235,19 +148,40 @@ class _LostAndFoundPageState extends State<LostAndFoundPage>
           ],
         ),
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            // Form Section
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF253040) : Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: isDark ? Colors.white10 : AppTheme.mutedColor,
+      body: BlocConsumer<LostFoundBloc, LostFoundState>(
+        listener: (context, state) {
+          if (state is LostFoundError) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(state.message), backgroundColor: Colors.red),
+            );
+          } else if (state is LostFoundSubmitSuccess) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Report registered. Our concierge will review this immediately!'),
+                behavior: SnackBarBehavior.floating,
+                backgroundColor: Colors.green,
+              ),
+            );
+            context.read<LostFoundBloc>().add(FetchLostFoundEvent());
+            _itemNameController.clear();
+            _descController.clear();
+            _locationController.clear();
+          }
+        },
+        builder: (context, state) {
+          return SingleChildScrollView(
+            child: Column(
+              children: [
+                // Form Section
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF253040) : Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: isDark ? Colors.white10 : AppTheme.mutedColor,
                   ),
                 ),
                 child: Form(
@@ -428,12 +362,12 @@ class _LostAndFoundPageState extends State<LostAndFoundPage>
                             ),
                             elevation: 0,
                           ),
-                          child: Text(
-                            _isLostType
-                                ? 'Submit Lost Report'
-                                : 'Submit Found Report',
-                            style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
+                          child: state is LostFoundLoading
+                              ? const CircularProgressIndicator(color: Colors.white)
+                              : Text(
+                                  _isLostType ? 'Submit Lost Report' : 'Submit Found Report',
+                                  style: const TextStyle(fontWeight: FontWeight.bold),
+                                ),
                         ),
                       ),
                     ],
@@ -467,8 +401,14 @@ class _LostAndFoundPageState extends State<LostAndFoundPage>
                     ],
                   ),
                   const SizedBox(height: 12),
-                  ..._catalog
-                      .map(
+                  if (state is LostFoundLoading && state is! LostFoundLoaded)
+                    const Center(child: CircularProgressIndicator())
+                  else if (state is LostFoundLoaded || state is LostFoundSubmitSuccess)
+                    ...() {
+                      final catalog = state is LostFoundLoaded ? state.reports : (state as LostFoundSubmitSuccess).report.id.isNotEmpty ? [ (state as LostFoundSubmitSuccess).report ] : [];
+                      final items = state is LostFoundLoaded ? state.reports : [];
+                      if (items.isEmpty) return [const Text('No reports found.')];
+                      return items.map(
                         (c) => Container(
                           margin: const EdgeInsets.only(bottom: 12),
                           padding: const EdgeInsets.all(16),
@@ -491,7 +431,7 @@ class _LostAndFoundPageState extends State<LostAndFoundPage>
                                     MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
-                                    c.title,
+                                    c.itemName,
                                     style: const TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 13.5,
@@ -503,7 +443,7 @@ class _LostAndFoundPageState extends State<LostAndFoundPage>
                                       vertical: 4,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: c.status.contains('Staff')
+                                      color: c.status == 'Resolved' || c.status == 'Found'
                                           ? Colors.green.withOpacity(0.1)
                                           : Colors.amber.withOpacity(0.1),
                                       borderRadius: BorderRadius.circular(6),
@@ -513,7 +453,7 @@ class _LostAndFoundPageState extends State<LostAndFoundPage>
                                       style: TextStyle(
                                         fontSize: 9.5,
                                         fontWeight: FontWeight.bold,
-                                        color: c.status.contains('Staff')
+                                        color: c.status == 'Resolved' || c.status == 'Found'
                                             ? Colors.green
                                             : Colors.orange,
                                       ),
@@ -553,7 +493,7 @@ class _LostAndFoundPageState extends State<LostAndFoundPage>
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
-                                    c.date,
+                                    DateFormat('MMM d, yyyy').format(c.dateLostFound),
                                     style: TextStyle(
                                       color: Colors.grey[500],
                                       fontSize: 10.5,
@@ -572,7 +512,8 @@ class _LostAndFoundPageState extends State<LostAndFoundPage>
             const SizedBox(height: 60),
           ],
         ),
-      ),
+      );
+      }),
     );
   }
 }

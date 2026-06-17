@@ -333,6 +333,22 @@ class BookingListItem extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 8),
+                  if (booking.status == 'Confirmed')
+                    ElevatedButton(
+                      onPressed: () => context.push('/day-planner/${booking.id}'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.accentColor,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        elevation: 0,
+                      ),
+                      child: const Text(
+                        'Plan Trip',
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  if (booking.status == 'Confirmed') const SizedBox(height: 8),
                   if (booking.status != 'Cancelled')
                     GestureDetector(
                       onTap: () => _showCancelDialog(context, booking),
@@ -491,6 +507,24 @@ class BookingListItem extends StatelessWidget {
                           ),
                         ),
                       ),
+
+                      if (booking.status == 'Confirmed') ...[
+                        const SizedBox(width: 8),
+                        ElevatedButton(
+                          onPressed: () => context.push('/day-planner/${booking.id}'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.accentColor,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            elevation: 0,
+                          ),
+                          child: const Text(
+                            'Plan Trip',
+                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ],

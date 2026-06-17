@@ -16,6 +16,10 @@ import HotelDetail from "@/pages/HotelDetail";
 import Rooms      from "@/pages/Rooms";
 import HotelMap   from "@/pages/HotelMap";
 import Bookings   from "@/pages/Bookings";
+import UserStats from "./pages/UserStats";
+import AuditLogs from "./pages/AuditLogs";
+import WaitlistDashboard from "./pages/WaitlistDashboard";
+import LostFoundDashboard from "./pages/LostFoundDashboard";
 import Payments   from "@/pages/Payments";
 import Guests     from "@/pages/Guests";
 import Analytics  from "@/pages/Analytics";
@@ -82,6 +86,9 @@ export default function App() {
             }
           >
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/inbox" element={<ProtectedRoute><Inbox /></ProtectedRoute>} />
+            <Route path="/waitlist" element={<ProtectedRoute><WaitlistDashboard /></ProtectedRoute>} />
+            <Route path="/lost-found" element={<ProtectedRoute><LostFoundDashboard /></ProtectedRoute>} />
             <Route path="/hotels" element={<Hotels />} />
             <Route path="/hotel/:id" element={<HotelDetail />} />
             <Route path="/rooms" element={<Rooms />} />

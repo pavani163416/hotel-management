@@ -179,6 +179,12 @@ class _ProfilePageState extends State<ProfilePage> {
                 _buildCustomerSupportCard(context),
                 const SizedBox(height: 16),
                 _buildSettingItem(
+                  LucideIcons.barChart2,
+                  'Owner Dashboard',
+                  'View revenue and booking analytics',
+                  onTap: () => context.push('/owner-dashboard'),
+                ),
+                _buildSettingItem(
                   LucideIcons.clipboardList,
                   'In-Room Service Requests',
                   'Request room service, housekeeping, or repairs',
