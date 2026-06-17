@@ -281,24 +281,28 @@ const Navbar = () => {
     <header className="sticky top-0 z-40 bg-background/85 backdrop-blur-md border-b border-border">
       <div className="container flex items-center justify-between h-16">
         
-        {/* Mobile Left: Hamburger */}
-        <div className="flex items-center md:hidden w-1/4">
+        {/* Logo (Acts as menu toggle on mobile, normal link on desktop) */}
+        <div className="flex items-center">
+          {/* Mobile Logo Button (opens menu drawer) */}
           <button 
             onClick={() => setMobileMenuOpen(true)}
-            className="min-w-[44px] min-h-[44px] flex items-center justify-start -ml-2 text-primary hover:text-accent transition-base"
+            className="flex items-center gap-2 font-display font-bold text-lg text-primary md:hidden min-h-[44px] outline-none"
             aria-label="Open menu"
           >
-            <Menu className="w-6 h-6" />
+            <span className="grid place-items-center w-8 h-8 rounded-lg bg-primary text-primary-foreground shrink-0">
+              <Hotel className="w-4 h-4" />
+            </span>
+            <span>AthithiGriha</span>
           </button>
-        </div>
 
-        {/* Logo */}
-        <Link to="/" className="flex items-center justify-center gap-2 font-display font-bold text-lg text-primary w-2/4 md:w-auto md:justify-start">
-          <span className="grid place-items-center w-8 h-8 rounded-lg bg-primary text-primary-foreground shrink-0">
-            <Hotel className="w-4 h-4" />
-          </span>
-          <span className="hidden sm:inline-block">AthithiGriha</span>
-        </Link>
+          {/* Desktop Logo Link */}
+          <Link to="/" className="hidden md:flex items-center justify-start gap-2 font-display font-bold text-lg text-primary md:w-auto">
+            <span className="grid place-items-center w-8 h-8 rounded-lg bg-primary text-primary-foreground shrink-0">
+              <Hotel className="w-4 h-4" />
+            </span>
+            <span>AthithiGriha</span>
+          </Link>
+        </div>
 
         {/* Desktop Links */}
         <nav className="hidden md:flex items-center gap-1">

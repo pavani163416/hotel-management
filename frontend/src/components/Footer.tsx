@@ -86,9 +86,9 @@ const NewsletterForm = () => {
 
 const Footer = () => (
   <footer className="bg-primary text-primary-foreground mt-20">
-    <div className="container py-14 grid md:grid-cols-4 gap-10 text-center md:text-left">
+    <div className="container py-14 grid grid-cols-1 md:grid-cols-4 gap-10 text-center md:text-left">
       {/* Brand */}
-      <div className="md:col-span-1 flex flex-col items-center md:items-start">
+      <div className="flex flex-col items-center md:items-start">
         <h3 className="text-primary-foreground font-display text-2xl font-bold mb-3">AthithiGriha</h3>
         <p className="text-primary-foreground/70 text-sm leading-relaxed max-w-xs mb-5">
           Elevating hospitality through seamless digital experiences and world-class luxury stays.
@@ -100,41 +100,44 @@ const Footer = () => (
         </div>
       </div>
 
-      {/* Company */}
-      <div>
-        <h4 className="text-primary-foreground/90 text-sm font-semibold uppercase tracking-wider mb-4">Company</h4>
-        <ul className="space-y-2.5 text-primary-foreground/70 text-sm">
-          {[
-            { label: "About Us",            to: "/about" },
-            { label: "Contact Us",          to: "/contact" },
-            { label: "Support Centre",      to: "/support-centre" },
-            { label: "List Your Property",  to: "/owner-portal" },
-          ].map(({ label, to }) => (
-            <li key={to}>
-              <Link to={to} className="hover:text-primary-foreground transition-colors">{label}</Link>
-            </li>
-          ))}
-        </ul>
-      </div>
+      {/* Links Subgrid: Legal (left) and Company (right) on mobile */}
+      <div className="grid grid-cols-2 gap-8 col-span-1 md:col-span-2 text-left">
+        {/* Legal */}
+        <div>
+          <h4 className="text-primary-foreground/90 text-sm font-semibold uppercase tracking-wider mb-4">Legal</h4>
+          <ul className="space-y-2.5 text-primary-foreground/70 text-sm">
+            {[
+              { label: "Terms of Service", to: "/terms" },
+              { label: "Privacy Policy",   to: "/privacy" },
+              { label: "Cookie Policy",    to: "/cookie-policy" },
+            ].map(({ label, to }) => (
+              <li key={to}>
+                <Link to={to} className="hover:text-primary-foreground transition-colors">{label}</Link>
+              </li>
+            ))}
+          </ul>
+        </div>
 
-      {/* Legal */}
-      <div>
-        <h4 className="text-primary-foreground/90 text-sm font-semibold uppercase tracking-wider mb-4">Legal</h4>
-        <ul className="space-y-2.5 text-primary-foreground/70 text-sm">
-          {[
-            { label: "Terms of Service", to: "/terms" },
-            { label: "Privacy Policy",   to: "/privacy" },
-            { label: "Cookie Policy",    to: "/cookie-policy" },
-          ].map(({ label, to }) => (
-            <li key={to}>
-              <Link to={to} className="hover:text-primary-foreground transition-colors">{label}</Link>
-            </li>
-          ))}
-        </ul>
+        {/* Company */}
+        <div>
+          <h4 className="text-primary-foreground/90 text-sm font-semibold uppercase tracking-wider mb-4">Company</h4>
+          <ul className="space-y-2.5 text-primary-foreground/70 text-sm">
+            {[
+              { label: "About Us",            to: "/about" },
+              { label: "Contact Us",          to: "/contact" },
+              { label: "Support Centre",      to: "/support-centre" },
+              { label: "List Your Property",  to: "/owner-portal" },
+            ].map(({ label, to }) => (
+              <li key={to}>
+                <Link to={to} className="hover:text-primary-foreground transition-colors">{label}</Link>
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
 
       {/* Newsletter */}
-      <div>
+      <div className="flex flex-col items-center md:items-start">
         <h4 className="text-primary-foreground/90 text-sm font-semibold uppercase tracking-wider mb-4">Newsletter</h4>
         <p className="text-primary-foreground/70 text-sm mb-4">Get exclusive deals and travel inspiration.</p>
         <NewsletterForm />
