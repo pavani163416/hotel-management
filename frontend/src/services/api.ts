@@ -7,13 +7,14 @@
 import axios from "axios";
 
 export const getApiUrl = () => {
-  let url = import.meta.env.VITE_API_URL;
+  let url = import.meta.env.VITE_API_URL || "https://hotel-mgmt-backend-production.up.railway.app/api";
   if (!url) {
     const isLocal = typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
     if (isLocal) {
       return "http://localhost:5000/api";
     }
-    throw new Error("FATAL: VITE_API_URL environment variable is missing. Hardcoded production fallbacks are disabled.");
+    // Fallback to production URL
+    return "https://hotel-mgmt-backend-production.up.railway.app/api";
   }
   url = url.trim().replace(/\/+$/, "");
   if (!url.toLowerCase().endsWith("/api")) {
