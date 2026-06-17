@@ -94,7 +94,7 @@ const OwnerPortal = () => {
   const [hotelAddress, setHotelAddress] = useState("");
   const [gstNumber, setGstNumber] = useState("");
   const [businessRegistrationNumber, setBusinessRegistrationNumber] = useState("");
-  const [docType, setDocType] = useState("aadhar");
+  const [docType, setDocType] = useState("Aadhar Card");
   const [files, setFiles] = useState<FileList | null>(null);
   const [fileError, setFileError] = useState("");
 
@@ -609,11 +609,11 @@ const OwnerPortal = () => {
                 <label className="block text-sm font-medium mb-1.5">Document Type</label>
                 <select value={docType} onChange={(e) => setDocType(e.target.value)}
                   className="w-full border border-border rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary bg-background">
-                  <option value="aadhar">Aadhar Card</option>
-                  <option value="pan">PAN Card</option>
-                  <option value="passport">Passport</option>
-                  <option value="business_reg">Business Registration Certificate</option>
-                  <option value="gst">GST Certificate</option>
+                  <option value="Aadhar Card">Aadhar Card</option>
+                  <option value="PAN Card">PAN Card</option>
+                  <option value="Passport">Passport</option>
+                  <option value="Business Registration Certificate / Trade License">Business Registration Certificate</option>
+                  <option value="GST Certificate">GST Certificate</option>
                 </select>
               </div>
 

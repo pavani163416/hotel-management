@@ -123,6 +123,7 @@ router.post("/apply", protect, preventExistingOwners, checkApplicationState, upl
       "PAN Card",
       "Passport",
       "Business Registration Certificate / Trade License",
+      "GST Certificate",
       "document"
     ];
     if (docType && !ALLOWED_DOC_TYPES.includes(docType)) {
