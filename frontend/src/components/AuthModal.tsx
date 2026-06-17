@@ -406,7 +406,7 @@ function AuthModalInner({ isOpen, onClose, defaultMode, mode, setMode, loading, 
 }
 
 export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModalProps) {
-  const { setUser, refreshUser } = useBooking();
+  const { user, setUser, refreshUser } = useBooking();
   const [mode, setMode]         = useState<"signin" | "signup" | "phone" | "verify_email_otp" | "forgot_password">(defaultMode);
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState("");
