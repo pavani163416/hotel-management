@@ -422,6 +422,7 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
   const [captchaChallenge, setCaptchaChallenge] = useState("");
   const [captchaAnswer, setCaptchaAnswer] = useState("");
   const [captchaLoading, setCaptchaLoading] = useState(false);
+  const showCaptcha = !window.location.pathname.includes('/owner-portal') && !window.location.pathname.includes('/support-centre');
 
   useEffect(() => {
     let timer: any;
@@ -447,9 +448,9 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
         setMode(defaultMode);
       }
       setError("");
-      fetchCaptcha(); // load a fresh CAPTCHA every time the modal opens
+      if (showCaptcha) fetchCaptcha(); // load a fresh CAPTCHA every time the modal opens
     }
-  }, [isOpen, defaultMode]);
+  }, [isOpen, defaultMode, showCaptcha]);
 
 
   const fetchCaptcha = async () => {
@@ -479,7 +480,7 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) { setError("Please enter email and password."); return; }
-    if (captchaChallenge && !captchaAnswer.trim()) { setError("Please answer the security check."); return; }
+    if (showCaptcha && captchaChallenge && !captchaAnswer.trim()) { setError("Please answer the security check."); return; }
     setError(""); setLoading(true);
     try {
       const payload: any = { email: email.trim().toLowerCase(), password };
@@ -504,7 +505,7 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
         setResendCooldown(60);
       } else {
         setError(respData?.message || err.message || "Sign in failed. Please try again.");
-        fetchCaptcha(); // refresh challenge after failed attempt
+        if (showCaptcha) fetchCaptcha(); // refresh challenge after failed attempt
       }
     } finally {
       setLoading(false);
@@ -534,7 +535,7 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
     if (!/[^A-Za-z0-9]/.test(password)) { setError("Password must contain at least one special character."); return; }
     const phoneErr = validatePhone(phone, countryCode);
     if (phoneErr) { setError(phoneErr); return; }
-    if (captchaChallenge && !captchaAnswer.trim()) { setError("Please answer the security check."); return; }
+    if (showCaptcha && captchaChallenge && !captchaAnswer.trim()) { setError("Please answer the security check."); return; }
     setError(""); setLoading(true);
     try {
       const fullPhone = `${countryCode}${phone.trim()}`;
@@ -558,7 +559,7 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
       }
     } catch (err: any) {
       setError(err.response?.data?.message || err.message || "Registration failed. Please try again.");
-      fetchCaptcha(); // refresh challenge after failed attempt
+      if (showCaptcha) fetchCaptcha(); // refresh challenge after failed attempt
     } finally {
       setLoading(false);
     }
@@ -692,7 +693,7 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
           finishAuth={finishAuth} handleSendPhoneOTP={handleSendPhoneOTP} handleVerifyPhoneOTP={handleVerifyPhoneOTP}
           handleVerifyEmailOTP={handleVerifyEmailOTP} handleResendEmailOTP={handleResendEmailOTP}
           handleForgotPassword={handleForgotPassword}
-          captchaId={captchaId} captchaChallenge={captchaChallenge} captchaAnswer={captchaAnswer}
+          captchaId={captchaId} captchaChallenge={showCaptcha ? captchaChallenge : ""} captchaAnswer={captchaAnswer}
           setCaptchaAnswer={setCaptchaAnswer} captchaLoading={captchaLoading} fetchCaptcha={fetchCaptcha}
         />
       </GoogleOAuthProvider>

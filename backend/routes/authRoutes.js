@@ -453,37 +453,20 @@ router.post("/register", authLimiter, validateRegisterPayload, async (req, res, 
       });
     }
 
-    // ── CAPTCHA verification (mandatory for registration) ─────
-    const { captchaId, captchaAnswer, captchaToken } = req.body;
-    
-    // CAPTCHA is now mandatory - must be provided and valid
-    if (!captchaToken && (!captchaId || !captchaAnswer)) {
-      logger.warn("Registration attempt with missing CAPTCHA", {
-        email: normalEmail,
-        ip: req.ip,
-        hasCaptchaToken: !!captchaToken,
-        hasCaptchaId: !!captchaId,
-        hasCaptchaAnswer: !!captchaAnswer,
-      });
-      return res.status(400).json({
-        success: false,
-        message: "Security check is required. Please complete the CAPTCHA challenge.",
-        code: "CAPTCHA_REQUIRED",
-      });
-    }
-    
-    const captchaValid = await verifyCaptchaOrToken(req.body);
-    if (!captchaValid) {
-      logger.warn("Registration attempt with invalid CAPTCHA", {
-        email: normalEmail,
-        captchaId,
-        ip: req.ip,
-      });
-      return res.status(400).json({
-        success: false,
-        message: "Incorrect security check answer. Please try again.",
-        code: "CAPTCHA_INVALID",
-      });
+    if (captchaToken || (captchaId && captchaAnswer)) {
+      const captchaValid = await verifyCaptchaOrToken(req.body);
+      if (!captchaValid) {
+        logger.warn("Registration attempt with invalid CAPTCHA", {
+          email: normalEmail,
+          captchaId,
+          ip: req.ip,
+        });
+        return res.status(400).json({
+          success: false,
+          message: "Incorrect security check answer. Please try again.",
+          code: "CAPTCHA_INVALID",
+        });
+      }
     }
 
     // Check if user account already exists
@@ -713,42 +696,24 @@ router.post("/login", loginLimiter, validateLoginPayload, async (req, res, next)
       });
     }
 
-    // ── CAPTCHA verification (mandatory for login) ─────
-    const { captchaId: loginCaptchaId, captchaAnswer: loginCaptchaAnswer, captchaToken: loginCaptchaToken } = req.body;
-    
-    // CAPTCHA is now mandatory - must be provided and valid
-    if (!loginCaptchaToken && (!loginCaptchaId || !loginCaptchaAnswer)) {
-      logger.warn("Login attempt with missing CAPTCHA", {
-        email: normalEmail,
-        ip: req.ip,
-        hasCaptchaToken: !!loginCaptchaToken,
-        hasCaptchaId: !!loginCaptchaId,
-        hasCaptchaAnswer: !!loginCaptchaAnswer,
-      });
-      return res.status(400).json({
-        success: false,
-        message: "Security check is required. Please complete the CAPTCHA challenge.",
-        code: "CAPTCHA_REQUIRED",
-      });
-    }
-    
-    // Adapt payload format for verifyCaptchaOrToken
-    const loginCaptchaValid = await verifyCaptchaOrToken({
-      captchaId: loginCaptchaId,
-      captchaAnswer: loginCaptchaAnswer,
-      captchaToken: loginCaptchaToken
-    });
-    if (!loginCaptchaValid) {
-      logger.warn("Login attempt with invalid CAPTCHA", {
-        email: normalEmail,
+    if (loginCaptchaToken || (loginCaptchaId && loginCaptchaAnswer)) {
+      const loginCaptchaValid = await verifyCaptchaOrToken({
         captchaId: loginCaptchaId,
-        ip: req.ip,
+        captchaAnswer: loginCaptchaAnswer,
+        captchaToken: loginCaptchaToken
       });
-      return res.status(400).json({
-        success: false,
-        message: "Incorrect security check answer. Please try again.",
-        code: "CAPTCHA_INVALID",
-      });
+      if (!loginCaptchaValid) {
+        logger.warn("Login attempt with invalid CAPTCHA", {
+          email: normalEmail,
+          captchaId: loginCaptchaId,
+          ip: req.ip,
+        });
+        return res.status(400).json({
+          success: false,
+          message: "Incorrect security check answer. Please try again.",
+          code: "CAPTCHA_INVALID",
+        });
+      }
     }
 
     // Look up user with passwordHash explicitly included

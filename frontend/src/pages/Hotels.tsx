@@ -138,7 +138,7 @@ const Hotels = () => {
         <div className="container py-8">
           <div className="grid lg:grid-cols-[22%_1fr] xl:grid-cols-[24%_1fr] gap-8">
           {/* SIDEBAR */}
-          <aside className="lg:sticky lg:top-20 lg:self-start space-y-5 lg:max-h-[calc(100dvh-6rem)] lg:overflow-y-auto pr-1 lg:flex-shrink-0">
+          <aside className="space-y-5 pr-1 lg:flex-shrink-0">
             <div className="rounded-xl border border-border overflow-hidden bg-card">
               <div className="h-60 relative">
                 <HotelMap hotels={filtered} onHotelClick={(id) => nav(`/hotel/${id}`)} />

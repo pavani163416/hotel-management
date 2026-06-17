@@ -153,29 +153,6 @@ const SupportCentre = () => {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
 
-  const [captchaId, setCaptchaId] = useState("");
-  const [captchaChallenge, setCaptchaChallenge] = useState("");
-  const [captchaAnswer, setCaptchaAnswer] = useState("");
-  const [captchaLoading, setCaptchaLoading] = useState(false);
-
-  const fetchCaptcha = async () => {
-    setCaptchaLoading(true);
-    setCaptchaAnswer("");
-    try {
-      const res: any = await api.get("/auth/captcha");
-      const d = res.data?.data || res.data || {};
-      setCaptchaId(d.captchaId || "");
-      setCaptchaChallenge(d.challenge || "");
-    } catch {
-      setCaptchaChallenge(""); setCaptchaId("");
-    } finally {
-      setCaptchaLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchCaptcha();
-  }, []);
 
   const handle = (k: string, v: string) => setForm((p) => ({ ...p, [k]: v }));
 
@@ -189,10 +166,7 @@ const SupportCentre = () => {
       setError("Please enter a valid email address.");
       return;
     }
-    if (captchaChallenge && !captchaAnswer.trim()) {
-      setError("Please complete the security check.");
-      return;
-    }
+
     setError(""); setLoading(true);
     try {
       await api.post("/public/support/create", {
@@ -201,14 +175,12 @@ const SupportCentre = () => {
         issueType: form.category || "Other",
         subject: form.subject.trim() || "Support Request",
         message: form.message.trim(),
-        captchaId,
-        captchaAnswer: captchaAnswer.trim(),
+        message: form.message.trim(),
       });
       setSuccess(true);
       setForm({ name: "", email: "", category: "", subject: "", message: "" });
     } catch (err: any) {
       setError(err.response?.data?.message || "Failed to submit. Please try again.");
-      fetchCaptcha();
     } finally {
       setLoading(false);
     }
@@ -400,26 +372,6 @@ const SupportCentre = () => {
                   className="w-full px-4 py-2.5 border border-border rounded-xl outline-none focus:ring-2 focus:ring-primary text-sm resize-none"
                 />
               </div>
-              {captchaChallenge && (
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <label htmlFor="captcha-input" className="block text-sm font-medium text-foreground">Security Check</label>
-                    <button type="button" onClick={fetchCaptcha} disabled={captchaLoading}
-                      className="text-xs text-primary hover:underline flex items-center gap-1">
-                      {captchaLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : "↻"} New challenge
-                    </button>
-                  </div>
-                  <div className="bg-secondary/60 border border-border rounded-xl px-4 py-2 text-sm font-mono font-semibold text-foreground flex justify-center items-center">
-                    {captchaChallenge.trim().startsWith('<svg') 
-                      ? <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(captchaChallenge) }} />
-                      : captchaChallenge}
-                  </div>
-                  <input id="captcha-input" type="text" value={captchaAnswer} onChange={e => setCaptchaAnswer(e.target.value)}
-                    className="w-full px-4 py-2.5 border border-border rounded-xl outline-none focus:ring-2 focus:ring-primary text-sm"
-                    placeholder="Your answer" autoComplete="off" />
-                </div>
-              )}
-
               {error && <p role="alert" className="text-destructive text-sm font-medium">{error}</p>}
               <button
                 type="submit" disabled={loading}
