@@ -480,11 +480,19 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
   const resetForm = () => {
     setEmail(""); setPassword(""); setName(""); setPhone(""); setCity(""); setError("");
     setOtpSent(false); setVerificationCode(""); setOtpMessage(""); setResendCooldown(0);
-    setCaptchaAnswer("");
+    setCaptchaId(""); setCaptchaChallenge(""); setCaptchaAnswer("");
     // Don't clear localStorage pending email here, let explicit actions do it
   };
 
-  const handleOpenChange = (open: boolean) => { if (!open) { onClose(); resetForm(); } };
+  const handleOpenChange = (open: boolean) => {
+    if (!open) {
+      localStorage.removeItem("luxe_pending_email");
+      sessionStorage.removeItem("redirectAfterLogin");
+      resetForm();
+      setMode(defaultMode);
+      onClose(false);
+    }
+  };
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();

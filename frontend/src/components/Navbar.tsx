@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
-import { Bell, Hotel, UserCircle, LogOut, Mail, CheckCircle2, Building2, Heart, Menu, X, PackageSearch, Calendar } from "lucide-react";
+import { Bell, Hotel, UserCircle, LogOut, Mail, CheckCircle2, Building2, Heart, Menu, X, PackageSearch } from "lucide-react";
 import { useBooking } from "@/context/BookingContext";
 import { useWishlist } from "@/context/WishlistContext";
 import { AuthModal } from "@/components/AuthModal";
@@ -413,11 +413,6 @@ const Navbar = () => {
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link to="/history" className="flex items-center gap-3 px-4 py-2.5 text-sm text-text-primary hover:bg-surface-2 transition-colors">
-                        <Calendar className="w-4 h-4 text-text-secondary" /> Bookings
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
                       <Link to="/owner-portal" className="w-full cursor-pointer flex items-center text-primary hover:text-accent font-medium min-h-[44px]">
                         <Building2 className="w-4 h-4 mr-2" /> List Your Property
                       </Link>
@@ -567,9 +562,6 @@ const Navbar = () => {
                 </button>
                 <button onClick={() => handleMenuNavigation("/owner-portal")} className="px-4 py-3 min-h-[44px] flex items-center text-base font-semibold text-muted-foreground hover:bg-secondary hover:text-primary rounded-lg transition-base">
                   List Your Property
-                </button>
-                <button onClick={() => handleMenuNavigation("/history")} className="px-4 py-3 min-h-[44px] flex items-center text-base font-semibold text-muted-foreground hover:bg-secondary hover:text-primary rounded-lg transition-base">
-                  My Bookings
                 </button>
                 <button onClick={() => { setMobileMenuOpen(false); handleLogout(); }} className="px-4 py-3 min-h-[44px] flex items-center text-base font-semibold text-destructive hover:bg-destructive/10 rounded-lg transition-base mt-1">
                   Log out
