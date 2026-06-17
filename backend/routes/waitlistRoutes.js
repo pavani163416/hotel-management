@@ -7,7 +7,7 @@ import {
   getAllWaitlists,
   notifyNextWaitlist
 } from "../controllers/waitlistController.js";
-import { protect, authorizeRoles, checkBannedAndLocked } from "../middleware/auth.js";
+import { protect, authorizeRoles } from "../middleware/auth.js";
 
 const router = express.Router();
 
@@ -20,7 +20,7 @@ const router = express.Router();
  *     security:
  *       - bearerAuth: []
  */
-router.post("/join", protect, checkBannedAndLocked, joinWaitlist);
+router.post("/join", protect, joinWaitlist);
 
 /**
  * @swagger
@@ -31,7 +31,7 @@ router.post("/join", protect, checkBannedAndLocked, joinWaitlist);
  *     security:
  *       - bearerAuth: []
  */
-router.get("/my", protect, checkBannedAndLocked, getMyWaitlists);
+router.get("/my", protect, getMyWaitlists);
 
 /**
  * @swagger
@@ -42,7 +42,7 @@ router.get("/my", protect, checkBannedAndLocked, getMyWaitlists);
  *     security:
  *       - bearerAuth: []
  */
-router.delete("/cancel/:id", protect, checkBannedAndLocked, cancelWaitlist);
+router.delete("/cancel/:id", protect, cancelWaitlist);
 
 // --- Admin & Owner Routes ---
 

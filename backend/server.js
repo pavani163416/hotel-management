@@ -219,6 +219,7 @@ const rawOrigins = [
 const allowedOrigins = [
   "https://hotel-management-frontend-puce.vercel.app",
   "https://hotel-management-admin-eta.vercel.app",
+  "https://hotel-management-admin-ten.vercel.app",
   "https://athithigriha-frontend.vercel.app",
   "http://localhost:5173",
   "http://localhost:3000",
@@ -263,8 +264,9 @@ const corsOptions = {
     callback(new Error("Not allowed by CORS"));
   },
   methods:        ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-CSRF-Token", "X-Requested-With"],
   credentials:    true,
+  optionsSuccessStatus: 204,
 };
 
 const socketCorsOrigin = (origin, callback) => {
@@ -351,7 +353,8 @@ app.use(helmet({
 }));
 
 // ── Global CORS Middleware ──
-// Delegate all CORS and preflight handling to the official cors package
+// Preflight OPTIONS MUST be handled BEFORE any other middleware (helmet, CSRF, etc.)
+// Otherwise the 204 response is sent without CORS headers and browsers block the request.
 app.options("*", cors(corsOptions));
 app.use(cors(corsOptions));
 

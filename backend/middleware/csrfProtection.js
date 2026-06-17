@@ -24,6 +24,7 @@ const TRUSTED_ORIGINS = [
   "https://athithigriha-frontend.vercel.app",
   "https://athithigriha-admin.vercel.app",
   "https://hotel-management-admin-eta.vercel.app",
+  "https://hotel-management-admin-ten.vercel.app",
   "https://athithigriha-frontend.vercel.app",
   "",
   ...RAW_ORIGINS,
