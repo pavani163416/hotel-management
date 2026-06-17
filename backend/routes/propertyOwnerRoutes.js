@@ -60,51 +60,10 @@ const uploadBufferToCloudinary = async (buffer, filename, mimetype) => {
   });
 };
 
-// Middleware: verify general logged-in user
-const verifyUser = (req, res, next) => {
-  const header = req.headers.authorization;
-  if (!header?.startsWith("Bearer ")) {
-    return res.status(401).json({ success: false, message: "Authentication required." });
-  }
-  try {
-    const decoded = jwt.verify(header.split(" ")[1], process.env.JWT_SECRET);
-    req.user = decoded;
-    next();
-  } catch {
-    return res.status(401).json({ success: false, message: "Invalid or expired token." });
-  }
-};
 
-// Middleware: verify owner role
-const verifyOwner = async (req, res, next) => {
-  const header = req.headers.authorization;
-  if (!header?.startsWith("Bearer ")) {
-    return res.status(401).json({ success: false, message: "Authentication required." });
-  }
-  try {
-    const decoded = jwt.verify(header.split(" ")[1], process.env.JWT_SECRET);
-
-    let userRole = decoded.role;
-    if (userRole !== "owner") {
-      const user = await User.findById(decoded.id);
-      if (user) {
-        userRole = user.role;
-      }
-    }
-
-    if (userRole !== "owner") {
-      return res.status(403).json({ success: false, message: "Access forbidden: owner role required." });
-    }
-    req.owner = decoded;
-    req.user = decoded;
-    next();
-  } catch (err) {
-    return res.status(401).json({ success: false, message: "Invalid or expired token." });
-  }
-};
 
 // ── GET /api/owners/application-status ──────────────────
-router.get("/application-status", verifyUser, async (req, res, next) => {
+router.get("/application-status", protect, async (req, res, next) => {
   try {
     const app = await OwnerApplication.findOne({ userId: req.user.id });
     if (!app) {
@@ -147,7 +106,7 @@ const checkApplicationState = async (req, res, next) => {
 };
 
 // ── POST /api/owners/apply ──────────────────────────────
-router.post("/apply", verifyUser, preventExistingOwners, checkApplicationState, uploadPublicSupport.array("documents", 5), validateKycMagicBytes, async (req, res, next) => {
+router.post("/apply", protect, preventExistingOwners, checkApplicationState, uploadPublicSupport.array("documents", 5), validateKycMagicBytes, async (req, res, next) => {
   try {
     const { businessName, hotelName, hotelAddress, gstNumber, businessRegistrationNumber, docType, email } = req.body;
     if (!businessName || !hotelName || !hotelAddress) {
@@ -284,9 +243,9 @@ router.post("/apply", verifyUser, preventExistingOwners, checkApplicationState, 
 });
 
 // ── GET /api/owners/dashboard ────────────────────────────
-router.get("/dashboard", verifyOwner, async (req, res, next) => {
+router.get("/dashboard", protect, authorizeRoles("owner"), async (req, res, next) => {
   try {
-    const user = await User.findById(req.owner.id);
+    const user = await User.findById(req.user.id);
     if (!user) return res.status(404).json({ success: false, message: "User not found." });
 
     const hotels = await Hotel.find({ ownerId: user._id });

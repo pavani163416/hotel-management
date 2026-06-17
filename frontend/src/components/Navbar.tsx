@@ -402,7 +402,7 @@ const Navbar = () => {
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
                       <Link to="/owner-portal" className="w-full cursor-pointer flex items-center text-primary hover:text-accent font-medium min-h-[44px]">
-                        <Building2 className="w-4 h-4 mr-2" /> {user?.role === "owner" ? "Owner Dashboard" : "List Property"}
+                        <Building2 className="w-4 h-4 mr-2" /> List Your Property
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem
@@ -562,7 +562,7 @@ const Navbar = () => {
                 Profile
               </button>
               <button onClick={() => handleMenuNavigation("/owner-portal")} className="px-4 py-3 min-h-[44px] flex items-center text-base font-medium text-muted-foreground hover:bg-secondary hover:text-primary rounded-lg transition-base">
-                Dashboard
+                List Your Property
               </button>
               <button onClick={() => handleMenuNavigation("/history")} className="px-4 py-3 min-h-[44px] flex items-center text-base font-medium text-muted-foreground hover:bg-secondary hover:text-primary rounded-lg transition-base">
                 My Bookings
