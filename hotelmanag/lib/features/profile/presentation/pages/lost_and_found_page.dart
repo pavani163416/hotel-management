@@ -404,10 +404,11 @@ class _LostAndFoundViewState extends State<_LostAndFoundView>
                   if (state is LostFoundLoading && state is! LostFoundLoaded)
                     const Center(child: CircularProgressIndicator())
                   else if (state is LostFoundLoaded || state is LostFoundSubmitSuccess)
-                    ...() {
-                      final catalog = state is LostFoundLoaded ? state.reports : (state as LostFoundSubmitSuccess).report.id.isNotEmpty ? [ (state as LostFoundSubmitSuccess).report ] : [];
-                      final items = state is LostFoundLoaded ? state.reports : [];
-                      if (items.isEmpty) return [const Text('No reports found.')];
+                    ...(() {
+                      final items = state is LostFoundLoaded
+                          ? state.reports
+                          : [ (state as LostFoundSubmitSuccess).report ];
+                      if (items.isEmpty) return <Widget>[const Text('No reports found.')];
                       return items.map(
                         (c) => Container(
                           margin: const EdgeInsets.only(bottom: 12),
@@ -504,8 +505,8 @@ class _LostAndFoundViewState extends State<_LostAndFoundView>
                             ],
                           ),
                         ),
-                      )
-                      .toList(),
+                      ).toList();
+                    })(),
                 ],
               ),
             ),

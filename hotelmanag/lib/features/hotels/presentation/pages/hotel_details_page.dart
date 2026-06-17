@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/providers/currency_provider.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
@@ -81,6 +82,37 @@ class _HotelDetailsPageState extends State<HotelDetailsPage>
     return list;
   }
 
+  Future<void> joinWaitlist(HotelEntity h) async {
+    final ap = context.read<AuthProvider>();
+    if (!ap.isAuthenticated) {
+      context.push('/login');
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Joining waitlist...')),
+    );
+    final repo = sl<WaitlistRepository>();
+    final result = await repo.joinWaitlist({
+      'hotelId': h.id,
+      'checkIn': DateTime.now().add(const Duration(days: 1)).toIso8601String(),
+      'checkOut': DateTime.now().add(const Duration(days: 2)).toIso8601String(),
+    });
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    result.fold(
+      (failure) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(failure.message), backgroundColor: Colors.red),
+        );
+      },
+      (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Successfully joined waitlist!'), backgroundColor: Colors.green),
+        );
+      }
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).colorScheme.brightness == Brightness.dark;
@@ -139,36 +171,7 @@ class _HotelDetailsPageState extends State<HotelDetailsPage>
       );
     }
 
-    Future<void> joinWaitlist(HotelEntity h) async {
-      final ap = context.read<AuthProvider>();
-      if (!ap.isAuthenticated) {
-        context.push('/login');
-        return;
-      }
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Joining waitlist...')),
-      );
-      final repo = sl<WaitlistRepository>();
-      final result = await repo.joinWaitlist({
-        'hotelId': h.id,
-        'checkIn': DateTime.now().add(const Duration(days: 1)).toIso8601String(),
-        'checkOut': DateTime.now().add(const Duration(days: 2)).toIso8601String(),
-      });
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).hideCurrentSnackBar();
-      result.fold(
-        (failure) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(failure.message), backgroundColor: Colors.red),
-          );
-        },
-        (success) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Successfully joined waitlist!'), backgroundColor: Colors.green),
-          );
-        }
-      );
-    }
+
 
     return MainLayout(
       child: SingleChildScrollView(

@@ -15,6 +15,8 @@ import '../providers/hotel_provider.dart';
 import '../providers/booking_provider.dart';
 import '../providers/notification_provider.dart';
 import '../providers/promo_provider.dart';
+import '../../features/booking/data/services/payment_service.dart';
+import '../../features/booking/data/services/booking_service.dart';
 
 import '../../features/waitlist/data/datasources/waitlist_remote_data_source.dart';
 import '../../features/waitlist/data/repositories/waitlist_repository_impl.dart';
@@ -108,4 +110,8 @@ Future<void> init() async {
   sl.registerLazySingleton(() => PromoProvider(sl()));
   // NotificationProvider needs ApiService to fetch /api/notifications
   sl.registerLazySingleton(() => NotificationProvider(sl<ApiService>()));
+
+  // Services
+  sl.registerLazySingleton(() => PaymentService(sl()));
+  sl.registerLazySingleton(() => BookingService(sl()));
 }
