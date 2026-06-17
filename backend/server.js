@@ -843,4 +843,3 @@ process.on("uncaughtException", (err) => {
 });
 
 export default app;
-// Trigger restart after port clean

@@ -338,31 +338,5 @@ export const requireObjectId = (paramName = "id") => {
   };
 };
 
-// ── checkBannedAndLocked Middleware ────────────────────────
-export const checkBannedAndLocked = async (req, res, next) => {
-  try {
-    if (!req.user || !req.user.id) {
-      return res.status(401).json({ success: false, message: "Authentication required." });
-    }
-
-    const user = await User.findById(req.user.id);
-    if (!user) {
-      return res.status(404).json({ success: false, message: "User not found." });
-    }
-
-    if (user.accountStatus === "suspended") {
-      return res.status(403).json({ success: false, message: "This account has been suspended." });
-    }
-
-    if (user.lockUntil && user.lockUntil > Date.now()) {
-      return res.status(403).json({ success: false, message: "This account is temporarily locked." });
-    }
-
-    next();
-  } catch (error) {
-    next(error);
-  }
-};
-
 // ── Alias: requireRoles — cleaner name for inline use ─────
 export const requireRoles = authorizeRoles;
