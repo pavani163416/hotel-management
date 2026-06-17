@@ -15,6 +15,7 @@ import { useBookings } from "@/context/BookingsContext";
 import { useHotels } from "@/context/HotelsContext";
 import { useAdmin } from "@/context/AdminContext";
 import { getStats, getAdminPriceRequests, createBooking } from "@/services/api";
+import { formatCurrency, currencySymbol } from "@/utils/currency";
 
 const PIE_COLORS = ["#6366f1", "#a8977a", "#10b981", "#f59e0b", "#e11d48", "#0ea5e9"];
 
@@ -44,7 +45,6 @@ export default function Dashboard() {
   const [nbCheckIn, setNbCheckIn] = useState("");
   const [nbCheckOut, setNbCheckOut] = useState("");
   const [nbAmount, setNbAmount] = useState("");
-  const [nbCurrency, setNbCurrency] = useState("$");
   const [nbPaymentMethod, setNbPaymentMethod] = useState("Credit Card");
   const [nbPricePerNight, setNbPricePerNight] = useState("");
 
@@ -104,6 +104,14 @@ export default function Dashboard() {
 
   const recentBookings = bookings.slice(0, 5);
 
+  const getCurrencyForHotel = (hotelName: string) => hotels.find((h) => h.name === hotelName)?.currency || "USD";
+  const revenueCurrency = (() => {
+    const currencies = Array.from(new Set(bookings.map((b) => getCurrencyForHotel(b.property))));
+    return currencies.length === 1 ? currencies[0] : "USD";
+  })();
+  const nbPropertyCurrency = hotels.find((h) => h.name === nbProperty)?.currency || "USD";
+  const nbPropertySymbol = currencySymbol(nbPropertyCurrency);
+
   const handleExport = () => {
     const rows = [
       ["Guest", "Email", "Property", "Room Type", "Check-in", "Check-out", "Amount", "Status"],
@@ -111,7 +119,7 @@ export default function Dashboard() {
         b.guestSnapshot.name, b.guestSnapshot.email,
         b.property, b.room.type,
         b.checkIn, b.checkOut,
-        `$${b.totalAmount.toLocaleString()}`, b.status,
+        formatCurrency(b.totalAmount, getCurrencyForHotel(b.property)), b.status,
       ]),
     ];
     const csv = rows.map((r) => r.join(",")).join("\n");
@@ -160,7 +168,7 @@ export default function Dashboard() {
         setNbProperty(hotels[0]?.name || "");
         setNbRoom("Deluxe"); setNbCheckIn(""); setNbCheckOut("");
         setNbAmount(""); setNbPricePerNight(""); setNbError("");
-        setNbPhone(""); setNbCurrency("$");
+        setNbPhone("");
         navigate("/bookings");
       }, 1200);
     } catch (err: any) {
@@ -204,7 +212,7 @@ export default function Dashboard() {
             </div>
             <div className="cursor-pointer hover:scale-[1.02] transition-transform" onClick={() => navigate("/revenue")}>
               <StatsCard title={t("Total Revenue")}
-                value={loading ? "—" : `$${((bookings.reduce((s, b) => s + b.totalAmount, 0)) / 1000).toFixed(1)}k`}
+                value={loading ? "—" : formatCurrency(bookings.reduce((s, b) => s + b.totalAmount, 0), revenueCurrency)}
                 change={loading ? t("Loading...") : `${bookings.length} ${t("bookings")}`} trend="up"
                 icon={<DollarSign className="w-5 h-5 text-success" />} iconBg="bg-success-light" />
             </div>
@@ -237,8 +245,8 @@ export default function Dashboard() {
                   <CartesianGrid strokeDasharray="3 3" stroke="#f1f3f9" />
                   <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false}
-                    tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
-                  <Tooltip formatter={(v: any) => [`$${(v / 1000).toFixed(0)}k`, t("Revenue")]}
+                    tickFormatter={(v) => formatCurrency(v, revenueCurrency, { minimumFractionDigits: 0, maximumFractionDigits: 0 }).replace(/\s+/g, "")} />
+                  <Tooltip formatter={(v: any) => [formatCurrency(v, revenueCurrency, { minimumFractionDigits: 0, maximumFractionDigits: 0 }), t("Revenue")]}
                     contentStyle={{ borderRadius: 8, border: "1px solid #e5e7f0", fontSize: 12 }} />
                   <Area type="monotone" dataKey="revenue" stroke="#6366f1" strokeWidth={2}
                     fill="url(#revGrad)" dot={{ fill: "#6366f1", r: 3 }} />
@@ -288,7 +296,7 @@ export default function Dashboard() {
                 <div key={h.name}>
                   <div className="flex items-center justify-between text-sm mb-1.5">
                     <span className="text-text-primary font-medium truncate">{h.name}</span>
-                    <span className="text-text-secondary font-semibold shrink-0 ml-2">${(h.revenue / 1000).toFixed(1)}k</span>
+                    <span className="text-text-secondary font-semibold shrink-0 ml-2">{formatCurrency(h.revenue, getCurrencyForHotel(h.name), { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</span>
                   </div>
                   <div className="h-1.5 bg-surface-3 rounded-full overflow-hidden">
                     <div className="h-full bg-primary rounded-full" style={{ width: `${h.pct}%` }} />
@@ -335,7 +343,7 @@ export default function Dashboard() {
                     </td>
                     <td className="px-5 py-3.5 text-sm text-text-secondary">{b.property}</td>
                     <td className="px-5 py-3.5 text-sm text-text-secondary">{b.room.type}</td>
-                    <td className="px-5 py-3.5 text-sm font-semibold text-text-primary">${b.totalAmount.toLocaleString()}</td>
+                    <td className="px-5 py-3.5 text-sm font-semibold text-text-primary">{formatCurrency(b.totalAmount, getCurrencyForHotel(b.property))}</td>
                     <td className="px-5 py-3.5"><StatusBadge status={b.status} /></td>
                     <td className="px-5 py-3.5">
                       <button onClick={() => setActionBooking(b)}
@@ -376,8 +384,8 @@ export default function Dashboard() {
                     </td>
                     <td className="px-5 py-3.5 text-sm text-text-secondary">{req.hotelName || "—"}</td>
                     <td className="px-5 py-3.5 text-sm text-text-secondary">{req.createdByName || req.createdBy?.name || "—"}</td>
-                    <td className="px-5 py-3.5 text-sm font-semibold text-text-primary">${req.currentPrice.toLocaleString()}</td>
-                    <td className="px-5 py-3.5 text-sm font-bold text-text-primary">${req.requestedPrice.toLocaleString()}</td>
+                    <td className="px-5 py-3.5 text-sm font-semibold text-text-primary">{formatCurrency(req.currentPrice, getCurrencyForHotel(req.hotelName || "") )}</td>
+                    <td className="px-5 py-3.5 text-sm font-bold text-text-primary">{formatCurrency(req.requestedPrice, getCurrencyForHotel(req.hotelName || "") )}</td>
                     <td className="px-5 py-3.5">
                       <span className={`text-xs font-semibold px-2.5 py-1 rounded-full capitalize ${
                         req.status === "pending" ? "bg-warning-light text-warning" : 
@@ -472,25 +480,16 @@ export default function Dashboard() {
                   className="w-full border border-border rounded-lg px-3 py-2.5 text-sm outline-none focus:border-primary" />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">{t("Price / Night ($) *")}</label>
+                <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">{t(`Price / Night (${nbPropertySymbol}) *`)}</label>
                 <input required type="number" min="1" value={nbPricePerNight} onChange={(e) => setNbPricePerNight(e.target.value)}
                   placeholder="e.g. 200"
                   className="w-full border border-border rounded-lg px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10" />
               </div>
               <div className="col-span-2">
-                <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">{t(`Total Amount (${nbCurrency}) *`)}</label>
-                <div className="flex gap-2">
-                  <select value={nbCurrency} onChange={(e) => setNbCurrency(e.target.value)}
-                    className="w-20 border border-border rounded-lg px-2 text-sm outline-none focus:border-primary bg-surface-3 cursor-pointer">
-                    <option value="$">$</option>
-                    <option value="₹">₹</option>
-                    <option value="€">€</option>
-                    <option value="£">£</option>
-                  </select>
-                  <input required type="number" min="0" value={nbAmount} onChange={(e) => setNbAmount(e.target.value)}
-                    placeholder="e.g. 1200"
-                    className="flex-1 w-full border border-border rounded-lg px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10" />
-                </div>
+                <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">{t(`Total Amount (${nbPropertySymbol}) *`)}</label>
+                <input required type="number" min="0" value={nbAmount} onChange={(e) => setNbAmount(e.target.value)}
+                  placeholder="e.g. 1200"
+                  className="w-full border border-border rounded-lg px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10" />
               </div>
               <div className="col-span-2">
                 <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">Payment Method *</label>
@@ -526,7 +525,7 @@ export default function Dashboard() {
               <div className="flex items-center gap-3 mt-2 pt-2 border-t border-border">
                 <span className="text-xs text-text-secondary">{actionBooking.room.type}</span>
                 <span className="text-xs text-muted">·</span>
-                <span className="text-xs font-semibold text-text-primary">${actionBooking.totalAmount.toLocaleString()}</span>
+                <span className="text-xs font-semibold text-text-primary">{formatCurrency(actionBooking.totalAmount, getCurrencyForHotel(actionBooking.property))}</span>
                 <span className="text-xs text-muted">·</span>
                 <StatusBadge status={actionBooking.status} />
               </div>

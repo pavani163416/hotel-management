@@ -12,6 +12,8 @@ import StatsCard from "@/components/StatsCard";
 import StatusBadge from "@/components/StatusBadge";
 import Modal from "@/components/Modal";
 import { useBookings, Booking } from "@/context/BookingsContext";
+import { useHotels } from "@/context/HotelsContext";
+import { formatCurrency, currencySymbol } from "@/utils/currency";
 import { cancelBooking as apiCancelBooking, getBookingById as apiGetBookingById, createBooking } from "@/services/api";
 
 // Map room number initials → hotel name
@@ -107,6 +109,7 @@ export default function Bookings() {
   };
 
   // New booking form
+  const { hotels } = useHotels();
   const [nbGuest, setNbGuest] = useState("");
   const [nbEmail, setNbEmail] = useState("");
   const [nbAadhaar, setNbAadhaar] = useState("");
@@ -116,7 +119,6 @@ export default function Bookings() {
   const [nbCheckIn, setNbCheckIn] = useState("");
   const [nbCheckOut, setNbCheckOut] = useState("");
   const [nbAmount, setNbAmount] = useState("");
-  const [nbCurrency, setNbCurrency] = useState("$");
   const [nbPaymentMethod, setNbPaymentMethod] = useState("Credit Card");
 
   const filtered = bookings.filter((b) => {
@@ -152,6 +154,13 @@ export default function Bookings() {
   const paginated = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
   const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
 
+  const selectedCurrency = propertyFilter === "All Properties"
+    ? "USD"
+    : hotels.find((h) => h.name === propertyFilter)?.currency ?? "USD";
+
+  const nbPropertyCurrency = hotels.find((h) => h.name === nbProperty)?.currency ?? "USD";
+  const nbPropertySymbol = currencySymbol(nbPropertyCurrency);
+
   const stats = {
     total: bookings.length,
     pending: bookings.filter((b) => b.status === "Pending").length,
@@ -165,7 +174,7 @@ export default function Bookings() {
       ...bookings.map((b) => [
         b.id, b.guestSnapshot.name, b.guestSnapshot.email,
         b.property, b.room.type, b.checkIn, b.checkOut,
-        b.nights, `$${b.totalAmount}`, b.status,
+        b.nights, formatCurrency(b.totalAmount, hotels.find((h) => h.name === b.property)?.currency ?? "USD"), b.status,
       ]),
     ];
     const csv = rows.map((r) => r.join(",")).join("\n");
@@ -209,7 +218,7 @@ export default function Bookings() {
         setNbSubmitted(false);
         setNbGuest(""); setNbEmail(""); setNbProperty(""); setNbAadhaar("");
         setNbRoom("Deluxe"); setNbCheckIn(""); setNbCheckOut(""); setNbAmount("");
-        setNbPhone(""); setNbCurrency("$");
+        setNbPhone("");
       }, 1200);
     } catch (err: any) {
       console.error("Failed to create booking:", err);
@@ -264,7 +273,7 @@ export default function Bookings() {
             icon={<Clock className="w-5 h-5 text-warning" />} iconBg="bg-warning-light" />
           <StatsCard title="Confirmed" value={loading ? "—" : stats.confirmed} change="Active reservations"
             icon={<LogIn className="w-5 h-5 text-success" />} iconBg="bg-success-light" />
-          <StatsCard title="Net Revenue" value={loading ? "—" : `$${stats.revenue.toLocaleString()}`} change={loading ? "—" : `${stats.total} bookings total`}
+          <StatsCard title="Net Revenue" value={loading ? "—" : formatCurrency(stats.revenue, selectedCurrency)} change={loading ? "—" : `${stats.total} bookings total`}
             trend="up" icon={<DollarSign className="w-5 h-5 text-text-secondary" />} iconBg="bg-surface-3" />
         </div>
 
@@ -368,7 +377,7 @@ export default function Bookings() {
                         {new Date(b.createdAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
                       </p>
                     </td>
-                    <td className="px-5 py-4 text-sm font-semibold text-text-primary">${b.totalAmount.toLocaleString()}</td>
+                    <td className="px-5 py-4 text-sm font-semibold text-text-primary">{formatCurrency(b.totalAmount, hotels.find((h) => h.name === b.property)?.currency ?? "USD")}</td>
                     <td className="px-5 py-4"><StatusBadge status={b.status} /></td>
                     <td className="px-5 py-4">
                       <button onClick={() => openDetail(b)}
@@ -424,7 +433,7 @@ export default function Bookings() {
               <h4 className="font-semibold text-sm text-text-primary">Revenue Overview</h4>
             </div>
             <p className="text-xs text-muted mb-4">
-              Total revenue from {bookings.length} bookings: <strong>${stats.revenue.toLocaleString()}</strong>
+              Total revenue from {bookings.length} bookings: <strong>{formatCurrency(stats.revenue, selectedCurrency)}</strong>
             </p>
             <button onClick={() => navigate("/revenue")}
               className="text-xs font-semibold text-primary hover:underline">
@@ -450,7 +459,7 @@ export default function Bookings() {
                 ["Check-in", new Date(detailBooking.checkIn).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" })],
                 ["Check-out", new Date(detailBooking.checkOut).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" })],
                 ["Nights", `${detailBooking.nights} night${detailBooking.nights !== 1 ? "s" : ""}`],
-                ["Total Amount", `$${detailBooking.totalAmount.toLocaleString()}`],
+                ["Total Amount", formatCurrency(detailBooking.totalAmount, hotels.find((h) => h.name === detailBooking.property)?.currency ?? "USD")],
               ] as [string, string | null][]).map(([label, value]) => (
                 <div key={label} className="bg-surface-2 rounded-lg p-3">
                   <p className="text-xs text-muted uppercase tracking-wider font-semibold mb-0.5">{label}</p>
@@ -615,19 +624,10 @@ export default function Bookings() {
                   className="w-full border border-border rounded-lg px-3 py-2.5 text-sm outline-none focus:border-primary" />
               </div>
               <div className="col-span-2">
-                <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">Total Amount ({nbCurrency}) *</label>
-                <div className="flex gap-2">
-                  <select value={nbCurrency} onChange={(e) => setNbCurrency(e.target.value)}
-                    className="w-20 border border-border rounded-lg px-2 text-sm outline-none focus:border-primary bg-surface-3 cursor-pointer">
-                    <option value="$">$</option>
-                    <option value="₹">₹</option>
-                    <option value="€">€</option>
-                    <option value="£">£</option>
-                  </select>
-                  <input required type="number" min="0" value={nbAmount} onChange={(e) => setNbAmount(e.target.value)}
-                    placeholder="e.g. 1200"
-                    className="flex-1 w-full border border-border rounded-lg px-3 py-2.5 text-sm outline-none focus:border-primary" />
-                </div>
+                <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">Total Amount ({nbPropertySymbol}) *</label>
+                <input required type="number" min="0" value={nbAmount} onChange={(e) => setNbAmount(e.target.value)}
+                  placeholder="e.g. 1200"
+                  className="w-full border border-border rounded-lg px-3 py-2.5 text-sm outline-none focus:border-primary" />
               </div>
               <div className="col-span-2">
                 <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">Payment Method *</label>
