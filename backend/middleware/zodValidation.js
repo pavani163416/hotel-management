@@ -25,6 +25,7 @@ export const validate = (schema, source = "body") => {
         field:   e.path.join("."),
         message: e.message,
       }));
+      console.warn(`[VALIDATION FAILED] Path: ${req.originalUrl} | Source: ${source} | Errors:`, JSON.stringify(errors), " | Raw Payload:", JSON.stringify(req[source]));
       return res.status(422).json({
         success: false,
         message: "Validation failed",

@@ -78,13 +78,12 @@ const PROCESS_STEPS = [
 const OwnerPortal = () => {
   const { user, setUser } = useBooking();
   const navigate = useNavigate();
-  const token = localStorage.getItem("luxe_customer_token");
 
   const [appStatus, setAppStatus] = useState<string>("not_applied");
   const [appDetails, setAppDetails] = useState<any>(null);
   const [dashboardData, setDashboardData] = useState<any>(null);
   
-  const [loading, setLoading] = useState(() => !!localStorage.getItem("luxe_customer_token"));
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [authOpen, setAuthOpen] = useState(false);
@@ -101,15 +100,14 @@ const OwnerPortal = () => {
 
   // Diagnostics log & State resolver
   useEffect(() => {
-    const activeToken = localStorage.getItem("luxe_customer_token");
     console.log("[OwnerPortal Diagnostics]", {
       currentUser: user ? { name: user.name, email: user.email } : null,
       currentRole: user?.role,
-      isAuthenticated: !!user && !!activeToken,
+      isAuthenticated: !!user,
       applicationStatus: appStatus,
     });
 
-    if (user && activeToken) {
+    if (user) {
       fetchApplicationStatus();
     } else {
       setAppStatus("not_applied");
@@ -213,7 +211,7 @@ const OwnerPortal = () => {
   }
 
   // ── 1. If not logged in: Show auth check / landing page ──
-  if (!token) {
+  if (!user) {
     return (
       <Layout>
         {/* Hero */}
