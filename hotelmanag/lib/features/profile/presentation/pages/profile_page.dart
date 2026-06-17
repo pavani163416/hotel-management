@@ -139,7 +139,7 @@ class _ProfilePageState extends State<ProfilePage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(
-                  height: 100,
+                  height: 15,
                 ), // Spacing to account for overlapping profile header
                 _buildSectionTitle('Account Settings'),
                 const SizedBox(height: 16),
@@ -375,82 +375,83 @@ class _ProfilePageState extends State<ProfilePage> {
         final profileUrl = user?.profileImage ?? '';
         final coverUrl = user?.coverImage ?? '';
 
-        return Stack(
-          clipBehavior: Clip.none,
-          children: [
-            // Cover Image
-            InkWell(
-              onTap: () => _showCoverImageOptions(context),
-              child: Container(
-                height: 200,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                  image: _coverImageFile != null
-                      ? DecorationImage(
-                          image: (kIsWeb
-                              ? NetworkImage(_coverImageFile!.path)
-                              : FileImage(io.File(_coverImageFile!.path))
-                                    as ImageProvider),
-                          fit: BoxFit.cover,
-                        )
-                      : coverUrl.isNotEmpty
-                      ? DecorationImage(
-                          image: CachedNetworkImageProvider(coverUrl),
-                          fit: BoxFit.cover,
-                        )
-                      : null,
-                ),
-                child: Stack(
-                  children: [
-                    Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Colors.black.withOpacity(0.4),
-                            Colors.transparent,
-                          ],
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      bottom: 16,
-                      right: 16,
-                      child: Container(
-                        padding: const EdgeInsets.all(8),
+        return SizedBox(
+          height: 285,
+          child: Stack(
+            children: [
+              // Cover Image
+              InkWell(
+                onTap: () => _showCoverImageOptions(context),
+                child: Container(
+                  height: 200,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                    image: _coverImageFile != null
+                        ? DecorationImage(
+                            image: (kIsWeb
+                                ? NetworkImage(_coverImageFile!.path)
+                                : FileImage(io.File(_coverImageFile!.path))
+                                      as ImageProvider),
+                            fit: BoxFit.cover,
+                          )
+                        : coverUrl.isNotEmpty
+                        ? DecorationImage(
+                            image: CachedNetworkImageProvider(coverUrl),
+                            fit: BoxFit.cover,
+                          )
+                        : null,
+                  ),
+                  child: Stack(
+                    children: [
+                      Container(
                         decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.4),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.white24),
-                        ),
-                        child: const Row(
-                          children: [
-                            Text(
-                              'Change Cover',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Colors.black.withOpacity(0.4),
+                              Colors.transparent,
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                      Positioned(
+                        bottom: 16,
+                        right: 16,
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.4),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.white24),
+                          ),
+                          child: const Row(
+                            children: [
+                              Text(
+                                'Change Cover',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-            // Profile Info
-            Positioned(
-              bottom: -80,
-              left: 24,
-              right: 24,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
+              // Profile Info
+              Positioned(
+                top: 120,
+                left: 24,
+                right: 24,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Stack(
                     children: [
@@ -556,7 +557,8 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
             ),
           ],
-        );
+        ),
+      );
       },
     );
   }

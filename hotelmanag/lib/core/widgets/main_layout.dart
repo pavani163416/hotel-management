@@ -53,17 +53,6 @@ class MainLayout extends StatelessWidget {
                 ? SingleChildScrollView(child: Column(children: [child]))
                 : child,
           ),
-          if (showNavbar && showBottomNav)
-            Positioned(
-              right: 16,
-              bottom: 86 + MediaQuery.of(context).padding.bottom,
-              child: FloatingActionButton(
-                onPressed: () => _openChatbot(context),
-                backgroundColor: AppTheme.primaryColor,
-                elevation: 6,
-                child: const Icon(LucideIcons.sparkles, color: Colors.white),
-              ),
-            ),
         ],
       ),
       bottomNavigationBar: (showNavbar && showBottomNav)
@@ -308,15 +297,6 @@ class MainLayout extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-
-  void _openChatbot(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => const ChatbotBottomSheet(),
     );
   }
 }

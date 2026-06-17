@@ -20,7 +20,7 @@ class BiometricHelper {
 
       final bool didAuthenticate = await auth.authenticate(
         localizedReason: reason,
-        biometricOnly: true,
+        biometricOnly: false,
         persistAcrossBackgrounding: true,
       );
       return didAuthenticate;

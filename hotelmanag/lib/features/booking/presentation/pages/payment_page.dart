@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
+import 'razorpay_web_helper.dart';
 import '../../../../core/providers/currency_provider.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
@@ -415,14 +416,37 @@ class _PaymentPageState extends State<PaymentPage> {
             }
 
             if (kIsWeb) {
-              // Mock payment success for web
-              _handlePaymentSuccess(
-                PaymentSuccessResponse(
-                  'mock_payment_id',
-                  _currentOrderId,
-                  'mock_signature',
-                  null,
-                ),
+              // Open Razorpay Checkout on Web using conditional JS interop
+              openRazorpayWeb(
+                options: {
+                  'key': data['key'] ?? 'rzp_test_dummy',
+                  'amount': (data['amount'] as num).toInt(),
+                  'currency': data['currency'] ?? 'INR',
+                  'name': 'Athithigriha',
+                  'description': 'Booking Payment',
+                  'order_id': _currentOrderId,
+                  if (prefill.isNotEmpty) 'prefill': prefill,
+                  'theme': {'color': '#454F5E'},
+                },
+                onSuccess: (paymentId, orderId, signature) {
+                  _handlePaymentSuccess(
+                    PaymentSuccessResponse(
+                      paymentId,
+                      orderId ?? _currentOrderId,
+                      signature,
+                      null,
+                    ),
+                  );
+                },
+                onFailure: (message) {
+                  _handlePaymentError(
+                    PaymentFailureResponse(
+                      0,
+                      message,
+                      null,
+                    ),
+                  );
+                },
               );
             } else {
               _razorpay.open(options);
