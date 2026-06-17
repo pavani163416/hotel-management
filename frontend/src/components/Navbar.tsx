@@ -391,13 +391,12 @@ const Navbar = () => {
                 )}
               </div>
 
-              {/* Desktop User Avatar (hidden on mobile, but user wants avatar on right. "Profile Avatar OR Guest Icon") */}
-              {/* Since we need avatar on mobile, we show it! */}
-              <div className="hidden md:block">
+              {/* User Avatar Dropdown (responsive for mobile & desktop) */}
+              <div>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <button className="flex items-center gap-2 px-3 py-1.5 rounded-full hover:bg-accent/5 transition-base border border-transparent hover:border-border outline-none min-h-[44px]">
-                      <span className="font-semibold text-sm text-primary">{user.name.split(" ")[0]}</span>
+                    <button className="flex items-center gap-2 px-1.5 py-1.5 md:px-3 md:py-1.5 rounded-full hover:bg-accent/5 transition-base border border-transparent hover:border-border outline-none min-h-[44px]">
+                      <span className="font-semibold text-sm text-primary hidden md:inline-block">{user.name.split(" ")[0]}</span>
                       <UserCircle className="w-7 h-7 text-muted-foreground shrink-0" />
                     </button>
                   </DropdownMenuTrigger>
@@ -460,15 +459,6 @@ const Navbar = () => {
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
-
-              {/* Mobile Avatar (just triggers drawer or acts as avatar) */}
-              <button 
-                onClick={() => setMobileMenuOpen(true)}
-                className="md:hidden flex items-center justify-center min-w-[44px] min-h-[44px] -mr-2"
-                aria-label="Open menu"
-              >
-                <UserCircle className="w-6 h-6 text-muted-foreground" />
-              </button>
             </>
           ) : (
             <>
@@ -488,14 +478,27 @@ const Navbar = () => {
                 </button>
               </div>
               
-              {/* Mobile Guest Avatar */}
-              <button 
-                onClick={() => setMobileMenuOpen(true)}
-                className="md:hidden flex items-center justify-center min-w-[44px] min-h-[44px] -mr-2"
-                aria-label="Open menu"
-              >
-                <UserCircle className="w-6 h-6 text-muted-foreground" />
-              </button>
+              {/* Mobile Guest Dropdown Menu */}
+              <div className="md:hidden">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button 
+                      className="flex items-center justify-center min-w-[44px] min-h-[44px] -mr-2 outline-none"
+                      aria-label="Guest Menu"
+                    >
+                      <UserCircle className="w-6 h-6 text-muted-foreground" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-40">
+                    <DropdownMenuItem onClick={() => openAuth("signin")} className="min-h-[44px] cursor-pointer">
+                      Sign In
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => openAuth("signup")} className="min-h-[44px] cursor-pointer">
+                      Sign Up
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             </>
           )}
         </div>

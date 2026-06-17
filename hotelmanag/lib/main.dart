@@ -133,12 +133,14 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = context.watch<ThemeProvider>();
     return MaterialApp.router(
       title: 'Athithigriha',
       debugShowCheckedModeBanner: false,
       scrollBehavior: MyScrollBehavior(),
       theme: AppTheme.lightTheme,
-      themeMode: ThemeMode.light,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: themeProvider.themeMode,
       routerConfig: AppRouter.createRouter(di.sl<AuthProvider>()),
       builder: (context, child) => IdleDetector(
         child: NotificationPopupOverlay(
