@@ -442,8 +442,8 @@ class _RegisterPageState extends State<RegisterPage> {
                         'Security Check',
                         style: TextStyle(
                           fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: Color(0xFF4A5568),
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87,
                         ),
                       ),
                       InkWell(
@@ -462,20 +462,20 @@ class _RegisterPageState extends State<RegisterPage> {
                                       height: 14,
                                       child: CircularProgressIndicator(
                                         strokeWidth: 2,
-                                        color: Color(0xFF4A5568),
+                                        color: Colors.black54,
                                       ),
                                     )
                                   : const Icon(
                                       Icons.refresh,
                                       size: 14,
-                                      color: Color(0xFF4A5568),
+                                      color: Colors.black54,
                                     ),
                               const SizedBox(width: 4),
                               const Text(
                                 'New challenge',
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: Color(0xFF4A5568),
+                                  color: Colors.black54,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -487,25 +487,22 @@ class _RegisterPageState extends State<RegisterPage> {
                   ),
                   const SizedBox(height: 8),
                   Container(
-                    height: 80,
+                    height: 64,
                     width: double.infinity,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFEFECE6), // Match light beige background
+                      color: Colors.black.withOpacity(0.05), // match bg-black/5
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: const Color(0xFFD5D2C8), // Match beige border
-                      ),
+                        color: Colors.black.withOpacity(0.1),
+                      ), // match border-black/10
                     ),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(12),
                       child: Center(
                         child: _captchaChallenge.trim().startsWith('<svg')
-                            ? Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-                                child: SvgPicture.string(
-                                  _captchaChallenge,
-                                  fit: BoxFit.contain,
-                                ),
+                            ? SvgPicture.string(
+                                _captchaChallenge,
+                                fit: BoxFit.contain,
                               )
                             : Text(
                                 _captchaChallenge == 'ERROR'
@@ -538,35 +535,36 @@ class _RegisterPageState extends State<RegisterPage> {
                     keyboardType: TextInputType.text,
                     style: const TextStyle(fontSize: 14, color: Colors.black87),
                     decoration: InputDecoration(
-                      hintText: 'Your answer',
+                      hintText: 'Type the characters above',
                       hintStyle: TextStyle(
-                        color: Colors.black.withOpacity(0.3),
+                        color: Colors.black.withOpacity(0.4),
                         fontSize: 14,
                       ),
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 16,
                         vertical: 14,
                       ),
-                      fillColor: Colors.white,
+                      fillColor: Colors.white.withOpacity(
+                        0.5,
+                      ), // match bg-white/50
                       filled: true,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(
-                          color: Color(0xFFE2E0D9),
+                        borderSide: BorderSide(
+                          color: Colors.black.withOpacity(0.1),
                         ),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(
-                          color: Color(0xFFE2E0D9),
+                        borderSide: BorderSide(
+                          color: Colors.black.withOpacity(0.1),
                         ),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: const BorderSide(
-                          color: Color(0xFF4A5568),
-                          width: 1.5,
-                        ),
+                          color: Colors.black,
+                        ), // match focus:border-black
                       ),
                     ),
                   ),
