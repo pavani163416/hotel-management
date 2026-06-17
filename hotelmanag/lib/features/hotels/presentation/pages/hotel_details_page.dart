@@ -85,6 +85,18 @@ class _HotelDetailsPageState extends State<HotelDetailsPage>
     final isDark = Theme.of(context).colorScheme.brightness == Brightness.dark;
     final isWide = MediaQuery.of(context).size.width > 900;
 
+    final authProvider = context.watch<AuthProvider>();
+    final user = authProvider.user;
+    if (user != null) {
+      if (_reviewNameController.text.isEmpty) {
+        _reviewNameController.text = user.name;
+      }
+    } else {
+      if (_reviewNameController.text.isNotEmpty) {
+        _reviewNameController.clear();
+      }
+    }
+
     final hotel = context.select<HotelProvider, HotelEntity>(
       (p) => p.allHotels.cast<HotelEntity>().firstWhere(
         (h) => h.id == widget.id,
@@ -1739,6 +1751,67 @@ class _HotelDetailsPageState extends State<HotelDetailsPage>
 
   Widget _buildWriteReviewCard(HotelEntity hotel) {
     final isDark = Theme.of(context).colorScheme.brightness == Brightness.dark;
+    final authProvider = context.watch<AuthProvider>();
+    final user = authProvider.user;
+
+    if (user == null) {
+      return Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF253040) : Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isDark ? Colors.white10 : AppTheme.mutedColor,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Write a Review',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.onSurface,
+                fontFamily: 'Serif',
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'You must be signed in to submit a review for this property.',
+              style: TextStyle(
+                fontSize: 14,
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+              ),
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton(
+                onPressed: () => context.push('/login'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF34495E),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 0,
+                ),
+                child: const Text(
+                  'Sign In / Sign Up',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
