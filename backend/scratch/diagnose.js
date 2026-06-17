@@ -5,7 +5,7 @@ import { v2 as cloudinary } from "cloudinary";
 
 async function runDiagnostics() {
   console.log("=========================================");
-  console.log("       LUXESTAY SYSTEM DIAGNOSTICS      ");
+  console.log("       ATHITHIGRIHA SYSTEM DIAGNOSTICS      ");
   console.log("=========================================\n");
 
   // 1. MongoDB Connection Check
@@ -30,7 +30,7 @@ async function runDiagnostics() {
       console.log("⚠️ Standard connection failed:", err.message);
       console.log(" - Trying direct shard fallback connection...");
       try {
-        const fallbackUri = "mongodb://addepallipavani4_db_user:fwcMA4LWNzPVYuRR@ac-yfgxigg-shard-00-00.qehr8hm.mongodb.net:27017,ac-yfgxigg-shard-00-01.qehr8hm.mongodb.net:27017,ac-yfgxigg-shard-00-02.qehr8hm.mongodb.net:27017/luxestay?ssl=true&replicaSet=atlas-7t7uoi-shard-0&authSource=admin&retryWrites=true&w=majority";
+        const fallbackUri = "mongodb://addepallipavani4_db_user:fwcMA4LWNzPVYuRR@ac-yfgxigg-shard-00-00.qehr8hm.mongodb.net:27017,ac-yfgxigg-shard-00-01.qehr8hm.mongodb.net:27017,ac-yfgxigg-shard-00-02.qehr8hm.mongodb.net:27017/athithigriha?ssl=true&replicaSet=atlas-7t7uoi-shard-0&authSource=admin&retryWrites=true&w=majority";
         await mongoose.connect(fallbackUri, { serverSelectionTimeoutMS: 5000 });
         console.log("✅ MongoDB Connected Successfully via direct shard connection!");
         

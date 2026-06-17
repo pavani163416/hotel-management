@@ -24,7 +24,7 @@ const About = () => (
             Redefining Luxury Hospitality
           </h1>
           <p className="text-primary-foreground/80 text-xl leading-relaxed">
-            At LuxeStay, we believe every stay should be extraordinary. Our mission is to connect
+            At AthithiGriha, we believe every stay should be extraordinary. Our mission is to connect
             discerning travelers with the finest hotels and most seamless booking experience in the world.
           </p>
         </div>
@@ -54,7 +54,7 @@ const About = () => (
               Born from a passion for travel
             </h2>
             <p className="text-muted-foreground leading-relaxed mb-4">
-              LuxeStay was founded in 2012 by a group of avid travelers who were frustrated with
+              AthithiGriha was founded in 2012 by a group of avid travelers who were frustrated with
               the fragmented hotel booking experience. We set out to build a platform that treats
               every guest like royalty — with curated selections, transparent pricing, and
               white-glove digital service.
@@ -85,7 +85,7 @@ const About = () => (
       <div className="bg-secondary/30 py-16">
         <div className="container text-center">
           <h2 className="font-display text-3xl font-bold mb-2 text-foreground">Meet the Leadership</h2>
-          <p className="text-muted-foreground mb-10">The visionaries driving LuxeStay forward</p>
+          <p className="text-muted-foreground mb-10">The visionaries driving AthithiGriha forward</p>
           <div className="flex flex-wrap justify-center gap-8">
             {team.map((m) => (
               <div key={m.name} className="bg-card border border-border rounded-2xl p-6 w-52 text-center hover:shadow-lg transition-shadow">

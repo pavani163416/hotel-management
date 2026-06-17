@@ -3,9 +3,9 @@
 const swaggerDefinition = {
   openapi: "3.0.0",
   info: {
-    title: "LuxeStay API",
+    title: "AthithiGriha API",
     version: "1.0.0",
-    description: "OpenAPI 3.0 documentation for the LuxeStay backend.",
+    description: "OpenAPI 3.0 documentation for the AthithiGriha backend.",
   },
   servers: [
     {

@@ -33,13 +33,13 @@ export function ContactAdminModal({ isOpen, onClose }: ContactAdminModalProps) {
           animate={{ opacity: 1, y: 0 }}
           className="p-6 space-y-4"
         >
-          <a href="mailto:support@luxestay.com" className="flex items-center gap-4 p-4 rounded-xl border border-border bg-card hover:bg-muted/50 transition-colors group">
+          <a href="mailto:support@athithigriha.com" className="flex items-center gap-4 p-4 rounded-xl border border-border bg-card hover:bg-muted/50 transition-colors group">
             <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center group-hover:scale-110 transition-transform">
               <Mail className="w-5 h-5" />
             </div>
             <div>
               <p className="text-sm font-semibold text-foreground">Email Support</p>
-              <p className="text-sm text-muted-foreground">support@luxestay.com</p>
+              <p className="text-sm text-muted-foreground">support@athithigriha.com</p>
             </div>
           </a>
 

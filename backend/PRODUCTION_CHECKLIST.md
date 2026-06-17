@@ -1,4 +1,4 @@
-# LuxeStay Backend — Production Checklist
+# AthithiGriha Backend — Production Checklist
 
 ## ✅ Completed Hardening
 

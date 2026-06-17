@@ -14,7 +14,7 @@ async function test() {
     // Use a tiny 1x1 base64 pixel to test upload
     const dummyImage = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
     
-    const result = await cloudinary.uploader.upload(dummyImage, { folder: "luxestay/test" });
+    const result = await cloudinary.uploader.upload(dummyImage, { folder: "athithigriha/test" });
     console.log("Upload Success!");
     console.log("URL:", result.secure_url);
     

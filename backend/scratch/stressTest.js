@@ -6,7 +6,7 @@ import connectDB from "../config/db.js";
 import crypto from "crypto";
 
 async function runStressTest() {
-  console.log("=== LuxeStay Overbooking Stress Test (50 Concurrent Requests) ===\n");
+  console.log("=== AthithiGriha Overbooking Stress Test (50 Concurrent Requests) ===\n");
   await connectDB();
 
   const testSuffix = crypto.randomInt(100000, 999999).toString();

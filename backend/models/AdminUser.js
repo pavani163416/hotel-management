@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-// ── Admin Panel Users — stored in the 'luxestay' database ──
+// ── Admin Panel Users — stored in the 'athithigriha' database ──
 const adminUserSchema = new mongoose.Schema(
   {
     name:            { type: String, required: true, trim: true },

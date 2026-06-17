@@ -138,7 +138,7 @@ const Hotels = () => {
         <div className="container py-8">
           <div className="grid lg:grid-cols-[22%_1fr] xl:grid-cols-[24%_1fr] gap-8">
           {/* SIDEBAR */}
-          <aside className="lg:sticky lg:top-20 lg:self-start space-y-5 lg:max-h-[calc(100dvh-6rem)] lg:overflow-y-auto pr-1 lg:flex-shrink-0">
+          <aside className="space-y-5 pr-1 lg:flex-shrink-0">
             <div className="rounded-xl border border-border overflow-hidden bg-card">
               <div className="h-60 relative">
                 <HotelMap hotels={filtered} onHotelClick={(id) => nav(`/hotel/${id}`)} />
@@ -196,7 +196,7 @@ const Hotels = () => {
           </aside>
 
           {/* RIGHT */}
-          <section className="space-y-8 min-w-0 lg:max-h-[calc(100dvh-6rem)] lg:overflow-y-auto">
+          <section className="space-y-8 min-w-0">
             {deals.length > 0 && <TopDeals deals={deals} onView={(id) => nav(`/hotel/${id}`)} format={format} wishlist={wishlist} toggleWishlist={toggleWishlist} nav={nav} />}
 
             <div className="flex items-end justify-between gap-3 flex-wrap">

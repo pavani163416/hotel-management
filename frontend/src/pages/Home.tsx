@@ -26,7 +26,7 @@ const TOP_DESTINATIONS = [
 const Home = () => {
   useSEO({
     title: "Discover Extraordinary Hotel Stays",
-    description: "Book luxury hotels and private residences worldwide with LuxeStay's seamless concierge-driven booking experience. Curated stays, best price guarantee, 24/7 concierge.",
+    description: "Book luxury hotels and private residences worldwide with AthithiGriha's seamless concierge-driven booking experience. Curated stays, best price guarantee, 24/7 concierge.",
     canonical: "https://hotel-mgnt.vercel.app/"
   });
 
@@ -224,13 +224,13 @@ const Home = () => {
           <div className="relative grid md:grid-cols-2 gap-10 items-center">
             <div>
               <span className="inline-block bg-white/10 text-[#f5ebd7] text-xs font-semibold uppercase tracking-widest px-3 py-1.5 rounded-full mb-4">
-                Partner with LuxeStay
+                Partner with AthithiGriha
               </span>
               <h2 className="font-display text-3xl md:text-4xl font-bold mb-4 leading-tight text-white">
                 Own a Hotel or Resort?
               </h2>
               <p className="text-white/80 text-lg mb-6">
-                Partner with LuxeStay and reach thousands of travelers. List your property and grow your revenue.
+                Partner with AthithiGriha and reach thousands of travelers. List your property and grow your revenue.
               </p>
               <Link to="/owner-portal"
                 className="inline-flex items-center gap-2 bg-[#d4a373] text-[#1c1815] font-semibold px-6 py-3.5 rounded-xl hover:bg-[#e6b685] transition-base text-sm shadow-md">

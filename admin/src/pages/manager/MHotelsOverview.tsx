@@ -302,7 +302,7 @@ export default function HotelsOverview() {
                 <Phone className="w-3.5 h-3.5 text-gold" /> +1 (555) 000-0000
               </div>
               <div className="flex items-center gap-2.5 text-sm text-soft">
-                <Mail className="w-3.5 h-3.5 text-gold" /> info@luxestay.com
+                <Mail className="w-3.5 h-3.5 text-gold" /> info@athithigriha.com
               </div>
             </div>
 

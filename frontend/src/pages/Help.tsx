@@ -78,7 +78,7 @@ const Help = () => {
         <div className="container max-w-2xl mx-auto text-center">
           <h1 className="font-display text-5xl font-bold mb-5">Help Center</h1>
           <p className="text-primary-foreground/80 text-lg mb-8">
-            Find quick answers to common questions about LuxeStay.
+            Find quick answers to common questions about AthithiGriha.
           </p>
           <div className="relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />

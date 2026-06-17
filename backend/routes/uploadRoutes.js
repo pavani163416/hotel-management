@@ -166,10 +166,10 @@ router.get("/test-email", protect, authorizeRoles("Super Admin", "admin"), async
   const resend = new Resend(process.env.RESEND_API_KEY);
   try {
     const { data, error } = await resend.emails.send({
-      from:    process.env.RESEND_FROM_EMAIL || "LuxeStay <onboarding@resend.dev>",
+      from:    process.env.RESEND_FROM_EMAIL || "AthithiGriha <onboarding@resend.dev>",
       to:      [to],
-      subject: "LuxeStay — Email Test",
-      html:    "<h1>Test email from LuxeStay</h1><p>If you see this, emails are working!</p>",
+      subject: "AthithiGriha — Email Test",
+      html:    "<h1>Test email from AthithiGriha</h1><p>If you see this, emails are working!</p>",
     });
     if (error) {
       console.error("📧 [Test] Resend error:", JSON.stringify(error));
@@ -215,7 +215,7 @@ router.get("/fix-hotel-names", protect, authorizeRoles("Super Admin", "admin"), 
 
     let fixed = 0;
     for (const b of bookings) {
-      if (b.hotelName && b.hotelName !== "LuxeStay") continue; // already has a real name
+      if (b.hotelName && b.hotelName !== "AthithiGriha") continue; // already has a real name
 
       const roomNum = b.room?.roomNumber || "";
       const prefix  = roomNum.split("-")[0]?.toLowerCase() || roomNum.split("_")[0]?.toLowerCase();

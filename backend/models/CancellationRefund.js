@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 /**
  * CancellationRefund — tracks every cancelled booking and its refund status.
- * Stored in the luxestay database alongside bookings.
+ * Stored in the athithigriha database alongside bookings.
  */
 const cancellationRefundSchema = new mongoose.Schema(
   {

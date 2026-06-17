@@ -1,4 +1,4 @@
-# Payment Flow & Data Storage — LuxeStay
+# Payment Flow & Data Storage — AthithiGriha
 
 ## Your Question Answered Directly
 

@@ -25,7 +25,7 @@ const getCloudinary = async () => {
 export const uploadImage = async (file, folder = "hotels") => {
   const cloudinary = await getCloudinary();
   const result = await cloudinary.uploader.upload(file, {
-    folder:         `luxestay/${folder}`,
+    folder:         `athithigriha/${folder}`,
     transformation: [{ width: 1200, height: 800, crop: "fill", quality: "auto", fetch_format: "auto" }],
   });
   return { url: result.secure_url, publicId: result.public_id };

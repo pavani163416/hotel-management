@@ -80,7 +80,7 @@ export default function ResetPassword() {
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-dim pointer-events-none" />
                   <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
-                    placeholder="admin@luxestay.com"
+                    placeholder="admin@athithigriha.com"
                     className="w-full rounded-xl px-12 py-3 bg-slate-950/70 text-white border border-white/10 outline-none"
                   />
                 </div>

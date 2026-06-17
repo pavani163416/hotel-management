@@ -5,25 +5,25 @@ const pressItems = [
   {
     date: "May 28, 2025",
     outlet: "The Economic Times",
-    headline: "LuxeStay Raises $50M Series C to Expand Across Southeast Asia",
+    headline: "AthithiGriha Raises $50M Series C to Expand Across Southeast Asia",
     summary: "The luxury hotel booking platform secured funding led by Sequoia India, targeting 10 new markets in 2025.",
   },
   {
     date: "April 15, 2025",
     outlet: "TechCrunch",
-    headline: "LuxeStay's AI-Powered Room Matching Sees 40% Conversion Lift",
-    summary: "An exclusive look at how LuxeStay's personalization engine is reshaping how travelers choose their stays.",
+    headline: "AthithiGriha's AI-Powered Room Matching Sees 40% Conversion Lift",
+    summary: "An exclusive look at how AthithiGriha's personalization engine is reshaping how travelers choose their stays.",
   },
   {
     date: "March 3, 2025",
     outlet: "Forbes India",
-    headline: "LuxeStay Named Among Top 25 Most Innovative Travel Startups",
-    summary: "LuxeStay joins an elite group of travel tech companies recognised for disrupting traditional hospitality distribution.",
+    headline: "AthithiGriha Named Among Top 25 Most Innovative Travel Startups",
+    summary: "AthithiGriha joins an elite group of travel tech companies recognised for disrupting traditional hospitality distribution.",
   },
   {
     date: "January 10, 2025",
     outlet: "Business Today",
-    headline: "LuxeStay Surpasses 1 Million Bookings Milestone",
+    headline: "AthithiGriha Surpasses 1 Million Bookings Milestone",
     summary: "The platform celebrated a major milestone as it crossed one million cumulative hotel nights booked by guests across 45 countries.",
   },
 ];
@@ -35,9 +35,9 @@ const Press = () => (
         <div className="inline-flex items-center gap-2 bg-primary-foreground/10 rounded-full px-4 py-1.5 text-sm font-semibold mb-6">
           <Newspaper className="w-4 h-4" /> Press Room
         </div>
-        <h1 className="font-display text-5xl font-bold mb-5">LuxeStay in the News</h1>
+        <h1 className="font-display text-5xl font-bold mb-5">AthithiGriha in the News</h1>
         <p className="text-primary-foreground/80 text-xl leading-relaxed">
-          Read the latest news and announcements from LuxeStay Hospitality.
+          Read the latest news and announcements from AthithiGriha Hospitality.
         </p>
       </div>
     </div>
@@ -75,9 +75,9 @@ const Press = () => (
         <Mail className="w-8 h-8 text-primary mx-auto mb-3" />
         <h3 className="font-display text-2xl font-bold text-foreground mb-2">Media Enquiries</h3>
         <p className="text-muted-foreground mb-4">For press enquiries, interview requests, or asset access, reach our PR team.</p>
-        <a href="mailto:press@luxestay.com"
+        <a href="mailto:press@athithigriha.com"
           className="inline-block bg-primary text-primary-foreground px-6 py-3 rounded-xl font-semibold hover:bg-primary/90 transition-colors">
-          press@luxestay.com
+          press@athithigriha.com
         </a>
       </div>
     </div>

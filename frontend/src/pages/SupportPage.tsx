@@ -20,7 +20,29 @@ const Support = () => {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
 
-  // CAPTCHA removed from public support form (server-side optional verification handled if provided)
+  const [captchaId, setCaptchaId] = useState("");
+  const [captchaChallenge, setCaptchaChallenge] = useState("");
+  const [captchaAnswer, setCaptchaAnswer] = useState("");
+  const [captchaLoading, setCaptchaLoading] = useState(false);
+
+  const fetchCaptcha = async () => {
+    setCaptchaLoading(true);
+    setCaptchaAnswer("");
+    try {
+      const res: any = await api.get("/auth/captcha");
+      const d = res.data?.data || res.data || {};
+      setCaptchaId(d.captchaId || "");
+      setCaptchaChallenge(d.challenge || "");
+    } catch {
+      setCaptchaChallenge(""); setCaptchaId("");
+    } finally {
+      setCaptchaLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCaptcha();
+  }, []);
 
   const handle = (k: string, v: string) => setForm((p) => ({ ...p, [k]: v }));
 
@@ -30,7 +52,10 @@ const Support = () => {
       setError("Please fill all required fields.");
       return;
     }
-    // no captcha required for support tickets
+    if (captchaChallenge && !captchaAnswer.trim()) {
+      setError("Please complete the security check.");
+      return;
+    }
     setError(""); setLoading(true);
     try {
       await api.post("/public/support/create", {
@@ -39,6 +64,8 @@ const Support = () => {
         category: form.category || "Other",
         subject: form.subject,
         message: form.message,
+        captchaId,
+        captchaAnswer: captchaAnswer.trim(),
       });
       setSuccess(true);
     } catch (err: any) {

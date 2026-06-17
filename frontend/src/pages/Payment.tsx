@@ -241,7 +241,7 @@ const Payment = () => {
         key: import.meta.env.VITE_RAZORPAY_KEY_ID || "rzp_test_dummy",
         amount: rzpOrder.amount, // in paise
         currency: rzpOrder.currency,
-        name: "LuxeStay",
+        name: "AthithiGriha",
         description: `Booking payment for ${selectedHotel.name}`,
         order_id: rzpOrder.orderId,
         prefill: {

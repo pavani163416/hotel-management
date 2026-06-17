@@ -208,7 +208,7 @@ router.get("/api/sitemap.json", (req, res) => {
 router.get("/robots.txt", (req, res) => {
   const baseUrl = `${req.protocol}://${req.get("host")}`;
 
-  const content = `# LuxeStay robots.txt
+  const content = `# AthithiGriha robots.txt
 User-agent: *
 Disallow: /api/
 Allow: /

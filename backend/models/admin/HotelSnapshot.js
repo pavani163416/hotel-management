@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 
 // Stored in: controller database
-// Admin-managed hotel records (separate from user-facing luxestay.hotels)
+// Admin-managed hotel records (separate from user-facing athithigriha.hotels)
 const schema = new mongoose.Schema(
   {
     hotelId:       { type: String, required: true, unique: true },

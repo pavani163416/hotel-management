@@ -52,7 +52,7 @@ export default function Sidebar() {
           <Building2 className="w-4 h-4 text-gold" />
         </div>
         <div>
-          <p className="text-bright font-bold text-sm leading-none">LuxeStay</p>
+          <p className="text-bright font-bold text-sm leading-none">AthithiGriha</p>
           <p className="text-dim text-[10px] mt-0.5">{t("Management")}</p>
         </div>
       </div>

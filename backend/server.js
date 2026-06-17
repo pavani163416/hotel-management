@@ -227,8 +227,8 @@ const STRICT_VERCEL_REGEXES = [
   /^https:\/\/hotel-management-admin-eta-pr-\d+\.vercel\.app$/,
   /^https:\/\/hotel-management-frontend-.*\.vercel\.app$/,
   /^https:\/\/hotel-management-admin-.*\.vercel\.app$/,
-  /^https:\/\/luxestay-frontend-pr-\d+\.vercel\.app$/,
-  /^https:\/\/luxestay-admin-pr-\d+\.vercel\.app$/,
+  /^https:\/\/athithigriha-frontend-pr-\d+\.vercel\.app$/,
+  /^https:\/\/athithigriha-admin-pr-\d+\.vercel\.app$/,
   /^https:\/\/hotel-mgnt-pr-\d+\.vercel\.app$/,
   /^https:\/\/athithigriha-.*-pr-\d+\.vercel\.app$/,
   /^https:\/\/athithigriha-.*\.vercel\.app$/
@@ -584,7 +584,7 @@ app.use("/api", (req, res, next) => {
 app.get("/", (req, res) => {
   res.status(200).json({
     success:     true,
-    message:     "LuxeStay API is live",
+    message:     "AthithiGriha API is live",
     version:     "1.0.0",
     environment: process.env.NODE_ENV,
     endpoints: {
@@ -598,7 +598,7 @@ app.get("/", (req, res) => {
 app.get("/api/health", (req, res) => {
   res.status(200).json({
     success:     true,
-    message:     "LuxeStay API is running",
+    message:     "AthithiGriha API is running",
     environment: process.env.NODE_ENV,
     redis:       isRedisReady() ? "connected" : "disconnected",
     socket:      "running",
@@ -799,7 +799,7 @@ httpServer.on("upgrade", (request, socket, head) => {
 
 if (process.env.NODE_ENV !== "test") {
   httpServer.listen(PORT, "0.0.0.0", () => {
-    logger.info(`LuxeStay API running on port ${PORT}`, {
+    logger.info(`AthithiGriha API running on port ${PORT}`, {
       port:        PORT,
       environment: process.env.NODE_ENV,
     });

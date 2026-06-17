@@ -1,5 +1,5 @@
 /**
- * LuxeStay Email Service — powered by Resend or SMTP (Nodemailer)
+ * AthithiGriha Email Service — powered by Resend or SMTP (Nodemailer)
  * Docs: https://resend.com/docs
  */
 
@@ -39,7 +39,7 @@ const getTransporter = () => {
   return _transporter;
 };
 
-const FROM = process.env.RESEND_FROM_EMAIL || "LuxeStay <onboarding@resend.dev>";
+const FROM = process.env.RESEND_FROM_EMAIL || "AthithiGriha <onboarding@resend.dev>";
 
 /**
  * Resend free plan restriction helper:
@@ -65,7 +65,7 @@ const sendMailInternal = async ({ to, subject, html }) => {
   if (transporter) {
     console.log(`📧 [Email] Sending email via SMTP (Nodemailer) to: ${to}`);
     const mailOptions = {
-      from: process.env.SMTP_FROM_EMAIL || `"LuxeStay" <${process.env.SMTP_USER}>`,
+      from: process.env.SMTP_FROM_EMAIL || `"AthithiGriha" <${process.env.SMTP_USER}>`,
       to,
       subject,
       html,
@@ -103,7 +103,7 @@ export const sendPasswordResetEmail = async ({ to, name, resetUrl }) => {
 
   console.log(`📧 [Email] Triggering password reset → ${to}`);
 
-  const subject = `Reset your LuxeStay password`;
+  const subject = `Reset your AthithiGriha password`;
   const html = `
 <!DOCTYPE html>
 <html lang="en">
@@ -114,14 +114,14 @@ export const sendPasswordResetEmail = async ({ to, name, resetUrl }) => {
       <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
         <tr>
           <td style="background:#1a1f2e;padding:32px 40px;text-align:center;">
-            <h1 style="color:#ffffff;margin:0;font-size:26px;font-weight:700;">LuxeStay</h1>
+            <h1 style="color:#ffffff;margin:0;font-size:26px;font-weight:700;">AthithiGriha</h1>
           </td>
         </tr>
         <tr>
           <td style="padding:32px 40px;text-align:left;color:#374151;">
-            <p style="margin:0 0 16px;font-size:16px;">Hi <strong>${name || "LuxeStay User"}</strong>,</p>
+            <p style="margin:0 0 16px;font-size:16px;">Hi <strong>${name || "AthithiGriha User"}</strong>,</p>
             <p style="margin:0 0 20px;font-size:14px;color:#6b7280;line-height:1.7;">
-              We received a request to reset your LuxeStay password. Click the button below to choose a new password.
+              We received a request to reset your AthithiGriha password. Click the button below to choose a new password.
             </p>
             <p style="text-align:center;margin:0 0 24px;">
               <a href="${resetUrl}" target="_blank" rel="noopener noreferrer"
@@ -140,7 +140,7 @@ export const sendPasswordResetEmail = async ({ to, name, resetUrl }) => {
         </tr>
         <tr>
           <td style="background:#f9fafb;border-top:1px solid #e5e7eb;padding:20px 40px;text-align:center;">
-            <p style="margin:0;color:#9ca3af;font-size:12px;">© 2026 LuxeStay Hospitality. All rights reserved.</p>
+            <p style="margin:0;color:#9ca3af;font-size:12px;">© 2026 AthithiGriha Hospitality. All rights reserved.</p>
           </td>
         </tr>
       </table>
@@ -202,7 +202,7 @@ export const sendBookingConfirmation = async ({
       <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
         <tr>
           <td style="background:#1a1f2e;padding:32px 40px;text-align:center;">
-            <h1 style="color:#ffffff;margin:0;font-size:26px;font-weight:700;">LuxeStay</h1>
+            <h1 style="color:#ffffff;margin:0;font-size:26px;font-weight:700;">AthithiGriha</h1>
           </td>
         </tr>
         <tr>
@@ -248,13 +248,13 @@ export const sendBookingConfirmation = async ({
             <ul style="margin:0;padding-left:20px;font-size:13px;color:#6b7280;line-height:1.7;">
               <li>Please carry a valid government-issued photo ID at check-in.</li>
               <li>Standard check-in time is 2:00 PM, and check-out time is 12:00 PM.</li>
-              <li>To manage or cancel your booking, visit your profile in the LuxeStay app.</li>
+              <li>To manage or cancel your booking, visit your profile in the AthithiGriha app.</li>
             </ul>
           </td>
         </tr>
         <tr>
           <td style="background:#f9fafb;border-top:1px solid #e5e7eb;padding:20px 40px;text-align:center;">
-            <p style="margin:0;color:#9ca3af;font-size:12px;">© 2026 LuxeStay Hospitality. All rights reserved.</p>
+            <p style="margin:0;color:#9ca3af;font-size:12px;">© 2026 AthithiGriha Hospitality. All rights reserved.</p>
           </td>
         </tr>
       </table>
@@ -305,7 +305,7 @@ export const sendCancellationEmail = async ({
       <table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
         <tr>
           <td style="background:#1a1f2e;padding:32px 40px;text-align:center;">
-            <h1 style="color:#fff;margin:0;font-size:26px;font-weight:700;">LuxeStay</h1>
+            <h1 style="color:#fff;margin:0;font-size:26px;font-weight:700;">AthithiGriha</h1>
           </td>
         </tr>
         <tr>
@@ -328,7 +328,7 @@ export const sendCancellationEmail = async ({
         </tr>
         <tr>
           <td style="background:#f9fafb;border-top:1px solid #e5e7eb;padding:20px 40px;text-align:center;">
-            <p style="color:#9ca3af;font-size:12px;margin:0;">© 2026 LuxeStay Hospitality. All rights reserved.</p>
+            <p style="color:#9ca3af;font-size:12px;margin:0;">© 2026 AthithiGriha Hospitality. All rights reserved.</p>
           </td>
         </tr>
       </table>
@@ -364,7 +364,7 @@ export const sendOtpEmail = async ({ to, name, otp }) => {
   console.log("Recipient:", to);
   console.log("Generated OTP:", otp);
 
-  const subject = `LuxeStay Verification Code — ${otp}`;
+  const subject = `AthithiGriha Verification Code — ${otp}`;
   const html = `
 <!DOCTYPE html>
 <html lang="en">
@@ -379,14 +379,14 @@ export const sendOtpEmail = async ({ to, name, otp }) => {
       <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
         <tr>
           <td style="background:#1a1f2e;padding:32px 40px;text-align:center;">
-            <h1 style="color:#ffffff;margin:0;font-size:26px;font-weight:700;">LuxeStay</h1>
+            <h1 style="color:#ffffff;margin:0;font-size:26px;font-weight:700;">AthithiGriha</h1>
           </td>
         </tr>
         <tr>
           <td style="padding:32px 40px;text-align:left;color:#374151;">
             <p style="margin:0 0 16px;font-size:16px;">Hi <strong>${name || "Guest"}</strong>,</p>
             <p style="margin:0 0 20px;font-size:14px;color:#6b7280;line-height:1.7;">
-              Thank you for registering with LuxeStay. Please use the verification code below to verify your email address. This code is valid for 5 minutes.
+              Thank you for registering with AthithiGriha. Please use the verification code below to verify your email address. This code is valid for 5 minutes.
             </p>
             <div style="text-align:center;margin:30px 0;">
               <span style="display:inline-block;padding:12px 30px;background:#f3f4f6;border:1px solid #e5e7eb;border-radius:8px;font-size:32px;font-weight:bold;letter-spacing:6px;color:#111827;">${otp}</span>
@@ -398,7 +398,7 @@ export const sendOtpEmail = async ({ to, name, otp }) => {
         </tr>
         <tr>
           <td style="background:#f9fafb;border-top:1px solid #e5e7eb;padding:20px 40px;text-align:center;">
-            <p style="margin:0;color:#9ca3af;font-size:12px;">© 2026 LuxeStay Hospitality. All rights reserved.</p>
+            <p style="margin:0;color:#9ca3af;font-size:12px;">© 2026 AthithiGriha Hospitality. All rights reserved.</p>
           </td>
         </tr>
       </table>
@@ -434,7 +434,7 @@ export const sendOwnerApprovalEmail = async ({ to, name }) => {
 
   console.log(`📧 [Email] Triggering owner approval email → ${to}`);
 
-  const subject = `🎉 Your LuxeStay Owner Application has been Approved!`;
+  const subject = `🎉 Your AthithiGriha Owner Application has been Approved!`;
   const html = `
 <!DOCTYPE html>
 <html lang="en">
@@ -445,7 +445,7 @@ export const sendOwnerApprovalEmail = async ({ to, name }) => {
       <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
         <tr>
           <td style="background:#1a1f2e;padding:32px 40px;text-align:center;">
-            <h1 style="color:#ffffff;margin:0;font-size:26px;font-weight:700;">LuxeStay</h1>
+            <h1 style="color:#ffffff;margin:0;font-size:26px;font-weight:700;">AthithiGriha</h1>
           </td>
         </tr>
         <tr>
@@ -455,12 +455,12 @@ export const sendOwnerApprovalEmail = async ({ to, name }) => {
         </tr>
         <tr>
           <td style="padding:32px 40px;text-align:left;color:#374151;">
-            <p style="margin:0 0 16px;font-size:16px;">Hi <strong>${name || "LuxeStay Partner"}</strong>,</p>
+            <p style="margin:0 0 16px;font-size:16px;">Hi <strong>${name || "AthithiGriha Partner"}</strong>,</p>
             <p style="margin:0 0 20px;font-size:14px;color:#6b7280;line-height:1.7;">
-              Congratulations! Your application to become a verified LuxeStay property partner has been reviewed and **approved** by our administrator.
+              Congratulations! Your application to become a verified AthithiGriha property partner has been reviewed and **approved** by our administrator.
             </p>
             <p style="margin:0 0 20px;font-size:14px;color:#6b7280;line-height:1.7;">
-              You can now access your **Owner Dashboard** at LuxeStay and list/manage your hotels and resorts.
+              You can now access your **Owner Dashboard** at AthithiGriha and list/manage your hotels and resorts.
             </p>
             <p style="text-align:center;margin:30px 0 24px;">
               <a href="https://hotel-management-frontend-puce.vercel.app/owner-portal" target="_blank" rel="noopener noreferrer"
@@ -472,7 +472,7 @@ export const sendOwnerApprovalEmail = async ({ to, name }) => {
         </tr>
         <tr>
           <td style="background:#f9fafb;border-top:1px solid #e5e7eb;padding:20px 40px;text-align:center;">
-            <p style="margin:0;color:#9ca3af;font-size:12px;">© 2026 LuxeStay Hospitality. All rights reserved.</p>
+            <p style="margin:0;color:#9ca3af;font-size:12px;">© 2026 AthithiGriha Hospitality. All rights reserved.</p>
           </td>
         </tr>
       </table>
@@ -506,7 +506,7 @@ export const sendOwnerRejectionEmail = async ({ to, name, reason }) => {
 
   console.log(`📧 [Email] Triggering owner rejection email → ${to}`);
 
-  const subject = `Update on your LuxeStay Owner Application`;
+  const subject = `Update on your AthithiGriha Owner Application`;
   const html = `
 <!DOCTYPE html>
 <html lang="en">
@@ -517,7 +517,7 @@ export const sendOwnerRejectionEmail = async ({ to, name, reason }) => {
       <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
         <tr>
           <td style="background:#1a1f2e;padding:32px 40px;text-align:center;">
-            <h1 style="color:#ffffff;margin:0;font-size:26px;font-weight:700;">LuxeStay</h1>
+            <h1 style="color:#ffffff;margin:0;font-size:26px;font-weight:700;">AthithiGriha</h1>
           </td>
         </tr>
         <tr>
@@ -527,9 +527,9 @@ export const sendOwnerRejectionEmail = async ({ to, name, reason }) => {
         </tr>
         <tr>
           <td style="padding:32px 40px;text-align:left;color:#374151;">
-            <p style="margin:0 0 16px;font-size:16px;">Hi <strong>${name || "LuxeStay Partner"}</strong>,</p>
+            <p style="margin:0 0 16px;font-size:16px;">Hi <strong>${name || "AthithiGriha Partner"}</strong>,</p>
             <p style="margin:0 0 20px;font-size:14px;color:#6b7280;line-height:1.7;">
-              Thank you for applying to become a verified LuxeStay property partner. After reviewing your application details and KYC documents, our administrator was **unable to approve** your application at this time.
+              Thank you for applying to become a verified AthithiGriha property partner. After reviewing your application details and KYC documents, our administrator was **unable to approve** your application at this time.
             </p>
             <div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;padding:16px;margin-bottom:20px;font-size:14px;color:#b91c1c;">
               <strong>Reason for Rejection:</strong><br/>
@@ -548,7 +548,7 @@ export const sendOwnerRejectionEmail = async ({ to, name, reason }) => {
         </tr>
         <tr>
           <td style="background:#f9fafb;border-top:1px solid #e5e7eb;padding:20px 40px;text-align:center;">
-            <p style="margin:0;color:#9ca3af;font-size:12px;">© 2026 LuxeStay Hospitality. All rights reserved.</p>
+            <p style="margin:0;color:#9ca3af;font-size:12px;">© 2026 AthithiGriha Hospitality. All rights reserved.</p>
           </td>
         </tr>
       </table>
@@ -590,7 +590,7 @@ export const sendGeneralEmail = async ({ to, subject, bodyHtml }) => {
       <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
         <tr>
           <td style="background:#1a1f2e;padding:32px 40px;text-align:center;">
-            <h1 style="color:#ffffff;margin:0;font-size:26px;font-weight:700;">LuxeStay</h1>
+            <h1 style="color:#ffffff;margin:0;font-size:26px;font-weight:700;">AthithiGriha</h1>
           </td>
         </tr>
         <tr>
@@ -602,7 +602,7 @@ export const sendGeneralEmail = async ({ to, subject, bodyHtml }) => {
         </tr>
         <tr>
           <td style="background:#f9fafb;border-top:1px solid #e5e7eb;padding:20px 40px;text-align:center;">
-            <p style="margin:0;color:#9ca3af;font-size:12px;">© 2026 LuxeStay Hospitality. All rights reserved.</p>
+            <p style="margin:0;color:#9ca3af;font-size:12px;">© 2026 AthithiGriha Hospitality. All rights reserved.</p>
           </td>
         </tr>
       </table>

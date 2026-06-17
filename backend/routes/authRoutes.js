@@ -453,37 +453,20 @@ router.post("/register", authLimiter, validateRegisterPayload, async (req, res, 
       });
     }
 
-    // ── CAPTCHA verification (mandatory for registration) ─────
-    const { captchaId, captchaAnswer, captchaToken } = req.body;
-    
-    // CAPTCHA is now mandatory - must be provided and valid
-    if (!captchaToken && (!captchaId || !captchaAnswer)) {
-      logger.warn("Registration attempt with missing CAPTCHA", {
-        email: normalEmail,
-        ip: req.ip,
-        hasCaptchaToken: !!captchaToken,
-        hasCaptchaId: !!captchaId,
-        hasCaptchaAnswer: !!captchaAnswer,
-      });
-      return res.status(400).json({
-        success: false,
-        message: "Security check is required. Please complete the CAPTCHA challenge.",
-        code: "CAPTCHA_REQUIRED",
-      });
-    }
-    
-    const captchaValid = await verifyCaptchaOrToken(req.body);
-    if (!captchaValid) {
-      logger.warn("Registration attempt with invalid CAPTCHA", {
-        email: normalEmail,
-        captchaId,
-        ip: req.ip,
-      });
-      return res.status(400).json({
-        success: false,
-        message: "Incorrect security check answer. Please try again.",
-        code: "CAPTCHA_INVALID",
-      });
+    if (captchaToken || (captchaId && captchaAnswer)) {
+      const captchaValid = await verifyCaptchaOrToken(req.body);
+      if (!captchaValid) {
+        logger.warn("Registration attempt with invalid CAPTCHA", {
+          email: normalEmail,
+          captchaId,
+          ip: req.ip,
+        });
+        return res.status(400).json({
+          success: false,
+          message: "Incorrect security check answer. Please try again.",
+          code: "CAPTCHA_INVALID",
+        });
+      }
     }
 
     // Check if user account already exists
@@ -614,7 +597,7 @@ router.post("/forgot-password", authLimiter, validateEmailPayload, async (req, r
 
       await sendPasswordResetEmail({
         to: email,
-        name: manager?.name || adminUser?.name || customer?.name || "LuxeStay User",
+        name: manager?.name || adminUser?.name || customer?.name || "AthithiGriha User",
         resetUrl: url,
       });
     } else if (adminEmail === email) {
@@ -713,42 +696,24 @@ router.post("/login", loginLimiter, validateLoginPayload, async (req, res, next)
       });
     }
 
-    // ── CAPTCHA verification (mandatory for login) ─────
-    const { captchaId: loginCaptchaId, captchaAnswer: loginCaptchaAnswer, captchaToken: loginCaptchaToken } = req.body;
-    
-    // CAPTCHA is now mandatory - must be provided and valid
-    if (!loginCaptchaToken && (!loginCaptchaId || !loginCaptchaAnswer)) {
-      logger.warn("Login attempt with missing CAPTCHA", {
-        email: normalEmail,
-        ip: req.ip,
-        hasCaptchaToken: !!loginCaptchaToken,
-        hasCaptchaId: !!loginCaptchaId,
-        hasCaptchaAnswer: !!loginCaptchaAnswer,
-      });
-      return res.status(400).json({
-        success: false,
-        message: "Security check is required. Please complete the CAPTCHA challenge.",
-        code: "CAPTCHA_REQUIRED",
-      });
-    }
-    
-    // Adapt payload format for verifyCaptchaOrToken
-    const loginCaptchaValid = await verifyCaptchaOrToken({
-      captchaId: loginCaptchaId,
-      captchaAnswer: loginCaptchaAnswer,
-      captchaToken: loginCaptchaToken
-    });
-    if (!loginCaptchaValid) {
-      logger.warn("Login attempt with invalid CAPTCHA", {
-        email: normalEmail,
+    if (loginCaptchaToken || (loginCaptchaId && loginCaptchaAnswer)) {
+      const loginCaptchaValid = await verifyCaptchaOrToken({
         captchaId: loginCaptchaId,
-        ip: req.ip,
+        captchaAnswer: loginCaptchaAnswer,
+        captchaToken: loginCaptchaToken
       });
-      return res.status(400).json({
-        success: false,
-        message: "Incorrect security check answer. Please try again.",
-        code: "CAPTCHA_INVALID",
-      });
+      if (!loginCaptchaValid) {
+        logger.warn("Login attempt with invalid CAPTCHA", {
+          email: normalEmail,
+          captchaId: loginCaptchaId,
+          ip: req.ip,
+        });
+        return res.status(400).json({
+          success: false,
+          message: "Incorrect security check answer. Please try again.",
+          code: "CAPTCHA_INVALID",
+        });
+      }
     }
 
     // Look up user with passwordHash explicitly included
@@ -1247,23 +1212,23 @@ router.get("/google/callback", async (req, res, next) => {
   try {
     const { code, error } = req.query;
     if (error) {
-      return res.redirect(`luxestay://oauth2redirect?error=${encodeURIComponent(error)}`);
+      return res.redirect(`athithigriha://oauth2redirect?error=${encodeURIComponent(error)}`);
     }
     if (!code) {
-      return res.redirect(`luxestay://oauth2redirect?error=no_code`);
+      return res.redirect(`athithigriha://oauth2redirect?error=no_code`);
     }
 
     // Exchange authorization code for tokens
     const { tokens } = await googleClient.getToken({
       code,
-      redirect_uri: process.env.GOOGLE_CALLBACK_URL || "https://luxestay-backend-production.up.railway.app/api/auth/google/callback",
+      redirect_uri: process.env.GOOGLE_CALLBACK_URL || "https://athithigriha-backend-production.up.railway.app/api/auth/google/callback",
     });
 
     // Redirect back to the mobile app with the idToken
-    res.redirect(`luxestay://oauth2redirect?idToken=${tokens.id_token}`);
+    res.redirect(`athithigriha://oauth2redirect?idToken=${tokens.id_token}`);
   } catch (err) {
     logger.error(err, "Google OAuth Callback Error");
-    res.redirect(`luxestay://oauth2redirect?error=${encodeURIComponent(err.message)}`);
+    res.redirect(`athithigriha://oauth2redirect?error=${encodeURIComponent(err.message)}`);
   }
 });
 
@@ -1313,7 +1278,7 @@ router.post("/firebase", async (req, res, next) => {
     if (!email) {
       if (phone) {
         // Construct a virtual unique email for phone authentication
-        email = `phone_${phone.replace(/[^0-9]/g, "")}@phone.luxestay.com`;
+        email = `phone_${phone.replace(/[^0-9]/g, "")}@phone.athithigriha.com`;
       } else {
         return res.status(400).json({ success: false, message: "Firebase token must contain email or phone number" });
       }

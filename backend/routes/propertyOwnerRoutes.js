@@ -41,7 +41,7 @@ const uploadBufferToCloudinary = async (buffer, filename, mimetype) => {
     }
 
     const uploadOptions = {
-      folder: "luxestay/kyc",
+      folder: "athithigriha/kyc",
       // ── ATOMIC SECURITY CHECK: Treat all uploads as opaque binary blobs ──
       resource_type: "raw", 
       format: undefined, // Let it be an opaque blob
@@ -149,9 +149,13 @@ const checkApplicationState = async (req, res, next) => {
 // ── POST /api/owners/apply ──────────────────────────────
 router.post("/apply", verifyUser, preventExistingOwners, checkApplicationState, uploadPublicSupport.array("documents", 5), validateKycMagicBytes, async (req, res, next) => {
   try {
-    const { businessName, hotelName, hotelAddress, gstNumber, businessRegistrationNumber, docType } = req.body;
+    const { businessName, hotelName, hotelAddress, gstNumber, businessRegistrationNumber, docType, email } = req.body;
     if (!businessName || !hotelName || !hotelAddress) {
       return res.status(400).json({ success: false, message: "Business name, hotel name, and hotel address are required." });
+    }
+
+    if (email && email.toLowerCase().trim() !== req.user.email.toLowerCase().trim()) {
+      return res.status(400).json({ success: false, message: "Application email must match your authenticated account email." });
     }
 
     // ── ATOMIC SECURITY CHECK: Strict Document Type Whitelist ──
@@ -387,7 +391,7 @@ router.patch("/admin/:id/approve", protect, authorizeRoles("Super Admin", "admin
         userId: user.email,
         role: "customer",
         type: "system",
-        message: `🎉 Your property owner application has been approved! You can now list your hotels on LuxeStay.`,
+        message: `🎉 Your property owner application has been approved! You can now list your hotels on AthithiGriha.`,
       });
     } catch { }
 
@@ -459,7 +463,7 @@ router.patch("/admin/:id/suspend", protect, authorizeRoles("Super Admin", "admin
         userId: user.email,
         role: "customer",
         type: "system",
-        message: `Your LuxeStay owner account has been suspended. Reason: ${req.body.reason || "Contact support for details."}`,
+        message: `Your AthithiGriha owner account has been suspended. Reason: ${req.body.reason || "Contact support for details."}`,
       });
     } catch { }
 

@@ -201,8 +201,6 @@ export default function Bookings() {
         subtotal: parseFloat(nbAmount) || 0,
         pricePerNight: resolvedPPN,
         paymentMethod: nbPaymentMethod,
-        // Admin-created reservations are considered confirmed by default
-        status: "Confirmed",
       });
       refetch(); // refresh bookings list from backend
       setNbSubmitted(true);
@@ -223,12 +221,7 @@ export default function Bookings() {
     if (!detailBooking) return;
     setCancelling(true);
     try {
-      // Try cancelling by the backend record id first, fall back to booking id
-      try {
-        await apiCancelBooking(detailBooking._id || detailBooking.id, "Cancelled by admin");
-      } catch (e) {
-        await apiCancelBooking(detailBooking.id || detailBooking._id, "Cancelled by admin");
-      }
+      await apiCancelBooking(detailBooking._id, "Cancelled by admin");
       updateStatus(detailBooking.id, "Cancelled");
     } catch {
       updateStatus(detailBooking.id, "Cancelled");

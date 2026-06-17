@@ -104,7 +104,7 @@ function mapBackend(b: any): Booking {
     nights,
     totalAmount: b.totalAmount || 0,
     status:      b.status || "Confirmed",
-    property:    b.hotelId?.name || (b.hotelName && b.hotelName !== "LuxeStay" ? b.hotelName : null) || (b.property && b.property !== "LuxeStay" ? b.property : null) || "Other Properties",
+    property:    b.hotelId?.name || (b.hotelName && b.hotelName !== "AthithiGriha" ? b.hotelName : null) || (b.property && b.property !== "AthithiGriha" ? b.property : null) || "Other Properties",
     createdAt:   b.createdAt || new Date().toISOString(),
     payment,
   };

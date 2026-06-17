@@ -33,7 +33,7 @@ import AdminUser from "../models/AdminUser.js";
 const MANAGERS = [
   {
     name:              "Lumière Manager",
-    email:             "lumiere.manager@luxestay.com",
+    email:             "lumiere.manager@athithigriha.com",
     password:          "Manager@Lumiere2024",
     role:              "Manager",
     assignedHotelId:   "h1",
@@ -41,7 +41,7 @@ const MANAGERS = [
   },
   {
     name:              "Azure Manager",
-    email:             "azure.manager@luxestay.com",
+    email:             "azure.manager@athithigriha.com",
     password:          "Manager@Azure2024",
     role:              "Manager",
     assignedHotelId:   "h2",
@@ -49,7 +49,7 @@ const MANAGERS = [
   },
   {
     name:              "Coral Bay Manager",
-    email:             "coralbay.manager@luxestay.com",
+    email:             "coralbay.manager@athithigriha.com",
     password:          "Manager@CoralBay2024",
     role:              "Manager",
     assignedHotelId:   "h3",
@@ -57,7 +57,7 @@ const MANAGERS = [
   },
   {
     name:              "Alpine Manager",
-    email:             "alpine.manager@luxestay.com",
+    email:             "alpine.manager@athithigriha.com",
     password:          "Manager@Alpine2024",
     role:              "Manager",
     assignedHotelId:   "h4",
@@ -65,7 +65,7 @@ const MANAGERS = [
   },
   {
     name:              "Metropolitan Manager",
-    email:             "metro.manager@luxestay.com",
+    email:             "metro.manager@athithigriha.com",
     password:          "Manager@Metro2024",
     role:              "Manager",
     assignedHotelId:   "h5",
@@ -73,7 +73,7 @@ const MANAGERS = [
   },
   {
     name:              "Santorini Manager",
-    email:             "santorini.manager@luxestay.com",
+    email:             "santorini.manager@athithigriha.com",
     password:          "Manager@Santorini2024",
     role:              "Manager",
     assignedHotelId:   "h6",

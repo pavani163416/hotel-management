@@ -372,7 +372,7 @@ export default function Hotels() {
     };
 
     // Only include rooms/reviews when creating a new hotel
-    const luxestayPayload = editTarget
+    const athithigrihaPayload = editTarget
       ? basePayload
       : { ...basePayload, rooms: [], reviews: [] };
 
@@ -380,7 +380,7 @@ export default function Hotels() {
       const token = localStorage.getItem("luxe_admin_token");
       const luxRes = await fetch(
         editTarget ? `${API}/hotels/${hotelId}` : `${API}/hotels`,
-        { method: editTarget ? "PATCH" : "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify(luxestayPayload) }
+        { method: editTarget ? "PATCH" : "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify(athithigrihaPayload) }
       );
       const luxData = await luxRes.json();
       if (!luxRes.ok) {
@@ -405,7 +405,7 @@ export default function Hotels() {
           .filter(Boolean)
           .join("")
           .slice(0, 12);
-        const email = `${slug}.manager@luxestay.com`;
+        const email = `${slug}.manager@athithigriha.com`;
         const password = `Manager@${form.name.replace(/[^a-zA-Z]/g, "").slice(0, 8)}2024`;
 
         // Register manager in backend

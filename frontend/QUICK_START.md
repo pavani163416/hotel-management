@@ -12,34 +12,34 @@ node utils/seedManagers.js
 ```
 🌱  Seeding hotel managers...
 
-  ✅  Created: lumiere.manager@luxestay.com → Hôtel de Lumière
-  ✅  Created: azure.manager@luxestay.com → The Azure Skyline
-  ✅  Created: coralbay.manager@luxestay.com → Coral Bay Resort
-  ✅  Created: alpine.manager@luxestay.com → Alpine Peak Lodge
-  ✅  Created: metro.manager@luxestay.com → The Grand Metropolitan
-  ✅  Created: santorini.manager@luxestay.com → Santorini Cliff Suites
+  ✅  Created: lumiere.manager@athithigriha.com → Hôtel de Lumière
+  ✅  Created: azure.manager@athithigriha.com → The Azure Skyline
+  ✅  Created: coralbay.manager@athithigriha.com → Coral Bay Resort
+  ✅  Created: alpine.manager@athithigriha.com → Alpine Peak Lodge
+  ✅  Created: metro.manager@athithigriha.com → The Grand Metropolitan
+  ✅  Created: santorini.manager@athithigriha.com → Santorini Cliff Suites
   ✅  Created: swagruhamanager@gmail.com → Swagruha Hotel
 
 📊  Summary: 7 created, 0 updated
 
 🔑  Manager Credentials:
 ──────────────────────────────────────────────────────────────────────
-  Hôtel de Lumière             lumiere.manager@luxestay.com
+  Hôtel de Lumière             lumiere.manager@athithigriha.com
                                Password: Manager@Lumiere2024
 
-  The Azure Skyline            azure.manager@luxestay.com
+  The Azure Skyline            azure.manager@athithigriha.com
                                Password: Manager@Azure2024
 
-  Coral Bay Resort             coralbay.manager@luxestay.com
+  Coral Bay Resort             coralbay.manager@athithigriha.com
                                Password: Manager@CoralBay2024
 
-  Alpine Peak Lodge            alpine.manager@luxestay.com
+  Alpine Peak Lodge            alpine.manager@athithigriha.com
                                Password: Manager@Alpine2024
 
-  The Grand Metropolitan       metro.manager@luxestay.com
+  The Grand Metropolitan       metro.manager@athithigriha.com
                                Password: Manager@Metro2024
 
-  Santorini Cliff Suites       santorini.manager@luxestay.com
+  Santorini Cliff Suites       santorini.manager@athithigriha.com
                                Password: Manager@Santorini2024
 
   Swagruha Hotel               swagruhamanager@gmail.com
@@ -62,7 +62,7 @@ npm run dev
 ```
 ✅  Admin DB (controller) connected: xyz.qehr8hm.mongodb.net
 ✅  MongoDB connected: xyz.qehr8hm.mongodb.net
-🚀  LuxeStay API running on http://localhost:5000
+🚀  AthithiGriha API running on http://localhost:5000
 📋  Environment: development
 ⚡  Socket.IO ready
 ```
@@ -90,7 +90,7 @@ npm run dev
 ### Test 1: Login as Super Admin
 1. Open `http://localhost:5173/login`
 2. Enter:
-   - Email: `admin@luxestay.com`
+   - Email: `admin@athithigriha.com`
    - Password: `admin123`
 3. Click "Sign in to Dashboard"
 4. **Expected:** Redirects to `/dashboard` (global view of all hotels)
@@ -116,7 +116,7 @@ npm run dev
 
    Manager Portal Credentials
    Hotel:    Taj Palace
-   Email:    tajpalace.manager@luxestay.com
+   Email:    tajpalace.manager@athithigriha.com
    Password: Manager@TajPalac2024
    Hotel ID: h<timestamp>
 
@@ -194,12 +194,12 @@ npm run dev
 
 | Hotel                    | Email                            | Password                  |
 |--------------------------|----------------------------------|---------------------------|
-| Hôtel de Lumière         | lumiere.manager@luxestay.com     | Manager@Lumiere2024       |
-| The Azure Skyline        | azure.manager@luxestay.com       | Manager@Azure2024         |
-| Coral Bay Resort         | coralbay.manager@luxestay.com    | Manager@CoralBay2024      |
-| Alpine Peak Lodge        | alpine.manager@luxestay.com      | Manager@Alpine2024        |
-| The Grand Metropolitan   | metro.manager@luxestay.com       | Manager@Metro2024         |
-| Santorini Cliff Suites   | santorini.manager@luxestay.com   | Manager@Santorini2024     |
+| Hôtel de Lumière         | lumiere.manager@athithigriha.com     | Manager@Lumiere2024       |
+| The Azure Skyline        | azure.manager@athithigriha.com       | Manager@Azure2024         |
+| Coral Bay Resort         | coralbay.manager@athithigriha.com    | Manager@CoralBay2024      |
+| Alpine Peak Lodge        | alpine.manager@athithigriha.com      | Manager@Alpine2024        |
+| The Grand Metropolitan   | metro.manager@athithigriha.com       | Manager@Metro2024         |
+| Santorini Cliff Suites   | santorini.manager@athithigriha.com   | Manager@Santorini2024     |
 | Swagruha Hotel           | swagruhamanager@gmail.com        | Manager@Swagruha2024      |
 
 ---

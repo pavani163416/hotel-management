@@ -21,7 +21,7 @@ const CANCEL_REASONS = [
 function normalise(b: any) {
   return {
     id:         b.id || b._id || "",
-    hotelName:  b.hotel?.name  || b.hotelName  || "LuxeStay",
+    hotelName:  b.hotel?.name  || b.hotelName  || "AthithiGriha",
     hotelCity:  b.hotel?.city  || b.hotelCity  || "",
     hotelImage: b.hotel?.image || b.hotelId?.image || b.hotelImage || b.room?.images?.[0] || "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&q=60",
     hotelLoc:   b.hotel?.location || "",

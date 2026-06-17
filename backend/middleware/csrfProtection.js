@@ -21,8 +21,8 @@ const RAW_ORIGINS    = (process.env.CLIENT_ORIGIN || "").split(",").map((o) => o
 
 const TRUSTED_ORIGINS = [
   "https://hotel-mgnt.vercel.app",
-  "https://luxestay-frontend.vercel.app",
-  "https://luxestay-admin.vercel.app",
+  "https://athithigriha-frontend.vercel.app",
+  "https://athithigriha-admin.vercel.app",
   "https://hotel-management-admin-eta.vercel.app",
   "https://athithigriha-frontend.vercel.app",
   "",
@@ -35,8 +35,8 @@ function isTrustedVercelDomain(origin) {
     const hostname = new URL(origin).hostname;
     const allowedSubstrings = [
       "hotel-mgnt",
-      "luxestay-frontend",
-      "luxestay-admin",
+      "athithigriha-frontend",
+      "athithigriha-admin",
       "hotel-management-admin-eta",
       "hotel-management-frontend",
       "hotel-management",

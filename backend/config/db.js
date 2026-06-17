@@ -26,7 +26,7 @@ const connectDB = async (attempt = 1) => {
       family:                   4,
     });
 
-    logger.info(`MongoDB (luxestay) connected: ${conn.connection.host}`);
+    logger.info(`MongoDB (athithigriha) connected: ${conn.connection.host}`);
   } catch (error) {
     logger.error(`MongoDB connection failed (attempt ${attempt}/${MAX_RETRIES})`, {
       error: error.message,
