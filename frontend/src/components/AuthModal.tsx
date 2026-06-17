@@ -126,8 +126,10 @@ function AuthModalInner({ isOpen, onClose, defaultMode, mode, setMode, loading, 
         <form onSubmit={handleSignIn} className="space-y-4 mt-4">
           <div className="space-y-2">
             <label className="block text-sm font-medium">Email Address</label>
-            <input type="email" value={email} onChange={e => setEmail(e.target.value)}
-              className="w-full px-4 py-2 border border-border rounded-lg outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+            <input type="email" value={email} onChange={e => !user && setEmail(e.target.value)}
+              readOnly={!!user}
+              disabled={!!user}
+              className={`w-full px-4 py-2 border border-border rounded-lg outline-none focus:ring-2 focus:ring-primary focus:border-primary ${!!user ? 'bg-secondary/80 cursor-not-allowed opacity-70' : ''}`}
               placeholder="name@example.com" autoComplete="email" />
           </div>
           <div className="space-y-2">
@@ -448,6 +450,9 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
         setOtpMessage("Your account is pending verification. Please verify your email to continue.");
       } else {
         setMode(defaultMode);
+        if (user && defaultMode === "signin") {
+          setEmail(user.email);
+        }
       }
       setError("");
       if (showCaptcha) fetchCaptcha(); // load a fresh CAPTCHA every time the modal opens
