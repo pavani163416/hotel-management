@@ -129,6 +129,7 @@ class HotelRepositoryImpl implements HotelRepository {
       }
       return Right(hotel);
     } on DioException catch (e) {
+      debugPrint('[HotelRepositoryImpl] submitReview failed. Response: ${e.response?.data}');
       String message = 'Failed to submit review';
       if (e.response?.data is Map) {
         message = e.response?.data['message'] ?? message;
@@ -137,6 +138,7 @@ class HotelRepositoryImpl implements HotelRepository {
       }
       return Left(ServerFailure(message));
     } catch (e) {
+      debugPrint('[HotelRepositoryImpl] submitReview failed with unexpected error: $e');
       return Left(ServerFailure(e.toString()));
     }
   }
