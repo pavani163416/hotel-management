@@ -277,12 +277,14 @@ export const BookingProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Fetch latest user profile details on mount to sync database role updates
+  // Refresh authenticated user details only when a user is already present.
+  // This avoids noisy 401 responses for guests on a fresh page load.
   useEffect(() => {
+    if (!user?.email) return;
+
     const controller = new AbortController();
     const fetchUserProfile = async () => {
       try {
-        // Cookie is sent automatically — no localStorage token check needed
         const res = await api.get("/auth/me", { signal: controller.signal });
         if (res.data?.success && res.data.data) {
           _setUser(res.data.data);
@@ -292,9 +294,10 @@ export const BookingProvider = ({ children }: { children: ReactNode }) => {
         // Not logged in or cookie expired — silently ignore
       }
     };
+
     fetchUserProfile();
     return () => controller.abort();
-  }, []);
+  }, [user?.email]);
 
   // ── Global real-time notification listener ───────────────
   useEffect(() => {

@@ -24,12 +24,12 @@ socket.on("connect", () => {
   console.log("[Socket.IO] Connected successfully", socket.id);
 });
 
-socket.on("connect_error", (error) => {
-  console.error("[Socket.IO] Connection error:", error);
+socket.on("connect_error", () => {
+  // Keep the console clean when the backend is temporarily unavailable.
 });
 
-socket.on("disconnect", (reason) => {
-  console.warn("[Socket.IO] Disconnected:", reason);
+socket.on("disconnect", () => {
+  // Socket reconnects automatically; no extra noise needed here.
 });
 
 export default socket;
