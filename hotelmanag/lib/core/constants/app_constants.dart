@@ -18,30 +18,8 @@ class AppConstants {
   /// Returns the correct base URL for the current build/platform.
   /// - Release builds strictly use HTTPS production/staging URLs.
   static String get apiBaseUrl {
-    // Enforce strict environment configuration in release mode
-    if (!kDebugMode) {
-      if (_envType == 'staging') {
-        return _stagingApiUrl;
-      }
-      return _productionApiUrl;
-    }
-
-    // In debug mode, if a custom URL is provided via dart-define, use it
     if (_envApiUrl.isNotEmpty) return _envApiUrl;
-
-    final scheme = 'http://'; // ignore: security_audit
-    final host = '127.0.0.1'; // ignore: security_audit
-    final emu = '10.0.2.2'; // ignore: security_audit
-
-    // Use local dev configuration
-    if (kIsWeb) {
-      return '$scheme$host:5000/api/';
-    } else if (defaultTargetPlatform == TargetPlatform.android) {
-      // Use Railway production backend — no local backend is running
-      return _productionApiUrl;
-    } else {
-      return '$scheme$host:5000/api/';
-    }
+    return _productionApiUrl;
   }
 
   // Storage Keys

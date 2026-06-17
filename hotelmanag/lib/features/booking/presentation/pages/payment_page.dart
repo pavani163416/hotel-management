@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
-import 'dart:js' as js;
+import 'razorpay_web_helper.dart';
 import '../../../../core/providers/currency_provider.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
@@ -416,27 +416,19 @@ class _PaymentPageState extends State<PaymentPage> {
             }
 
             if (kIsWeb) {
-              // Open Razorpay Checkout on Web using JS interop
-              final jsOptions = js.JsObject.jsify({
-                'key': data['key'] ?? 'rzp_test_dummy',
-                'amount': (data['amount'] as num).toInt(),
-                'currency': data['currency'] ?? 'INR',
-                'name': 'Athithigriha',
-                'description': 'Booking Payment',
-                'order_id': _currentOrderId,
-                'prefill': {
-                  if (prefill['name'] != null) 'name': prefill['name'],
-                  if (prefill['email'] != null) 'email': prefill['email'],
-                  if (provider.leadGuest['phone'] != null) 'contact': provider.leadGuest['phone'],
+              // Open Razorpay Checkout on Web using conditional JS interop
+              openRazorpayWeb(
+                options: {
+                  'key': data['key'] ?? 'rzp_test_dummy',
+                  'amount': (data['amount'] as num).toInt(),
+                  'currency': data['currency'] ?? 'INR',
+                  'name': 'Athithigriha',
+                  'description': 'Booking Payment',
+                  'order_id': _currentOrderId,
+                  if (prefill.isNotEmpty) 'prefill': prefill,
+                  'theme': {'color': '#454F5E'},
                 },
-                'theme': {
-                  'color': '#454F5E',
-                },
-                'handler': js.allowInterop((response) {
-                  final paymentId = response['razorpay_payment_id'] as String?;
-                  final signature = response['razorpay_signature'] as String?;
-                  final orderId = response['razorpay_order_id'] as String?;
-                  
+                onSuccess: (paymentId, orderId, signature) {
                   _handlePaymentSuccess(
                     PaymentSuccessResponse(
                       paymentId,
@@ -445,22 +437,17 @@ class _PaymentPageState extends State<PaymentPage> {
                       null,
                     ),
                   );
-                }),
-                'modal': {
-                  'ondismiss': js.allowInterop(() {
-                    _handlePaymentError(
-                      PaymentFailureResponse(
-                        0,
-                        'Payment cancelled by user',
-                        null,
-                      ),
-                    );
-                  }),
-                }
-              });
-
-              final rzp = js.JsObject(js.context['Razorpay'], [jsOptions]);
-              rzp.callMethod('open');
+                },
+                onFailure: (message) {
+                  _handlePaymentError(
+                    PaymentFailureResponse(
+                      0,
+                      message,
+                      null,
+                    ),
+                  );
+                },
+              );
             } else {
               _razorpay.open(options);
             }

@@ -105,8 +105,8 @@ void main() async {
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => di.sl<ThemeProvider>()),
-        ChangeNotifierProvider(create: (_) => di.sl<FavoritesProvider>()),
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ChangeNotifierProvider(create: (_) => FavoritesProvider()),
         ChangeNotifierProvider(create: (_) => di.sl<AuthProvider>()),
         ChangeNotifierProvider(create: (_) => di.sl<HotelProvider>()),
         ChangeNotifierProvider(create: (_) => di.sl<BookingProvider>()),
@@ -133,14 +133,12 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final themeProvider = Provider.of<ThemeProvider>(context);
     return MaterialApp.router(
       title: 'Athithigriha',
       debugShowCheckedModeBanner: false,
       scrollBehavior: MyScrollBehavior(),
       theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
-      themeMode: themeProvider.themeMode,
+      themeMode: ThemeMode.light,
       routerConfig: AppRouter.createRouter(di.sl<AuthProvider>()),
       builder: (context, child) => IdleDetector(
         child: NotificationPopupOverlay(

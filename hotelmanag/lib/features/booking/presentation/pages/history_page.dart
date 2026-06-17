@@ -27,29 +27,20 @@ class _HistoryPageState extends State<HistoryPage> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(() => context.read<BookingProvider>().startPolling());
-  }
-
-  @override
-  void dispose() {
-    context.read<BookingProvider>().stopPolling();
-    super.dispose();
+    Future.microtask(() => context.read<BookingProvider>().fetchMyBookings());
   }
 
   @override
   Widget build(BuildContext context) {
     return MainLayout(
-      child: RefreshIndicator(
-        onRefresh: () => context.read<BookingProvider>().fetchMyBookings(),
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 32),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Booking History',
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 32),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Booking History',
                 style: TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
@@ -97,7 +88,6 @@ class _HistoryPageState extends State<HistoryPage> {
           ),
         ),
       ),
-    ),
     );
   }
 

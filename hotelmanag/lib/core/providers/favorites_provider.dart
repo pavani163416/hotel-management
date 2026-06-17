@@ -2,22 +2,10 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../shared/domain/entities/hotel_entity.dart';
-import '../utils/injection_container.dart';
-import 'auth_provider.dart';
 
 class FavoritesProvider extends ChangeNotifier {
   List<HotelEntity> _favorites = [];
-
-  String get _favoritesKey {
-    try {
-      final auth = sl<AuthProvider>();
-      final userId = auth.user?.id;
-      if (userId != null && userId.isNotEmpty) {
-        return 'user_favorites_$userId';
-      }
-    } catch (_) {}
-    return 'user_favorites_guest';
-  }
+  static const String _favoritesKey = 'user_favorites';
 
   FavoritesProvider() {
     _loadFavorites();
@@ -124,10 +112,5 @@ class FavoritesProvider extends ChangeNotifier {
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_favoritesKey);
-  }
-
-  Future<void> loadFavoritesForCurrentUser() async {
-    _favorites = [];
-    await _loadFavorites();
   }
 }

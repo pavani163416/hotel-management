@@ -33,22 +33,7 @@ export const createPublicTicket = async (req, res) => {
   try {
     const { fullName, hotelName, email, phoneNumber, issueType, priority, message, captchaId, captchaAnswer, captchaToken } = req.body;
 
-    // CAPTCHA verification
-    if (!captchaToken && (!captchaId || !captchaAnswer)) {
-      return res.status(400).json({
-        success: false,
-        message: "Security check is required. Please complete the CAPTCHA challenge."
-      });
-    }
-
-    const { verifyCaptchaOrToken } = await import("../utils/captcha.js");
-    const captchaValid = await verifyCaptchaOrToken({ captchaId, captchaAnswer, captchaToken });
-    if (!captchaValid) {
-      return res.status(400).json({
-        success: false,
-        message: "Incorrect security check answer. Please try again."
-      });
-    }
+    // CAPTCHA verification removed per user request
 
     // Resolve names to support both frontend naming variants safely
     const finalName = String(fullName || req.body.guestName || "").trim();
