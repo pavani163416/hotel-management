@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import Layout from "../components/Layout";
 import { Loader2, Plus, Search, Tag, Calendar, MapPin, Package, Eye, PackageSearch, AlertCircle } from "lucide-react";
 import api from "../services/api";
-import { useAuth } from "../context/AuthContext";
+import { useBooking } from "../context/BookingContext";
 import { useNavigate } from "react-router-dom";
 import { format, parseISO } from "date-fns";
 import { toast } from "sonner";
@@ -21,7 +21,7 @@ interface LostFoundEntry {
 }
 
 export default function LostFound() {
-  const { user } = useAuth();
+  const { user } = useBooking();
   const navigate = useNavigate();
   const [reports, setReports] = useState<LostFoundEntry[]>([]);
   const [loading, setLoading] = useState(true);

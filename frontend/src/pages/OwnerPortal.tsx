@@ -6,11 +6,10 @@ import {
   Star, Users, DollarSign, X, Eye, EyeOff, ClipboardList,
   UserCheck, BadgeCheck, Clock3
 } from "lucide-react";
-import { useAuth } from "@/context/AuthContext";
 import api from "@/services/api";
-import OwnerWaitlist from "./owner/OwnerWaitlist";
-import OwnerLostFound from "./owner/OwnerLostFound";
-import OwnerAnalytics from "./owner/OwnerAnalytics";
+import OwnerWaitlist from "@/components/owner/OwnerWaitlist";
+import OwnerLostFound from "@/components/owner/OwnerLostFound";
+import OwnerAnalytics from "@/components/owner/OwnerAnalytics";
 import { AuthModal } from "@/components/AuthModal";
 import { useBooking } from "@/context/BookingContext";
 import Layout from "@/components/Layout";

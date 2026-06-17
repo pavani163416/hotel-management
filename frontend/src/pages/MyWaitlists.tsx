@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import Layout from "../components/Layout";
 import { Loader2, Clock, CheckCircle2, XCircle, AlertCircle, Calendar } from "lucide-react";
 import api from "../services/api";
-import { useAuth } from "../context/AuthContext";
+import { useBooking } from "../context/BookingContext";
 import { useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
 
@@ -19,7 +19,7 @@ interface WaitlistEntry {
 }
 
 export default function MyWaitlists() {
-  const { user, token } = useAuth();
+  const { user } = useBooking();
   const navigate = useNavigate();
   const [waitlists, setWaitlists] = useState<WaitlistEntry[]>([]);
   const [loading, setLoading] = useState(true);
