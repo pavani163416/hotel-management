@@ -7,7 +7,7 @@ import {
   updateReportStatus,
   deleteReport
 } from "../controllers/lostFoundController.js";
-import { protect, authorizeRoles } from "../middleware/authMiddleware.js";
+import { protect, authorizeRoles } from "../middleware/auth.js";
 
 const router = express.Router();
 

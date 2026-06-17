@@ -4,7 +4,7 @@ import {
   updateActivity,
   deleteActivity
 } from "../controllers/tripPlanController.js";
-import { protect } from "../middleware/authMiddleware.js";
+import { protect } from "../middleware/auth.js";
 
 const router = express.Router();
 

@@ -6,7 +6,7 @@ import {
   getReviewAnalytics,
   getOverviewAnalytics
 } from "../controllers/ownerAnalyticsController.js";
-import { protect, authorizeRoles } from "../middleware/authMiddleware.js";
+import { protect, authorizeRoles } from "../middleware/auth.js";
 
 const router = express.Router();
 
