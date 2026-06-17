@@ -1,7 +1,6 @@
 import mongoose from "mongoose";
 import Booking from "../models/Booking.js";
 import Hotel from "../models/Hotel.js";
-import Review from "../models/Review.js";
 import dayjs from "dayjs";
 
 // Helper: resolve hotelId
