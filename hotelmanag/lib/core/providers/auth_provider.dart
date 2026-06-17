@@ -407,11 +407,7 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
     try {
       try {
         await _apiService?.post('auth/logout');
-      } catch (e) {
-        if (kDebugMode) {
-          debugPrint('[AuthProvider] Logout API call failed: $e');
-        }
-      }
+      } catch (_) {}
 
       const storage = FlutterSecureStorage();
       await storage.delete(key: AppConstants.tokenKey);
@@ -420,19 +416,11 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
       try {
         await sl<FavoritesProvider>().clearFavorites();
         sl<PromoProvider>().reset();
-      } catch (e) {
-        if (kDebugMode) {
-          debugPrint('[AuthProvider] Failed clearing favorites/promos: $e');
-        }
-      }
+      } catch (_) {}
 
       try {
         await _googleSignIn.signOut();
-      } catch (e) {
-        if (kDebugMode) {
-          debugPrint('[AuthProvider] Google Sign Out failed: $e');
-        }
-      }
+      } catch (_) {}
 
       if (_user != null) {
         _user = UserEntity(
@@ -450,19 +438,11 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
 
       try {
         sl<BookingProvider>().reset();
-      } catch (e) {
-        if (kDebugMode) {
-          debugPrint('[AuthProvider] BookingProvider reset failed: $e');
-        }
-      }
+      } catch (_) {}
 
       try {
         sl<FavoritesProvider>().loadFavoritesForCurrentUser();
-      } catch (e) {
-        if (kDebugMode) {
-          debugPrint('[AuthProvider] FavoritesProvider load failed on logout: $e');
-        }
-      }
+      } catch (_) {}
 
       try {
         await DefaultCacheManager().emptyCache();
@@ -478,67 +458,61 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
 
   Future<bool> signInWithGoogle() async {
     try {
-      if (kDebugMode) {
-        debugPrint('[GoogleSignIn] Starting Google Sign-In flow...');
-      }
+      debugPrint('[GoogleSignIn] Starting Google Sign-In flow...');
       _isLoading = true;
       notifyListeners();
 
-      if (kDebugMode) {
-        debugPrint('[GoogleSignIn] Force signing out of previous session...');
-      }
+      // Sign out from any current session to force account picker
+      debugPrint('[GoogleSignIn] Force signing out of previous session...');
       await _googleSignIn.signOut().catchError((_) {});
 
-      if (kDebugMode) {
-        debugPrint('[GoogleSignIn] Triggering account chooser picker...');
-      }
+      debugPrint('[GoogleSignIn] Triggering account chooser picker...');
       final GoogleSignInAccount? account = await _googleSignIn.signIn();
-      if (kDebugMode) {
+      if (kDebugMode)
         debugPrint(
           '[GoogleSignIn] Account picker returned: ${account?.email ?? "null"}',
         );
-      }
 
       if (account == null) {
-        if (kDebugMode) {
-          debugPrint('[GoogleSignIn] User canceled account selection.');
-        }
+        debugPrint('[GoogleSignIn] User canceled account selection.');
         _isLoading = false;
         notifyListeners();
         return false;
       }
 
-      if (kDebugMode) {
-        debugPrint('[GoogleSignIn] Retrieving authentication credentials...');
-      }
+      debugPrint('[GoogleSignIn] Retrieving authentication credentials...');
       final GoogleSignInAuthentication auth = await account.authentication;
       final String? idToken = auth.idToken;
+      debugPrint(
+        '[GoogleSignIn] Token retrieved: ${idToken != null ? "YES (length ${idToken.length})" : "NO"}',
+      );
+      debugPrint(
+        '[GoogleSignIn] Token starts with: ${idToken?.substring(0, idToken.length > 20 ? 20 : idToken.length)}',
+      );
+      debugPrint(
+        '[GoogleSignIn] Is JWT (3 segments): ${idToken?.split('.').length == 3}',
+      );
+      debugPrint(
+        '[GoogleSignIn] AccessToken present: ${auth.accessToken != null}',
+      );
 
       if (idToken == null || idToken.isEmpty) {
-        if (kDebugMode) {
-          debugPrint('[GoogleSignIn] Error: Token is null or empty!');
-        }
+        debugPrint('[GoogleSignIn] Error: Token is null or empty!');
         _error = 'Sign-in failed. Please try again.';
         _isLoading = false;
         notifyListeners();
         return false;
       }
 
-      if (kDebugMode) {
-        debugPrint('[GoogleSignIn] Sending token to backend for verification...');
-      }
+      debugPrint('[GoogleSignIn] Sending token to backend for verification...');
       final res = await _authRepository.signInWithGoogle(idToken);
-      if (kDebugMode) {
-        debugPrint('[GoogleSignIn] Backend response received.');
-      }
+      debugPrint('[GoogleSignIn] Backend response received.');
 
       return res.fold(
         (failure) {
-          if (kDebugMode) {
-            debugPrint(
-              '[GoogleSignIn] Backend verification failed: ${failure.message}',
-            );
-          }
+          debugPrint(
+            '[GoogleSignIn] Backend verification failed: ${failure.message}',
+          );
           _error = failure.message;
           _isLoading = false;
           notifyListeners();
@@ -546,11 +520,10 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
         },
         (data) async {
           final (user, token) = data;
-          if (kDebugMode) {
+          if (kDebugMode)
             debugPrint(
               '[GoogleSignIn] Backend verification succeeded! Logged in as: ${user.email}',
             );
-          }
           _user = user;
           await _saveAuthData(user, token);
           _isLoading = false;
@@ -559,10 +532,8 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
         },
       );
     } catch (e, stack) {
-      if (kDebugMode) {
-        debugPrint('[GoogleSignIn] Exception caught: $e');
-        debugPrint('[GoogleSignIn] Stacktrace: $stack');
-      }
+      debugPrint('[GoogleSignIn] Exception caught: $e');
+      debugPrint('[GoogleSignIn] Stacktrace: $stack');
       _error = 'Google sign-in error: ${e.toString()}';
       _isLoading = false;
       notifyListeners();
