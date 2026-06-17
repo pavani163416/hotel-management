@@ -265,19 +265,22 @@ class _LoginPageState extends State<LoginPage> {
                     height: 64,
                     width: double.infinity,
                     decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.05), // match bg-black/5
+                      color: const Color(0xFFEFECE6), // Match light beige background
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: Colors.black.withOpacity(0.1),
-                      ), // match border-black/10
+                        color: const Color(0xFFD5D2C8), // Match beige border
+                      ),
                     ),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(12),
                       child: Center(
                         child: _captchaChallenge.trim().startsWith('<svg')
-                            ? SvgPicture.string(
-                                _captchaChallenge,
-                                fit: BoxFit.contain,
+                            ? Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+                                child: SvgPicture.string(
+                                  _captchaChallenge,
+                                  fit: BoxFit.contain,
+                                ),
                               )
                             : Text(
                                 _captchaChallenge == 'ERROR'
