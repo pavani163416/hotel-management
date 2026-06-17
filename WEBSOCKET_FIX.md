@@ -3,7 +3,7 @@
 ## Problem
 The application was receiving repeated WebSocket errors:
 ```
-WebSocket connection to 'wss://luxestay-backend-production.up.railway.app/socket.io/?EIO=4&transport=websocket' 
+WebSocket connection to 'wss://athithigriha-backend-production.up.railway.app/socket.io/?EIO=4&transport=websocket' 
 failed: Invalid frame header
 ```
 

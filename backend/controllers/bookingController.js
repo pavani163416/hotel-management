@@ -893,14 +893,14 @@ export const cancelBooking = async (req, res, next) => {
         sendNotification({
           userId: email,
           role: "customer",
-          message: `Your booking for ${booking.hotelName || "LuxeStay"} has been cancelled.`,
+          message: `Your booking for ${booking.hotelName || "AthithiGriha"} has been cancelled.`,
           type: "booking",
         }).catch(nonCriticalCatch("cancellationNotification", { bookingId: booking._id }));
 
         const cancellationEmailPayload = {
           to:        email,
           guestName: populatedForEmail.guest?.name || booking.guestSnapshot?.name || "Guest",
-          hotelName: booking.hotelName || "LuxeStay",
+          hotelName: booking.hotelName || "AthithiGriha",
           bookingRef: `LS-${booking._id.toString().slice(-5).toUpperCase()}`,
           reason:    booking.cancellationReason,
         };

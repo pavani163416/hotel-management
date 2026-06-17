@@ -15,7 +15,7 @@ async function test() {
     
     // Try a test upload
     console.log("Testing dummy upload...");
-    const uploadResult = await cloudinary.uploader.upload("https://ui-avatars.com/api/?name=LuxeStay", {
+    const uploadResult = await cloudinary.uploader.upload("https://ui-avatars.com/api/?name=AthithiGriha", {
       folder: "test",
     });
     console.log("Upload SUCCESS! URL:", uploadResult.secure_url);

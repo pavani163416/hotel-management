@@ -1,5 +1,5 @@
 /**
- * Master Seed Script — seeds ALL collections in the luxestay database
+ * Master Seed Script — seeds ALL collections in the athithigriha database
  * Collections: hotels, rooms, guests, bookings, visitors, adminusers
  *
  * Run: cd backend && node utils/seedAll.js
@@ -200,9 +200,9 @@ const visitorsData = [
 // 5. ADMIN USERS (controller/admin panel users)
 // ════════════════════════════════════════════════════════
 const adminUsersData = [
-  { name: "Marcus Thorne",  email: "admin@luxestay.com",   password: "admin123",    role: "Super Admin" },
-  { name: "Priya Kapoor",   email: "manager@luxestay.com", password: "manager123",  role: "Manager" },
-  { name: "David Chen",     email: "staff@luxestay.com",   password: "staff123",    role: "Staff" },
+  { name: "Marcus Thorne",  email: "admin@athithigriha.com",   password: "admin123",    role: "Super Admin" },
+  { name: "Priya Kapoor",   email: "manager@athithigriha.com", password: "manager123",  role: "Manager" },
+  { name: "David Chen",     email: "staff@athithigriha.com",   password: "staff123",    role: "Staff" },
 ];
 
 
@@ -212,7 +212,7 @@ const adminUsersData = [
 // ════════════════════════════════════════════════════════
 const seed = async () => {
   await connectDB();
-  console.log("\n🌱  LuxeStay Seed — structural data only\n");
+  console.log("\n🌱  AthithiGriha Seed — structural data only\n");
 
   // ── Clear structural collections only ─────────────────
   await Promise.all([

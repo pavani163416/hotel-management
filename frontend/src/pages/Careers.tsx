@@ -15,7 +15,7 @@ const perks = [
   { emoji: "🏥", title: "Health & Wellness", text: "Full medical, dental, and vision coverage" },
   { emoji: "🏖️", title: "Unlimited PTO", text: "Take the time you need to recharge" },
   { emoji: "📚", title: "Learning Budget", text: "$2,000/year for courses and conferences" },
-  { emoji: "🏨", title: "Free Hotel Stays", text: "Annual credit at any LuxeStay partner hotel" },
+  { emoji: "🏨", title: "Free Hotel Stays", text: "Annual credit at any AthithiGriha partner hotel" },
 ];
 
 const Careers = () => (
@@ -31,7 +31,7 @@ const Careers = () => (
 
     <div className="container max-w-4xl mx-auto py-16 px-4">
       {/* Perks */}
-      <h2 className="font-display text-3xl font-bold text-foreground mb-2 text-center">Why LuxeStay?</h2>
+      <h2 className="font-display text-3xl font-bold text-foreground mb-2 text-center">Why AthithiGriha?</h2>
       <p className="text-muted-foreground text-center mb-10">We take care of our team as well as we take care of our guests.</p>
       <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-5 mb-16">
         {perks.map((p) => (
@@ -66,9 +66,9 @@ const Careers = () => (
       <div className="mt-10 text-center bg-primary/5 border border-primary/20 rounded-2xl p-8">
         <h3 className="font-display text-2xl font-bold text-foreground mb-2">Don't see your role?</h3>
         <p className="text-muted-foreground mb-4">We're always looking for extraordinary talent. Send your resume to us.</p>
-        <a href="mailto:careers@luxestay.com"
+        <a href="mailto:careers@athithigriha.com"
           className="inline-block bg-primary text-primary-foreground px-6 py-3 rounded-xl font-semibold hover:bg-primary/90 transition-colors">
-          careers@luxestay.com
+          careers@athithigriha.com
         </a>
       </div>
     </div>

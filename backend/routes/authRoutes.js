@@ -614,7 +614,7 @@ router.post("/forgot-password", authLimiter, validateEmailPayload, async (req, r
 
       await sendPasswordResetEmail({
         to: email,
-        name: manager?.name || adminUser?.name || customer?.name || "LuxeStay User",
+        name: manager?.name || adminUser?.name || customer?.name || "AthithiGriha User",
         resetUrl: url,
       });
     } else if (adminEmail === email) {
@@ -1247,23 +1247,23 @@ router.get("/google/callback", async (req, res, next) => {
   try {
     const { code, error } = req.query;
     if (error) {
-      return res.redirect(`luxestay://oauth2redirect?error=${encodeURIComponent(error)}`);
+      return res.redirect(`athithigriha://oauth2redirect?error=${encodeURIComponent(error)}`);
     }
     if (!code) {
-      return res.redirect(`luxestay://oauth2redirect?error=no_code`);
+      return res.redirect(`athithigriha://oauth2redirect?error=no_code`);
     }
 
     // Exchange authorization code for tokens
     const { tokens } = await googleClient.getToken({
       code,
-      redirect_uri: process.env.GOOGLE_CALLBACK_URL || "https://luxestay-backend-production.up.railway.app/api/auth/google/callback",
+      redirect_uri: process.env.GOOGLE_CALLBACK_URL || "https://athithigriha-backend-production.up.railway.app/api/auth/google/callback",
     });
 
     // Redirect back to the mobile app with the idToken
-    res.redirect(`luxestay://oauth2redirect?idToken=${tokens.id_token}`);
+    res.redirect(`athithigriha://oauth2redirect?idToken=${tokens.id_token}`);
   } catch (err) {
     logger.error(err, "Google OAuth Callback Error");
-    res.redirect(`luxestay://oauth2redirect?error=${encodeURIComponent(err.message)}`);
+    res.redirect(`athithigriha://oauth2redirect?error=${encodeURIComponent(err.message)}`);
   }
 });
 
@@ -1313,7 +1313,7 @@ router.post("/firebase", async (req, res, next) => {
     if (!email) {
       if (phone) {
         // Construct a virtual unique email for phone authentication
-        email = `phone_${phone.replace(/[^0-9]/g, "")}@phone.luxestay.com`;
+        email = `phone_${phone.replace(/[^0-9]/g, "")}@phone.athithigriha.com`;
       } else {
         return res.status(400).json({ success: false, message: "Firebase token must contain email or phone number" });
       }

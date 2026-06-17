@@ -32,7 +32,7 @@ const PROCESS_STEPS = [
     step: "01",
     icon: UserCheck,
     title: "Create an Account",
-    desc: "Sign up or log in with your LuxeStay customer account. All applications require a verified account.",
+    desc: "Sign up or log in with your AthithiGriha customer account. All applications require a verified account.",
     color: "bg-secondary/30",
     border: "border-border",
     iconColor: "text-muted-foreground",
@@ -180,6 +180,7 @@ const OwnerPortal = () => {
       fd.append("gstNumber", gstNumber);
       fd.append("businessRegistrationNumber", businessRegistrationNumber);
       fd.append("docType", docType);
+      if (user?.email) fd.append("email", user.email);
       Array.from(files).forEach((f) => fd.append("documents", f));
 
       await api.post("/owners/apply", fd, {
@@ -225,13 +226,13 @@ const OwnerPortal = () => {
               Own a Hotel or Resort?
             </h1>
             <p className="text-primary-foreground/80 text-xl max-w-2xl mx-auto mb-8">
-              Partner with LuxeStay and reach thousands of travelers worldwide. List your property and grow your revenue with our luxury booking platform.
+              Partner with AthithiGriha and reach thousands of travelers worldwide. List your property and grow your revenue with our luxury booking platform.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
               <button onClick={() => setAuthOpen(true)}
-                  className="flex items-center gap-2 bg-primary-foreground text-primary font-semibold px-8 py-3.5 rounded-xl hover:bg-primary-foreground/90 transition-base text-sm">
-                  Get Started / List Your Property <ArrowRight className="w-4 h-4" />
-                </button>
+                className="flex items-center gap-2 bg-primary-foreground text-primary font-semibold px-8 py-3.5 rounded-xl hover:bg-primary-foreground/90 transition-base text-sm">
+                Get Started / List Your Property <ArrowRight className="w-4 h-4" />
+              </button>
             </div>
           </div>
         </section>
@@ -240,7 +241,7 @@ const OwnerPortal = () => {
         <section className="container py-16">
           <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6 mb-16">
             {[
-              { icon: Globe, title: "Global Reach", text: "Connect with travelers from 45+ countries browsing LuxeStay daily." },
+              { icon: Globe, title: "Global Reach", text: "Connect with travelers from 45+ countries browsing AthithiGriha daily." },
               { icon: TrendingUp, title: "Real-Time Revenue", text: "Track bookings and earnings live from your owner dashboard." },
               { icon: ShieldCheck, title: "Secure KYC Onboarding", text: "Verified partner process ensures trust and safety for all." },
             ].map(({ icon: Icon, title, text }) => (
@@ -261,7 +262,7 @@ const OwnerPortal = () => {
             </span>
             <h2 className="font-display text-3xl font-bold text-primary mb-2">Application Process</h2>
             <p className="text-muted-foreground text-sm max-w-xl mx-auto mb-10">
-              Becoming a LuxeStay property partner is simple. Follow these 5 steps to get your hotel listed and start earning.
+              Becoming a AthithiGriha property partner is simple. Follow these 5 steps to get your hotel listed and start earning.
             </p>
           </div>
 
@@ -292,7 +293,7 @@ const OwnerPortal = () => {
           </div>
         </section>
 
-        <AuthModal isOpen={authOpen} onClose={() => setAuthOpen(false)} defaultMode="signin" showCaptcha={false} />
+        <AuthModal isOpen={authOpen} onClose={() => setAuthOpen(false)} defaultMode="signin" />
       </Layout>
     );
   }
@@ -520,7 +521,7 @@ const OwnerPortal = () => {
             </div>
             <div>
               <h1 className="font-display text-2xl font-bold">List Your Property</h1>
-              <p className="text-muted-foreground text-sm">Apply to become a verified LuxeStay property partner.</p>
+              <p className="text-muted-foreground text-sm">Apply to become a verified AthithiGriha property partner.</p>
             </div>
           </div>
 

@@ -15,7 +15,7 @@ try {
   dns.setServers(["8.8.8.8", "8.8.4.4", "1.1.1.1"]);
 } catch {}
 
-const TEST_EMAIL = "notify_test@luxestay.com";
+const TEST_EMAIL = "notify_test@athithigriha.com";
 const TEST_REF = "LS-99999";
 const TEST_HOTEL_ID = "hotel_notif_test";
 
@@ -79,7 +79,7 @@ async function run() {
     status: "Pending",
     bookingRef: TEST_REF,
     hotelStringId: TEST_HOTEL_ID,
-    hotelName: "LuxeStay Test Hotel",
+    hotelName: "AthithiGriha Test Hotel",
   });
 
   // Call the notifications logic for Booking Created

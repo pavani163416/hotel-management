@@ -1,5 +1,5 @@
 /**
- * LuxeStay API Service
+ * AthithiGriha API Service
  * Centralised Axios instance for all backend calls.
  * Base URL reads from VITE_API_URL env var (falls back to localhost:5000)
  */

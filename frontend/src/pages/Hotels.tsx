@@ -196,7 +196,7 @@ const Hotels = () => {
           </aside>
 
           {/* RIGHT */}
-          <section className="space-y-8 min-w-0 lg:max-h-[calc(100dvh-6rem)] lg:overflow-y-auto">
+          <section className="space-y-8 min-w-0">
             {deals.length > 0 && <TopDeals deals={deals} onView={(id) => nav(`/hotel/${id}`)} format={format} wishlist={wishlist} toggleWishlist={toggleWishlist} nav={nav} />}
 
             <div className="flex items-end justify-between gap-3 flex-wrap">

@@ -18,7 +18,7 @@ const CookiePolicy = () => (
 
       <div className="prose prose-sm max-w-none">
         <p className="text-muted-foreground mb-8 leading-relaxed">
-          This Cookie Policy explains how LuxeStay ("we", "us", or "our") uses cookies and similar tracking technologies when you visit our website. It explains what these technologies are, why we use them, and your rights to control our use of them.
+          This Cookie Policy explains how AthithiGriha ("we", "us", or "our") uses cookies and similar tracking technologies when you visit our website. It explains what these technologies are, why we use them, and your rights to control our use of them.
         </p>
 
         <Section title="1. What Are Cookies?">
@@ -57,7 +57,7 @@ const CookiePolicy = () => (
         </Section>
 
         <Section title="6. Contact Us">
-          <p>If you have any questions about our use of cookies or other technologies, please email us at <a href="mailto:privacy@luxestay.com" className="text-primary hover:underline">privacy@luxestay.com</a>.</p>
+          <p>If you have any questions about our use of cookies or other technologies, please email us at <a href="mailto:privacy@athithigriha.com" className="text-primary hover:underline">privacy@athithigriha.com</a>.</p>
         </Section>
       </div>
     </div>

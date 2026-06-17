@@ -89,12 +89,12 @@ const Footer = () => (
     <div className="container py-14 grid md:grid-cols-4 gap-10 text-center md:text-left">
       {/* Brand */}
       <div className="md:col-span-1 flex flex-col items-center md:items-start">
-        <h3 className="text-primary-foreground font-display text-2xl font-bold mb-3">LuxeStay</h3>
+        <h3 className="text-primary-foreground font-display text-2xl font-bold mb-3">AthithiGriha</h3>
         <p className="text-primary-foreground/70 text-sm leading-relaxed max-w-xs mb-5">
           Elevating hospitality through seamless digital experiences and world-class luxury stays.
         </p>
         <div className="space-y-2 text-primary-foreground/70 text-sm flex flex-col items-center md:items-start">
-          <div className="flex items-center gap-2"><Mail className="w-4 h-4" /><span>hello@luxestay.com</span></div>
+          <div className="flex items-center gap-2"><Mail className="w-4 h-4" /><span>hello@athithigriha.com</span></div>
           <div className="flex items-center gap-2"><Phone className="w-4 h-4" /><span>+1 (800) 123-4567</span></div>
           <div className="flex items-center gap-2"><MapPin className="w-4 h-4" /><span>123 Luxury Ave, New York</span></div>
         </div>
@@ -142,7 +142,7 @@ const Footer = () => (
     </div>
 
     <div className="border-t border-primary-foreground/10 py-5 text-center text-primary-foreground/50 text-xs">
-      © {new Date().getFullYear()} LuxeStay Hospitality. All rights reserved.
+      © {new Date().getFullYear()} AthithiGriha Hospitality. All rights reserved.
       {" · "}
       <Link to="/terms" className="hover:text-primary-foreground/70 transition-colors">Terms</Link>
       {" · "}

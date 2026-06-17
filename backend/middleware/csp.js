@@ -2,7 +2,7 @@
  * csp.js — Content Security Policy middleware
  *
  * This module builds a strict, environment-aware CSP header for the
- * LuxeStay backend API responses and provides a helper that generates
+ * AthithiGriha backend API responses and provides a helper that generates
  * per-request nonces for any server-rendered HTML.
  *
  * PROTECTION SCOPE

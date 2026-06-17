@@ -153,7 +153,29 @@ const SupportCentre = () => {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
 
-  // CAPTCHA removed from Support Centre form to improve UX; backend will accept tickets without captcha
+  const [captchaId, setCaptchaId] = useState("");
+  const [captchaChallenge, setCaptchaChallenge] = useState("");
+  const [captchaAnswer, setCaptchaAnswer] = useState("");
+  const [captchaLoading, setCaptchaLoading] = useState(false);
+
+  const fetchCaptcha = async () => {
+    setCaptchaLoading(true);
+    setCaptchaAnswer("");
+    try {
+      const res: any = await api.get("/auth/captcha");
+      const d = res.data?.data || res.data || {};
+      setCaptchaId(d.captchaId || "");
+      setCaptchaChallenge(d.challenge || "");
+    } catch {
+      setCaptchaChallenge(""); setCaptchaId("");
+    } finally {
+      setCaptchaLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCaptcha();
+  }, []);
 
   const handle = (k: string, v: string) => setForm((p) => ({ ...p, [k]: v }));
 
@@ -167,7 +189,10 @@ const SupportCentre = () => {
       setError("Please enter a valid email address.");
       return;
     }
-    // no captcha required for support tickets
+    if (captchaChallenge && !captchaAnswer.trim()) {
+      setError("Please complete the security check.");
+      return;
+    }
     setError(""); setLoading(true);
     try {
       await api.post("/public/support/create", {
@@ -176,6 +201,8 @@ const SupportCentre = () => {
         issueType: form.category || "Other",
         subject: form.subject.trim() || "Support Request",
         message: form.message.trim(),
+        captchaId,
+        captchaAnswer: captchaAnswer.trim(),
       });
       setSuccess(true);
       setForm({ name: "", email: "", category: "", subject: "", message: "" });
@@ -221,7 +248,7 @@ const SupportCentre = () => {
       <div className="bg-secondary/40 border-b border-border">
         <div className="container max-w-3xl mx-auto py-5 grid sm:grid-cols-2 gap-4">
           <a
-            href="mailto:support@luxestay.com"
+            href="mailto:support@athithigriha.com"
             className="flex items-center gap-4 p-4 bg-card rounded-2xl border border-border hover:shadow-elegant transition-base group"
           >
             <div className="w-10 h-10 rounded-xl bg-primary/10 grid place-items-center shrink-0 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
@@ -229,7 +256,7 @@ const SupportCentre = () => {
             </div>
             <div>
               <p className="font-semibold text-primary text-sm">Email Support</p>
-              <p className="text-muted-foreground text-xs">support@luxestay.com</p>
+              <p className="text-muted-foreground text-xs">support@athithigriha.com</p>
             </div>
           </a>
 
@@ -307,20 +334,7 @@ const SupportCentre = () => {
             </div>
           </div>
 
-          {!user ? (
-            <div className="text-center py-12 bg-secondary/40 rounded-2xl border border-border">
-              <User className="w-12 h-12 mx-auto mb-4 text-muted-foreground/40" />
-              <h3 className="font-display text-xl font-bold text-primary mb-2">Sign in Required</h3>
-              <p className="text-muted-foreground mb-6">You must be signed in to submit a support ticket.</p>
-              <button
-                type="button"
-                onClick={() => { setAuthMode("signin"); setAuthOpen(true); }}
-                className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-6 py-2.5 rounded-xl font-semibold hover:bg-primary/90 transition-colors"
-              >
-                Sign In to Continue
-              </button>
-            </div>
-          ) : success ? (
+          {success ? (
             <div className="bg-green-50 border border-green-200 rounded-2xl p-8 text-center">
               <CheckCircle2 className="w-12 h-12 text-green-500 mx-auto mb-4" />
               <h3 className="font-display text-xl font-bold text-green-800 mb-2">Ticket Submitted!</h3>
@@ -424,8 +438,7 @@ const SupportCentre = () => {
         isOpen={authOpen}
         onClose={() => setAuthOpen(false)}
         defaultMode={authMode}
-          showCaptcha={false}
-        />
+      />
     </Layout>
   );
 };

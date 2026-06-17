@@ -57,7 +57,7 @@ export function downloadBookingReceipt(data: ReceiptData) {
   doc.setTextColor(255, 255, 255);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(22);
-  doc.text("LuxeStay", 20, 18);
+  doc.text("AthithiGriha", 20, 18);
   doc.setFontSize(10);
   doc.setFont("helvetica", "normal");
   doc.text("Premium Hotel Reservations", 20, 25);
@@ -126,13 +126,13 @@ export function downloadBookingReceipt(data: ReceiptData) {
   doc.setFont("helvetica", "normal");
   const footer = isCancelled
     ? "This document confirms your booking cancellation. Keep it for your records."
-    : "Thank you for choosing LuxeStay. Present this receipt at check-in.";
+    : "Thank you for choosing AthithiGriha. Present this receipt at check-in.";
   doc.text(footer, 20, y, { maxWidth: pageW - 40 });
-  doc.text("support@luxestay.com · www.luxestay.com", 20, 280);
+  doc.text("support@athithigriha.com · www.athithigriha.com", 20, 280);
 
   const filename = isCancelled
-    ? `LuxeStay-Cancellation-${String(data.id).replace(/[^a-zA-Z0-9-]/g, "")}.pdf`
-    : `LuxeStay-Receipt-${String(data.id).replace(/[^a-zA-Z0-9-]/g, "")}.pdf`;
+    ? `AthithiGriha-Cancellation-${String(data.id).replace(/[^a-zA-Z0-9-]/g, "")}.pdf`
+    : `AthithiGriha-Receipt-${String(data.id).replace(/[^a-zA-Z0-9-]/g, "")}.pdf`;
   doc.save(filename);
 }
 

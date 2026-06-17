@@ -40,7 +40,7 @@ async function run() {
   console.log("Connected to MongoDB.");
 
   // Clear previous test users and events to ensure clean slate
-  const TEST_EMAIL = "testpayment@luxestay.com";
+  const TEST_EMAIL = "testpayment@athithigriha.com";
   await User.deleteOne({ email: TEST_EMAIL });
   await Guest.deleteOne({ email: TEST_EMAIL });
   await WebhookEvent.deleteMany({ eventId: /^evt_test_/ });
@@ -378,7 +378,7 @@ async function run() {
 
   // Log in as manager
   const managerLoginPayload = {
-    email: "lumiere.manager@luxestay.com",
+    email: "lumiere.manager@athithigriha.com",
     password: "Manager@Lumiere2024"
   };
 

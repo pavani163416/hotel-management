@@ -20,7 +20,7 @@ export default function Login() {
   const [resetLoading, setResetLoading] = useState(false);
   const [showSupportModal, setShowSupportModal] = useState(false);
 
-  const supportEmail = import.meta.env.VITE_SUPPORT_EMAIL || "admin@luxestay.com";
+  const supportEmail = import.meta.env.VITE_SUPPORT_EMAIL || "admin@athithigriha.com";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -158,7 +158,7 @@ export default function Login() {
               <p className="text-sm text-dim mt-1 text-center">
                 {resetMode 
                   ? "Enter your email to receive a password reset link" 
-                  : "LuxeStay Multi-Hotel Platform Management"
+                  : "AthithiGriha Multi-Hotel Platform Management"
                 }
               </p>
             </div>
@@ -172,7 +172,7 @@ export default function Login() {
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
                     <input type="email" value={resetEmail} onChange={(e) => setResetEmail(e.target.value)}
-                      placeholder="admin@luxestay.com"
+                      placeholder="admin@athithigriha.com"
                       className="w-full bg-white/[0.04] border border-white/10 text-[#f0f4ff] rounded-xl py-3 pl-10 pr-4 text-sm outline-none placeholder-slate-500 focus:border-amber-500/50 focus:ring-2 focus:ring-amber-500/10 transition-all"
                     />
                   </div>
@@ -226,7 +226,7 @@ export default function Login() {
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
                     <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
-                      placeholder="admin@luxestay.com"
+                      placeholder="admin@athithigriha.com"
                       className="w-full bg-white/[0.04] border border-white/10 text-[#f0f4ff] rounded-xl py-3 pl-10 pr-4 text-sm outline-none placeholder-slate-500 focus:border-amber-500/50 focus:ring-2 focus:ring-amber-500/10 transition-all"
                     />
                   </div>

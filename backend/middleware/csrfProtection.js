@@ -21,8 +21,8 @@ const RAW_ORIGINS    = (process.env.CLIENT_ORIGIN || "").split(",").map((o) => o
 
 const TRUSTED_ORIGINS = [
   "https://hotel-mgnt.vercel.app",
-  "https://luxestay-frontend.vercel.app",
-  "https://luxestay-admin.vercel.app",
+  "https://athithigriha-frontend.vercel.app",
+  "https://athithigriha-admin.vercel.app",
   "https://hotel-management-admin-eta.vercel.app",
   "https://athithigriha-frontend.vercel.app",
   "",
@@ -35,8 +35,8 @@ function isTrustedVercelDomain(origin) {
     const hostname = new URL(origin).hostname;
     const allowedSubstrings = [
       "hotel-mgnt",
-      "luxestay-frontend",
-      "luxestay-admin",
+      "athithigriha-frontend",
+      "athithigriha-admin",
       "hotel-management-admin-eta",
       "hotel-management-frontend",
       "hotel-management",
@@ -78,27 +78,6 @@ const csrfProtection = (req, res, next) => {
 
   // Bypass CSRF validation for webhook routes and CSP violation reports
   if (req.path.startsWith("/webhooks") || req.path.startsWith("/api/webhooks") || req.path === "/csp-report") {
-    return next();
-  }
-
-  // Bypass CSRF for pre-authentication auth endpoints (mobile apps don't send
-  // Origin headers and these endpoints don't rely on ambient cookie auth, so
-  // they are inherently immune to CSRF attacks).
-  const CSRF_EXEMPT_AUTH_PATHS = [
-    "/auth/login",
-    "/auth/register",
-    "/auth/captcha",
-    "/auth/verify-otp",
-    "/auth/resend-otp",
-    "/auth/google",
-    "/auth/firebase",
-    "/auth/forgot-password",
-    "/auth/reset-password",
-    "/auth/phone/send",
-    "/auth/phone/verify",
-  ];
-  const reqPath = req.path.replace(/^\/api/, "");
-  if (CSRF_EXEMPT_AUTH_PATHS.includes(reqPath)) {
     return next();
   }
 

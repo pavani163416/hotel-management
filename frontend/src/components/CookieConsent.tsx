@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Cookie, X, ChevronDown, ChevronUp, Shield } from "lucide-react";
 
-const STORAGE_KEY = "luxestay_cookie_consent";
+const STORAGE_KEY = "athithigriha_cookie_consent";
 
 interface Preferences {
   essential: boolean;
@@ -87,7 +87,7 @@ const CookieConsent = () => {
             <div className="space-y-3 mb-4">
               {([
                 { key: "essential", label: "Essential", description: "Required for core site functionality. Cannot be disabled.", locked: true },
-                { key: "analytics", label: "Analytics", description: "Help us understand how visitors use LuxeStay.", locked: false },
+                { key: "analytics", label: "Analytics", description: "Help us understand how visitors use AthithiGriha.", locked: false },
                 { key: "marketing", label: "Marketing", description: "Enable personalized offers and targeted advertising.", locked: false },
               ] as const).map(({ key, label, description, locked }) => (
                 <div key={key} className="flex items-start justify-between gap-3 p-3 bg-secondary/30 rounded-xl">

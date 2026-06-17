@@ -1,5 +1,5 @@
 /**
- * AdditionalGuest model — stored in luxestay DB
+ * AdditionalGuest model — stored in athithigriha DB
  * Tracks extra adults and children added during booking
  */
 import mongoose from "mongoose";

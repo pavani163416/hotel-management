@@ -44,7 +44,7 @@ assignedHotelName: { type: String, default: null }  // "Hôtel de Lumière", etc
 
 **Environment Variable Added:**
 ```env
-JWT_SECRET=luxestay_manager_secret_2024_imperial_emerald
+JWT_SECRET=athithigriha_manager_secret_2024_imperial_emerald
 ```
 
 ---
@@ -149,9 +149,9 @@ export const checkHotelAccess = (hotelId) => ...
 
 **Logic:**
 1. Admin adds a new hotel via the "Add Hotel" modal
-2. Backend creates the hotel in the `luxestay` database
+2. Backend creates the hotel in the `athithigriha` database
 3. Frontend auto-generates manager credentials:
-   - **Email:** `<hotelslug>.manager@luxestay.com`
+   - **Email:** `<hotelslug>.manager@athithigriha.com`
    - **Password:** `Manager@<HotelName>2024`
 4. Frontend calls `POST /api/admin/users` to create the manager account
 5. Modal shows the generated credentials with a "Copy to Clipboard" button
@@ -159,7 +159,7 @@ export const checkHotelAccess = (hotelId) => ...
 **Example:**
 ```
 Hotel: Swagruha Hotel
-Email: swagruhahotel.manager@luxestay.com
+Email: swagruhahotel.manager@athithigriha.com
 Password: Manager@Swagruha2024
 Hotel ID: h7
 ```
@@ -241,12 +241,12 @@ cd backend && node utils/seedManagers.js
 **Creates 7 Managers:**
 | Hotel                    | Email                            | Password                  | Hotel ID |
 |--------------------------|----------------------------------|---------------------------|----------|
-| Hôtel de Lumière         | lumiere.manager@luxestay.com     | Manager@Lumiere2024       | h1       |
-| The Azure Skyline        | azure.manager@luxestay.com       | Manager@Azure2024         | h2       |
-| Coral Bay Resort         | coralbay.manager@luxestay.com    | Manager@CoralBay2024      | h3       |
-| Alpine Peak Lodge        | alpine.manager@luxestay.com      | Manager@Alpine2024        | h4       |
-| The Grand Metropolitan   | metro.manager@luxestay.com       | Manager@Metro2024         | h5       |
-| Santorini Cliff Suites   | santorini.manager@luxestay.com   | Manager@Santorini2024     | h6       |
+| Hôtel de Lumière         | lumiere.manager@athithigriha.com     | Manager@Lumiere2024       | h1       |
+| The Azure Skyline        | azure.manager@athithigriha.com       | Manager@Azure2024         | h2       |
+| Coral Bay Resort         | coralbay.manager@athithigriha.com    | Manager@CoralBay2024      | h3       |
+| Alpine Peak Lodge        | alpine.manager@athithigriha.com      | Manager@Alpine2024        | h4       |
+| The Grand Metropolitan   | metro.manager@athithigriha.com       | Manager@Metro2024         | h5       |
+| Santorini Cliff Suites   | santorini.manager@athithigriha.com   | Manager@Santorini2024     | h6       |
 | Swagruha Hotel           | swagruhamanager@gmail.com        | Manager@Swagruha2024      | h7       |
 
 **Passwords:** Bcrypt-hashed with salt rounds = 12
@@ -334,7 +334,7 @@ Try accessing a different hotel's data:
 
 ### Step 6: Add a New Hotel (Super Admin)
 **Login as Super Admin:**
-- Email: `admin@luxestay.com`
+- Email: `admin@athithigriha.com`
 - Password: `admin123`
 
 **Navigate to:** `/hotels` → Click "Add Hotel"
@@ -352,7 +352,7 @@ Try accessing a different hotel's data:
 
 Manager Portal Credentials
 Hotel:    Test Hotel
-Email:    testhotel.manager@luxestay.com
+Email:    testhotel.manager@athithigriha.com
 Password: Manager@TestHote2024
 Hotel ID: h<timestamp>
 ```
@@ -436,7 +436,7 @@ PATCH  /api/admin/users/:id                  — Update admin user
 ## 15. Manager Credentials
 
 ### Format
-- **Email:** `<hotelslug>.manager@luxestay.com`
+- **Email:** `<hotelslug>.manager@athithigriha.com`
 - **Password:** `Manager@<HotelName>2024`
 
 ### Special Case: Swagruha Hotel
@@ -445,7 +445,7 @@ PATCH  /api/admin/users/:id                  — Update admin user
 
 ### Storage
 - Passwords are bcrypt-hashed (salt rounds = 12)
-- Stored in `AdminUser` collection in the `luxestay` database
+- Stored in `AdminUser` collection in the `athithigriha` database
 - JWT tokens expire after 7 days
 
 ---
@@ -531,7 +531,7 @@ npm run dev
 
 ### 4. Login as Super Admin
 - URL: `http://localhost:5173/login`
-- Email: `admin@luxestay.com`
+- Email: `admin@athithigriha.com`
 - Password: `admin123`
 
 ### 5. Add a New Hotel

@@ -424,7 +424,7 @@ export const getManagerBookings = async (req, res, next) => {
       .populate("room",  "roomNumber type pricePerNight images")
       .populate("guest", "name email phone")
       .sort({ createdAt:-1 });
-    const data = bookings.map(b => ({ ...b.toJSON(), hotelName: b.hotelName || req.scopedHotelName || "LuxeStay" }));
+    const data = bookings.map(b => ({ ...b.toJSON(), hotelName: b.hotelName || req.scopedHotelName || "AthithiGriha" }));
     res.status(200).json({ success:true, count:data.length, data });
   } catch (err) { next(err); }
 };

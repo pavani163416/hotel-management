@@ -1,5 +1,5 @@
 /**
- * Math-based CAPTCHA utility for LuxeStay
+ * Math-based CAPTCHA utility for AthithiGriha
  * ------------------------------------------
  * Generates a simple arithmetic challenge (e.g., "What is 7 + 4?") and stores
  * the expected answer keyed by a UUID. On verification, the key is consumed
@@ -44,16 +44,15 @@ setInterval(() => {
 import svgCaptcha from "svg-captcha";
 
 export const generateCaptcha = async () => {
-  // Use a simpler, user-friendly CAPTCHA (short, low-noise) to improve UX
   const captcha = svgCaptcha.create({
-    size: 4,
+    size: 6,
     ignoreChars: '0o1iIlL', // Omit confusing letters
-    noise: 2, // Reduced noise for readability
+    noise: 5, // Enhanced noise lines to deter bots
     color: true,
-    background: '#f3f4f6',
-    width: 180,
-    height: 48,
-    fontSize: 40,
+    background: '#f8f9fa',
+    width: 200,
+    height: 60,
+    fontSize: 50,
   });
 
   const captchaId = randomUUID();

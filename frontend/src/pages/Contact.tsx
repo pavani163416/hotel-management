@@ -4,7 +4,7 @@ import DOMPurify from "dompurify";
 import { Phone, Mail, Clock, Send, Loader2, CheckCircle2 } from "lucide-react";
 import api from "@/services/api";
 
-const ADMIN_EMAIL = "hello@luxestay.com";
+const ADMIN_EMAIL = "hello@athithigriha.com";
 
 const Contact = () => {
   const [form, setForm] = useState({ name: "", email: "", subject: "", message: "" });
@@ -110,7 +110,7 @@ const Contact = () => {
                 {
                   icon: Mail,
                   title: "Email",
-                  text: "hello@luxestay.com\nsupport@luxestay.com",
+                  text: "hello@athithigriha.com\nsupport@athithigriha.com",
                 },
                 {
                   icon: Clock,

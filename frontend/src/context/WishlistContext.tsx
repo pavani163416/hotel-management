@@ -33,7 +33,7 @@ export const WishlistProvider = ({ children }: { children: React.ReactNode }) =>
   useEffect(() => {
     const handleLogout = () => {
       setWishlist([]);
-      localStorage.removeItem("luxestay_wishlist");
+      localStorage.removeItem("athithigriha_wishlist");
     };
     window.addEventListener("luxe_logout", handleLogout);
     return () => window.removeEventListener("luxe_logout", handleLogout);

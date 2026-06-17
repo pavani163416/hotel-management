@@ -8,7 +8,7 @@ import { countAvailableRooms } from "../services/roomAllocationService.js";
 import crypto from "crypto";
 
 async function runTests() {
-  console.log("=== LuxeStay Production Readiness Integration Tests ===\n");
+  console.log("=== AthithiGriha Production Readiness Integration Tests ===\n");
 
   await connectDB();
 

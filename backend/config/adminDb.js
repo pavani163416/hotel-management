@@ -1,6 +1,6 @@
 /**
  * adminDb.js — Separate MongoDB connection for the controller/admin database.
- * Keeps admin data completely separate from user-facing luxestay data.
+ * Keeps admin data completely separate from user-facing athithigriha data.
  */
 import mongoose from "mongoose";
 import dns      from "dns";

@@ -76,14 +76,6 @@ function saveAlerts(alerts: any[]) {
   try { localStorage.setItem(ALERTS_KEY, JSON.stringify(alerts)); } catch {}
 }
 
-function timeAgo(iso: string) {
-  const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
-  if (diff < 60) return "just now";
-  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-  return `${Math.floor(diff / 86400)}d ago`;
-}
-
 function normalizeNotificationToAlert(data: any) {
   const typeMap: Record<string, string> = {
     manager:    "vip",
@@ -92,14 +84,12 @@ function normalizeNotificationToAlert(data: any) {
     assistance: "assistance",
     price:      "payment",
   };
-  const createdAt = data.createdAt || new Date().toISOString();
 
   return {
     id:       data._id || data.id || Date.now().toString(),
     type:     typeMap[data.type] || "booking",
     msg:      data.message || data.msg || "",
-    time:     timeAgo(createdAt),
-    createdAt,
+    time:     "just now",
     priority: data.priority || (data.type === "assistance" ? "high" : "medium"),
     fullData: data,
   };
@@ -157,17 +147,9 @@ export default function Dashboard() {
   useEffect(() => { load(); }, [load]);
   useSocket("newBooking", useCallback((data: any) => {
     load();
-    const createdAt = new Date().toISOString();
     setAlerts((prev) => {
       const next = [
-        {
-          id: Date.now().toString(),
-          type: "booking",
-          msg: `New booking: ${data.guestName || "Guest"}`,
-          createdAt,
-          time: timeAgo(createdAt),
-          priority: "medium",
-        },
+        { id: Date.now().toString(), type: "booking", msg: `New booking: ${data.guestName || "Guest"}`, time: "just now", priority: "medium" },
         ...prev.slice(0, 5),
       ];
       saveAlerts(next);

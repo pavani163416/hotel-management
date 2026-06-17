@@ -128,7 +128,7 @@ router.route("/:id/halls")
   .get(getHotelHalls);
 
 router.route("/:id/halls/:hallId/book")
-  .post(protect, authorizeRoles("customer"), bookHotelHall);
+  .post(protect, bookHotelHall);
 
 router.route("/:id/reviews")
   .post(protect, validate(schemas.addReview), addReviewToHotel);

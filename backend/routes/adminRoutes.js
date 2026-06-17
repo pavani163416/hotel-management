@@ -358,7 +358,7 @@ router.put("/change-password", protect, async (req, res, next) => {
       logger.warn("Controller DB lookup failed for change-password, trying fallbacks", { error: dbErr.message });
     }
 
-    // ── 2. Try luxestay DB AdminUser model ──
+    // ── 2. Try athithigriha DB AdminUser model ──
     const adminUser = await AdminUser.findOne({ email: normalizedEmail });
     if (adminUser) {
       const storedPwd = adminUser.password;
@@ -368,13 +368,13 @@ router.put("/change-password", protect, async (req, res, next) => {
         : currentPwdTrim === storedPwd;
 
       if (!isMatch) {
-        logger.info("Password verification failed (luxestay DB)", { email: normalizedEmail, isHashed });
+        logger.info("Password verification failed (athithigriha DB)", { email: normalizedEmail, isHashed });
         return res.status(401).json({ success: false, message: "Current password is incorrect." });
       }
 
       adminUser.password = await bcrypt.hash(newPassword, 12);
       await adminUser.save();
-      logger.info("Admin password changed via luxestay DB", { email: normalizedEmail });
+      logger.info("Admin password changed via athithigriha DB", { email: normalizedEmail });
       return res.json({ success: true, message: "Password changed successfully." });
     }
 

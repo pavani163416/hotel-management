@@ -6,7 +6,7 @@ const schema = new mongoose.Schema(
   {
     transactionId: { type: String, required: true, unique: true },
     bookingRef:    { type: String, required: true },   // e.g. "LS-00957"
-    bookingId:     { type: String },                   // MongoDB _id from luxestay.bookings
+    bookingId:     { type: String },                   // MongoDB _id from athithigriha.bookings
     guestName:     { type: String, required: true },
     guestEmail:    { type: String, required: true },
     hotelName:     { type: String },

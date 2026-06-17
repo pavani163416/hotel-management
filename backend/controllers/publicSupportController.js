@@ -9,7 +9,7 @@ const uploadBufferToCloudinary = async (buffer, filename, mimetype) => {
     const isPdf = mimetype === "application/pdf" || (filename && filename.toLowerCase().endsWith(".pdf"));
     const cleanFilename = filename.includes(".") ? filename.split('.').slice(0, -1).join('.') : filename;
     const uploadOptions = {
-      folder: "luxestay/support",
+      folder: "athithigriha/support",
       resource_type: isPdf ? "image" : "auto", 
       format: isPdf ? "pdf" : undefined,
       public_id: `${cleanFilename}-${Date.now()}`,
@@ -31,10 +31,24 @@ const uploadBufferToCloudinary = async (buffer, filename, mimetype) => {
 
 export const createPublicTicket = async (req, res) => {
   try {
-    const { fullName, hotelName, email, phoneNumber, issueType, priority, message } = req.body;
+    const { fullName, hotelName, email, phoneNumber, issueType, priority, message, captchaId, captchaAnswer, captchaToken } = req.body;
 
-    // CAPTCHA removed for public support tickets to simplify UX.
-    // Any captcha fields sent by clients will be ignored by this endpoint.
+    // CAPTCHA verification
+    if (!captchaToken && (!captchaId || !captchaAnswer)) {
+      return res.status(400).json({
+        success: false,
+        message: "Security check is required. Please complete the CAPTCHA challenge."
+      });
+    }
+
+    const { verifyCaptchaOrToken } = await import("../utils/captcha.js");
+    const captchaValid = await verifyCaptchaOrToken({ captchaId, captchaAnswer, captchaToken });
+    if (!captchaValid) {
+      return res.status(400).json({
+        success: false,
+        message: "Incorrect security check answer. Please try again."
+      });
+    }
 
     // Resolve names to support both frontend naming variants safely
     const finalName = String(fullName || req.body.guestName || "").trim();
@@ -116,7 +130,7 @@ export const createPublicTicket = async (req, res) => {
       try {
         const resend = new Resend(process.env.RESEND_API_KEY);
         await resend.emails.send({
-          from: process.env.RESEND_FROM_EMAIL || "LuxeStay <onboarding@resend.dev>",
+          from: process.env.RESEND_FROM_EMAIL || "AthithiGriha <onboarding@resend.dev>",
           to: [process.env.ADMIN_EMAIL || "addepallipavani4@gmail.com"], // Change if needed
           subject: `New Support Request: ${ticketId} - ${finalIssue}`,
           html: `

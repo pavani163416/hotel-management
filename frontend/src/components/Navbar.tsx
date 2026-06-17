@@ -149,7 +149,7 @@ const Navbar = () => {
     try { await api.post("/auth/logout"); } catch { /* best-effort */ }
     localStorage.removeItem("luxe_user");
     localStorage.removeItem("luxe_bookings");
-    localStorage.removeItem("luxestay_wishlist");
+    localStorage.removeItem("athithigriha_wishlist");
     setUser(null);
     window.dispatchEvent(new Event("luxe_logout"));
     navigate("/");
@@ -297,7 +297,7 @@ const Navbar = () => {
           <span className="grid place-items-center w-8 h-8 rounded-lg bg-primary text-primary-foreground shrink-0">
             <Hotel className="w-4 h-4" />
           </span>
-          <span className="hidden sm:inline-block">LuxeStay</span>
+          <span className="hidden sm:inline-block">AthithiGriha</span>
         </Link>
 
         {/* Desktop Links */}
@@ -391,13 +391,11 @@ const Navbar = () => {
                         <UserCircle className="w-4 h-4 mr-2" /> Profile
                       </Link>
                     </DropdownMenuItem>
-                    {user.role === "customer" && (
-                      <DropdownMenuItem asChild>
-                        <Link to="/halls" className="w-full cursor-pointer min-h-[44px] flex items-center">
-                          <Building2 className="w-4 h-4 mr-2" /> Book a Hall
-                        </Link>
-                      </DropdownMenuItem>
-                    )}
+                    <DropdownMenuItem asChild>
+                      <Link to="/halls" className="w-full cursor-pointer min-h-[44px] flex items-center">
+                        <Building2 className="w-4 h-4 mr-2" /> Book a Hall
+                      </Link>
+                    </DropdownMenuItem>
                     <DropdownMenuItem asChild>
                       <Link to="/owner-portal" className="w-full cursor-pointer flex items-center text-primary hover:text-accent font-medium min-h-[44px]">
                         <Building2 className="w-4 h-4 mr-2" /> {user?.role === "owner" ? "Owner Dashboard" : "List Property"}
@@ -500,7 +498,7 @@ const Navbar = () => {
             <span className="grid place-items-center w-8 h-8 rounded-lg bg-primary text-primary-foreground shrink-0">
               <Hotel className="w-4 h-4" />
             </span>
-            LuxeStay
+            AthithiGriha
           </Link>
           <button 
             onClick={() => setMobileMenuOpen(false)} 
@@ -526,6 +524,7 @@ const Navbar = () => {
           {/* Authenticated Links */}
           {user && (
             <>
+              <button onClick={() => handleMenuNavigation("/halls")} className={`px-4 py-3 min-h-[44px] flex items-center text-base font-medium rounded-lg transition-base ${location.pathname === "/halls" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-primary"}`}>Book a Hall</button>
               <button onClick={() => handleMenuNavigation("/history")} className={`px-4 py-3 min-h-[44px] flex items-center text-base font-medium rounded-lg transition-base ${location.pathname === "/history" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-primary"}`}>History</button>
             </>
           )}

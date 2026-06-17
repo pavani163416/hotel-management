@@ -41,7 +41,7 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
 
   // Resolved hotel name: prefer assignedHotelName, fall back to hotelName
   const hotelDisplayName =
-    admin?.assignedHotelName || admin?.hotelName || "LuxeStay";
+    admin?.assignedHotelName || admin?.hotelName || "AthithiGriha";
   const scopedHotelId = admin?.assignedHotelId || admin?.hotelId;
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 
@@ -87,13 +87,7 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
     const onDisconnect = () => setConnected(false);
     const onBooking    = (data: any) => {
       setNotifications((prev) => [
-        {
-          id: Date.now().toString(),
-          msg: `New booking: ${data.guestName || "Guest"} — ${data.roomType || "Room"}`,
-          createdAt: new Date().toISOString(),
-          type: "booking",
-          isRead: false,
-        },
+        { id: Date.now().toString(), msg: `New booking: ${data.guestName || "Guest"} — ${data.roomType || "Room"}`, time: "just now" },
         ...prev.slice(0, 9),
       ]);
     };

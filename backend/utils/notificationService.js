@@ -89,7 +89,7 @@ export async function sendNotification({ userId = null, hotelId = null, role, me
       }
 
       if (fcmTokens.length > 0) {
-        await sendFcmNotification(fcmTokens, "LuxeStay", message, { type, notificationId: String(notification._id) });
+        await sendFcmNotification(fcmTokens, "AthithiGriha", message, { type, notificationId: String(notification._id) });
         logger.info(`FCM push sent to ${fcmTokens.length} device(s) for notification ${notification._id}`);
       }
     } catch (fcmErr) {
@@ -122,7 +122,7 @@ export async function sendNotification({ userId = null, hotelId = null, role, me
         if (recipientEmail) {
           await sendGeneralEmail({
             to: recipientEmail,
-            subject: "LuxeStay Update",
+            subject: "AthithiGriha Update",
             bodyHtml: message,
           });
         }
@@ -132,7 +132,7 @@ export async function sendNotification({ userId = null, hotelId = null, role, me
           if (sub.email) {
             await sendGeneralEmail({
               to: sub.email,
-              subject: "LuxeStay Update",
+              subject: "AthithiGriha Update",
               bodyHtml: message,
             });
           }

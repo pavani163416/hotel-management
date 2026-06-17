@@ -273,7 +273,7 @@ export default function Guests() {
   if (!loadingBookings) {
     recentActivity = bookings.slice(0, 3).map((b) => ({
       label: "Booking",
-      desc: `${b.guestSnapshot.name || "Guest"} booked ${b.property || "LuxeStay"}.`,
+      desc: `${b.guestSnapshot.name || "Guest"} booked ${b.property || "AthithiGriha"}.`,
       time: b.createdAt ? new Date(b.createdAt).toLocaleDateString() : "Recent",
     }));
     if (recentActivity.length === 0 && guests.length > 0) {

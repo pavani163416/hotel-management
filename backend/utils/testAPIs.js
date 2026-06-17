@@ -1,5 +1,5 @@
 /**
- * LuxeStay API — Full Test Suite
+ * AthithiGriha API — Full Test Suite
  * Tests every endpoint including payment simulation
  * Run: node utils/testAPIs.js  (from inside backend/)
  */
@@ -58,7 +58,7 @@ function section(title) {
 // TEST RUNNER
 // ═══════════════════════════════════════════════════════════
 async function runTests() {
-  console.log(c.bold("\n🏨  LuxeStay API — Full Test Suite"));
+  console.log(c.bold("\n🏨  AthithiGriha API — Full Test Suite"));
   console.log(c.dim(`    Target: ${BASE}\n`));
 
   let roomId = null;

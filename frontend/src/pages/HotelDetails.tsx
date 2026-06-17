@@ -231,17 +231,11 @@ const HotelDetails = () => {
       {/* Gallery */}
       <div className="container pt-8 px-0 sm:px-4">
         {/* Desktop Gallery */}
-        <div className="hidden md:grid grid-cols-[2fr_1fr] gap-3 rounded-2xl overflow-hidden h-[420px]">
-          <div className="col-span-1 w-full h-full">
-            <img src={hotel.gallery?.[0] || hotel.image} alt={hotel.name} className="w-full h-full object-cover" />
-          </div>
+        <div className="hidden md:grid grid-cols-3 gap-3 rounded-2xl overflow-hidden h-[420px]">
+          <img src={hotel.gallery?.[0] || hotel.image} alt={hotel.name} className="col-span-2 w-full h-full object-cover" />
           <div className="grid grid-rows-2 gap-3 h-full">
-            <div className="row-span-1 w-full h-full overflow-hidden rounded">
-              <img src={hotel.gallery?.[1] || hotel.image} alt="" className="w-full h-full object-cover" loading="lazy" />
-            </div>
-            <div className="row-span-1 w-full h-full overflow-hidden rounded">
-              <img src={hotel.gallery?.[2] || hotel.image} alt="" className="w-full h-full object-cover" loading="lazy" />
-            </div>
+            <img src={hotel.gallery?.[1] || hotel.image} alt="" className="w-full h-full object-cover" loading="lazy" />
+            <img src={hotel.gallery?.[2] || hotel.image} alt="" className="w-full h-full object-cover" loading="lazy" />
           </div>
         </div>
 

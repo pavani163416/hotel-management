@@ -220,7 +220,7 @@ npm run dev
 
 You should see:
 ```
-🚀  LuxeStay API running on http://localhost:5000
+🚀  AthithiGriha API running on http://localhost:5000
 ⚡  Socket.IO ready
 🔌  WebSocket server ready at ws://localhost/ws
 ```
@@ -257,7 +257,7 @@ Content-Type: application/json
   "discount": 0,
   "totalAmount": 1100,
   "paymentMethod": "card",
-  "hotelName": "LuxeStay Grand"
+  "hotelName": "AthithiGriha Grand"
 }
 ```
 

@@ -9,7 +9,7 @@ interface SEOProps {
 export function useSEO({ title, description, canonical }: SEOProps) {
   useEffect(() => {
     // 1. Update document title
-    document.title = title ? `${title} | LuxeStay` : "LuxeStay | Discover Extraordinary Hotel Stays";
+    document.title = title ? `${title} | AthithiGriha` : "AthithiGriha | Discover Extraordinary Hotel Stays";
 
     // 2. Update meta description
     if (description) {

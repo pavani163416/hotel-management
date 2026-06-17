@@ -37,7 +37,7 @@ const Privacy = () => (
           <p>We implement industry-standard security measures including SSL/TLS encryption, secure token storage, and regular security audits to protect your personal information.</p>
         </Section>
         <Section title="7. Your Rights">
-          <p>Depending on your jurisdiction, you may have rights to access, correct, delete, or restrict processing of your personal data. To exercise any right, contact <a href="mailto:privacy@luxestay.com" className="text-primary hover:underline">privacy@luxestay.com</a>.</p>
+          <p>Depending on your jurisdiction, you may have rights to access, correct, delete, or restrict processing of your personal data. To exercise any right, contact <a href="mailto:privacy@athithigriha.com" className="text-primary hover:underline">privacy@athithigriha.com</a>.</p>
         </Section>
         <Section title="8. Changes to This Policy">
           <p>We may update this Privacy Policy from time to time. We will notify you of significant changes via email or a prominent notice on our website.</p>
