@@ -26,6 +26,8 @@ type AdminCtx = {
   language: "en" | "fr" | "de" | "es";
   setLanguage: (lang: "en" | "fr" | "de" | "es") => void;
   t: (text: string) => string;
+  sidebarOpen: boolean;
+  setSidebarOpen: (open: boolean) => void;
 };
 
 const Ctx = createContext<AdminCtx | null>(null);
@@ -193,10 +195,12 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem("luxe_admin", JSON.stringify(updated));
   };
 
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
   const isManager = admin?.role === "Manager";
 
   return (
-    <Ctx.Provider value={{ admin, token, login, logout, isAuthenticated: !!token, isManager, setHotel, theme, setTheme, language, setLanguage, t }}>
+    <Ctx.Provider value={{ admin, token, login, logout, isAuthenticated: !!token, isManager, setHotel, theme, setTheme, language, setLanguage, t, sidebarOpen, setSidebarOpen }}>
       {children}
     </Ctx.Provider>
   );

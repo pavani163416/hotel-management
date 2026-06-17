@@ -66,6 +66,7 @@
 }
 
 @layer base {
+  *, *::before, *::after { box-sizing: border-box; }
   * { @apply border-border; }
   body {
     @apply bg-background text-foreground antialiased;
@@ -91,4 +92,16 @@
   .shadow-elegant { box-shadow: var(--shadow-md); }
   .shadow-luxe { box-shadow: var(--shadow-lg); }
   .transition-base { transition: all var(--transition-base); }
+}
+
+@media (max-width: 768px) {
+  button:not(.wishlisted):not(.icon-btn), a[href]:not(.icon-link), [role="button"]:not(.icon-btn) {
+    min-height: 44px;
+  }
+  input[type="text"], input[type="number"], input[type="email"],
+  input[type="password"], input[type="tel"], input[type="date"],
+  select, textarea {
+    font-size: 16px !important; /* Prevents iOS auto-zoom */
+    min-height: 44px;
+  }
 }

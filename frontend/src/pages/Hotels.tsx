@@ -36,6 +36,7 @@ const Hotels = () => {
   const [nameSearch, setNameSearch] = useState("");
   const [nameFilter, setNameFilter] = useState("");
   const [nameDropdown, setNameDropdown] = useState(false);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
   // Suggestions: all hotel names that match current input (case-insensitive)
   const nameSuggestions = useMemo(() => {
@@ -138,7 +139,20 @@ const Hotels = () => {
         <div className="container py-8">
           <div className="grid lg:grid-cols-[22%_1fr] xl:grid-cols-[24%_1fr] gap-8">
           {/* SIDEBAR */}
-          <aside className="lg:sticky lg:top-20 lg:self-start space-y-5 lg:max-h-[calc(100dvh-6rem)] lg:overflow-y-auto pr-1 lg:flex-shrink-0">
+          <aside className={`lg:sticky lg:top-20 lg:self-start space-y-5 lg:max-h-[calc(100dvh-6rem)] lg:overflow-y-auto pr-1 lg:flex-shrink-0 ${
+            mobileFiltersOpen ? "fixed inset-0 z-[100] bg-background p-4 overflow-y-auto" : "hidden lg:block"
+          }`}>
+            {mobileFiltersOpen && (
+              <div className="flex justify-end lg:hidden">
+                <button
+                  onClick={() => setMobileFiltersOpen(false)}
+                  className="p-2 rounded-lg hover:bg-secondary text-muted-foreground transition-base"
+                  aria-label="Close filters"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            )}
             <div className="rounded-xl border border-border overflow-hidden bg-card">
               <div className="h-60 relative">
                 <HotelMap hotels={filtered} onHotelClick={(id) => nav(`/hotel/${id}`)} />
@@ -276,6 +290,12 @@ const Hotels = () => {
                     </div>
                   )}
                 </div>
+                <button
+                  onClick={() => setMobileFiltersOpen(true)}
+                  className="lg:hidden px-4 py-2 border border-border rounded-lg bg-background text-sm font-semibold text-primary hover:bg-secondary transition-base"
+                >
+                  Filters
+                </button>
                 <div className="flex border border-border rounded-lg overflow-hidden">
                   <button onClick={() => setView("list")} className={`p-2 transition-base ${view === "list" ? "bg-primary text-primary-foreground" : "text-primary hover:bg-secondary"}`} aria-label="List view"><List className="w-4 h-4" /></button>
                   <button onClick={() => setView("grid")} className={`p-2 transition-base ${view === "grid" ? "bg-primary text-primary-foreground" : "text-primary hover:bg-secondary"}`} aria-label="Grid view"><LayoutGrid className="w-4 h-4" /></button>
@@ -352,8 +372,8 @@ const TopDeals = ({ deals, onView, format, wishlist, toggleWishlist, nav }: { de
           </div>
         </div>
         <div className="flex gap-1">
-          <button onClick={() => scroll("l")} className="w-8 h-8 grid place-items-center rounded-lg border border-border hover:bg-secondary transition-base"><ChevronLeft className="w-4 h-4 text-primary" /></button>
-          <button onClick={() => scroll("r")} className="w-8 h-8 grid place-items-center rounded-lg border border-border hover:bg-secondary transition-base"><ChevronRight className="w-4 h-4 text-primary" /></button>
+          <button onClick={() => scroll("l")} className="w-11 h-11 grid place-items-center rounded-lg border border-border hover:bg-secondary transition-base"><ChevronLeft className="w-4 h-4 text-primary" /></button>
+          <button onClick={() => scroll("r")} className="w-11 h-11 grid place-items-center rounded-lg border border-border hover:bg-secondary transition-base"><ChevronRight className="w-4 h-4 text-primary" /></button>
         </div>
       </div>
       <div id="deals-rail" className="flex gap-4 overflow-x-auto scroll-smooth pb-2 -mx-1 px-1 snap-x">
@@ -363,7 +383,7 @@ const TopDeals = ({ deals, onView, format, wishlist, toggleWishlist, nav }: { de
               <img src={h.image} alt={h.name} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-base duration-500" />
               <button
                 onClick={(e) => { e.stopPropagation(); toggleWishlist(h.id); }}
-                className="absolute top-2 left-2 bg-background/95 backdrop-blur w-7 h-7 rounded-full grid place-items-center hover:scale-110 transition-transform shadow-md"
+                className="absolute top-2 left-2 bg-background/95 backdrop-blur w-10 h-10 rounded-full grid place-items-center hover:scale-110 transition-transform shadow-md"
                 aria-label="Add to wishlist"
               >
                 <Heart className={`w-3.5 h-3.5 ${isWishlisted(h.id) ? "fill-red-500 text-red-500" : "text-muted-foreground"}`} />
@@ -426,8 +446,8 @@ const HotelListCard = ({ hotel: h, onView, format, wishlist, toggleWishlist, nav
           </div>
           <p className="text-sm text-muted-foreground line-clamp-2">{h.description}</p>
         </div>
-        <div className="p-5 border-t md:border-t-0 md:border-l border-border flex md:flex-col items-end md:items-end justify-between md:justify-center gap-3 md:min-w-[170px]">
-          <div className="text-right">
+        <div className="p-5 border-t md:border-t-0 md:border-l border-border flex flex-col items-start md:items-end justify-between gap-3 md:min-w-[170px]">
+          <div className="text-left md:text-right">
             <p className="text-xs text-muted-foreground">Starting from</p>
             {h.originalPrice && <p className="text-xs text-muted-foreground line-through">{format(h.originalPrice)}</p>}
             <p className="font-display text-2xl font-bold text-primary">{format(h.pricePerNight)}</p>

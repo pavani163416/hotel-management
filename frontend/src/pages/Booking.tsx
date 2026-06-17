@@ -63,11 +63,13 @@ const Booking = () => {
                         : search.checkOut;
                       setSearch({ ...search, checkIn: newIn, checkOut: newOut });
                     }}
-                    className="text-xs border border-border rounded-lg px-2 py-1 outline-none focus:border-primary bg-transparent" />
+                    className="border border-border rounded-lg px-2 py-1 outline-none focus:border-primary bg-transparent"
+                    style={{ fontSize: '16px' }} />
                   <input type="date" value={search.checkOut}
                     min={new Date(new Date(search.checkIn).getTime() + 86400000).toISOString().slice(0, 10)}
                     onChange={(e) => setSearch({ ...search, checkOut: e.target.value })}
-                    className="text-xs border border-border rounded-lg px-2 py-1 outline-none focus:border-primary bg-transparent" />
+                    className="border border-border rounded-lg px-2 py-1 outline-none focus:border-primary bg-transparent"
+                    style={{ fontSize: '16px' }} />
                 </div>
               </div>
               {/* Editable nights */}

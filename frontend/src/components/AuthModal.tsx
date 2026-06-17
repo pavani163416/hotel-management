@@ -115,7 +115,7 @@ function AuthModalInner({ isOpen, onClose, defaultMode, mode, setMode, loading, 
   );
 
   return (
-    <DialogContent className={`${mode === "signup" ? "w-[min(95vw,760px)] max-w-[760px]" : "w-[min(95vw,440px)] max-w-[440px]"} max-h-[90dvh] overflow-y-auto p-5 sm:p-6`} aria-describedby={undefined}>
+    <DialogContent className={`${mode === "signup" ? "w-[min(95vw,760px)] max-w-[760px]" : "w-[min(95vw,440px)] max-w-[440px]"} max-h-[calc(100dvh-5rem)] overflow-y-auto p-5 sm:p-6`} aria-describedby={undefined}>
       <DialogHeader>
         <DialogTitle className="font-display text-xl sm:text-2xl font-bold">
           {mode === "signin" ? "Welcome Back" : mode === "phone" ? "Continue with Phone" : mode === "verify_email_otp" ? "Verify Your Email" : mode === "forgot_password" ? "Reset Password" : "Create an Account"}
@@ -223,7 +223,8 @@ function AuthModalInner({ isOpen, onClose, defaultMode, mode, setMode, loading, 
               <select 
                 value={countryCode} 
                 onChange={e => setCountryCode(e.target.value)}
-                className="w-[75px] px-1 py-2 border border-border rounded-lg outline-none focus:border-accent bg-background text-sm"
+                className="w-[75px] px-1 py-2 border border-border rounded-lg outline-none focus:border-accent bg-background"
+                style={{ fontSize: '16px' }}
               >
                 {COUNTRY_CODES.map(c => (
                   <option key={c.code} value={c.code}>{c.code}</option>
@@ -279,7 +280,8 @@ function AuthModalInner({ isOpen, onClose, defaultMode, mode, setMode, loading, 
               <select 
                 value={countryCode} 
                 onChange={e => setCountryCode(e.target.value)}
-                className="w-[75px] px-1 py-2 border border-border rounded-lg outline-none focus:border-accent bg-background text-sm"
+                className="w-[75px] px-1 py-2 border border-border rounded-lg outline-none focus:border-accent bg-background"
+                style={{ fontSize: '16px' }}
               >
                 {COUNTRY_CODES.map(c => (
                   <option key={c.code} value={c.code}>{c.code}</option>

@@ -231,7 +231,7 @@ const HotelDetails = () => {
       {/* Gallery */}
       <div className="container pt-8 px-0 sm:px-4">
         {/* Desktop Gallery */}
-        <div className="hidden md:grid grid-cols-3 gap-3 rounded-2xl overflow-hidden h-[420px]">
+        <div className="hidden md:grid grid-cols-3 gap-3 rounded-2xl overflow-hidden h-[420px] max-h-[50vh]">
           <img src={hotel.gallery?.[0] || hotel.image} alt={hotel.name} className="col-span-2 w-full h-full object-cover" />
           <div className="grid grid-rows-2 gap-3 h-full">
             <img src={hotel.gallery?.[1] || hotel.image} alt="" className="w-full h-full object-cover" loading="lazy" />
@@ -247,7 +247,7 @@ const HotelDetails = () => {
         </div>
       </div>
 
-      <div className="container py-8">
+      <div className="container py-8 pb-28 md:pb-8">
         <div className="flex items-start justify-between flex-wrap gap-4 mb-2">
           <div>
             <h1 className="font-display text-3xl md:text-4xl font-bold">{hotel.name}</h1>
@@ -282,7 +282,7 @@ const HotelDetails = () => {
             {/* Room Filters */}
             <div className="flex items-center gap-3 flex-wrap mb-5">
               <h2 className="font-display text-2xl font-bold flex-1">Select Your Room</h2>
-              <div className="flex items-center gap-3 flex-wrap bg-secondary/30 p-2.5 rounded-2xl border border-border">
+              <div className="flex items-center gap-3 flex-wrap bg-secondary/30 p-2.5 rounded-2xl border border-border overflow-x-auto max-w-full">
                 <div className="relative">
                   <select value={capacityFilter} onChange={(e) => setCapacityFilter(Number(e.target.value))}
                     className="appearance-none border border-border rounded-xl pl-9 pr-8 py-2 text-sm font-medium bg-card outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-base cursor-pointer shadow-sm min-w-[130px]">
@@ -486,7 +486,7 @@ const HotelDetails = () => {
                   className="w-full px-4 py-2.5 border border-border rounded-lg outline-none focus:border-accent text-sm" />
                 <div className="flex items-center gap-1.5">
                   {[1, 2, 3, 4, 5].map((n) => (
-                    <button type="button" key={n} onClick={() => setReviewRating(n)} className="focus:outline-none">
+                    <button type="button" key={n} onClick={() => setReviewRating(n)} className="focus:outline-none min-w-[44px] min-h-[44px] flex items-center justify-center">
                       <Star className={`w-6 h-6 transition-base ${n <= reviewRating ? "fill-accent text-accent" : "text-muted-foreground/30 fill-none"}`} />
                     </button>
                   ))}

@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, Hotel, BedDouble, CalendarCheck,
@@ -26,16 +27,22 @@ const links = [
 const topLevel = new Set(["/dashboard", "/hotels", "/rooms", "/hotel-map", "/bookings", "/payments", "/guests", "/revenue", "/analytics", "/insights", "/managers", "/owners", "/coupons", "/top-deals", "/notifications"]);
 
 export default function Sidebar() {
-  const { admin, theme, t } = useAdmin();
+  const { admin, theme, t, sidebarOpen, setSidebarOpen } = useAdmin();
   const navigate  = useNavigate();
   const location  = useLocation();
+
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [location.pathname, setSidebarOpen]);
 
   const showBack = !topLevel.has(location.pathname);
   const initials = (admin?.name || "A").split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2);
 
   return (
     <aside
-      className="fixed left-0 top-0 h-screen w-56 flex flex-col z-30"
+      className={`fixed left-0 top-0 h-screen w-56 flex flex-col z-30 transition-transform duration-300 ${
+        sidebarOpen ? "translate-x-0" : "-translate-x-full"
+      } lg:translate-x-0`}
       style={{
         background: theme === "light" ? "linear-gradient(180deg, #ffffff 0%, #f1f5f9 100%)" : "linear-gradient(180deg, #07101e 0%, #0a1628 100%)",
         borderRight: theme === "light" ? "1px solid #cbd5e1" : "1px solid rgba(255,255,255,0.07)",

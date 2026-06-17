@@ -1,4 +1,4 @@
-import { Bell, Search, Hotel, X, UserCircle } from "lucide-react";
+import { Bell, Search, Hotel, X, UserCircle, Menu } from "lucide-react";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAdmin } from "@/context/AdminContext";
@@ -31,7 +31,7 @@ function timeAgo(iso: string) {
 }
 
 export default function Topbar({ searchPlaceholder }: Props) {
-  const { admin, logout, theme, t } = useAdmin();
+  const { admin, logout, theme, t, sidebarOpen, setSidebarOpen } = useAdmin();
   const { liveAlerts, pushLiveAlert, clearLiveAlerts } = useBookings();
   const { hotels } = useHotels();
   const navigate = useNavigate();
@@ -215,14 +215,23 @@ export default function Topbar({ searchPlaceholder }: Props) {
         borderBottom: theme === "light" ? "1px solid #cbd5e1" : "1px solid rgba(255,255,255,0.07)",
       }}
     >
-      {/* Search */}
-      <div ref={searchRef} className="relative">
-        <div className="flex items-center gap-2 rounded-xl px-3 py-2 w-72"
-          style={{
-            background: theme === "light" ? "rgba(0,0,0,0.03)" : "rgba(255,255,255,0.05)",
-            border: theme === "light" ? "1px solid #cbd5e1" : "1px solid rgba(255,255,255,0.08)"
-          }}>
-          <Search className="w-3.5 h-3.5 text-dim shrink-0" />
+      {/* Left: Hamburger & Search */}
+      <div className="flex items-center gap-2 flex-1 md:flex-none">
+        <button
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          className="lg:hidden p-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 text-dim hover:text-bright transition-colors shrink-0"
+          aria-label="Toggle Menu"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+
+        <div ref={searchRef} className="relative flex-1 md:flex-none">
+          <div className="flex items-center gap-2 rounded-xl px-3 py-2 w-full max-w-xs md:w-72"
+            style={{
+              background: theme === "light" ? "rgba(0,0,0,0.03)" : "rgba(255,255,255,0.05)",
+              border: theme === "light" ? "1px solid #cbd5e1" : "1px solid rgba(255,255,255,0.08)"
+            }}>
+            <Search className="w-3.5 h-3.5 text-dim shrink-0" />
           <input
             value={search}
             onChange={(e) => {
@@ -274,6 +283,7 @@ export default function Topbar({ searchPlaceholder }: Props) {
             )}
           </div>
         )}
+        </div>
       </div>
 
       {/* Right */}
@@ -327,7 +337,7 @@ export default function Topbar({ searchPlaceholder }: Props) {
         <div ref={notifRef} className="relative">
           <button
             onClick={() => { setShowNotifs(!showNotifs); setShowSettings(false); setShowHotelSwitcher(false); }}
-            className="relative w-9 h-9 grid place-items-center rounded-xl transition-all"
+            className="relative w-9 h-9 grid place-items-center rounded-xl transition-all active:scale-95 active:opacity-75"
             style={{ color: "#94a3b8" }}
             onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.07)"; (e.currentTarget as HTMLElement).style.color = "#f0f4ff"; }}
             onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; (e.currentTarget as HTMLElement).style.color = "#94a3b8"; }}
@@ -428,7 +438,7 @@ export default function Topbar({ searchPlaceholder }: Props) {
 
         {/* Live booking toast */}
         {toast && (
-          <div className="fixed bottom-6 right-6 z-[100] w-80 rounded-2xl overflow-hidden animate-slide-up"
+          <div className="fixed bottom-6 right-6 z-[100] w-[calc(100vw-3rem)] max-w-80 rounded-2xl overflow-hidden animate-slide-up"
             style={{
               background: "#112240",
               border: "1px solid rgba(16,185,129,0.4)",
@@ -482,7 +492,7 @@ export default function Topbar({ searchPlaceholder }: Props) {
         <div ref={settingsRef} className="relative">
           <button
             onClick={() => { setShowSettings(!showSettings); setShowNotifs(false); setShowHotelSwitcher(false); }}
-            className="w-9 h-9 grid place-items-center rounded-xl transition-all"
+            className="w-9 h-9 grid place-items-center rounded-xl transition-all active:scale-95 active:opacity-75"
             style={{ color: "#94a3b8" }}
             onMouseEnter={e => {
               (e.currentTarget as HTMLElement).style.background = theme === "light" ? "rgba(0,0,0,0.04)" : "rgba(255,255,255,0.07)";

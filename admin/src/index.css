@@ -5,6 +5,82 @@
 @layer base {
   * { box-sizing: border-box; }
 
+  :root {
+    --admin-surface: #ffffff;
+    --admin-surface-2: #f8fafc;
+    --admin-surface-3: #e2e8f0;
+    --admin-border: #cbd5e1;
+    --admin-text-primary: #0f172a;
+    --admin-text-secondary: #475569;
+    --admin-text-muted: #64748b;
+    --admin-card-bg: #ffffff;
+    --admin-card-border: #e2e8f0;
+    --admin-card-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+
+    --admin-glass-bg: #ffffff;
+    --admin-glass-hover-bg: #f8fafc;
+    --admin-glass-border: #e2e8f0;
+    --admin-glass-shadow: 0 8px 32px rgba(15,23,42,0.08);
+
+    --admin-input-bg: #ffffff;
+    --admin-input-border: #cbd5e1;
+    --admin-input-text: #0f172a;
+    --admin-input-focus-border: #d4a843;
+    --admin-input-focus-shadow: rgba(212,168,67,0.15);
+    --admin-input-placeholder: #94a3b8;
+    --admin-select-option-bg: #ffffff;
+
+    --admin-button-cancel-bg: rgba(0,0,0,0.05);
+    --admin-button-cancel-border: rgba(0,0,0,0.08);
+    --admin-button-cancel-text: #475569;
+
+    --admin-table-head-bg: #f1f5f9;
+    --admin-table-head-text: #475569;
+    --admin-table-row-hover: #f8fafc;
+    --admin-table-row-text: #334155;
+    
+    --admin-scrollbar-thumb: rgba(0,0,0,0.1);
+    --admin-scrollbar-thumb-hover: rgba(0,0,0,0.2);
+  }
+
+  body.dark {
+    --admin-surface: linear-gradient(135deg, rgba(17,34,64,0.9) 0%, rgba(13,26,48,0.9) 100%);
+    --admin-surface-2: rgba(255,255,255,0.04);
+    --admin-surface-3: rgba(255,255,255,0.06);
+    --admin-border: rgba(255,255,255,0.08);
+    --admin-text-primary: #f0f4ff;
+    --admin-text-secondary: #94a3b8;
+    --admin-text-muted: #64748b;
+    --admin-card-bg: linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%);
+    --admin-card-border: rgba(255,255,255,0.08);
+    --admin-card-shadow: none;
+
+    --admin-glass-bg: linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%);
+    --admin-glass-hover-bg: linear-gradient(135deg, rgba(255,255,255,0.09) 0%, rgba(255,255,255,0.04) 100%);
+    --admin-glass-border: rgba(255,255,255,0.08);
+    --admin-glass-shadow: none;
+
+    --admin-input-bg: rgba(255,255,255,0.04);
+    --admin-input-border: rgba(255,255,255,0.08);
+    --admin-input-text: #f0f4ff;
+    --admin-input-focus-border: rgba(212,168,67,0.5);
+    --admin-input-focus-shadow: rgba(212,168,67,0.1);
+    --admin-input-placeholder: #64748b;
+    --admin-select-option-bg: #112240;
+
+    --admin-button-cancel-bg: rgba(255,255,255,0.05);
+    --admin-button-cancel-border: rgba(255,255,255,0.08);
+    --admin-button-cancel-text: #94a3b8;
+
+    --admin-table-head-bg: rgba(255,255,255,0.04);
+    --admin-table-head-text: #64748b;
+    --admin-table-row-hover: rgba(255,255,255,0.03);
+    --admin-table-row-text: #94a3b8;
+
+    --admin-scrollbar-thumb: rgba(255,255,255,0.12);
+    --admin-scrollbar-thumb-hover: rgba(255,255,255,0.2);
+  }
+
   body {
     font-family: 'Inter', system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
@@ -98,56 +174,71 @@
   }
 
   /* Shared modal form controls used by admin and manager panels */
-  .modal-panel label {
-    color: #64748b !important;
+  body.dark .admin-layout-content .modal-panel label,
+  body.light .admin-layout-content .modal-panel label {
+    color: var(--admin-text-muted);
   }
 
-  .modal-panel input:not([type="checkbox"]):not([type="radio"]),
-  .modal-panel select,
-  .modal-panel textarea {
-    background: rgba(255,255,255,0.04) !important;
-    border: 1px solid rgba(255,255,255,0.1) !important;
-    color: #f0f4ff !important;
-    border-radius: 12px !important;
-    transition: border-color 0.2s, box-shadow 0.2s, background 0.2s !important;
+  body.dark .admin-layout-content .modal-panel input:not([type="checkbox"]):not([type="radio"]),
+  body.dark .admin-layout-content .modal-panel select,
+  body.dark .admin-layout-content .modal-panel textarea,
+  body.light .admin-layout-content .modal-panel input:not([type="checkbox"]):not([type="radio"]),
+  body.light .admin-layout-content .modal-panel select,
+  body.light .admin-layout-content .modal-panel textarea {
+    background: var(--admin-input-bg);
+    border: 1px solid var(--admin-input-border);
+    color: var(--admin-input-text);
+    border-radius: 12px;
+    transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
   }
 
-  .modal-panel input::placeholder,
-  .modal-panel textarea::placeholder {
-    color: #64748b !important;
+  body.dark .admin-layout-content .modal-panel input::placeholder,
+  body.dark .admin-layout-content .modal-panel textarea::placeholder,
+  body.light .admin-layout-content .modal-panel input::placeholder,
+  body.light .admin-layout-content .modal-panel textarea::placeholder {
+    color: var(--admin-input-placeholder);
   }
 
-  .modal-panel input:not([type="checkbox"]):not([type="radio"]):focus,
-  .modal-panel select:focus,
-  .modal-panel textarea:focus {
-    background: rgba(255,255,255,0.07) !important;
-    border-color: rgba(212,168,67,0.5) !important;
-    box-shadow: 0 0 0 3px rgba(212,168,67,0.1) !important;
-    outline: none !important;
+  body.dark .admin-layout-content .modal-panel input:not([type="checkbox"]):not([type="radio"]):focus,
+  body.dark .admin-layout-content .modal-panel select:focus,
+  body.dark .admin-layout-content .modal-panel textarea:focus,
+  body.light .admin-layout-content .modal-panel input:not([type="checkbox"]):not([type="radio"]):focus,
+  body.light .admin-layout-content .modal-panel select:focus,
+  body.light .admin-layout-content .modal-panel textarea:focus {
+    background: var(--admin-input-bg);
+    border-color: var(--admin-input-focus-border);
+    box-shadow: 0 0 0 3px var(--admin-input-focus-shadow);
+    outline: none;
   }
 
-  .modal-panel select option {
-    background: #112240;
-    color: #f0f4ff;
+  body.dark .admin-layout-content .modal-panel select option,
+  body.light .admin-layout-content .modal-panel select option {
+    background: var(--admin-select-option-bg);
+    color: var(--admin-input-text);
   }
 
-  .modal-panel input[type="date"] {
+  body.dark .admin-layout-content .modal-panel input[type="date"] {
     color-scheme: dark;
   }
+  body.light .admin-layout-content .modal-panel input[type="date"] {
+    color-scheme: light;
+  }
 
-  .modal-panel form button[type="submit"] {
-    background: linear-gradient(135deg, #c0392b 0%, #a93226 100%) !important;
-    border: 1px solid rgba(192,57,43,0.45) !important;
-    color: #fff !important;
-    border-radius: 12px !important;
+  body.dark .admin-layout-content .modal-panel form button[type="submit"],
+  body.light .admin-layout-content .modal-panel form button[type="submit"] {
+    background: linear-gradient(135deg, #c0392b 0%, #a93226 100%);
+    border: 1px solid rgba(192,57,43,0.45);
+    color: #fff;
+    border-radius: 12px;
     box-shadow: 0 4px 16px rgba(192,57,43,0.35);
   }
 
-  .modal-panel form button[type="button"] {
-    background: rgba(255,255,255,0.05) !important;
-    border: 1px solid rgba(255,255,255,0.08) !important;
-    color: #94a3b8 !important;
-    border-radius: 12px !important;
+  body.dark .admin-layout-content .modal-panel form button[type="button"],
+  body.light .admin-layout-content .modal-panel form button[type="button"] {
+    background: var(--admin-button-cancel-bg);
+    border: 1px solid var(--admin-button-cancel-border);
+    color: var(--admin-button-cancel-text);
+    border-radius: 12px;
   }
 
   /* ── Glass Table ────────────────────────────────────── */
@@ -157,7 +248,7 @@
   }
   .glass-table thead th {
     color: #64748b;
-    font-size: 0.7rem;
+    font-size: 0.75rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.08em;
