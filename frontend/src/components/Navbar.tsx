@@ -60,6 +60,8 @@ const Navbar = () => {
   // Track whether the modal was open so we know when it just closed
   const wasAuthOpen = useRef(false);
   const notificationRef = useRef<HTMLDivElement>(null);
+  const mobileMenuRef = useRef<HTMLDivElement>(null);
+  const mobileLogoRef = useRef<HTMLButtonElement>(null);
 
   const handleMenuNavigation = (route: string) => {
     setMobileMenuOpen(false);
@@ -71,10 +73,19 @@ const Navbar = () => {
       if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
         setShowNotifications(false);
       }
+      if (
+        mobileMenuOpen &&
+        mobileMenuRef.current &&
+        !mobileMenuRef.current.contains(event.target as Node) &&
+        mobileLogoRef.current &&
+        !mobileLogoRef.current.contains(event.target as Node)
+      ) {
+        setMobileMenuOpen(false);
+      }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  }, [mobileMenuOpen]);
 
   useEffect(() => {
     if (mobileMenuOpen) {
@@ -285,9 +296,10 @@ const Navbar = () => {
         <div className="flex items-center">
           {/* Mobile Logo Button (opens menu drawer) */}
           <button 
-            onClick={() => setMobileMenuOpen(true)}
+            ref={mobileLogoRef}
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="flex items-center gap-2 font-display font-bold text-lg text-primary md:hidden min-h-[44px] outline-none"
-            aria-label="Open menu"
+            aria-label="Toggle menu"
           >
             <span className="grid place-items-center w-8 h-8 rounded-lg bg-primary text-primary-foreground shrink-0">
               <Hotel className="w-4 h-4" />
@@ -513,6 +525,7 @@ const Navbar = () => {
             onClick={() => setMobileMenuOpen(false)}
           />
           <div 
+            ref={mobileMenuRef}
             className="absolute top-16 left-0 right-0 z-50 bg-background border-b border-border shadow-luxe md:hidden flex flex-col py-4 px-6 gap-2 max-h-[80dvh] overflow-y-auto"
           >
             {user && (
