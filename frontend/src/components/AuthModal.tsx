@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import DOMPurify from "dompurify";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useBooking } from "@/context/BookingContext";
@@ -407,6 +408,7 @@ function AuthModalInner({ isOpen, onClose, defaultMode, mode, setMode, loading, 
 
 export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModalProps) {
   const { user, setUser, refreshUser } = useBooking();
+  const navigate = useNavigate();
   const [mode, setMode]         = useState<"signin" | "signup" | "phone" | "verify_email_otp" | "forgot_password">(defaultMode);
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState("");
@@ -560,9 +562,7 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
         setOtpMessage(res.data?.message || "Registration successful! A verification code has been sent to your email.");
         setResendCooldown(60);
       } else {
-        // Token is now an HttpOnly cookie set by the backend — no localStorage write needed
-        setUser({ name: d.name, email: d.email, phone: d.phone || "", city: d.city || "", role: d.role || "customer" });
-        onClose(true); resetForm();
+        await finishAuth(d);
       }
     } catch (err: any) {
       setError(err.response?.data?.message || err.message || "Registration failed. Please try again.");
@@ -576,13 +576,24 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
     localStorage.removeItem("luxe_pending_email");
     // Token is now an HttpOnly cookie set by the backend — no localStorage write needed
     setUser({ name: d.name, email: d.email, phone: d.phone || "", city: d.city || "", role: d.role || "customer" });
-    
-    // Explicitly refetch the authenticated user to ensure all context and UI state (Navbar) 
-    // is instantly synced across the application, especially for OAuth logins where 
+
+    // Explicitly refetch the authenticated user to ensure all context and UI state (Navbar)
+    // is instantly synced across the application, especially for OAuth logins where
     // the user object might be partially structured differently.
     await refreshUser();
-    
-    onClose(true); resetForm();
+
+    const pendingRedirect = sessionStorage.getItem("redirectAfterLogin");
+    if (pendingRedirect) {
+      sessionStorage.removeItem("redirectAfterLogin");
+      navigate(pendingRedirect, { replace: true });
+    } else if ((d.role || "customer") === "owner") {
+      navigate("/owner-portal", { replace: true });
+    } else {
+      navigate("/", { replace: true });
+    }
+
+    onClose(true);
+    resetForm();
   };
 
   const handleSendPhoneOTP = async () => {
