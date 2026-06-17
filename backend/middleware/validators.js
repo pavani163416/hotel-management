@@ -4,13 +4,15 @@ import { body, validationResult } from "express-validator";
 export const handleValidation = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
+    const errorArray = errors.array().map((e) => ({
+      field: e.path,
+      message: e.msg,
+    }));
+    console.warn(`[EXPRESS-VALIDATOR FAILED] Path: ${req.originalUrl} | Errors:`, JSON.stringify(errorArray), " | Raw Body:", JSON.stringify(req.body));
     return res.status(422).json({
       success: false,
       message: "Validation failed",
-      errors: errors.array().map((e) => ({
-        field: e.path,
-        message: e.msg,
-      })),
+      errors: errorArray,
     });
   }
   next();
