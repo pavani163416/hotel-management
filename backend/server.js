@@ -37,8 +37,6 @@ import promoRoutes      from "./routes/promoRoutes.js";
 import assistanceRoutes from "./routes/assistanceRoutes.js";
 import roomTypeRoutes from "./routes/roomTypeRoutes.js";
 import maintenanceRoutes from "./routes/maintenanceRoutes.js";
-import bookingRoutes    from "./routes/bookingRoutes.js";
-import adminRoutes      from "./routes/adminRoutes.js";
 import publicSupportRoutes from "./routes/publicSupportRoutes.js";
 import propertyOwnerRoutes from "./routes/propertyOwnerRoutes.js";
 import ownerAnalyticsRoutes from "./routes/ownerAnalyticsRoutes.js";
