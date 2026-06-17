@@ -495,7 +495,7 @@ const Navbar = () => {
         onClick={() => setMobileMenuOpen(false)}
       />
       <div 
-        className={`fixed top-0 left-0 bottom-0 z-50 w-[80vw] max-w-sm bg-card border-r border-border shadow-luxe transition-transform duration-300 ease-in-out md:hidden flex flex-col ${mobileMenuOpen ? "translate-x-0" : "-translate-x-full"}`}
+        className={`fixed top-0 left-0 bottom-0 z-[60] w-[80vw] max-w-sm bg-background border-r border-border shadow-luxe transition-transform duration-300 ease-in-out md:hidden flex flex-col ${mobileMenuOpen ? "translate-x-0" : "-translate-x-full"}`}
       >
         <div className="flex items-center justify-between p-4 border-b border-border">
           <Link to="/" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 font-display font-bold text-lg text-primary">
