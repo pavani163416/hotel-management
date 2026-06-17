@@ -645,7 +645,6 @@ app.use("/api",               publicSupportRoutes);
 app.use("/api/owners/analytics", ownerAnalyticsRoutes);
 app.use("/api/owners",        propertyOwnerRoutes);
 app.use("/api/newsletter",    newsletterRoutes);
-app.use("/api/refunds",       refundRoutes);
 app.use("/api/chat",          chatRoutes);
 app.use("/api/waitlist",      waitlistRoutes);
 app.use("/api/lost-found",    lostFoundRoutes);
