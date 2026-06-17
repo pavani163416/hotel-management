@@ -42,7 +42,6 @@ import propertyOwnerRoutes from "./routes/propertyOwnerRoutes.js";
 import ownerAnalyticsRoutes from "./routes/ownerAnalyticsRoutes.js";
 import sitemapRoutes    from "./routes/sitemapRoutes.js";
 import newsletterRoutes from "./routes/newsletterRoutes.js";
-import refundRoutes from "./routes/refundRoutes.js";
 import chatRoutes       from "./routes/chatRoutes.js";
 import waitlistRoutes          from "./routes/waitlistRoutes.js";
 import lostFoundRoutes from "./routes/lostFoundRoutes.js";
