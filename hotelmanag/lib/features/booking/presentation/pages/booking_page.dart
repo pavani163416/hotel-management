@@ -102,9 +102,11 @@ class _BookingPageState extends State<BookingPage> {
 
     return MainLayout(
       showAppBar: true,
+      isScrollable: false,
       child: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          padding: const EdgeInsets.fromLTRB(24.0, 0, 24.0, 140.0),
           child: Column(
             children: [
               const StepperWidget(currentStep: 0),
@@ -128,7 +130,6 @@ class _BookingPageState extends State<BookingPage> {
               ),
               const SizedBox(height: 32),
               _buildMainSelectionCard(provider),
-              const SizedBox(height: 60),
             ],
           ),
         ),
