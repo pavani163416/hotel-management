@@ -141,6 +141,9 @@ router.post("/apply", protect, preventExistingOwners, checkApplicationState, upl
       try {
         await OwnerApplication.create({
           userId: req.user.id,
+          businessName,
+          hotelName,
+          hotelAddress,
           status: "processing_upload",
           kycStatus: "pending"
         });
