@@ -81,27 +81,6 @@ const csrfProtection = (req, res, next) => {
     return next();
   }
 
-  // Bypass CSRF for pre-authentication auth endpoints (mobile apps don't send
-  // Origin headers and these endpoints don't rely on ambient cookie auth, so
-  // they are inherently immune to CSRF attacks).
-  const CSRF_EXEMPT_AUTH_PATHS = [
-    "/auth/login",
-    "/auth/register",
-    "/auth/captcha",
-    "/auth/verify-otp",
-    "/auth/resend-otp",
-    "/auth/google",
-    "/auth/firebase",
-    "/auth/forgot-password",
-    "/auth/reset-password",
-    "/auth/phone/send",
-    "/auth/phone/verify",
-  ];
-  const reqPath = req.path.replace(/^\/api/, "");
-  if (CSRF_EXEMPT_AUTH_PATHS.includes(reqPath)) {
-    return next();
-  }
-
   const origin  = req.headers["origin"];
   const referer = req.headers["referer"];
 
