@@ -16,30 +16,6 @@ import { useHotels } from "@/context/HotelsContext";
 import { formatCurrency, currencySymbol } from "@/utils/currency";
 import { cancelBooking as apiCancelBooking, getBookingById as apiGetBookingById, createBooking } from "@/services/api";
 
-// Map room number initials → hotel name
-// Room numbers follow pattern: initials-number (e.g. hdl-101, tas-101, apl-101)
-const HOTEL_INITIALS_MAP: Record<string, string> = {
-  hdl: "Hôtel de Lumière",
-  tas: "The Azure Skyline",
-  cbr: "Coral Bay Resort",
-  apl: "Alpine Peak Lodge",
-  tgm: "The Grand Metropolitan",
-  scs: "Santorini Cliff Suites",
-};
-
-function resolveHotelName(roomNumber: string): string {
-  if (!roomNumber) return "";
-  // Format: "hdl-101" → prefix "hdl"
-  const prefix = roomNumber.split("-")[0]?.toLowerCase();
-  if (prefix && HOTEL_INITIALS_MAP[prefix]) return HOTEL_INITIALS_MAP[prefix];
-  // Legacy format: "h1_r1" → hotel id "h1"
-  const legacyPrefix = roomNumber.split("_")[0]?.toLowerCase();
-  const legacyMap: Record<string, string> = {
-    h1: "Hôtel de Lumière", h2: "The Azure Skyline", h3: "Coral Bay Resort",
-    h4: "Alpine Peak Lodge", h5: "The Grand Metropolitan", h6: "Santorini Cliff Suites",
-  };
-  return legacyMap[legacyPrefix] || "";
-}
 
 const formatAadhaar = (aadhaar?: string) => {
   if (!aadhaar) return "—";

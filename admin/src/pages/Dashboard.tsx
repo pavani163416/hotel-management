@@ -76,8 +76,9 @@ export default function Dashboard() {
   const bookingShare = (() => {
     const total = bookings.length || 1;
     const hotelCounts: Record<string, number> = {};
+    if (bookings.length === 0) return [];
     bookings.forEach((b) => {
-      const name = b.property || "Other";
+      const name = (b as any).hotelName || b.property || "Other";
       hotelCounts[name] = (hotelCounts[name] || 0) + 1;
     });
     return Object.entries(hotelCounts)
@@ -93,8 +94,9 @@ export default function Dashboard() {
   // ── Compute top hotels by revenue ──
   const topHotels = (() => {
     const hotelRevenue: Record<string, number> = {};
+    if (bookings.length === 0) return [];
     bookings.forEach((b) => {
-      const name = b.property || "Other";
+      const name = (b as any).hotelName || b.property || "Other";
       hotelRevenue[name] = (hotelRevenue[name] || 0) + b.totalAmount;
     });
     const sorted = Object.entries(hotelRevenue).sort((a, b) => b[1] - a[1]).slice(0, 4);
@@ -281,7 +283,7 @@ export default function Dashboard() {
                   </div>
                 </>
               ) : (
-                <div className="h-[200px] flex items-center justify-center text-muted text-sm">{t("No bookings yet")}</div>
+                <div className="h-[200px] flex items-center justify-center text-muted text-sm">{t("No booking analytics available")}</div>
               )}
             </div>
           </div>
@@ -305,7 +307,7 @@ export default function Dashboard() {
               ))}
             </div>
           ) : (
-            <p className="text-sm text-muted text-center py-4">{t("No revenue data yet")}</p>
+            <p className="text-sm text-muted text-center py-4">{t("No hotels available")}</p>
           )}
         </div>
 
