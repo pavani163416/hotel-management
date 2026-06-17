@@ -181,9 +181,7 @@ const OwnerPortal = () => {
       if (user?.email) fd.append("email", user.email);
       Array.from(files).forEach((f) => fd.append("documents", f));
 
-      await api.post("/owners/apply", fd, {
-        headers: { "Content-Type": "multipart/form-data" }
-      });
+      await api.post("/owners/apply", fd);
 
       setSuccess("Application submitted successfully!");
       setFiles(null);
