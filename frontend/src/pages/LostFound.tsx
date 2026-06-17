@@ -4,7 +4,7 @@ import { Loader2, Plus, Search, Tag, Calendar, MapPin, Package, Eye, PackageSear
 import api from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
-import dayjs from "dayjs";
+import { format, parseISO } from "date-fns";
 import { toast } from "sonner";
 
 interface LostFoundEntry {
@@ -183,7 +183,7 @@ export default function LostFound() {
                       </div>
                       <div className="flex items-start gap-2 text-sm">
                         <Calendar className="w-4 h-4 text-muted shrink-0 mt-0.5" />
-                        <span className="text-text-secondary">{dayjs(r.dateLostFound).format("MMMM D, YYYY")}</span>
+                        <span className="text-text-secondary">{format(parseISO(r.dateLostFound), "MMMM d, yyyy")}</span>
                       </div>
                     </div>
                     
