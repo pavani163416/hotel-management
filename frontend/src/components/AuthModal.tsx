@@ -159,7 +159,7 @@ function AuthModalInner({ isOpen, onClose, defaultMode, mode, setMode, loading, 
               </div>
               <input type="text" value={captchaAnswer} onChange={e => setCaptchaAnswer(e.target.value)}
                 className="w-full px-4 py-2 border border-border rounded-lg outline-none focus:ring-2 focus:ring-primary text-sm"
-                placeholder="Your answer" autoComplete="off" inputMode="numeric" />
+                placeholder="Your answer" autoComplete="off" inputMode="text" />
             </div>
           )}
           {error && <p className="text-destructive text-sm font-medium">{error}</p>}
@@ -260,7 +260,7 @@ function AuthModalInner({ isOpen, onClose, defaultMode, mode, setMode, loading, 
               </div>
               <input type="text" value={captchaAnswer} onChange={e => setCaptchaAnswer(e.target.value)}
                 className="w-full px-4 py-2 border border-border rounded-lg outline-none focus:ring-2 focus:ring-primary text-sm"
-                placeholder="Your answer" autoComplete="off" inputMode="numeric" />
+                placeholder="Your answer" autoComplete="off" inputMode="text" />
             </div>
           )}
           {error && <p className="text-destructive text-sm font-medium sm:col-span-2">{error}</p>}

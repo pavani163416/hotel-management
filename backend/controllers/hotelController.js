@@ -484,6 +484,11 @@ export const deleteHotel = async (req, res, next) => {
       const HotelSnapshot = await getHotelSnapshot();
       await HotelSnapshot.findOneAndDelete({ hotelId: req.params.id });
     } catch {}
+    
+    // Auto-cleanup orphaned Rooms and Bookings when a Hotel is destroyed
+    await Room.deleteMany({ $or: [{ hotelStringId: hotel.hotelId }, { hotelId: hotel._id }] }).catch(() => {});
+    await Booking.deleteMany({ $or: [{ hotelStringId: hotel.hotelId }, { hotelId: hotel._id }] }).catch(() => {});
+
     await invalidateHotelCache();
     broadcastHotels();
     res.status(200).json({ success: true, message: "Hotel permanently deleted" });

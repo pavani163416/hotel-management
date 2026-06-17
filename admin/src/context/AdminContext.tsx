@@ -142,8 +142,7 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
   }, [theme]);
 
 
-  // ── Re-register socket room on page load if already authenticated ──
-  // Covers the case where the admin refreshes the page with a valid stored token.
+  // ── Re-register socket room on page load and reconnect ──
   useEffect(() => {
     if (!token || !admin) return;
 
@@ -154,17 +153,14 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
       socket.emit("registerNotifications", scope);
     };
 
-    if (socket.connected) {
-      register();
-    } else {
-      socket.once("connect", register);
-    }
+    // Register immediately and on every reconnect
+    register();
+    socket.on("connect", register);
 
     return () => {
       socket.off("connect", register);
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [token, admin]);
 
   const login = (a: Admin, t: string) => {
     setAdmin(a); setToken(t);

@@ -302,7 +302,15 @@ export const BookingProvider = ({ children }: { children: ReactNode }) => {
   // ── Global real-time notification listener ───────────────
   useEffect(() => {
     if (!user?.email) return;
-    socket.emit("registerNotifications", { role: "customer", userId: user.email });
+
+    const register = () => {
+      socket.emit("registerNotifications", { role: "customer", userId: user.email });
+    };
+
+    // Register immediately and also re-register on every reconnect
+    register();
+    socket.on("connect", register);
+
     const onNotification = (data: { message?: string; type?: string }) => {
       const msg = data?.message || "You have a new notification";
       const type = data?.type || "system";
@@ -311,7 +319,10 @@ export const BookingProvider = ({ children }: { children: ReactNode }) => {
       else toast(msg, { duration: 6000, icon: "🔔" });
     };
     socket.on("notification", onNotification);
-    return () => { socket.off("notification", onNotification); };
+    return () => {
+      socket.off("connect", register);
+      socket.off("notification", onNotification);
+    };
   }, [user?.email]);
 
   // Inactivity/Idle timer: log user out after 15 minutes of inactivity
