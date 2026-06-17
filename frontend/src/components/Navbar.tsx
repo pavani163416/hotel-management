@@ -283,12 +283,11 @@ const Navbar = () => {
         
         {/* Logo (Acts as menu toggle on mobile, normal link on desktop) */}
         <div className="flex items-center">
-          {/* Mobile Logo Button (opens/closes menu dropdown) */}
+          {/* Mobile Logo Button (opens menu drawer) */}
           <button 
-            onClick={() => setMobileMenuOpen((prev) => !prev)}
-            onDoubleClick={() => setMobileMenuOpen(false)}
+            onClick={() => setMobileMenuOpen(true)}
             className="flex items-center gap-2 font-display font-bold text-lg text-primary md:hidden min-h-[44px] outline-none"
-            aria-label="Toggle menu"
+            aria-label="Open menu"
           >
             <span className="grid place-items-center w-8 h-8 rounded-lg bg-primary text-primary-foreground shrink-0">
               <Hotel className="w-4 h-4" />
@@ -352,25 +351,25 @@ const Navbar = () => {
                   )}
                 </button>
                 {showNotifications && (
-                  <div className="absolute right-0 top-12 z-50 w-[85vw] sm:w-80 overflow-hidden rounded-xl border border-border bg-background shadow-luxe">
-                    <div className="flex items-center justify-between px-3 py-2 border-b border-border bg-secondary/35">
-                      <p className="text-xs font-semibold text-primary">Notifications</p>
-                      <span className="text-[10px] bg-accent/20 text-primary px-1.5 py-0.5 rounded-full font-medium">{unreadCount} new</span>
+                  <div className="absolute right-0 top-12 z-50 w-[90vw] max-w-sm overflow-hidden rounded-xl border border-border bg-card shadow-elegant">
+                    <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+                      <p className="text-sm font-semibold text-primary">Notifications</p>
+                      <span className="text-xs text-muted-foreground">{unreadCount} unread</span>
                     </div>
-                    <div className="max-h-64 overflow-y-auto divide-y divide-border/60">
+                    <div className="max-h-80 overflow-y-auto">
                       {notifications.length === 0 ? (
-                        <p className="py-6 text-center text-xs text-muted-foreground">No new notifications</p>
+                        <p className="py-8 text-center text-sm text-muted-foreground">No notifications</p>
                       ) : notifications.map((n) => (
                         <button
                           key={n._id}
                           onClick={() => openNotification(n)}
-                          className="w-full text-left px-3 py-2.5 hover:bg-secondary/40 transition-base min-h-[40px]"
+                          className="w-full text-left px-4 py-3 border-b border-border last:border-0 hover:bg-secondary transition-base min-h-[44px]"
                         >
-                          <div className="flex items-start gap-2.5">
-                            <span className={`mt-1.5 w-1.5 h-1.5 rounded-full shrink-0 ${n.isRead ? "bg-muted-foreground/30" : "bg-accent"}`} />
-                            <div className="min-w-0 flex-1">
-                              <p className={`text-xs leading-normal break-words ${n.isRead ? "text-muted-foreground/85" : "text-primary font-medium"}`}>{n.message}</p>
-                              <p className="text-[10px] text-muted-foreground/75 mt-0.5 capitalize">{n.type} · {timeAgo(n.createdAt)}</p>
+                          <div className="flex items-start gap-3">
+                            <span className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${n.isRead ? "bg-border" : "bg-accent"}`} />
+                            <div>
+                              <p className={`text-sm ${n.isRead ? "text-muted-foreground" : "text-primary font-semibold"}`}>{n.message}</p>
+                              <p className="text-xs text-muted-foreground mt-0.5 capitalize">{n.type} · {timeAgo(n.createdAt)}</p>
                             </div>
                           </div>
                         </button>
