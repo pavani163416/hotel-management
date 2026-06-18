@@ -246,8 +246,8 @@ export const createBooking = async (req, res, next) => {
     const childrenCount = additionalChildren?.length || 0;
     const totalGuests = adultsCount + childrenCount;
 
-    const maxGuests = room.maxGuests || room.capacity || 4;
-    const maxAdults = room.maxAdults || room.capacity || 2;
+    const maxGuests = actualHotel?.maxGuests || room.maxGuests || room.capacity || 4;
+    const maxAdults = actualHotel?.maxGuests || room.maxAdults || room.capacity || 2;
     const maxChildren = room.maxChildren != null ? room.maxChildren : 2;
 
     if (totalGuests > maxGuests) {

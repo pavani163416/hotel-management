@@ -89,7 +89,7 @@ export default function Rooms() {
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState<FormState>({
     name: "", type: "Standard", price: "",
-    capacity: "2", bed: "1 King Bed", features: "WiFi, AC", floor: "1",
+    capacity: "8", bed: "1 King Bed", features: "WiFi, AC", floor: "1",
   });
 
   // ── Fetch hotel list for dropdown ──────────────────────
@@ -152,7 +152,7 @@ export default function Rooms() {
 
   const openAdd = () => {
     setEditTarget(null);
-    setForm({ name: "", type: "Standard", price: "", capacity: "2", bed: "1 King Bed", features: "WiFi, AC", floor: "1", breakfastIncluded: false, freeCancellation: false });
+    setForm({ name: "", type: "Standard", price: "", capacity: "8", bed: "1 King Bed", features: "WiFi, AC", floor: "1", breakfastIncluded: false, freeCancellation: false });
     setSubmitted(false);
     setAddOpen(true);
   };
@@ -293,8 +293,8 @@ export default function Rooms() {
 
   const handleExport = () => {
     const rows = [
-      ["Room ID", "Name", "Floor", "Price/Night", "Capacity", "Bed", "Available", "Features"],
-      ...filtered.map((r) => [r.id, r.name, r.floor, r.price, r.capacity, r.bed, r.available, r.features.join("|")]),
+      ["Room ID", "Name", "Floor", "Price/Night", "Bed", "Available", "Features"],
+      ...filtered.map((r) => [r.id, r.name, r.floor, r.price, r.bed, r.available, r.features.join("|")]),
     ];
     const csv = rows.map((r) => r.join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
@@ -382,7 +382,7 @@ export default function Rooms() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-border">
-                  {["#", "Name", "Floor", "Price/Night", "Capacity", "Bed", "Available", "Features", "Actions"].map((h) => (
+                  {["#", "Name", "Floor", "Price/Night", "Bed", "Available", "Features", "Actions"].map((h) => (
                     <th key={h} className="text-left text-xs font-semibold text-muted uppercase tracking-wider px-5 py-3">{h}</th>
                   ))}
                 </tr>
@@ -410,7 +410,6 @@ export default function Rooms() {
                       </span>
                     </td>
                     <td className="px-5 py-3.5 text-sm font-semibold text-text-primary">${r.price}</td>
-                    <td className="px-5 py-3.5 text-sm text-text-secondary">{r.capacity}</td>
                     <td className="px-5 py-3.5 text-sm text-text-secondary">{r.bed}</td>
                     <td className="px-5 py-3.5">
                       <StatusBadge status={r.status} />
@@ -474,13 +473,7 @@ export default function Rooms() {
                   placeholder="480"
                   className="w-full px-3 py-2.5 border border-border rounded-lg text-sm outline-none focus:border-primary" />
               </div>
-              <div>
-                <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">Capacity</label>
-                <input type="number" min="1" value={form.capacity} onChange={(e) => setForm({ ...form, capacity: e.target.value })}
-                  placeholder="2"
-                  className="w-full px-3 py-2.5 border border-border rounded-lg text-sm outline-none focus:border-primary" />
-                <p className="text-[10px] text-muted mt-1">Max guests allowed. Users cannot add more guests than this during booking.</p>
-              </div>
+
               <div>
                 <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">Bed Type</label>
                 <select value={form.bed} onChange={(e) => setForm({ ...form, bed: e.target.value })}
