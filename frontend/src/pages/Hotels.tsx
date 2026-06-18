@@ -426,7 +426,6 @@ const TopDeals = ({ deals, onView, format, wishlist, toggleWishlist, nav }: { de
               <p className="text-xs text-muted-foreground truncate mb-3">{h.location}</p>
               <div className="flex items-end justify-between mt-2">
                 <div>
-                  {h.originalPrice && <span className="text-[11px] text-muted-foreground line-through mr-1">{format(h.originalPrice)}</span>}
                   <span className="font-display text-lg font-bold text-primary leading-none block mt-1">{format(h.pricePerNight)}<span className="text-[11px] text-muted-foreground font-normal ml-0.5">/night</span></span>
                 </div>
                 <button onClick={(e) => { e.stopPropagation(); onView(h.id); }} className="text-xs font-semibold bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:bg-primary/90 transition-base shrink-0">Book Now</button>
@@ -475,7 +474,6 @@ const HotelListCard = ({ hotel: h, onView, format, wishlist, toggleWishlist, nav
         <div className="p-5 border-t md:border-t-0 md:border-l border-border flex flex-col items-start md:items-end justify-between gap-3 md:min-w-[170px]">
           <div className="text-left md:text-right">
             <p className="text-xs text-muted-foreground">Starting from</p>
-            {h.originalPrice && <p className="text-xs text-muted-foreground line-through">{format(h.originalPrice)}</p>}
             <p className="font-display text-2xl font-bold text-primary">{format(h.pricePerNight)}</p>
             <p className="text-xs text-muted-foreground">per night</p>
           </div>

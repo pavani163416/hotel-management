@@ -1176,6 +1176,8 @@ router.post("/google", async (req, res, next) => {
         passwordHash: await bcrypt.hash(crypto.randomBytes(32).toString("hex"), 10),
         phone: "",
         profileImage: picture || "",
+        isVerified: true,
+        accountStatus: "active",
       });
 
       // Create linked Guest
@@ -1190,6 +1192,12 @@ router.post("/google", async (req, res, next) => {
       await user.save();
 
       logger.info({ email, name }, "New Google user registered with Guest record");
+    } else {
+      if (!user.isVerified || user.accountStatus !== "active") {
+        user.isVerified = true;
+        user.accountStatus = "active";
+        await user.save();
+      }
     }
 
     const token = jwt.sign(
@@ -1313,6 +1321,7 @@ router.post("/firebase", async (req, res, next) => {
         phone: phone,
         profileImage: picture,
         isVerified: true,
+        accountStatus: "active",
       });
 
       const guest = await Guest.create({
@@ -1327,8 +1336,9 @@ router.post("/firebase", async (req, res, next) => {
       logger.info({ email, name, phone }, "New Firebase user registered");
     } else {
       let updated = false;
-      if (!user.isVerified) {
+      if (!user.isVerified || user.accountStatus !== "active") {
         user.isVerified = true;
+        user.accountStatus = "active";
         updated = true;
       }
       if (phone && !user.phone) {

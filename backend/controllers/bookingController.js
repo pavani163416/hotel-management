@@ -591,6 +591,13 @@ export const getAllBookings = async (req, res, next) => {
       return res.status(401).json({ success: false, message: "Authentication required" });
     }
 
+    // Diagnostic log — helps trace 403 issues in production
+    logger.info("[getAllBookings] req.user", {
+      id: req.user.id,
+      role: req.user.role,
+      email: req.user.email,
+    });
+
     const { status, guestEmail } = req.query;
     const page  = Math.max(1, parseInt(req.query.page)  || 1);
     const limit = Math.min(500, parseInt(req.query.limit) || 20);
@@ -599,7 +606,7 @@ export const getAllBookings = async (req, res, next) => {
     const filter = {};
     if (status) filter.status = status;
 
-    if (req.user.role === "customer") {
+    if (req.user.role === "customer" || req.user.role === "owner") {
       const userEmail = req.user.email?.toLowerCase().trim() || "";
       let guestIds = [];
       if (userEmail) {

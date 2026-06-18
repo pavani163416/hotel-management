@@ -39,20 +39,25 @@ export async function getOccupiedRoomIds(roomIds, checkIn, checkOut) {
   }));
 }
 
-/**
- * Build hotel scope filter for Room queries.
- */
 export function buildHotelRoomFilter({ hotelObjectId, hotelStringId }) {
-  if (hotelObjectId && hotelStringId) {
+  let objectId = hotelObjectId;
+  let stringId = hotelStringId;
+
+  if (hotelStringId && typeof hotelStringId === "string" && /^[a-f0-9]{24}$/i.test(hotelStringId)) {
+    objectId = hotelStringId;
+    stringId = undefined;
+  }
+
+  if (objectId && stringId) {
     return {
       $or: [
-        { hotelId: hotelObjectId },
-        { hotelStringId: String(hotelStringId) },
+        { hotelId: objectId },
+        { hotelStringId: String(stringId) },
       ],
     };
   }
-  if (hotelObjectId) return { hotelId: hotelObjectId };
-  if (hotelStringId) return { hotelStringId: String(hotelStringId) };
+  if (objectId) return { hotelId: objectId };
+  if (stringId) return { hotelStringId: String(stringId) };
   return {};
 }
 
@@ -163,12 +168,20 @@ export async function countAvailableRooms({
   checkIn,
   checkOut,
 }) {
+  let objectId = hotelObjectId;
+  let stringId = hotelStringId;
+
+  if (hotelStringId && typeof hotelStringId === "string" && /^[a-f0-9]{24}$/i.test(hotelStringId)) {
+    objectId = hotelStringId;
+    stringId = undefined;
+  }
+
   try {
     const Hotel = (await import("../models/Hotel.js")).default;
     const hotel = await Hotel.findOne({
       $or: [
-        ...(hotelObjectId ? [{ _id: hotelObjectId }] : []),
-        ...(hotelStringId ? [{ hotelId: hotelStringId }] : []),
+        ...(objectId ? [{ _id: objectId }] : []),
+        ...(stringId ? [{ hotelId: stringId }] : []),
       ].filter(Boolean)
     }).lean();
 
@@ -192,10 +205,23 @@ export async function countAvailableRooms({
     }
 
     if (useInventory) {
+      const filter = buildRoomCandidateFilter({
+        hotelObjectId: objectId,
+        hotelStringId: stringId,
+        roomTypeId,
+        type,
+      });
+      const hasPhysicalRooms = await Room.exists(filter);
+      if (hasPhysicalRooms) {
+        useInventory = false;
+      }
+    }
+
+    if (useInventory) {
       const activeBookingsCount = await Booking.countDocuments({
         $or: [
-          ...(hotelObjectId ? [{ hotelId: hotelObjectId }] : []),
-          ...(hotelStringId ? [{ hotelStringId: hotelStringId }] : []),
+          ...(objectId ? [{ hotelId: objectId }] : []),
+          ...(stringId ? [{ hotelStringId: stringId }] : []),
         ].filter(Boolean),
         roomType: roomTypeId,
         status: { $in: ["Confirmed", "CheckedIn", "Pending"] },
@@ -210,8 +236,8 @@ export async function countAvailableRooms({
   }
 
   const filter = buildRoomCandidateFilter({
-    hotelStringId,
-    hotelObjectId,
+    hotelStringId: stringId,
+    hotelObjectId: objectId,
     roomTypeId,
     type,
   });
