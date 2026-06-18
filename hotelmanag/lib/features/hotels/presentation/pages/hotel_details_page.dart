@@ -41,6 +41,7 @@ class HotelDetailsPage extends StatefulWidget {
 class _HotelDetailsPageState extends State<HotelDetailsPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  final ScrollController _tabScrollController = ScrollController();
   int _currentMobileImageIndex = 0;
 
   // Room filter state
@@ -68,6 +69,7 @@ class _HotelDetailsPageState extends State<HotelDetailsPage>
   @override
   void dispose() {
     _tabController.dispose();
+    _tabScrollController.dispose();
     _reviewNameController.dispose();
     _reviewCommentController.dispose();
     super.dispose();
@@ -617,9 +619,11 @@ class _HotelDetailsPageState extends State<HotelDetailsPage>
         border: Border(bottom: BorderSide(color: AppTheme.mutedColor)),
       ),
       child: Scrollbar(
+        controller: _tabScrollController,
         thumbVisibility: true,
         trackVisibility: true,
         child: SingleChildScrollView(
+          controller: _tabScrollController,
           scrollDirection: Axis.horizontal,
           child: TabBar(
             isScrollable: true,
