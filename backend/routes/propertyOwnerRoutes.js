@@ -141,6 +141,9 @@ router.post("/apply", protect, preventExistingOwners, checkApplicationState, upl
       try {
         await OwnerApplication.create({
           userId: req.user.id,
+          businessName,
+          hotelName,
+          hotelAddress,
           status: "processing_upload",
           kycStatus: "pending"
         });
@@ -157,7 +160,15 @@ router.post("/apply", protect, preventExistingOwners, checkApplicationState, upl
       // It must be rejected (since approved/pending/processing_upload are blocked by checkApplicationState)
       const locked = await OwnerApplication.findOneAndUpdate(
         { userId: req.user.id, status: "rejected" },
-        { $set: { status: "processing_upload", kycStatus: "pending" } },
+        { 
+          $set: { 
+            status: "processing_upload", 
+            kycStatus: "pending",
+            businessName,
+            hotelName,
+            hotelAddress
+          } 
+        },
         { new: true }
       );
       if (!locked) {
