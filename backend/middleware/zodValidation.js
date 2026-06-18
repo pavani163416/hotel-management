@@ -148,6 +148,7 @@ const createHotel = z.object({
   pricePerNight: positiveNumber,
   type:          z.enum(["Hotel", "Resort", "Villa", "Suite"]).optional(),
   coords:        z.array(z.number()).length(2).optional(),
+  category:      z.enum(["Beach", "Mountain", "City", "Desert", "Luxury", "General"]).optional(),
   amenities:     z.array(z.string().max(100)).max(50).optional(),
   currency:      z.enum(["USD","INR","EUR","GBP","AED","AUD","SGD"]).optional(),
   rooms:         z.array(z.object({
@@ -194,6 +195,7 @@ const updateHotel = z.object({
   pricePerNight: positiveNumber.optional(),
   type:          z.enum(["Hotel", "Resort", "Villa", "Suite"]).optional(),
   coords:        z.array(z.number()).length(2).optional(),
+  category:      z.enum(["Beach", "Mountain", "City", "Desert", "Luxury", "General"]).optional(),
   amenities:     z.array(z.string().max(100)).max(50).optional(),
   currency:      z.enum(["USD","INR","EUR","GBP","AED","AUD","SGD"]).optional(),
   roomInventory: z.record(

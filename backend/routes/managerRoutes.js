@@ -305,6 +305,7 @@ import {
   getManagerHalls,
   createManagerHall,
   updateManagerHall,
+  updateHallBookingStatus,
   createPriceRequest,
   getManagerPriceRequests,
 } from "../controllers/managerController.js";
@@ -471,6 +472,7 @@ router.get("/guests",            ...protect, getManagerGuests);
 router.get("/halls",        ...protect, getManagerHalls);
 router.post("/halls",       ...protect, createManagerHall);
 router.put("/halls/:id",    ...protect, requireObjectId(), updateManagerHall);
+router.patch("/halls/:hallId/bookings/:bookingId/status", ...protect, requireObjectId(), updateHallBookingStatus);
 
 // ── Price Requests ────────────────────────────────────────
 router.post("/price-requests", ...protect, validate(schemas.createPriceRequest), createPriceRequest);

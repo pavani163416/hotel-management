@@ -5,7 +5,7 @@ import { downloadBookingReceipt, historyItemToReceipt } from "@/utils/receiptPdf
 import Layout from "@/components/Layout";
 import { useBooking, Booking } from "@/context/BookingContext";
 import { useCurrency } from "@/context/CurrencyContext";
-import { getBookingsByEmail, getMyBookings, cancelBooking as cancelBookingApi } from "@/services/api";
+import { getBookingsByEmail, getMyBookings, cancelBooking as cancelBookingApi, getMyHallBookings } from "@/services/api";
 
 const CANCEL_REASONS = [
   "Change of plans",
@@ -62,14 +62,28 @@ const History = () => {
     setLoadingBookings(true);
     
     const tryJWTFirst = async () => {
+      let hallBookings = [];
+      try {
+        const hRes: any = await getMyHallBookings();
+        if (hRes?.data) hallBookings = hRes.data;
+      } catch { /* ignore */ }
+
       try {
         const res: any = await getMyBookings();
-        if (res?.data && res.data.length > 0) {
-          setApiBookings(res.data);
+        const combined = [...(res?.data || []), ...hallBookings];
+        if (combined.length > 0) {
+          setApiBookings(combined);
           setLoadingBookings(false);
           return true;
         }
       } catch { /* fall through */ }
+      
+      // Even if no room bookings, we might have hall bookings
+      if (hallBookings.length > 0) {
+        setApiBookings(hallBookings);
+        setLoadingBookings(false);
+        return true;
+      }
       return false;
     };
     
@@ -96,8 +110,10 @@ const History = () => {
       
       // Refresh via cookie-authenticated endpoint first
       try {
+        let hB = [];
+        try { const hr: any = await getMyHallBookings(); if(hr?.data) hB = hr.data; } catch {}
         const res: any = await getMyBookings();
-        if (res?.data) setApiBookings(res.data);
+        if (res?.data || hB.length > 0) setApiBookings([...(res?.data || []), ...hB]);
       } catch {
         if (user?.email) {
           const res: any = await getBookingsByEmail(user.email);

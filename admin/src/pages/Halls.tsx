@@ -7,7 +7,7 @@ import AdminLayout from "@/components/AdminLayout";
 import Topbar from "@/components/Topbar";
 import Modal from "@/components/Modal";
 import StatusBadge from "@/components/StatusBadge";
-import { getManagerHalls, createManagerHall, updateManagerHall, getHotels } from "@/services/api";
+import { getManagerHalls, createManagerHall, updateManagerHall, updateHallBookingStatus, getHotels } from "@/services/api";
 
 type HallEvent = {
   id: string;
@@ -43,7 +43,7 @@ export default function Halls() {
   const [halls, setHalls]       = useState<any[]>([]);
   const [events, setEvents]     = useState<HallEvent[]>([]);
   const [loading, setLoading]   = useState(true);
-  const [view, setView]         = useState<"calendar" | "list">("calendar");
+  const [view, setView]         = useState<"calendar" | "list" | "halls">("calendar");
   const [currentDate, setCurrentDate] = useState(new Date());
   
   const [showAdd, setShowAdd]   = useState(false);
@@ -195,6 +195,13 @@ export default function Halls() {
     } catch { /* silent */ }
   };
 
+  const handleAcceptBooking = async (eventId: string, hallId: string) => {
+    try {
+      await updateHallBookingStatus(hallId, eventId, "Confirmed");
+      await loadHalls();
+    } catch { /* silent */ }
+  };
+
   const openEdit = (ev: HallEvent) => {
     setEditEvent(ev);
     setForm({
@@ -252,7 +259,15 @@ export default function Halls() {
                 view === "list" ? "bg-primary " : "text-text-secondary hover:text-text-primary hover:bg-surface-2"
               }`}
             >
-              <List className="w-4 h-4" /> List
+              <List className="w-4 h-4" /> Events
+            </button>
+            <button
+              onClick={() => setView("halls")}
+              className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium transition-colors ${
+                view === "halls" ? "bg-primary " : "text-text-secondary hover:text-text-primary hover:bg-surface-2"
+              }`}
+            >
+              <Building2 className="w-4 h-4" /> Halls
             </button>
           </div>
           <button
@@ -413,7 +428,7 @@ export default function Halls() {
             )}
           </div>
         </div>
-      ) : (
+      ) : view === "list" ? (
         /* List View */
         <div className="bg-white shadow-card rounded-2xl border border-border overflow-hidden">
           <table className="w-full">
@@ -448,7 +463,13 @@ export default function Halls() {
                   <td className="px-5 py-3.5 text-sm text-soft">{ev.organizer}</td>
                   <td className="px-5 py-3.5"><StatusBadge status={ev.status} /></td>
                   <td className="px-5 py-3.5">
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center justify-end gap-1.5">
+                      {ev.status === "Pending" && (
+                        <button onClick={() => handleAcceptBooking(ev.id, ev.hallId)}
+                          className="px-2 py-1 text-xs font-semibold bg-success/10 text-success hover:bg-success/20 rounded-md transition-colors border border-success/20">
+                          Accept
+                        </button>
+                      )}
                       <button onClick={() => openEdit(ev)}
                         className="p-1.5 text-text-secondary hover:text-text-primary hover:bg-surface-3 rounded-lg transition-colors">
                         <Edit2 className="w-3.5 h-3.5" />
@@ -468,6 +489,59 @@ export default function Halls() {
               )}
             </tbody>
           </table>
+        </div>
+      ) : (
+        /* Halls List View */
+        <div className="bg-white shadow-card rounded-2xl border border-border p-6">
+          <div className="grid md:grid-cols-4 gap-4 mb-6">
+            <div className="bg-surface-2 border border-border rounded-xl p-4 flex flex-col justify-center">
+              <p className="text-text-secondary text-sm font-semibold mb-1">Total Halls</p>
+              <p className="text-2xl font-bold text-text-primary">{halls.length}</p>
+            </div>
+            <div className="bg-surface-2 border border-border rounded-xl p-4 flex flex-col justify-center">
+              <p className="text-text-secondary text-sm font-semibold mb-1">Total Capacity</p>
+              <p className="text-2xl font-bold text-text-primary">{halls.reduce((acc, h) => acc + (h.capacity || 0), 0)}</p>
+            </div>
+          </div>
+          
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {halls.map((hall) => (
+              <div key={hall._id} className="bg-surface-2 border border-border rounded-2xl p-5 hover:border-border/80 transition-colors">
+                <div className="flex justify-between items-start mb-3">
+                  <h3 className="text-lg font-bold text-text-primary">{hall.name}</h3>
+                  {hall.isActive ? (
+                    <span className="bg-success/10 text-success text-xs font-bold px-2 py-1 rounded border border-success/20">Active</span>
+                  ) : (
+                    <span className="bg-text-secondary/10 text-text-secondary text-xs font-bold px-2 py-1 rounded border border-border">Inactive</span>
+                  )}
+                </div>
+                {hall.description && <p className="text-sm text-text-secondary mb-4 line-clamp-2">{hall.description}</p>}
+                <div className="space-y-2 mb-4">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-text-secondary flex items-center gap-2"><Users className="w-4 h-4" /> Capacity</span>
+                    <span className="font-semibold text-text-primary">{hall.capacity}</span>
+                  </div>
+                  {hall.pricePerDay && (
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-text-secondary flex items-center gap-2"><Clock className="w-4 h-4" /> Price / Day</span>
+                      <span className="font-semibold text-text-primary">₹{hall.pricePerDay}</span>
+                    </div>
+                  )}
+                  {hall.pricePerHour && (
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-text-secondary flex items-center gap-2"><Clock className="w-4 h-4" /> Price / Hour</span>
+                      <span className="font-semibold text-text-primary">₹{hall.pricePerHour}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+            {halls.length === 0 && (
+              <div className="col-span-full text-center py-12 border border-dashed border-border rounded-2xl">
+                <p className="text-text-secondary">No halls found for this hotel.</p>
+              </div>
+            )}
+          </div>
         </div>
       )}
 

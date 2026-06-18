@@ -652,6 +652,43 @@ export const updateManagerHall = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
+// ── PATCH /api/manager/halls/:hallId/bookings/:bookingId/status ──────────────
+export const updateHallBookingStatus = async (req, res, next) => {
+  try {
+    const { hallId, bookingId } = req.params;
+    const { status } = req.body;
+    
+    if (!["Confirmed", "Pending", "Cancelled"].includes(status)) {
+      return res.status(400).json({ success: false, message: "Invalid status" });
+    }
+
+    const hall = await FunctionHall.findById(hallId);
+    if (!hall) return res.status(404).json({ success: false, message: "Hall not found" });
+
+    if (req.manager?.role === "Manager" && hall.hotelStringId && hall.hotelStringId !== req.scopedHotelId) {
+      return res.status(403).json({ success: false, message: "Unauthorized: This hall does not belong to your hotel." });
+    }
+
+    const booking = hall.bookings.id(bookingId);
+    if (!booking) return res.status(404).json({ success: false, message: "Booking not found in this hall" });
+
+    booking.status = status;
+    await hall.save();
+
+    // Send notification if user email is available
+    if (booking.organizerEmail && (status === "Confirmed" || status === "Cancelled")) {
+      sendNotification({
+        userId: booking.organizerEmail,
+        role: "customer",
+        message: `Your hall booking request for ${hall.name} on ${new Date(booking.date).toLocaleDateString()} has been ${status.toLowerCase()}.`,
+        type: "booking",
+      }).catch(() => {});
+    }
+
+    res.status(200).json({ success: true, message: `Booking status updated to ${status}`, data: hall });
+  } catch (err) { next(err); }
+};
+
 // ── POST /api/manager/price-requests ─────────────────────
 export const createPriceRequest = async (req, res, next) => {
   try {
