@@ -355,25 +355,25 @@ const Navbar = () => {
                   )}
                 </button>
                 {showNotifications && (
-                  <div className="absolute right-0 top-12 z-50 w-[90vw] max-w-sm overflow-hidden rounded-xl border border-border bg-card shadow-elegant">
-                    <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-                      <p className="text-sm font-semibold text-primary">Notifications</p>
-                      <span className="text-xs text-muted-foreground">{unreadCount} unread</span>
+                  <div className="absolute right-0 top-12 z-50 w-[280px] sm:w-[320px] md:w-[360px] overflow-hidden rounded-xl border border-border bg-card shadow-elegant">
+                    <div className="flex items-center justify-between px-3 py-2 md:px-4 md:py-3 border-b border-border">
+                      <p className="text-xs md:text-sm font-semibold text-primary">Notifications</p>
+                      <span className="text-[10px] md:text-xs text-muted-foreground">{unreadCount} unread</span>
                     </div>
                     <div className="max-h-80 overflow-y-auto">
                       {notifications.length === 0 ? (
-                        <p className="py-8 text-center text-sm text-muted-foreground">No notifications</p>
+                        <p className="py-8 text-center text-xs md:text-sm text-muted-foreground">No notifications</p>
                       ) : notifications.map((n) => (
                         <button
                           key={n._id}
                           onClick={() => openNotification(n)}
-                          className="w-full text-left px-4 py-3 border-b border-border last:border-0 hover:bg-secondary transition-base min-h-[44px]"
+                          className="w-full text-left px-3 py-2.5 md:px-4 md:py-3 border-b border-border last:border-0 hover:bg-secondary transition-base min-h-[44px]"
                         >
-                          <div className="flex items-start gap-3">
-                            <span className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${n.isRead ? "bg-border" : "bg-accent"}`} />
+                          <div className="flex items-start gap-2 md:gap-3">
+                            <span className={`mt-1.5 w-1.5 h-1.5 md:w-2 md:h-2 rounded-full shrink-0 ${n.isRead ? "bg-border" : "bg-accent"}`} />
                             <div>
-                              <p className={`text-sm ${n.isRead ? "text-muted-foreground" : "text-primary font-semibold"}`}>{n.message}</p>
-                              <p className="text-xs text-muted-foreground mt-0.5 capitalize">{n.type} · {timeAgo(n.createdAt)}</p>
+                              <p className={`text-xs md:text-sm ${n.isRead ? "text-muted-foreground" : "text-primary font-semibold"}`}>{n.message}</p>
+                              <p className="text-[10px] md:text-xs text-muted-foreground mt-0.5 capitalize">{n.type} · {timeAgo(n.createdAt)}</p>
                             </div>
                           </div>
                         </button>
@@ -383,127 +383,93 @@ const Navbar = () => {
                 )}
               </div>
 
-              {/* User Avatar Dropdown (responsive for mobile & desktop) */}
-              <div>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button className="flex items-center gap-2 px-1.5 py-1.5 md:px-3 md:py-1.5 rounded-full hover:bg-accent/5 transition-base border border-transparent hover:border-border outline-none min-h-[44px]">
-                      <span className="font-semibold text-sm text-primary hidden md:inline-block">{user.name.split(" ")[0]}</span>
-                      {user.profileImage ? (
-                        <img src={user.profileImage} alt={user.name} className="w-7 h-7 rounded-full object-cover shrink-0" />
-                      ) : (
-                        <UserCircle className="w-7 h-7 text-muted-foreground shrink-0" />
-                      )}
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48">
-                    <DropdownMenuItem asChild>
-                      <Link to="/profile" className="w-full cursor-pointer min-h-[44px] flex items-center">
-                        <UserCircle className="w-4 h-4 mr-2" /> Profile
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link to="/halls" className="w-full cursor-pointer min-h-[44px] flex items-center">
-                        <Building2 className="w-4 h-4 mr-2" /> Book a Hall
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-
-                    <DropdownMenuItem
-                      onClick={async () => {
-                        if (!hasActiveStay) return;
-                        if (user?.email) {
-                          try {
-                            const bRes = await api.get(`/bookings?guestEmail=${encodeURIComponent(user.email)}&limit=${DEFAULT_PAGINATION_LIMIT}`);
-                            const apiBookings: any[] = bRes.data?.data || [];
-                            const confirmed = apiBookings.find((b: any) => b.status === "Confirmed") || apiBookings[0];
-                            if (confirmed?.room?.roomNumber) {
-                              setActiveRoomNo(confirmed.room.roomNumber);
-                              const match = confirmed.room.roomNumber.match(/(\d+)/);
-                              const roomNum = match ? match[1] : "";
-                              setActiveFloorNo(roomNum.length >= 3 ? roomNum[0] : "");
-                            } else {
-                              setActiveRoomNo("");
-                              setActiveFloorNo("");
-                            }
-                          } catch {
-                            setActiveRoomNo("");
-                            setActiveFloorNo("");
-                          }
+              {/* User Avatar Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="flex items-center gap-2 px-1.5 py-1.5 md:px-3 md:py-1.5 rounded-full hover:bg-accent/5 transition-base border border-transparent hover:border-border outline-none min-h-[44px]">
+                    <span className="font-semibold text-sm text-primary hidden md:inline-block">{user.name.split(" ")[0]}</span>
+                    {user.profileImage ? (
+                      <img src={user.profileImage} alt={user.name} className="w-7 h-7 rounded-full object-cover shrink-0" />
+                    ) : (
+                      <UserCircle className="w-7 h-7 text-muted-foreground shrink-0" />
+                    )}
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem asChild>
+                    <Link to="/profile" className="w-full cursor-pointer min-h-[44px] flex items-center">
+                      <UserCircle className="w-4 h-4 mr-2" /> Profile
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/halls" className="w-full cursor-pointer min-h-[44px] flex items-center">
+                      <Building2 className="w-4 h-4 mr-2" /> Book a Hall
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/owner-portal" className="w-full cursor-pointer flex items-center text-primary hover:text-accent font-medium min-h-[44px]">
+                      <Building2 className="w-4 h-4 mr-2" /> List Your Property
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={async () => {
+                      if (!hasActiveStay) return;
+                      if (user?.email) {
+                        try {
+                           const bRes = await api.get(`/bookings?guestEmail=${encodeURIComponent(user.email)}&limit=${DEFAULT_PAGINATION_LIMIT}`);
+                           const apiBookings: any[] = bRes.data?.data || [];
+                           const confirmed = apiBookings.find((b: any) => b.status === "Confirmed") || apiBookings[0];
+                           if (confirmed?.room?.roomNumber) {
+                             setActiveRoomNo(confirmed.room.roomNumber);
+                             const match = confirmed.room.roomNumber.match(/(\d+)/);
+                             const roomNum = match ? match[1] : "";
+                             setActiveFloorNo(roomNum.length >= 3 ? roomNum[0] : "");
+                           } else {
+                             setActiveRoomNo("");
+                             setActiveFloorNo("");
+                           }
+                        } catch {
+                           setActiveRoomNo("");
+                           setActiveFloorNo("");
                         }
-                        setAssistanceOpen(true);
-                      }}
-                      disabled={requesting || requestSuccess || !hasActiveStay}
-                      className={`min-h-[44px] ${hasActiveStay ? "cursor-pointer" : "cursor-not-allowed opacity-50"}`}
-                      title={!hasActiveStay ? "Assistance available during stay" : undefined}
-                    >
-                      {requestSuccess ? (
-                        <><CheckCircle2 className="w-4 h-4 mr-2 text-green-500" /> Sent!</>
-                      ) : (
-                        <><Mail className="w-4 h-4 mr-2" /> {requesting ? "Sending..." : "Request Assistance"}</>
-                      )}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={handleLogout}
-                      className="text-destructive cursor-pointer focus:text-destructive focus:bg-destructive/10 min-h-[44px]"
-                    >
-                      <LogOut className="w-4 h-4 mr-2" /> Log out
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-
-              {/* Mobile Avatar (just triggers drawer or acts as avatar) */}
-              <button 
-                onClick={() => setMobileMenuOpen(true)}
-                className="md:hidden flex items-center justify-center min-w-[44px] min-h-[44px] -mr-2"
-                aria-label="Open menu"
-              >
-                {user.profileImage ? (
-                  <img src={user.profileImage} alt={user.name} className="w-6 h-6 rounded-full object-cover" />
-                ) : (
-                  <UserCircle className="w-6 h-6 text-muted-foreground" />
-                )}
-              </button>
+                      }
+                      setAssistanceOpen(true);
+                    }}
+                    disabled={requesting || requestSuccess || !hasActiveStay}
+                    className={`min-h-[44px] ${hasActiveStay ? "cursor-pointer" : "cursor-not-allowed opacity-50"}`}
+                    title={!hasActiveStay ? "Assistance available during stay" : undefined}
+                  >
+                    {requestSuccess ? (
+                      <><CheckCircle2 className="w-4 h-4 mr-2 text-green-500" /> Sent!</>
+                    ) : (
+                      <><Mail className="w-4 h-4 mr-2" /> {requesting ? "Sending..." : "Request Assistance"}</>
+                    )}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={handleLogout}
+                    className="text-destructive cursor-pointer focus:text-destructive focus:bg-destructive/10 min-h-[44px]"
+                  >
+                    <LogOut className="w-4 h-4 mr-2" /> Log out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </>
           ) : (
             <>
-              {/* Desktop Sign In / Sign Up */}
-              <div className="hidden md:flex items-center gap-2">
+              {/* Sign In / Sign Up Buttons (responsive for mobile & desktop) */}
+              <div className="flex items-center gap-1.5 md:gap-2">
                 <button
                   onClick={() => openAuth("signin")}
-                  className="px-5 py-2 min-h-[44px] text-sm font-semibold rounded-lg text-primary hover:bg-secondary transition-base"
+                  className="px-3 py-1.5 md:px-5 md:py-2 min-h-[36px] md:min-h-[44px] text-xs md:text-sm font-semibold rounded-lg text-primary hover:bg-secondary transition-base"
                 >
                   Sign In
                 </button>
                 <button
                   onClick={() => openAuth("signup")}
-                  className="px-5 py-2 min-h-[44px] text-sm font-semibold rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-base"
+                  className="px-3 py-1.5 md:px-5 md:py-2 min-h-[36px] md:min-h-[44px] text-xs md:text-sm font-semibold rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-base"
                 >
                   Sign Up
                 </button>
-              </div>
-              
-              {/* Mobile Guest Dropdown Menu */}
-              <div className="md:hidden">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button 
-                      className="flex items-center justify-center min-w-[44px] min-h-[44px] -mr-2 outline-none"
-                      aria-label="Guest Menu"
-                    >
-                      <UserCircle className="w-6 h-6 text-muted-foreground" />
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-40">
-                    <DropdownMenuItem onClick={() => openAuth("signin")} className="min-h-[44px] cursor-pointer">
-                      Sign In
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => openAuth("signup")} className="min-h-[44px] cursor-pointer">
-                      Sign Up
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
               </div>
             </>
           )}

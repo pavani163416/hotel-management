@@ -631,18 +631,20 @@ class BookingListItem extends StatelessWidget {
               onPressed: selectedReason == null
                   ? null
                   : () async {
+                      final bookingProvider = parentContext.read<BookingProvider>();
+                      final notificationProvider = parentContext.read<NotificationProvider>();
+                      final scaffoldMessenger = ScaffoldMessenger.of(parentContext);
+                      
                       Navigator.pop(parentContext);
-                      final success = await parentContext
-                          .read<BookingProvider>()
-                          .cancelBooking(booking.id);
-                      if (success && parentContext.mounted) {
-                        parentContext.read<NotificationProvider>().addNotification(
+                      final success = await bookingProvider.cancelBooking(booking.id);
+                      if (success) {
+                        notificationProvider.addNotification(
                           'Booking Cancelled',
                           subtitle:
                               'Your stay at ${booking.hotelName} has been cancelled.',
                           isCancelled: true,
                         );
-                        ScaffoldMessenger.of(parentContext).showSnackBar(
+                        scaffoldMessenger.showSnackBar(
                           const SnackBar(
                             content: Text('Booking cancelled successfully'),
                             behavior: SnackBarBehavior.floating,

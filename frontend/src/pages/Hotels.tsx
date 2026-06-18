@@ -90,6 +90,32 @@ const Hotels = () => {
 
   useEffect(() => { setLoading(false); }, []);
 
+  useEffect(() => {
+    if (!mapOpen) return;
+
+    const handleScroll = (e: Event) => {
+      const modalEl = document.getElementById("map-modal-container");
+      if (modalEl && modalEl.contains(e.target as Node)) {
+        return;
+      }
+      setMapOpen(false);
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    
+    const scrollableSections = document.querySelectorAll(".overflow-y-auto");
+    scrollableSections.forEach((sec) => {
+      sec.addEventListener("scroll", handleScroll, { passive: true });
+    });
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      scrollableSections.forEach((sec) => {
+        sec.removeEventListener("scroll", handleScroll);
+      });
+    };
+  }, [mapOpen]);
+
   const filtered = useMemo(() => {
     let list = hotels.filter((h) => {
       const ratingValue = typeof h.rating === "number" ? h.rating : 0;
@@ -155,7 +181,7 @@ const Hotels = () => {
             )}
             <div className="rounded-xl border border-border overflow-hidden bg-card">
               <div className="h-60 relative">
-                <HotelMap hotels={filtered} onHotelClick={(id) => nav(`/hotel/${id}`)} />
+                <HotelMap key="sidebar-map" hotels={filtered} onHotelClick={(id) => nav(`/hotel/${id}`)} />
               </div>
               <button onClick={() => setMapOpen(true)} className="w-full flex items-center justify-center gap-2 py-3 text-xs font-semibold text-primary border-t border-border hover:bg-secondary transition-base">
                 <Maximize2 className="w-3.5 h-3.5" /> Explore Map
@@ -327,8 +353,8 @@ const Hotels = () => {
       </div>
 
       {mapOpen && (
-        <div className="fixed inset-0 z-50 bg-primary/60 backdrop-blur-sm p-4 md:p-8 animate-fade-in" onClick={() => setMapOpen(false)}>
-          <div className="bg-background rounded-2xl overflow-hidden h-full max-w-6xl mx-auto flex flex-col shadow-luxe" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[1010] bg-primary/60 backdrop-blur-sm p-4 md:p-8 animate-fade-in" onClick={() => setMapOpen(false)}>
+          <div id="map-modal-container" className="bg-background rounded-2xl overflow-hidden h-full max-w-6xl mx-auto flex flex-col shadow-luxe" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between px-5 py-3 border-b border-border">
               <div>
                 <h3 className="font-display font-bold text-primary">Map View</h3>
@@ -338,8 +364,8 @@ const Hotels = () => {
                 <X className="w-4 h-4 text-primary" />
               </button>
             </div>
-            <div className="flex-1">
-              <HotelMap hotels={filtered} onHotelClick={(id) => { setMapOpen(false); nav(`/hotel/${id}`); }} />
+            <div className="flex-1 min-h-0">
+              <HotelMap key={`modal-map-${mapOpen}`} hotels={filtered} onHotelClick={(id) => { setMapOpen(false); nav(`/hotel/${id}`); }} />
             </div>
           </div>
         </div>

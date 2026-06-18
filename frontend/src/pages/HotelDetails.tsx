@@ -70,11 +70,52 @@ const HotelDetails = () => {
     canonical: hotel ? `https://hotel-mgnt.vercel.app/hotel/${hotel.id}` : undefined,
   });
 
-  const [tab, setTab] = useState<"rooms" | "amenities" | "reviews" | "location">("rooms");
+  const [tab, setTab] = useState<"rooms" | "halls" | "amenities" | "reviews" | "location">("rooms");
   const [reviewText, setReviewText] = useState("");
   const [reviewName, setReviewName] = useState("");
   const [reviewRating, setReviewRating] = useState(5);
   const [err, setErr] = useState("");
+
+  const [hallModalOpen, setHallModalOpen] = useState(false);
+  const [selectedHall, setSelectedHall] = useState<Hall | null>(null);
+  const [hallForm, setHallForm] = useState<HallBookingForm>({
+    eventName: "",
+    date: search.checkIn,
+    startTime: "09:00",
+    endTime: "17:00",
+    capacity: 50,
+    notes: "",
+  });
+  const [hallSubmitting, setHallSubmitting] = useState(false);
+
+  const handleHallSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) {
+      toast.error("Please log in to request a hall");
+      return;
+    }
+    setHallSubmitting(true);
+    try {
+      const payload = {
+        hotelId: hotel?._id || hotel?.id,
+        hallId: selectedHall?.id || selectedHall?._id,
+        ...hallForm,
+      };
+      const res = await fetch(`${API}/halls/request`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${localStorage.getItem("token")}` },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Failed to request hall");
+      toast.success("Hall request submitted successfully! We will notify you once approved.");
+      setHallModalOpen(false);
+    } catch (error: any) {
+      toast.error(error.message);
+    } finally {
+      setHallSubmitting(false);
+    }
+  };
 
   // Captcha removed for reviews — simpler UX; server-side no longer requires captcha for reviews
 
@@ -222,6 +263,69 @@ const HotelDetails = () => {
             Browse All Hotels
           </button>
         </div>
+      {/* Hall Booking Modal */}
+      {hallModalOpen && selectedHall && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-card w-full max-w-lg rounded-2xl shadow-xl border border-border overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="p-5 border-b border-border flex items-center justify-between bg-surface-1">
+              <h3 className="font-display font-bold text-xl text-primary">Request: {selectedHall.name}</h3>
+              <button onClick={() => setHallModalOpen(false)} className="w-8 h-8 rounded-full bg-secondary/50 flex items-center justify-center text-muted-foreground hover:text-primary transition-colors">
+                ✕
+              </button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto custom-scrollbar">
+              <p className="text-sm text-muted-foreground mb-6">
+                Fill out the details below to request a booking for this function hall. The hotel manager will review your request and notify you.
+              </p>
+              
+              <form id="hall-booking-form" onSubmit={handleHallSubmit} className="space-y-5">
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-primary">Event Name</label>
+                  <input required type="text" value={hallForm.eventName} onChange={(e) => setHallForm({ ...hallForm, eventName: e.target.value })} className="w-full bg-secondary/30 border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent/50" placeholder="e.g. Annual Tech Conference" />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-primary">Date</label>
+                    <input required type="date" value={hallForm.date} onChange={(e) => setHallForm({ ...hallForm, date: e.target.value })} className="w-full bg-secondary/30 border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent/50" min={new Date().toISOString().split("T")[0]} />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-primary">Expected Guests</label>
+                    <input required type="number" min="1" max={selectedHall.capacity} value={hallForm.capacity} onChange={(e) => setHallForm({ ...hallForm, capacity: Number(e.target.value) })} className="w-full bg-secondary/30 border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent/50" />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-primary">Start Time</label>
+                    <input required type="time" value={hallForm.startTime} onChange={(e) => setHallForm({ ...hallForm, startTime: e.target.value })} className="w-full bg-secondary/30 border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent/50" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-primary">End Time</label>
+                    <input required type="time" value={hallForm.endTime} onChange={(e) => setHallForm({ ...hallForm, endTime: e.target.value })} className="w-full bg-secondary/30 border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent/50" />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-primary">Special Requests / Notes</label>
+                  <textarea rows={3} value={hallForm.notes} onChange={(e) => setHallForm({ ...hallForm, notes: e.target.value })} className="w-full bg-secondary/30 border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent/50 resize-none" placeholder="Catering needs, seating arrangement, AV requirements..."></textarea>
+                </div>
+              </form>
+            </div>
+            
+            <div className="p-5 border-t border-border flex gap-3 bg-surface-1">
+              <button type="button" onClick={() => setHallModalOpen(false)} className="flex-1 py-3 px-4 font-semibold text-muted-foreground hover:text-primary hover:bg-secondary rounded-xl transition-colors">
+                Cancel
+              </button>
+              <button form="hall-booking-form" type="submit" disabled={hallSubmitting} className="flex-1 py-3 px-4 bg-accent text-white font-semibold rounded-xl hover:bg-accent/90 transition-base disabled:opacity-70 flex items-center justify-center gap-2">
+                {hallSubmitting ? <><Loader2 className="w-4 h-4 animate-spin" /> Submitting</> : "Submit Request"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       </Layout>
     );
   }
@@ -275,8 +379,8 @@ const HotelDetails = () => {
 
         {/* Tabs */}
         <div id="rooms-section" className="flex gap-1 border-b border-border mt-8 overflow-x-auto scrollbar-hide whitespace-nowrap">
-          {["rooms", "amenities", "reviews", "location"].map((t) => (
-            <button key={t} onClick={() => setTab(t)}
+          {["rooms", "halls", "amenities", "reviews", "location"].map((t) => (
+            <button key={t} onClick={() => setTab(t as any)}
               className={`px-5 py-3 text-sm font-semibold capitalize relative transition-base min-h-[44px] ${tab === t ? "text-primary" : "text-muted-foreground hover:text-primary"}`}>
               {t} {t === "reviews" && `(${allReviews.length})`}
               {tab === t && <span className="absolute left-0 right-0 -bottom-px h-0.5 bg-accent rounded-full" />}
@@ -453,6 +557,45 @@ const HotelDetails = () => {
               </>
               );
             })()}
+          </div>
+        )}
+        {tab === "halls" && (
+          <div className="mt-8">
+            <h2 className="font-display text-2xl font-bold mb-5">Function Halls & Event Spaces</h2>
+            {!hotel.functionHalls || hotel.functionHalls.length === 0 ? (
+              <p className="text-muted-foreground text-sm bg-card p-6 border border-border rounded-xl text-center">
+                No function halls are currently available at this property.
+              </p>
+            ) : (
+              <div className="grid md:grid-cols-2 gap-5">
+                {hotel.functionHalls.map((hall) => (
+                  <div key={hall.id || hall._id} className="border border-border rounded-2xl overflow-hidden bg-card flex flex-col">
+                    {hall.images && hall.images.length > 0 && (
+                      <div className="h-48 overflow-hidden bg-surface-2">
+                        <img src={hall.images[0]} alt={hall.name} className="w-full h-full object-cover transition-transform hover:scale-105 duration-500" />
+                      </div>
+                    )}
+                    <div className="p-5 flex-1 flex flex-col">
+                      <h3 className="text-lg font-bold text-primary mb-2">{hall.name}</h3>
+                      <p className="text-sm text-muted-foreground mb-4 flex-1 line-clamp-2">{hall.description}</p>
+                      
+                      <div className="flex flex-wrap gap-4 text-xs font-medium text-primary mb-4 bg-secondary/20 p-3 rounded-xl border border-border/50">
+                        <span className="flex items-center gap-1.5"><Users className="w-4 h-4 text-accent" /> Up to {hall.capacity} Guests</span>
+                        {hall.pricePerHour && <span className="flex items-center gap-1.5"><Clock className="w-4 h-4 text-accent" /> ${hall.pricePerHour}/hr</span>}
+                        {hall.pricePerDay && <span className="flex items-center gap-1.5"><Calendar className="w-4 h-4 text-accent" /> ${hall.pricePerDay}/day</span>}
+                      </div>
+
+                      <button
+                        onClick={() => { setSelectedHall(hall); setHallModalOpen(true); }}
+                        className="w-full py-3 bg-accent/10 text-accent font-semibold rounded-xl hover:bg-accent hover:text-white transition-base border border-accent/20 hover:border-transparent"
+                      >
+                        Request to Book
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
         {tab === "amenities" && (

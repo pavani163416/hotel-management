@@ -11,18 +11,24 @@ const Booking = () => {
   const { selectedHotel, selectedRoom, search, setSearch } = useBooking();
   const { format } = useCurrency();
 
-  useEffect(() => { if (!selectedHotel || !selectedRoom) nav("/hotels"); }, [selectedHotel, selectedRoom, nav]);
+  useEffect(() => {
+    if (!selectedHotel || !selectedRoom) {
+      nav("/hotels");
+    }
+  }, [selectedHotel, selectedRoom, nav]);
+
+  const maxGuests = selectedRoom ? Math.max(1, selectedRoom.capacity || 1) : 1;
+
+  useEffect(() => {
+    if (selectedRoom && search.guests > maxGuests) {
+      setSearch({ ...search, guests: maxGuests });
+    }
+  }, [maxGuests, search, setSearch, selectedRoom]);
+
   if (!selectedHotel || !selectedRoom) return null;
 
   const nights = calcNights(search.checkIn, search.checkOut);
   const subtotal = selectedRoom.price * nights;
-  const maxGuests = Math.max(1, selectedRoom.capacity || 1);
-
-  useEffect(() => {
-    if (search.guests > maxGuests) {
-      setSearch({ ...search, guests: maxGuests });
-    }
-  }, [maxGuests, search, setSearch]);
 
   const adjustNights = (delta: number) => {
     const checkOut = new Date(search.checkOut);

@@ -207,7 +207,7 @@ class _RegisterPageState extends State<RegisterPage> {
     final bool specialOk = RegExp(r'[^A-Za-z0-9]').hasMatch(pw);
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -216,7 +216,7 @@ class _RegisterPageState extends State<RegisterPage> {
           padding: const EdgeInsets.only(left: 16, top: 8),
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Theme.of(context).colorScheme.surface,
               shape: BoxShape.circle,
               border: Border.all(color: AppTheme.mutedColor),
             ),
@@ -231,9 +231,10 @@ class _RegisterPageState extends State<RegisterPage> {
           ),
         ),
       ),
-      body: AutofillGroup(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+      body: SafeArea(
+        child: AutofillGroup(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -717,6 +718,7 @@ class _RegisterPageState extends State<RegisterPage> {
             ],
           ),
         ),
+      ),
       ),
     );
   }

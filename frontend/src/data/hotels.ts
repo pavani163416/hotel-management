@@ -20,6 +20,19 @@ export type Review = {
   date: string;
 };
 
+export type Hall = {
+  _id?: string;
+  id?: string;
+  name: string;
+  description?: string;
+  capacity: number;
+  pricePerHour?: number;
+  pricePerDay?: number;
+  amenities?: string[];
+  images?: string[];
+  isActive?: boolean;
+};
+
 export type Hotel = {
   id: string;
   name: string;
@@ -39,6 +52,7 @@ export type Hotel = {
   mapUrl?: string;
   amenities: string[];
   rooms: Room[];
+  functionHalls?: Hall[];
   reviews: Review[];
   activeBookings?: number;
 };

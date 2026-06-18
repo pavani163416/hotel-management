@@ -5,7 +5,7 @@ import { downloadBookingReceipt, historyItemToReceipt } from "@/utils/receiptPdf
 import Layout from "@/components/Layout";
 import { useBooking, Booking } from "@/context/BookingContext";
 import { useCurrency } from "@/context/CurrencyContext";
-import { getBookingsByEmail, getMyBookings, cancelBooking as cancelBookingApi, getMyHallBookings } from "@/services/api";
+import { getBookingsByEmail, getMyBookings, cancelBooking as cancelBookingApi, getMyHallBookings, cancelHallBooking } from "@/services/api";
 
 const CANCEL_REASONS = [
   "Change of plans",
@@ -19,20 +19,22 @@ const CANCEL_REASONS = [
 
 // Normalise a booking from either API shape or local context shape
 function normalise(b: any) {
+  const isHall = !!b.eventName; // hall bookings use eventName instead of room
   return {
     id:         b.id || b._id || "",
     hotelName:  b.hotel?.name  || b.hotelName  || "AthithiGriha",
     hotelCity:  b.hotel?.city  || b.hotelCity  || "",
     hotelImage: b.hotel?.image || b.hotelId?.image || b.hotelImage || b.room?.images?.[0] || "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&q=60",
     hotelLoc:   b.hotel?.location || "",
-    checkIn:    b.search?.checkIn  || (b.checkIn  ? new Date(b.checkIn).toISOString().slice(0, 10)  : ""),
-    checkOut:   b.search?.checkOut || (b.checkOut ? new Date(b.checkOut).toISOString().slice(0, 10) : ""),
-    nights:     b.nights || "",
+    checkIn:    isHall ? new Date(b.date).toISOString().slice(0, 10) : (b.search?.checkIn  || (b.checkIn  ? new Date(b.checkIn).toISOString().slice(0, 10)  : "")),
+    checkOut:   isHall ? new Date(b.date).toISOString().slice(0, 10) : (b.search?.checkOut || (b.checkOut ? new Date(b.checkOut).toISOString().slice(0, 10) : "")),
+    nights:     isHall ? "" : (b.nights || ""),
     total:      b.total ?? b.totalAmount ?? 0,
     status:     b.status || "Confirmed",
-    guestName:  b.guest?.name || b.guestSnapshot?.name || "",
-    roomName:   b.room?.name  || b.room?.roomNumber || b.room?.type || "",
-    createdAt:  b.createdAt || null,
+    guestName:  b.guest?.name || b.guestSnapshot?.name || b.guestName || b.organizer || "",
+    roomName:   isHall ? `${b.hallName} (${b.eventName})` : (b.room?.name  || b.room?.roomNumber || b.room?.type || b.roomName || ""),
+    createdAt:  b.createdAt || b.bookedAt || null,
+    isHallBooking: isHall || b.isHallBooking || false,
     raw:        b,
   };
 }
@@ -106,7 +108,11 @@ const History = () => {
     setCancelling(true);
     const reason = cancelReason === "Other" ? cancelOther || "Other" : cancelReason;
     try {
-      await cancelBookingApi(cancelTarget.id, reason);
+      if (cancelTarget.isHallBooking) {
+        await cancelHallBooking(cancelTarget.hallId || cancelTarget.raw?.hallId, cancelTarget.id, reason);
+      } else {
+        await cancelBookingApi(cancelTarget.id, reason);
+      }
       
       // Refresh via cookie-authenticated endpoint first
       try {

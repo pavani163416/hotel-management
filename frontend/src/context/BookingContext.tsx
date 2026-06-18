@@ -49,6 +49,20 @@ function mapHotel(h: any): Hotel {
           freeCancellation: r.freeCancellation || false,
         }))
       : [],
+    functionHalls: Array.isArray(h.functionHalls)
+      ? h.functionHalls.map((hall: any) => ({
+          _id: hall._id,
+          id: hall.id || hall._id,
+          name: hall.name || "Function Hall",
+          description: hall.description || "",
+          capacity: hall.capacity || 50,
+          pricePerHour: hall.pricePerHour,
+          pricePerDay: hall.pricePerDay,
+          amenities: hall.amenities || [],
+          images: hall.images || [],
+          isActive: hall.isActive ?? true,
+        }))
+      : [],
     reviews: (h.reviews || []).map((r: any) => ({
       id: r._id || r.id || Math.random().toString(36),
       author: r.author || "",

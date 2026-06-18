@@ -25,15 +25,25 @@ const hasValidCoords = (h: Hotel): boolean => {
 const FitBounds = ({ hotels }: { hotels: Hotel[] }) => {
   const map = useMap();
   useEffect(() => {
+    if (!map) return;
     const valid = hotels.filter(hasValidCoords);
     if (!valid.length) return;
-    if (valid.length === 1) {
-      // Single marker — zoom in directly instead of fitting a 0-area bounds
-      map.setView(valid[0].coords, 12);
-      return;
-    }
-    const bounds = L.latLngBounds(valid.map((h) => h.coords));
-    map.fitBounds(bounds, { padding: [40, 40], maxZoom: 10 });
+    
+    // Delay to ensure map is fully rendered
+    const timeoutId = setTimeout(() => {
+      try {
+        if (valid.length === 1) {
+          map.setView(valid[0].coords, 12);
+        } else {
+          const bounds = L.latLngBounds(valid.map((h) => h.coords));
+          map.fitBounds(bounds, { padding: [40, 40], maxZoom: 10 });
+        }
+      } catch (e) {
+        console.error("Error fitting bounds:", e);
+      }
+    }, 100);
+    
+    return () => clearTimeout(timeoutId);
   }, [hotels, map]);
   return null;
 };
@@ -65,9 +75,13 @@ const HotelMap = ({ hotels, height = "100%", onHotelClick, className }: Props) =
     );
   }
 
+  // Create a stable key based on the hotels to ensure proper re-rendering
+  const mapKey = mappableHotels.map(h => h.id).join("-");
+
   return (
     <div className={className} style={{ height, width: "100%" }}>
       <MapContainer
+        key={`map-container-${mapKey}`}
         center={mappableHotels[0].coords}
         zoom={4}
         scrollWheelZoom={false}

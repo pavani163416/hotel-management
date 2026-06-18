@@ -227,6 +227,12 @@ export const bookHotelHall = async (req, res, next) => {
       type: "booking",
     }).catch(() => {});
 
+    await sendNotification({
+      role: "admin",
+      message: `New function hall booking request for ${hall.name} at ${hotel.name}.`,
+      type: "booking",
+    }).catch(() => {});
+
     res.status(201).json({ success: true, message: "Function hall booking request submitted", data: hall });
   } catch (error) {
     next(error);
@@ -586,7 +592,7 @@ export const addRoomToHotel = async (req, res, next) => {
           $set: {
             type,
             description:   req.body.description || `${req.body.name} at ${hotel.name}`,
-            pricePerNight: req.body.pricePerNight || req.body.price || 0,
+            pricePerNight: Math.max(1, req.body.pricePerNight || req.body.price || 1),
             capacity:      req.body.capacity || 2,
             bedType,
             amenities:     req.body.features || [],
