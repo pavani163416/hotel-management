@@ -53,7 +53,7 @@ const Navbar = () => {
   const [requesting, setRequesting] = useState(false);
   const [requestSuccess, setRequestSuccess] = useState(false);
   const [assistanceOpen, setAssistanceOpen] = useState(false);
-  const [activeRoomNo, setActiveRoomNo]   = useState("");
+  const [activeRoomNo, setActiveRoomNo] = useState("");
   const [activeFloorNo, setActiveFloorNo] = useState("");
   const [hasActiveStay, setHasActiveStay] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -192,7 +192,7 @@ const Navbar = () => {
 
       // Build message with room and floor details if provided
       const parts: string[] = [];
-      if (data.roomNo)  parts.push(`Room: ${data.roomNo}`);
+      if (data.roomNo) parts.push(`Room: ${data.roomNo}`);
       if (data.floorNo) parts.push(`Floor: ${data.floorNo}`);
       parts.push(data.message);
       const fullMessage = parts.join(" | ");
@@ -240,7 +240,7 @@ const Navbar = () => {
     }
     const scope = { role: "customer", userId: user.email };
     socket.emit("registerNotifications", scope);
-    getNotifications(scope).then((res) => setNotifications(res?.data || [])).catch(() => {});
+    getNotifications(scope).then((res) => setNotifications(res?.data || [])).catch(() => { });
 
     const controller = new AbortController();
     // Check if user has an active (Confirmed/CheckedIn) booking from API
@@ -249,11 +249,11 @@ const Navbar = () => {
         const active = (res.data?.data || []).some((b: any) =>
           (b.status === "Confirmed" || b.status === "CheckedIn") && bookingIsActiveToday(b)
         );
-        setHasActiveStay(active || bookings.some((b) => (b.status === "Confirmed" || b.status === "CheckedIn") && bookingIsActiveToday(b)));
+        setHasActiveStay(active || (bookings || []).some((b: any) => (b.status === "Confirmed" || b.status === "CheckedIn") && bookingIsActiveToday(b)));
       })
       .catch((err) => {
         if (err.name === "CanceledError" || err.message === "canceled") return;
-        setHasActiveStay(bookings.some((b) => (b.status === "Confirmed" || b.status === "CheckedIn") && bookingIsActiveToday(b)));
+        setHasActiveStay((bookings || []).some((b: any) => (b.status === "Confirmed" || b.status === "CheckedIn") && bookingIsActiveToday(b)));
       });
 
     const onNotification = (data: NotificationItem) => {
@@ -270,10 +270,10 @@ const Navbar = () => {
   const openNotification = (n: NotificationItem) => {
     if (!n.isRead) {
       setNotifications((prev) => prev.map((item) => item._id === n._id ? { ...item, isRead: true } : item));
-      markNotificationRead(n._id).catch(() => {});
+      markNotificationRead(n._id).catch(() => { });
     }
     setShowNotifications(false);
-    
+
     const msg = n.message.toLowerCase();
     if (n.type === "booking" || msg.includes("booking") || msg.includes("confirm") || msg.includes("cancel")) {
       navigate("/history");
@@ -283,11 +283,11 @@ const Navbar = () => {
   return (
     <header className="sticky top-0 z-40 bg-background/85 backdrop-blur-md border-b border-border">
       <div className="container flex items-center justify-between h-16">
-        
+
         {/* Logo (Acts as menu toggle on mobile, normal link on desktop) */}
         <div className="flex items-center">
           {/* Mobile Logo Button (opens menu drawer) */}
-          <button 
+          <button
             ref={mobileLogoRef}
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="flex items-center gap-2 font-display font-bold text-lg text-primary md:hidden min-h-[44px] outline-none"
@@ -337,7 +337,7 @@ const Navbar = () => {
           >
             <Heart className="w-5 h-5 text-muted-foreground" />
           </button>
-          
+
           {user ? (
             <>
               {/* Notifications */}
@@ -416,21 +416,21 @@ const Navbar = () => {
                       if (!hasActiveStay) return;
                       if (user?.email) {
                         try {
-                           const bRes = await api.get(`/bookings?guestEmail=${encodeURIComponent(user.email)}&limit=${DEFAULT_PAGINATION_LIMIT}`);
-                           const apiBookings: any[] = bRes.data?.data || [];
-                           const confirmed = apiBookings.find((b: any) => b.status === "Confirmed") || apiBookings[0];
-                           if (confirmed?.room?.roomNumber) {
-                             setActiveRoomNo(confirmed.room.roomNumber);
-                             const match = confirmed.room.roomNumber.match(/(\d+)/);
-                             const roomNum = match ? match[1] : "";
-                             setActiveFloorNo(roomNum.length >= 3 ? roomNum[0] : "");
-                           } else {
-                             setActiveRoomNo("");
-                             setActiveFloorNo("");
-                           }
+                          const bRes = await api.get(`/bookings?guestEmail=${encodeURIComponent(user.email)}&limit=${DEFAULT_PAGINATION_LIMIT}`);
+                          const apiBookings: any[] = bRes.data?.data || [];
+                          const confirmed = apiBookings.find((b: any) => b.status === "Confirmed") || apiBookings[0];
+                          if (confirmed?.room?.roomNumber) {
+                            setActiveRoomNo(confirmed.room.roomNumber);
+                            const match = confirmed.room.roomNumber.match(/(\d+)/);
+                            const roomNum = match ? match[1] : "";
+                            setActiveFloorNo(roomNum.length >= 3 ? roomNum[0] : "");
+                          } else {
+                            setActiveRoomNo("");
+                            setActiveFloorNo("");
+                          }
                         } catch {
-                           setActiveRoomNo("");
-                           setActiveFloorNo("");
+                          setActiveRoomNo("");
+                          setActiveFloorNo("");
                         }
                       }
                       setAssistanceOpen(true);
@@ -458,18 +458,38 @@ const Navbar = () => {
             <>
               {/* Sign In / Sign Up Buttons (responsive for mobile & desktop) */}
               <div className="flex items-center gap-1.5 md:gap-2">
+                {/* Desktop Buttons */}
                 <button
                   onClick={() => openAuth("signin")}
-                  className="px-3 py-1.5 md:px-5 md:py-2 min-h-[36px] md:min-h-[44px] text-xs md:text-sm font-semibold rounded-lg text-primary hover:bg-secondary transition-base"
+                  className="hidden md:block px-3 py-1.5 md:px-5 md:py-2 min-h-[36px] md:min-h-[44px] text-xs md:text-sm font-semibold rounded-lg text-primary hover:bg-secondary transition-base"
                 >
                   Sign In
                 </button>
                 <button
                   onClick={() => openAuth("signup")}
-                  className="px-3 py-1.5 md:px-5 md:py-2 min-h-[36px] md:min-h-[44px] text-xs md:text-sm font-semibold rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-base"
+                  className="hidden md:block px-3 py-1.5 md:px-5 md:py-2 min-h-[36px] md:min-h-[44px] text-xs md:text-sm font-semibold rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-base"
                 >
                   Sign Up
                 </button>
+
+                {/* Mobile Dropdown */}
+                <div className="md:hidden">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button className="flex items-center justify-center w-[44px] h-[44px] rounded-full hover:bg-accent/5 transition-base border border-transparent hover:border-border outline-none">
+                        <UserCircle className="w-6 h-6 text-muted-foreground" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-48">
+                      <DropdownMenuItem onClick={() => openAuth("signin")} className="min-h-[44px] cursor-pointer font-medium">
+                        Sign In
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => openAuth("signup")} className="min-h-[44px] cursor-pointer font-medium">
+                        Sign Up
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               </div>
             </>
           )}
@@ -480,11 +500,11 @@ const Navbar = () => {
       {mobileMenuOpen && (
         <>
           {/* Backdrop below the header */}
-          <div 
+          <div
             className="fixed inset-x-0 bottom-0 top-16 z-40 bg-black/20 backdrop-blur-sm md:hidden"
             onClick={() => setMobileMenuOpen(false)}
           />
-          <div 
+          <div
             ref={mobileMenuRef}
             className="absolute top-16 left-0 right-0 z-50 bg-background border-b border-border shadow-luxe md:hidden flex flex-col py-4 px-6 gap-2 max-h-[80dvh] overflow-y-auto"
           >
@@ -551,7 +571,7 @@ const Navbar = () => {
             )}
 
             <div className="my-1 h-px bg-border/50" />
-            
+
             <div className="px-4 py-3 min-h-[44px] flex items-center justify-between">
               <span className="text-base font-semibold text-muted-foreground">Currency</span>
               <CurrencySwitcher />
