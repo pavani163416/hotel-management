@@ -155,7 +155,7 @@ const Hotels = () => {
             )}
             <div className="rounded-xl border border-border overflow-hidden bg-card">
               <div className="h-60 relative">
-                <HotelMap hotels={filtered} onHotelClick={(id) => nav(`/hotel/${id}`)} />
+                <HotelMap key="sidebar-map" hotels={filtered} onHotelClick={(id) => nav(`/hotel/${id}`)} />
               </div>
               <button onClick={() => setMapOpen(true)} className="w-full flex items-center justify-center gap-2 py-3 text-xs font-semibold text-primary border-t border-border hover:bg-secondary transition-base">
                 <Maximize2 className="w-3.5 h-3.5" /> Explore Map
@@ -338,8 +338,8 @@ const Hotels = () => {
                 <X className="w-4 h-4 text-primary" />
               </button>
             </div>
-            <div className="flex-1">
-              <HotelMap hotels={filtered} onHotelClick={(id) => { setMapOpen(false); nav(`/hotel/${id}`); }} />
+            <div className="flex-1 min-h-0">
+              <HotelMap key={`modal-map-${mapOpen}`} hotels={filtered} onHotelClick={(id) => { setMapOpen(false); nav(`/hotel/${id}`); }} />
             </div>
           </div>
         </div>
