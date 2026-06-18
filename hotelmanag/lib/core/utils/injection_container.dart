@@ -16,8 +16,7 @@ import '../providers/booking_provider.dart';
 import '../providers/notification_provider.dart';
 import '../providers/promo_provider.dart';
 import '../providers/favorites_provider.dart';
-import '../../features/booking/data/services/payment_service.dart';
-import '../../features/booking/data/services/booking_service.dart';
+
 
 final sl = GetIt.instance;
 

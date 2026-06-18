@@ -24,8 +24,8 @@ import 'package:google_fonts/google_fonts.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // Prevent Google Fonts from fetching over the network — use cached/bundled fonts only
-  GoogleFonts.config.allowRuntimeFetching = false;
+  // Allow Google Fonts to fetch at runtime if not bundled — prevents startup crash
+  GoogleFonts.config.allowRuntimeFetching = true;
 
   try {
     if (Firebase.apps.isEmpty) {

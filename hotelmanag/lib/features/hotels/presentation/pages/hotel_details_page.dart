@@ -43,6 +43,13 @@ class _HotelDetailsPageState extends State<HotelDetailsPage>
   late TabController _tabController;
   int _currentMobileImageIndex = 0;
 
+  // Room filter state
+  int _capacityFilter = 1;
+  String _bedFilter = 'any';
+  String _roomSort = 'default';
+  bool _breakfastFilter = false;
+  bool _cancellationFilter = false;
+
   final _reviewNameController = TextEditingController();
   final _reviewCommentController = TextEditingController();
   int _reviewRating = 0;
@@ -609,18 +616,26 @@ class _HotelDetailsPageState extends State<HotelDetailsPage>
       decoration: const BoxDecoration(
         border: Border(bottom: BorderSide(color: AppTheme.mutedColor)),
       ),
-      child: TabBar(
-        controller: _tabController,
-        labelColor: AppTheme.primaryColor,
-        unselectedLabelColor: AppTheme.primaryColor.withOpacity(0.5),
-        indicatorColor: AppTheme.accentColor,
-        indicatorWeight: 3,
-        labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-        tabs: [
-          const Tab(text: 'Rooms'),
-          const Tab(text: 'Amenities'),
-          Tab(text: 'Reviews (${hotel.reviews.length})'),
-        ],
+      child: Scrollbar(
+        thumbVisibility: true,
+        trackVisibility: true,
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: TabBar(
+            isScrollable: true,
+            controller: _tabController,
+            labelColor: AppTheme.primaryColor,
+            unselectedLabelColor: AppTheme.primaryColor.withOpacity(0.5),
+            indicatorColor: AppTheme.accentColor,
+            indicatorWeight: 3,
+            labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+            tabs: [
+              const Tab(text: 'Rooms'),
+              const Tab(text: 'Amenities'),
+              Tab(text: 'Reviews (${hotel.reviews.length})'),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -705,7 +720,7 @@ class _HotelDetailsPageState extends State<HotelDetailsPage>
       );
     }
 
-    final roomList = hotel.rooms.map((room) {
+    var roomList = hotel.rooms.map((room) {
       double priceFactor = hotel.pricePerNight > 0
           ? room.price / hotel.pricePerNight
           : 1.0;
@@ -715,11 +730,26 @@ class _HotelDetailsPageState extends State<HotelDetailsPage>
         isSoldOut: room.available == 0,
         availableCount: room.available,
       );
+    }).where((row) {
+      if (row.room.capacity < _capacityFilter) return false;
+      if (_bedFilter != 'any' && !row.room.bed.toLowerCase().contains(_bedFilter)) return false;
+      if (_breakfastFilter && !row.room.features.any((f) => f.toLowerCase().contains('breakfast'))) return false;
+      if (_cancellationFilter && !row.room.features.any((f) => f.toLowerCase().contains('cancel'))) return false;
+      return true;
     }).toList();
+
+    if (_roomSort == 'price-asc') {
+      roomList.sort((a, b) => a.price.compareTo(b.price));
+    } else if (_roomSort == 'price-desc') {
+      roomList.sort((a, b) => b.price.compareTo(a.price));
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Room Filters — matching website design
+        _buildRoomFilters(isDark),
+        const SizedBox(height: 16),
         Text(
           'Select Your Room',
           style: TextStyle(
@@ -1348,6 +1378,167 @@ class _HotelDetailsPageState extends State<HotelDetailsPage>
     );
   }
 
+  Widget _buildRoomFilters(bool isDark) {
+    final cardColor = isDark ? const Color(0xFF253040) : Colors.white;
+    final borderColor = isDark ? Colors.white10 : AppTheme.mutedColor;
+
+    Widget filterChip(String label, bool active, VoidCallback onTap) {
+      return GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: active
+                ? AppTheme.primaryColor.withOpacity(0.12)
+                : (isDark ? const Color(0xFF19222E) : const Color(0xFFF7F7F7)),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: active ? AppTheme.primaryColor : borderColor,
+            ),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: active
+                  ? AppTheme.primaryColor
+                  : (isDark ? Colors.grey[400] : Colors.grey[600]),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: borderColor),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Filter Rooms',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 10),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                // Capacity
+                _buildFilterDropdown(
+                  isDark: isDark,
+                  icon: LucideIcons.users,
+                  value: _capacityFilter == 1
+                      ? 'Any Capacity'
+                      : '$_capacityFilter+ Guests',
+                  items: const ['Any Capacity', '2+ Guests', '3+ Guests', '4+ Guests'],
+                  onSelected: (val) => setState(() {
+                    _capacityFilter = val == 'Any Capacity' ? 1 : int.parse(val[0]);
+                  }),
+                ),
+                const SizedBox(width: 8),
+                // Bed type
+                _buildFilterDropdown(
+                  isDark: isDark,
+                  icon: LucideIcons.bedDouble,
+                  value: _bedFilter == 'any'
+                      ? 'Any Bed'
+                      : '${_bedFilter[0].toUpperCase()}${_bedFilter.substring(1)} Bed',
+                  items: const ['Any Bed', 'King Bed', 'Queen Bed', 'Twin Beds'],
+                  onSelected: (val) => setState(() {
+                    _bedFilter = val == 'Any Bed'
+                        ? 'any'
+                        : val.split(' ')[0].toLowerCase();
+                  }),
+                ),
+                const SizedBox(width: 8),
+                // Sort
+                _buildFilterDropdown(
+                  isDark: isDark,
+                  icon: LucideIcons.arrowUpDown,
+                  value: _roomSort == 'default'
+                      ? 'Default Order'
+                      : (_roomSort == 'price-asc'
+                          ? 'Price: Low → High'
+                          : 'Price: High → Low'),
+                  items: const ['Default Order', 'Price: Low → High', 'Price: High → Low'],
+                  onSelected: (val) => setState(() {
+                    if (val == 'Default Order') _roomSort = 'default';
+                    else if (val == 'Price: Low → High') _roomSort = 'price-asc';
+                    else _roomSort = 'price-desc';
+                  }),
+                ),
+                const SizedBox(width: 12),
+                filterChip('🍳 Breakfast', _breakfastFilter,
+                    () => setState(() => _breakfastFilter = !_breakfastFilter)),
+                const SizedBox(width: 8),
+                filterChip('✓ Free Cancel', _cancellationFilter,
+                    () => setState(() => _cancellationFilter = !_cancellationFilter)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFilterDropdown({
+    required bool isDark,
+    required IconData icon,
+    required String value,
+    required List<String> items,
+    required ValueChanged<String> onSelected,
+  }) {
+    return PopupMenuButton<String>(
+      onSelected: onSelected,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      itemBuilder: (_) => items
+          .map((item) => PopupMenuItem(
+                value: item,
+                child: Text(item, style: const TextStyle(fontSize: 13)),
+              ))
+          .toList(),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF19222E) : const Color(0xFFF7F7F7),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isDark ? Colors.white10 : AppTheme.mutedColor,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 13, color: isDark ? Colors.grey[400] : Colors.grey[600]),
+            const SizedBox(width: 6),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: isDark ? Colors.grey[300] : Colors.grey[700],
+              ),
+            ),
+            const SizedBox(width: 4),
+            Icon(LucideIcons.chevronDown, size: 12,
+                color: isDark ? Colors.grey[400] : Colors.grey[600]),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildAmenitiesTab(HotelEntity hotel) {
     final isDark = Theme.of(context).colorScheme.brightness == Brightness.dark;
     final amenities = hotel.amenities.isNotEmpty
@@ -1360,19 +1551,12 @@ class _HotelDetailsPageState extends State<HotelDetailsPage>
             'Restaurant',
             'Airport Shuttle',
           ];
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        mainAxisSpacing: 12,
-        crossAxisSpacing: 12,
-        childAspectRatio: 3,
-      ),
-      itemCount: amenities.length,
-      itemBuilder: (context, index) {
-        return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: amenities.map((amenity) => Container(
+          margin: const EdgeInsets.only(right: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
             color: isDark ? const Color(0xFF253040) : Colors.white,
             border: Border.all(
@@ -1381,15 +1565,12 @@ class _HotelDetailsPageState extends State<HotelDetailsPage>
             borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(
-                LucideIcons.check,
-                size: 16,
-                color: AppTheme.accentColor,
-              ),
+              const Icon(LucideIcons.check, size: 16, color: AppTheme.accentColor),
               const SizedBox(width: 8),
               Text(
-                amenities[index],
+                amenity,
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
@@ -1398,8 +1579,8 @@ class _HotelDetailsPageState extends State<HotelDetailsPage>
               ),
             ],
           ),
-        );
-      },
+        )).toList(),
+      ),
     );
   }
 
@@ -1672,20 +1853,15 @@ class _HotelDetailsPageState extends State<HotelDetailsPage>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildAISummaryCard(hotel),
-                      hotel.reviews.isEmpty
-                          ? _buildEmptyReviewsPlaceholder(context)
-                          : Column(
-                              children: hotel.reviews
-                                  .map(
-                                    (r) => Padding(
-                                      padding: const EdgeInsets.only(
-                                        bottom: 16.0,
-                                      ),
-                                      child: ReviewCard(review: r),
-                                    ),
-                                  )
-                                  .toList(),
+                      if (hotel.reviews.isEmpty)
+                        _buildEmptyReviewsPlaceholder(context)
+                      else
+                        ...hotel.reviews
+                            .map(
+                              (r) => Padding(
+                                padding: const EdgeInsets.only(bottom: 16.0),
+                                child: ReviewCard(review: r),
+                              ),
                             ),
                     ],
                   ),
@@ -1699,8 +1875,6 @@ class _HotelDetailsPageState extends State<HotelDetailsPage>
               children: [
                 _buildWriteReviewCard(hotel),
                 const SizedBox(height: 32),
-                _buildAISummaryCard(hotel),
-                const SizedBox(height: 16),
                 Text(
                   'Guest Reviews (${hotel.reviews.length})',
                   style: TextStyle(
