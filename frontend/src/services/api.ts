@@ -160,7 +160,6 @@ export const getHotelById = async (hotelId: string) => {
 // ════════════════════════════════════════════════════════
 export const getHotelHalls = (hotelId: string) => api.get(`/hotels/${hotelId}/halls`);
 export const bookHotelHall = (hallId: string, data: any) => api.post(`/hotels/halls/${hallId}/book`, data);
-export const getMyHallBookings = () => api.get(`/hotels/halls/my-bookings`);
 
 export const bookHotelHallOld = async (
   hotelId: string,

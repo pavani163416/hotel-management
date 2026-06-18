@@ -1,5 +1,5 @@
 import express from "express";
-import { requestHallBooking, getMyHallBookings } from "../controllers/hallBookingController.js";
+import { requestHallBooking, getMyHallBookings, cancelMyHallBooking } from "../controllers/hallBookingController.js";
 import { protect } from "../middleware/auth.js";
 
 const router = express.Router();
