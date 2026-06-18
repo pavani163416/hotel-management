@@ -72,8 +72,10 @@ class _HotelsPageState extends State<HotelsPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildTopDeals(context, isWide),
-                        const SizedBox(height: 32),
+                        if (context.watch<HotelProvider>().searchQuery.trim().isEmpty) ...[
+                          _buildTopDeals(context, isWide),
+                          const SizedBox(height: 32),
+                        ],
                         _buildMainListHeader(context, isWide),
                         const SizedBox(height: 24),
                         _buildMainList(context, isWide),

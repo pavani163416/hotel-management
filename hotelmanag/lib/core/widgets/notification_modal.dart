@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
+import 'package:go_router/go_router.dart';
 import '../theme/app_theme.dart';
 import '../providers/notification_provider.dart';
 import '../providers/booking_provider.dart';
@@ -31,6 +33,121 @@ class _NotificationModalState extends State<NotificationModal> {
     if (diff.inMinutes < 60) return '${diff.inMinutes}m Ago';
     if (diff.inHours < 24) return '${diff.inHours}h Ago';
     return '${diff.inDays}d Ago';
+  }
+
+  void _showNotificationDetails(BuildContext context, NotificationItem item) {
+    // Mark as read immediately on open
+    context.read<NotificationProvider>().markAllAsRead([item]);
+
+    final isDark = Theme.of(context).colorScheme.brightness == Brightness.dark;
+    final dialogBg = isDark ? const Color(0xFF253040) : Colors.white;
+    final titleColor = isDark ? const Color(0xFFEAE5DC) : AppTheme.primaryColor;
+    final bodyColor = isDark ? Colors.grey[350] : Colors.grey[800];
+
+    IconData icon;
+    Color iconColor;
+    if (item.type == 'Offer') {
+      icon = Icons.local_offer_rounded;
+      iconColor = const Color(0xFFC0A080);
+    } else if (item.isCancelled) {
+      icon = Icons.cancel_outlined;
+      iconColor = Colors.redAccent;
+    } else {
+      icon = Icons.check_circle_outline_rounded;
+      iconColor = Colors.green;
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: dialogBg,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+          side: BorderSide(
+            color: isDark ? Colors.white10 : AppTheme.mutedColor,
+            width: 1,
+          ),
+        ),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: iconColor.withOpacity(0.12),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, size: 20, color: iconColor),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                '${item.type} Notification',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: titleColor,
+                  fontFamily: 'Serif',
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              item.title,
+              style: TextStyle(
+                fontSize: 14,
+                color: bodyColor,
+                height: 1.4,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Received: ${DateFormat('MMM dd, yyyy \'at\' hh:mm a').format(item.timestamp)}',
+              style: TextStyle(
+                fontSize: 11,
+                color: Colors.grey[500],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Close',
+              style: TextStyle(
+                color: isDark ? Colors.grey[400] : Colors.grey[600],
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          if (item.type == 'Booking')
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context); // Close dialog
+                Navigator.pop(context); // Close notification modal
+                context.go('/history'); // Go to bookings history
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryColor,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                elevation: 0,
+              ),
+              child: const Text(
+                'View Bookings',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -109,14 +226,7 @@ class _NotificationModalState extends State<NotificationModal> {
                                           ),
                                         ),
                                       ),
-                                    Text(
-                                      '$unreadCount unread',
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        color: subColor,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
+                                    const SizedBox.shrink(),
                                     TextButton(
                                       style: TextButton.styleFrom(
                                         padding: const EdgeInsets.symmetric(
@@ -228,16 +338,7 @@ class _NotificationModalState extends State<NotificationModal> {
                         }
 
                         return InkWell(
-                          onTap: () {
-                            provider.markAllAsRead([item]);
-                            Navigator.pop(context);
-                            if (item.type == 'Offer') {
-                              // Could go to offers, default to profile for now
-                            } else {
-                              // Default booking
-                              // context.push('/profile'); // if there's a booking page
-                            }
-                          },
+                          onTap: () => _showNotificationDetails(context, item),
                           child: Container(
                             color: cardColor,
                           padding: const EdgeInsets.symmetric(
