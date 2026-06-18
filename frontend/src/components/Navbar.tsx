@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
-import { Bell, Hotel, UserCircle, LogOut, Mail, CheckCircle2, Building2, Heart, Menu, X } from "lucide-react";
+import { Bell, Hotel, UserCircle, LogOut, Mail, CheckCircle2, Building2, Heart, Menu, X, PackageSearch } from "lucide-react";
 import { useBooking } from "@/context/BookingContext";
 import { useWishlist } from "@/context/WishlistContext";
 import { AuthModal } from "@/components/AuthModal";
@@ -409,6 +409,21 @@ const Navbar = () => {
                     <DropdownMenuItem asChild>
                       <Link to="/halls" className="w-full cursor-pointer min-h-[44px] flex items-center">
                         <Building2 className="w-4 h-4 mr-2" /> Book a Hall
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/history" className="flex items-center gap-3 px-4 py-2.5 text-sm text-text-primary hover:bg-surface-2 transition-colors">
+                        <Calendar className="w-4 h-4 text-text-secondary" /> Bookings
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/my-waitlists" className="flex items-center gap-3 px-4 py-2.5 text-sm text-text-primary hover:bg-surface-2 transition-colors">
+                        <Clock className="w-4 h-4 text-text-secondary" /> My Waitlists
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/lost-found" className="flex items-center gap-3 px-4 py-2.5 text-sm text-text-primary hover:bg-surface-2 transition-colors">
+                        <PackageSearch className="w-4 h-4 text-text-secondary" /> Lost & Found
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>

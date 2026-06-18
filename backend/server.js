@@ -39,9 +39,13 @@ import roomTypeRoutes from "./routes/roomTypeRoutes.js";
 import maintenanceRoutes from "./routes/maintenanceRoutes.js";
 import publicSupportRoutes from "./routes/publicSupportRoutes.js";
 import propertyOwnerRoutes from "./routes/propertyOwnerRoutes.js";
+import ownerAnalyticsRoutes from "./routes/ownerAnalyticsRoutes.js";
 import sitemapRoutes    from "./routes/sitemapRoutes.js";
 import newsletterRoutes from "./routes/newsletterRoutes.js";
 import chatRoutes       from "./routes/chatRoutes.js";
+import waitlistRoutes          from "./routes/waitlistRoutes.js";
+import lostFoundRoutes from "./routes/lostFoundRoutes.js";
+import tripPlanRoutes from "./routes/tripPlanRoutes.js";
 import errorHandler     from "./middleware/errorHandler.js";
 import csrfProtection  from "./middleware/csrfProtection.js";
 import { swaggerCspMiddleware } from "./middleware/csp.js";
@@ -635,10 +639,15 @@ app.use("/api/assistance",    assistanceRoutes);
 app.use("/api/room-types",    roomTypeRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/maintenance",   maintenanceRoutes);
+app.use("/api/admin",         adminRoutes);
 app.use("/api",               publicSupportRoutes);
+app.use("/api/owners/analytics", ownerAnalyticsRoutes);
 app.use("/api/owners",        propertyOwnerRoutes);
 app.use("/api/newsletter",    newsletterRoutes);
 app.use("/api/chat",          chatRoutes);
+app.use("/api/waitlist",      waitlistRoutes);
+app.use("/api/lost-found",    lostFoundRoutes);
+app.use("/api/trip-plans",    tripPlanRoutes);
 
 // ── CSP Violation Report endpoint ────────────────────────
 // Browsers send JSON violation reports here when CSP blocks something.
@@ -838,3 +847,4 @@ process.on("uncaughtException", (err) => {
 });
 
 export default app;
+// Trigger restart after port clean

@@ -34,6 +34,9 @@ import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 import Notifications from "./pages/Notifications";
 import Wishlist from "./pages/Wishlist";
+import MyWaitlists from "./pages/MyWaitlists";
+import LostFound from "./pages/LostFound";
+import TripPlanner from "./pages/TripPlanner";
 
 // ── Footer / Informational pages ─────────────────────────
 import About from "./pages/About";
@@ -64,7 +67,6 @@ const App = () => (
             <Route path="/" element={<Home />} />
             <Route path="/hotels" element={<Hotels />} />
             <Route path="/hotel/:id" element={<HotelDetails />} />
-            <Route path="/wishlist" element={<Wishlist />} />
 
             {/* ── Informational / Footer pages ────── */}
             <Route path="/about" element={<About />} />
@@ -96,6 +98,10 @@ const App = () => (
             } />
 
             {/* ── These handle their own inline auth UI ─ */}
+            <Route path="/wishlist" element={<Wishlist />} />
+            <Route path="/my-waitlists" element={<MyWaitlists />} />
+            <Route path="/lost-found" element={<LostFound />} />
+            <Route path="/trip-planner/:bookingId" element={<TripPlanner />} />
             <Route path="/history" element={<History />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/halls" element={<Halls />} />
