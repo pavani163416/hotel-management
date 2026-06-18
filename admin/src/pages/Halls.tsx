@@ -440,7 +440,7 @@ export default function Halls() {
               </tr>
             </thead>
             <tbody>
-              {events.sort((a, b) => a.date.localeCompare(b.date)).map((ev) => (
+              {[...events].sort((a, b) => a.date.localeCompare(b.date)).map((ev) => (
                 <tr key={ev.id} className="transition-colors"
                   style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}
                   onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.03)"}

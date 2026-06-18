@@ -57,7 +57,7 @@ export default function Sidebar() {
             background: "linear-gradient(135deg, rgba(212,168,67,0.2) 0%, rgba(212,168,67,0.08) 100%)",
             border: "1px solid rgba(212,168,67,0.3)",
           }}>
-          <Building2 className="w-4 h-4 text-gold" />
+          <img src="/logo.png" alt="Logo" className="w-5 h-5 object-contain" />
         </div>
         <div>
           <p className="text-bright font-bold text-sm leading-none">AthithiGriha</p>

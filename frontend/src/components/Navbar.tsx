@@ -302,7 +302,7 @@ const Navbar = () => {
             aria-label="Toggle menu"
           >
             <span className="grid place-items-center w-8 h-8 rounded-lg bg-primary text-primary-foreground shrink-0">
-              <Hotel className="w-4 h-4" />
+              <img src="/logo.png" alt="Logo" className="w-5 h-5 object-contain invert" />
             </span>
             <span>AthithiGriha</span>
           </button>
@@ -310,7 +310,7 @@ const Navbar = () => {
           {/* Desktop Logo Link */}
           <Link to="/" className="hidden md:flex items-center justify-start gap-2 font-display font-bold text-lg text-primary md:w-auto">
             <span className="grid place-items-center w-8 h-8 rounded-lg bg-primary text-primary-foreground shrink-0">
-              <Hotel className="w-4 h-4" />
+              <img src="/logo.png" alt="Logo" className="w-5 h-5 object-contain invert" />
             </span>
             <span>AthithiGriha</span>
           </Link>

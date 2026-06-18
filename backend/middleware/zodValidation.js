@@ -178,6 +178,9 @@ const createHotel = z.object({
   totalRooms:    positiveInt.optional(),
   status:        z.enum(["Active", "Inactive", "Maintenance"]).optional(),
   isActive:      z.boolean().optional(),
+  isDeal:        z.boolean().optional(),
+  discountPct:   z.number().min(0).max(100).optional(),
+  originalPrice: z.number().nullable().optional(),
 }).strict();
 
 const updateHotel = z.object({
@@ -209,6 +212,9 @@ const updateHotel = z.object({
   totalRooms:    positiveInt.optional(),
   status:        z.enum(["Active", "Inactive", "Maintenance"]).optional(),
   isActive:      z.boolean().optional(),
+  isDeal:        z.boolean().optional(),
+  discountPct:   z.number().min(0).max(100).optional(),
+  originalPrice: z.number().nullable().optional(),
 }).strict();
 
 // ── Room Schemas ──────────────────────────────────────────────────────────────
