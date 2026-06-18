@@ -13,7 +13,7 @@ import Guest      from "../models/Guest.js";
 import Hotel      from "../models/Hotel.js";
 import AdditionalGuest from "../models/AdditionalGuest.js";
 import PriceRequest    from "../models/PriceRequest.js";
-import { getIO } from "../socket.js";
+import { getIo } from "../utils/notificationService.js";
 import FunctionHall    from "../models/FunctionHall.js";
 import { sendNotification } from "../utils/notificationService.js";
 import logger from "../utils/logger.js";
@@ -629,7 +629,7 @@ export const createManagerHall = async (req, res, next) => {
       hotelId: mongoose.Types.ObjectId.isValid(hId) ? hId : (req.scopedHotelObjectId || null),
       hotelName: req.body.hotelName || req.scopedHotelName,
     });
-    const io = getIO();
+    const io = getIo();
     if (io) {
       io.emit("hallsUpdated", { hotelId: hId });
     }
