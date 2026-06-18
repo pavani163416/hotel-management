@@ -30,9 +30,10 @@ function normalise(b: any) {
     nights:     b.nights || "",
     total:      b.total ?? b.totalAmount ?? 0,
     status:     b.status || "Confirmed",
-    guestName:  b.guest?.name || b.guestSnapshot?.name || "",
-    roomName:   b.room?.name  || b.room?.roomNumber || b.room?.type || "",
+    guestName:  b.guest?.name || b.guestSnapshot?.name || b.guestName || "",
+    roomName:   b.room?.name  || b.room?.roomNumber || b.room?.type || b.roomName || "",
     createdAt:  b.createdAt || null,
+    isHallBooking: b.isHallBooking || false,
     raw:        b,
   };
 }

@@ -681,9 +681,9 @@ export const updateHallBookingStatus = async (req, res, next) => {
     await hall.save();
 
     // Send notification if user email is available
-    if (booking.organizerEmail && (status === "Confirmed" || status === "Cancelled")) {
+    if ((booking.organizerEmail || booking.userId) && (status === "Confirmed" || status === "Cancelled")) {
       sendNotification({
-        userId: booking.organizerEmail,
+        userId: booking.userId || booking.organizerEmail,
         role: "customer",
         message: `Your hall booking request for ${hall.name} on ${new Date(booking.date).toLocaleDateString()} has been ${status.toLowerCase()}.`,
         type: "booking",

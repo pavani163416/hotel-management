@@ -227,6 +227,12 @@ export const bookHotelHall = async (req, res, next) => {
       type: "booking",
     }).catch(() => {});
 
+    await sendNotification({
+      role: "admin",
+      message: `New function hall booking request for ${hall.name} at ${hotel.name}.`,
+      type: "booking",
+    }).catch(() => {});
+
     res.status(201).json({ success: true, message: "Function hall booking request submitted", data: hall });
   } catch (error) {
     next(error);
