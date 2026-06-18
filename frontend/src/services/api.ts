@@ -193,6 +193,16 @@ export const getMyBookings = async (params?: { page?: number; limit?: number }) 
   return data;
 };
 
+export const getMyHallBookings = async () => {
+  const { data } = await api.get("/halls/my-requests");
+  return data;
+};
+
+export const cancelHallBooking = async (hallId: string, bookingId: string, reason?: string) => {
+  const { data } = await api.patch(`/halls/${hallId}/bookings/${bookingId}/cancel`, { reason });
+  return data;
+};
+
 /** GET /api/bookings?guestEmail=... — fetch bookings for a guest */
 export const getBookingsByEmail = async (email: string) => {
   const { data } = await api.get("/bookings", { params: { guestEmail: email } });

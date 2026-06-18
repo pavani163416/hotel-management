@@ -183,6 +183,14 @@ export async function countAvailableRooms({
       }
     }
 
+    if (!useInventory && hotel && hotel.rooms && hotel.rooms.length > 0) {
+      const embeddedRoom = hotel.rooms.find(r => r.id === roomTypeId || r.roomTypeId === roomTypeId);
+      if (embeddedRoom && typeof embeddedRoom.available === "number") {
+        totalCapacity = embeddedRoom.available;
+        useInventory = true;
+      }
+    }
+
     if (useInventory) {
       const activeBookingsCount = await Booking.countDocuments({
         $or: [

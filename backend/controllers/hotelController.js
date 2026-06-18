@@ -592,7 +592,7 @@ export const addRoomToHotel = async (req, res, next) => {
           $set: {
             type,
             description:   req.body.description || `${req.body.name} at ${hotel.name}`,
-            pricePerNight: req.body.pricePerNight || req.body.price || 0,
+            pricePerNight: Math.max(1, req.body.pricePerNight || req.body.price || 1),
             capacity:      req.body.capacity || 2,
             bedType,
             amenities:     req.body.features || [],
