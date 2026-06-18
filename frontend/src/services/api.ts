@@ -53,6 +53,9 @@ api.interceptors.response.use(
       localStorage.removeItem("luxe_user");
       localStorage.removeItem("luxe_bookings");
       window.dispatchEvent(new Event("luxe_logout"));
+      if (window.location.pathname !== '/') {
+        window.location.href = '/';
+      }
     }
 
     const message =

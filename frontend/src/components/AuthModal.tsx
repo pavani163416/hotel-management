@@ -590,11 +590,9 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
     // the user object might be partially structured differently.
     await refreshUser();
 
-    const pendingRedirect = sessionStorage.getItem("redirectAfterLogin");
-    if (pendingRedirect) {
-      sessionStorage.removeItem("redirectAfterLogin");
-      navigate(pendingRedirect, { replace: true });
-    } else if ((d.role || "customer") === "owner") {
+    sessionStorage.removeItem("redirectAfterLogin");
+    
+    if ((d.role || "customer") === "owner") {
       navigate("/owner-portal", { replace: true });
     } else {
       navigate("/", { replace: true });

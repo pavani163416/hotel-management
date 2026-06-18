@@ -301,16 +301,16 @@ const Navbar = () => {
             className="flex items-center gap-2 font-display font-bold text-lg text-primary md:hidden min-h-[44px] outline-none"
             aria-label="Toggle menu"
           >
-            <span className="grid place-items-center w-10 h-10 shrink-0">
-              <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
+            <span className="grid place-items-center w-10 h-10 shrink-0 rounded-full overflow-hidden">
+              <img src="/logo.png" alt="Logo" className="w-full h-full object-cover" />
             </span>
             <span>AthithiGriha</span>
           </button>
 
           {/* Desktop Logo Link */}
           <Link to="/" className="hidden md:flex items-center justify-start gap-2 font-display font-bold text-lg text-primary md:w-auto">
-            <span className="grid place-items-center w-10 h-10 shrink-0">
-              <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
+            <span className="grid place-items-center w-10 h-10 shrink-0 rounded-full overflow-hidden">
+              <img src="/logo.png" alt="Logo" className="w-full h-full object-cover" />
             </span>
             <span>AthithiGriha</span>
           </Link>

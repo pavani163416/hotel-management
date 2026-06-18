@@ -52,8 +52,8 @@ export default function Sidebar() {
       {/* Logo */}
       <div className="flex items-center gap-3 px-5 py-5"
         style={{ borderBottom: theme === "light" ? "1px solid #cbd5e1" : "1px solid rgba(255,255,255,0.07)" }}>
-        <div className="w-10 h-10 shrink-0">
-          <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
+        <div className="w-8 h-8 rounded-full overflow-hidden shrink-0">
+          <img src="/logo.png" alt="Logo" className="w-full h-full object-cover" />
         </div>
         <div>
           <p className="text-bright font-bold text-sm leading-none">AthithiGriha</p>

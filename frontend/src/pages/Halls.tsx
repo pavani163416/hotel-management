@@ -4,6 +4,7 @@ import { Building2, Calendar, Clock, Users, Check, Loader2, ArrowRight, Mail, Us
 import Layout from "@/components/Layout";
 import { useBooking } from "@/context/BookingContext";
 import { getHotelHalls, bookHotelHall } from "@/services/api";
+import socket from "@/services/socket";
 import { AuthModal } from "@/components/AuthModal";
 import { toast } from "sonner";
 
@@ -78,7 +79,18 @@ const Halls = () => {
         setHallLoading(false);
       }
     };
+
     loadHalls();
+
+    const handleHallsUpdated = () => {
+      loadHalls();
+    };
+
+    socket.on("hallsUpdated", handleHallsUpdated);
+
+    return () => {
+      socket.off("hallsUpdated", handleHallsUpdated);
+    };
   }, [selectedHotelId]);
 
   const openAuth = (mode: "signin" | "signup") => {
