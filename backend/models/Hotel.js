@@ -40,6 +40,7 @@ const hotelSchema = new mongoose.Schema(
     discountPct:   { type: Number, default: 0 },
     isDeal:        { type: Boolean, default: false },
     type:          { type: String, enum: ["Hotel", "Resort", "Villa", "Suite"], default: "Hotel" },
+    category:      { type: String, enum: ["Beach", "Mountain", "City", "Desert", "Luxury", "General"], default: "General" },
     coords:        { type: [Number], default: [0, 0] },
     mapUrl:        { type: String, default: "" },
     amenities:     [String],
@@ -77,12 +78,14 @@ hotelSchema.index({
   state: "text",
   country: "text",
   type: "text",
+  category: "text",
   description: "text",
   amenities: "text"
 }, {
   weights: {
     name: 10,
     city: 5,
+    category: 5,
     state: 3,
     country: 2,
     type: 2,
