@@ -657,6 +657,23 @@ export const updateManagerHall = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
+// ── DELETE /api/manager/halls/:id ────────────────────────────
+export const deleteManagerHall = async (req, res, next) => {
+  try {
+    const hall = await FunctionHall.findById(req.params.id);
+    if (!hall) return res.status(404).json({ success: false, message: "Hall not found" });
+    if (req.manager?.role === "Manager" && hall.hotelStringId && hall.hotelStringId !== req.scopedHotelId)
+      return res.status(403).json({ success: false, message: "Unauthorized: This hall does not belong to your hotel." });
+    
+    await hall.deleteOne();
+    const io = getIo();
+    if (io) {
+      io.emit("hallsUpdated", { hotelId: hall.hotelStringId || hall.hotelId });
+    }
+    res.status(200).json({ success: true, message: "Hall deleted" });
+  } catch (err) { next(err); }
+};
+
 // ── PATCH /api/manager/halls/:hallId/bookings/:bookingId/status ──────────────
 export const updateHallBookingStatus = async (req, res, next) => {
   try {

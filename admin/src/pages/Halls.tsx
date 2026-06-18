@@ -7,7 +7,7 @@ import AdminLayout from "@/components/AdminLayout";
 import Topbar from "@/components/Topbar";
 import Modal from "@/components/Modal";
 import StatusBadge from "@/components/StatusBadge";
-import { getManagerHalls, createManagerHall, updateManagerHall, updateHallBookingStatus, getHotels } from "@/services/api";
+import { getManagerHalls, createManagerHall, updateManagerHall, deleteManagerHall, updateHallBookingStatus, getHotels } from "@/services/api";
 
 type HallEvent = {
   id: string;
@@ -183,6 +183,16 @@ export default function Halls() {
         setSuccess(false);
       }, 1000);
     } catch { /* silent */ }
+  };
+
+  const handleDeleteHallItem = async (hallId: string) => {
+    if (!window.confirm("Are you sure you want to delete this hall?")) return;
+    try {
+      await deleteManagerHall(hallId);
+      await loadHalls();
+    } catch {
+      alert("Failed to delete hall");
+    }
   };
 
   const handleDelete = async (eventId: string, hallId: string) => {
@@ -533,6 +543,11 @@ export default function Halls() {
                       <span className="font-semibold text-text-primary">₹{hall.pricePerHour}</span>
                     </div>
                   )}
+                </div>
+                <div className="pt-4 mt-auto border-t border-border flex justify-end">
+                  <button onClick={() => handleDeleteHallItem(hall._id)} className="flex items-center justify-center p-2 text-danger hover:bg-danger/10 rounded-lg transition-colors" title="Delete Hall">
+                    <Trash2 className="w-4 h-4 mr-2" /> <span className="text-sm font-semibold">Delete</span>
+                  </button>
                 </div>
               </div>
             ))}

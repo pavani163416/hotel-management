@@ -231,6 +231,7 @@ export const checkHotelAccess = (hotelId: string) =>
 export const getManagerHalls = (params?: { hotelId?: string }) => api.get("/manager/halls", { params });
 export const createManagerHall = (data: Record<string, any>) => api.post("/manager/halls", data);
 export const updateManagerHall = (id: string, data: Record<string, any>) => api.put(`/manager/halls/${id}`, data);
+export const deleteManagerHall = (id: string) => api.delete(`/manager/halls/${id}`);
 export const updateHallBookingStatus = (hallId: string, bookingId: string, status: string) => api.patch(`/manager/halls/${hallId}/bookings/${bookingId}/status`, { status });
 
 
