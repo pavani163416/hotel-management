@@ -12,22 +12,7 @@ import { useBookings } from "@/context/BookingsContext";
 import { getGuests as apiGetGuests, getGuestById as apiGetGuestById, API } from "@/services/api";
 import socket from "@/services/socket";
 
-const HOTEL_INITIALS_MAP: Record<string, string> = {
-  hdl: "Hôtel de Lumière", tas: "The Azure Skyline", cbr: "Coral Bay Resort",
-  apl: "Alpine Peak Lodge", tgm: "The Grand Metropolitan", scs: "Santorini Cliff Suites",
-};
-const HOTEL_LEGACY_MAP: Record<string, string> = {
-  h1: "Hôtel de Lumière", h2: "The Azure Skyline", h3: "Coral Bay Resort",
-  h4: "Alpine Peak Lodge", h5: "The Grand Metropolitan", h6: "Santorini Cliff Suites",
-};
 
-function resolvePreferredHotel(roomNumber: string): string {
-  if (!roomNumber) return "";
-  const prefix = roomNumber.split("-")[0]?.toLowerCase();
-  if (HOTEL_INITIALS_MAP[prefix]) return HOTEL_INITIALS_MAP[prefix];
-  const legacy = roomNumber.split("_")[0]?.toLowerCase();
-  return HOTEL_LEGACY_MAP[legacy] || "";
-}
 
 function normalizeGuestBooking(b: any) {
   const checkIn = b.checkIn ? new Date(b.checkIn) : null;
@@ -106,10 +91,7 @@ export default function Guests() {
         const latestBooking = bookingsList[0];
         // Use stored hotelName first, then resolve from room number
         const roomNum: string = latestBooking?.room?.roomNumber || latestBooking?.roomType?.name || "";
-        const preferredHotel =
-          latestBooking?.hotelName ||
-          resolvePreferredHotel(roomNum) ||
-          "—";
+        const preferredHotel = latestBooking?.hotelName || "—";
         return {
           id: g._id,
           name: g.name,

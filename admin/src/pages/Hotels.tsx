@@ -47,6 +47,18 @@ export default function Hotels() {
     "AC", "Smart TV", "Pet Friendly", "Family Friendly",
   ]);
 
+  // Allow admins to add a custom amenity string quickly
+  const addCustomAmenity = (custom: string) => {
+    const a = custom.trim();
+    if (!a) return;
+    if (!allAmenities.includes(a)) {
+      // mutate the array reference used for rendering (safe here)
+      (allAmenities as string[]).push(a);
+    }
+    // toggle it into the current form selection
+    if (!form.amenities.includes(a)) setForm({ ...form, amenities: [...form.amenities, a] });
+  };
+
   const [form, setForm] = useState({
     name: "", subtitle: "", location: "", country: "",
     pricePerNight: "500", status: "Active" as Hotel["status"],
@@ -969,6 +981,15 @@ export default function Hotels() {
                     {a}
                   </button>
                 ))}
+              </div>
+              <div className="mt-2 flex gap-2">
+                <input type="text" placeholder="Add custom amenity" id="customAmenityInput"
+                  className="flex-1 px-3 py-2.5 border border-border rounded-lg text-sm outline-none focus:border-primary"
+                />
+                <button type="button" onClick={() => { const el = document.getElementById("customAmenityInput") as HTMLInputElement | null; if (el) { addCustomAmenity(el.value); el.value = ""; } }}
+                  className="px-3 py-2.5 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-primary-dark transition-colors">
+                  Add
+                </button>
               </div>
               {form.amenities.length > 0 && (
                 <p className="text-xs text-muted mt-1.5">{form.amenities.length} selected</p>

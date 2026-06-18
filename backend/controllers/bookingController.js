@@ -364,7 +364,7 @@ export const createBooking = async (req, res, next) => {
           paymentMethod: paymentMethod || "card",
           paymentStatus: bookingPaymentStatus,
           specialRequests: specialRequests ? String(specialRequests).replace(/</g, "&lt;").replace(/>/g, "&gt;") : "",
-          hotelName: req.body.hotelName || resolveHotelName(room.roomNumber) || "",
+          hotelName: req.body.hotelName || "",
           roomType: targetRoomType,
           hotelStringId: room.hotelStringId || null,
           hotelImage,
@@ -479,7 +479,7 @@ export const createBooking = async (req, res, next) => {
     // Broadcast new booking to admin panels (after response sent)
     const bookingPayload = {
       ...populated.toJSON(),
-      hotelName: req.body.hotelName || resolveHotelName(populated.room?.roomNumber || ""),
+      hotelName: req.body.hotelName || "",
     };
     broadcastBookingUpdate(bookingPayload);
 
@@ -553,7 +553,7 @@ export const createBooking = async (req, res, next) => {
       sendBookingConfirmation({
         to:          guestData.email,
         guestName:   guestData.name,
-        hotelName:   req.body.hotelName || resolveHotelName(room.roomNumber) || "Unknown Hotel",
+        hotelName:   req.body.hotelName || "Unknown Hotel",
         bookingRef:  `LS-${booking._id.toString().slice(-5).toUpperCase()}`,
         checkIn,
         checkOut,
@@ -579,22 +579,7 @@ export const createBooking = async (req, res, next) => {
   }
 };
 
-// Map room number prefix → hotel name (mirrors frontend logic)
-const HOTEL_INITIALS = {
-  hdl: "Hôtel de Lumière", tas: "The Azure Skyline", cbr: "Coral Bay Resort",
-  apl: "Alpine Peak Lodge", tgm: "The Grand Metropolitan", scs: "Santorini Cliff Suites",
-};
-const HOTEL_IDS = {
-  h1: "Hôtel de Lumière", h2: "The Azure Skyline", h3: "Coral Bay Resort",
-  h4: "Alpine Peak Lodge", h5: "The Grand Metropolitan", h6: "Santorini Cliff Suites",
-};
 
-function resolveHotelName(roomNumber = "") {
-  const prefix = roomNumber.split("-")[0]?.toLowerCase();
-  if (HOTEL_INITIALS[prefix]) return HOTEL_INITIALS[prefix];
-  const legacy = roomNumber.split("_")[0]?.toLowerCase();
-  return HOTEL_IDS[legacy] || "";
-}
 
 // ─────────────────────────────────────────────────────────
 // GET /api/bookings?page=1&limit=20&status=Confirmed&guestEmail=...
@@ -673,7 +658,7 @@ export const getAllBookings = async (req, res, next) => {
 
     const data = bookings.map((b) => ({
       ...b.toJSON(),
-      hotelName: b.hotelId?.name || b.hotelName || resolveHotelName(b.room?.roomNumber || "") || "Other Properties",
+      hotelName: b.hotelId?.name || b.hotelName || "Other Properties",
       hotelImage: b.hotelId?.image || b.hotelImage || b.room?.images?.[0] || "",
     }));
 

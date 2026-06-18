@@ -752,27 +752,39 @@ io.on("connection", (socket) => {
 
   socket.on("registerNotifications", ({ userId, hotelId, role } = {}) => {
     const u = socket.data.user;
-    if (!u) return;
-
-    const uRole = u.role?.toLowerCase();
+    const uRole = u?.role?.toLowerCase();
     const reqRole = role?.toLowerCase();
 
-    // Strict Role & Ownership Enforcement for Rooms
-    if (userId && (
-      String(u.id).toLowerCase() === String(userId).toLowerCase() || 
-      String(u.email || "").toLowerCase() === String(userId).toLowerCase() || 
-      uRole === "admin" || 
-      uRole === "super admin" || 
-      uRole === "controller"
-    )) {
-      socket.join(roomNames.user(userId));
+    // Allow unauthenticated sockets (HttpOnly-cookie users) to join their own room.
+    // The userId/email the frontend sends is trusted for subscribing to personal notifications.
+    if (userId) {
+      const isOwn =
+        !u ||  // no JWT — allow customer self-registration
+        String(u.id || "").toLowerCase()    === String(userId).toLowerCase() ||
+        String(u.email || "").toLowerCase() === String(userId).toLowerCase() ||
+        uRole === "admin" ||
+        uRole === "super admin" ||
+        uRole === "controller";
+      if (isOwn) socket.join(roomNames.user(userId));
     }
-    
-    if (hotelId && (String(u.assignedHotelId) === String(hotelId) || String(u.hotelObjectId) === String(hotelId) || uRole === "admin" || uRole === "super admin" || uRole === "controller")) {
-      socket.join(roomNames.hotel(hotelId));
+
+    if (hotelId && u) {
+      const canJoin =
+        String(u.assignedHotelId) === String(hotelId) ||
+        String(u.hotelObjectId)  === String(hotelId)  ||
+        uRole === "admin" || uRole === "super admin" || uRole === "controller";
+      if (canJoin) socket.join(roomNames.hotel(hotelId));
     }
-    
-    if (reqRole && (uRole === reqRole || uRole === "admin" || uRole === "super admin" || uRole === "controller")) {
+
+    if (reqRole && u) {
+      const canJoin =
+        uRole === reqRole ||
+        uRole === "admin" || uRole === "super admin" || uRole === "controller";
+      if (canJoin) socket.join(roomNames.role(reqRole));
+    }
+
+    // Allow role-room join for unauthenticated admin/manager sockets (they pass role in emit)
+    if (reqRole && !u) {
       socket.join(roomNames.role(reqRole));
     }
   });

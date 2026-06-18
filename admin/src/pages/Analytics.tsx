@@ -10,6 +10,7 @@ import PageHeader from "@/components/PageHeader";
 import StatsCard from "@/components/StatsCard";
 import { useBookings } from "@/context/BookingsContext";
 import { useHotels } from "@/context/HotelsContext";
+import { formatCurrency } from "@/utils/currency";
 import { useState } from "react";
 import HotelMap from "@/components/HotelMap";
 
@@ -73,6 +74,10 @@ export default function Analytics() {
     .filter((m) => bookingsByMonth[m] !== undefined)
     .map((m) => ({ month: m, bookings: bookingsByMonth[m] }));
 
+  const selectedCurrency = selectedHotel === "All Properties"
+    ? "USD"
+    : hotels.find((h) => h.name === selectedHotel)?.currency ?? "USD";
+
   // ── Occupancy by hotel (confirmed bookings / total bookings) ──
   const occupancy = hotels.slice(0, 3).map((h) => {
     const hTotal = bookings.filter((b) => b.property === h.name).length;
@@ -92,7 +97,7 @@ export default function Analytics() {
       ? `${Math.round(bookings.filter(b => b.status === "Confirmed").length / bookings.length * 100)}%`
       : "0%";
     const rows = [["Metric", "Value"],
-      ["Total Revenue", `$${totalRevenue.toLocaleString()}`],
+      ["Total Revenue", formatCurrency(totalRevenue, selectedCurrency)],
       ["Total Bookings", bookings.length],
       ["Confirmed", confirmed],
       ["Avg Occupancy", occupancyRate],
@@ -158,7 +163,7 @@ export default function Analytics() {
         {/* Stats — live from context */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <div className="cursor-pointer hover:scale-[1.02] transition-transform" onClick={() => navigate("/revenue")}>
-            <StatsCard title="Total Revenue" value={`$${(totalRevenue / 1000).toFixed(0)}k`} change="From all bookings" trend="up"
+            <StatsCard title="Total Revenue" value={formatCurrency(totalRevenue, selectedCurrency, { minimumFractionDigits: 0, maximumFractionDigits: 0 })} change="From all bookings" trend="up"
               icon={<DollarSign className="w-5 h-5 text-primary" />} iconBg="bg-primary-light" />
           </div>
           <StatsCard title="Avg Occupancy" value={hotels.length > 0 ? `${Math.round(bookings.filter(b => b.status === "Confirmed").length / Math.max(bookings.length, 1) * 100)}%` : "0%"} change="Confirmed / total bookings" trend="up"
@@ -167,7 +172,7 @@ export default function Analytics() {
             <StatsCard title="Total Bookings" value={filteredBookings.length.toLocaleString()} change={`${confirmed} confirmed`} trend={filteredBookings.length > 0 ? "up" : "neutral"}
               icon={<BarChart3 className="w-5 h-5 text-warning" />} iconBg="bg-warning-light" />
           </div>
-          <StatsCard title="Avg Spend" value={avgSpend ? `$${avgSpend.toLocaleString()}` : "$0"} change="Per booking" trend={avgSpend > 0 ? "up" : "neutral"}
+          <StatsCard title="Avg Spend" value={avgSpend ? formatCurrency(avgSpend, selectedCurrency) : formatCurrency(0, selectedCurrency)} change="Per booking" trend={avgSpend > 0 ? "up" : "neutral"}
             icon={<Users className="w-5 h-5 text-danger" />} iconBg="bg-danger-light" />
         </div>
 
@@ -190,8 +195,8 @@ export default function Analytics() {
                   <CartesianGrid strokeDasharray="3 3" stroke="#f1f3f9" vertical={false} />
                   <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false}
-                    tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
-                  <Tooltip formatter={(v: any) => [`$${(v / 1000).toFixed(0)}k`]}
+                    tickFormatter={(v) => formatCurrency(v, selectedCurrency, { minimumFractionDigits: 0, maximumFractionDigits: 0 }).replace(/\s+/g, "")} />
+                  <Tooltip formatter={(v: any) => [formatCurrency(v, selectedCurrency, { minimumFractionDigits: 0, maximumFractionDigits: 0 })]}
                     contentStyle={{ borderRadius: 8, border: "1px solid #e5e7f0", fontSize: 12 }} />
                   <Bar dataKey="actual" fill="#6366f1" radius={[4, 4, 0, 0]} maxBarSize={28} />
                   <Bar dataKey="budget" fill="#e5e7f0" radius={[4, 4, 0, 0]} maxBarSize={28} />
