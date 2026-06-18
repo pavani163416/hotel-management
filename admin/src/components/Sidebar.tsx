@@ -52,12 +52,8 @@ export default function Sidebar() {
       {/* Logo */}
       <div className="flex items-center gap-3 px-5 py-5"
         style={{ borderBottom: theme === "light" ? "1px solid #cbd5e1" : "1px solid rgba(255,255,255,0.07)" }}>
-        <div className="w-8 h-8 rounded-lg grid place-items-center shrink-0"
-          style={{
-            background: "linear-gradient(135deg, rgba(212,168,67,0.2) 0%, rgba(212,168,67,0.08) 100%)",
-            border: "1px solid rgba(212,168,67,0.3)",
-          }}>
-          <img src="/logo.png" alt="Logo" className="w-5 h-5 object-contain" />
+        <div className="w-10 h-10 shrink-0">
+          <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
         </div>
         <div>
           <p className="text-bright font-bold text-sm leading-none">AthithiGriha</p>
