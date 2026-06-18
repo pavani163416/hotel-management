@@ -276,12 +276,10 @@ export const addReviewToHotel = async (req, res, next) => {
     if (!userId && !guestId && !userEmail) {
       return res.status(401).json({ success: false, message: "Authentication required to submit a review." });
     }
-
-    const hotel = await Hotel.findOne({ hotelId: req.params.id, isActive: true });
-    if (!hotel) {
+    const hotel = await findHotelByIdentifier(req.params.id);
+    if (!hotel || !hotel.isActive) {
       return res.status(404).json({ success: false, message: "Hotel not found" });
     }
-
     // One review per user per hotel, keyed by userId or email.
     const alreadyReviewed = hotel.reviews.some((r) =>
       (userId   && String(r.userId)    === String(userId)) ||
