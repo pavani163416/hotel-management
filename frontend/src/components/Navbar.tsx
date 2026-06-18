@@ -383,88 +383,76 @@ const Navbar = () => {
                 )}
               </div>
 
-              {/* User Avatar Dropdown (desktop only) */}
-              <div className="hidden md:block">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button className="flex items-center gap-2 px-1.5 py-1.5 md:px-3 md:py-1.5 rounded-full hover:bg-accent/5 transition-base border border-transparent hover:border-border outline-none min-h-[44px]">
-                      <span className="font-semibold text-sm text-primary hidden md:inline-block">{user.name.split(" ")[0]}</span>
-                      {user.profileImage ? (
-                        <img src={user.profileImage} alt={user.name} className="w-7 h-7 rounded-full object-cover shrink-0" />
-                      ) : (
-                        <UserCircle className="w-7 h-7 text-muted-foreground shrink-0" />
-                      )}
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48">
-                    <DropdownMenuItem asChild>
-                      <Link to="/profile" className="w-full cursor-pointer min-h-[44px] flex items-center">
-                        <UserCircle className="w-4 h-4 mr-2" /> Profile
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link to="/halls" className="w-full cursor-pointer min-h-[44px] flex items-center">
-                        <Building2 className="w-4 h-4 mr-2" /> Book a Hall
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-
-                    <DropdownMenuItem
-                      onClick={async () => {
-                        if (!hasActiveStay) return;
-                        if (user?.email) {
-                          try {
-                             const bRes = await api.get(`/bookings?guestEmail=${encodeURIComponent(user.email)}&limit=${DEFAULT_PAGINATION_LIMIT}`);
-                             const apiBookings: any[] = bRes.data?.data || [];
-                             const confirmed = apiBookings.find((b: any) => b.status === "Confirmed") || apiBookings[0];
-                             if (confirmed?.room?.roomNumber) {
-                               setActiveRoomNo(confirmed.room.roomNumber);
-                               const match = confirmed.room.roomNumber.match(/(\d+)/);
-                               const roomNum = match ? match[1] : "";
-                               setActiveFloorNo(roomNum.length >= 3 ? roomNum[0] : "");
-                             } else {
-                               setActiveRoomNo("");
-                               setActiveFloorNo("");
-                             }
-                          } catch {
+              {/* User Avatar Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="flex items-center gap-2 px-1.5 py-1.5 md:px-3 md:py-1.5 rounded-full hover:bg-accent/5 transition-base border border-transparent hover:border-border outline-none min-h-[44px]">
+                    <span className="font-semibold text-sm text-primary hidden md:inline-block">{user.name.split(" ")[0]}</span>
+                    {user.profileImage ? (
+                      <img src={user.profileImage} alt={user.name} className="w-7 h-7 rounded-full object-cover shrink-0" />
+                    ) : (
+                      <UserCircle className="w-7 h-7 text-muted-foreground shrink-0" />
+                    )}
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem asChild>
+                    <Link to="/profile" className="w-full cursor-pointer min-h-[44px] flex items-center">
+                      <UserCircle className="w-4 h-4 mr-2" /> Profile
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/halls" className="w-full cursor-pointer min-h-[44px] flex items-center">
+                      <Building2 className="w-4 h-4 mr-2" /> Book a Hall
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/owner-portal" className="w-full cursor-pointer flex items-center text-primary hover:text-accent font-medium min-h-[44px]">
+                      <Building2 className="w-4 h-4 mr-2" /> List Your Property
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={async () => {
+                      if (!hasActiveStay) return;
+                      if (user?.email) {
+                        try {
+                           const bRes = await api.get(`/bookings?guestEmail=${encodeURIComponent(user.email)}&limit=${DEFAULT_PAGINATION_LIMIT}`);
+                           const apiBookings: any[] = bRes.data?.data || [];
+                           const confirmed = apiBookings.find((b: any) => b.status === "Confirmed") || apiBookings[0];
+                           if (confirmed?.room?.roomNumber) {
+                             setActiveRoomNo(confirmed.room.roomNumber);
+                             const match = confirmed.room.roomNumber.match(/(\d+)/);
+                             const roomNum = match ? match[1] : "";
+                             setActiveFloorNo(roomNum.length >= 3 ? roomNum[0] : "");
+                           } else {
                              setActiveRoomNo("");
                              setActiveFloorNo("");
-                          }
+                           }
+                        } catch {
+                           setActiveRoomNo("");
+                           setActiveFloorNo("");
                         }
-                        setAssistanceOpen(true);
-                      }}
-                      disabled={requesting || requestSuccess || !hasActiveStay}
-                      className={`min-h-[44px] ${hasActiveStay ? "cursor-pointer" : "cursor-not-allowed opacity-50"}`}
-                      title={!hasActiveStay ? "Assistance available during stay" : undefined}
-                    >
-                      {requestSuccess ? (
-                        <><CheckCircle2 className="w-4 h-4 mr-2 text-green-500" /> Sent!</>
-                      ) : (
-                        <><Mail className="w-4 h-4 mr-2" /> {requesting ? "Sending..." : "Request Assistance"}</>
-                      )}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={handleLogout}
-                      className="text-destructive cursor-pointer focus:text-destructive focus:bg-destructive/10 min-h-[44px]"
-                    >
-                      <LogOut className="w-4 h-4 mr-2" /> Log out
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-
-              {/* Mobile Avatar (just triggers drawer or acts as avatar) */}
-              <button 
-                onClick={() => setMobileMenuOpen(true)}
-                className="md:hidden flex items-center justify-center min-w-[44px] min-h-[44px] -mr-2"
-                aria-label="Open menu"
-              >
-                {user.profileImage ? (
-                  <img src={user.profileImage} alt={user.name} className="w-6 h-6 rounded-full object-cover" />
-                ) : (
-                  <UserCircle className="w-6 h-6 text-muted-foreground" />
-                )}
-              </button>
+                      }
+                      setAssistanceOpen(true);
+                    }}
+                    disabled={requesting || requestSuccess || !hasActiveStay}
+                    className={`min-h-[44px] ${hasActiveStay ? "cursor-pointer" : "cursor-not-allowed opacity-50"}`}
+                    title={!hasActiveStay ? "Assistance available during stay" : undefined}
+                  >
+                    {requestSuccess ? (
+                      <><CheckCircle2 className="w-4 h-4 mr-2 text-green-500" /> Sent!</>
+                    ) : (
+                      <><Mail className="w-4 h-4 mr-2" /> {requesting ? "Sending..." : "Request Assistance"}</>
+                    )}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={handleLogout}
+                    className="text-destructive cursor-pointer focus:text-destructive focus:bg-destructive/10 min-h-[44px]"
+                  >
+                    <LogOut className="w-4 h-4 mr-2" /> Log out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </>
           ) : (
             <>
