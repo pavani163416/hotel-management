@@ -182,6 +182,7 @@ class _PaymentPageState extends State<PaymentPage> {
     if (provider.total > 5000) {
       final authenticated = await BiometricHelper.authenticate(
         reason: 'Confirm your identity for high-value payment',
+        context: context,
       );
       if (!authenticated) {
         if (mounted) setState(() => _isProcessingPayment = false);
@@ -416,38 +417,50 @@ class _PaymentPageState extends State<PaymentPage> {
             }
 
             if (kIsWeb) {
-              // Open Razorpay Checkout on Web using conditional JS interop
-              openRazorpayWeb(
-                options: {
-                  'key': data['key'] ?? 'rzp_test_dummy',
-                  'amount': (data['amount'] as num).toInt(),
-                  'currency': data['currency'] ?? 'INR',
-                  'name': 'Athithigriha',
-                  'description': 'Booking Payment',
-                  'order_id': _currentOrderId,
-                  if (prefill.isNotEmpty) 'prefill': prefill,
-                  'theme': {'color': '#454F5E'},
-                },
-                onSuccess: (paymentId, orderId, signature) {
-                  _handlePaymentSuccess(
-                    PaymentSuccessResponse(
-                      paymentId,
-                      orderId ?? _currentOrderId,
-                      signature,
-                      null,
+              try {
+                // Open Razorpay Checkout on Web using conditional JS interop
+                openRazorpayWeb(
+                  options: {
+                    'key': data['key'] ?? 'rzp_test_dummy',
+                    'amount': (data['amount'] as num).toInt(),
+                    'currency': data['currency'] ?? 'INR',
+                    'name': 'Athithigriha',
+                    'description': 'Booking Payment',
+                    'order_id': _currentOrderId,
+                    if (prefill.isNotEmpty) 'prefill': prefill,
+                    'theme': {'color': '#454F5E'},
+                  },
+                  onSuccess: (paymentId, orderId, signature) {
+                    _handlePaymentSuccess(
+                      PaymentSuccessResponse(
+                        paymentId,
+                        orderId ?? _currentOrderId,
+                        signature,
+                        null,
+                      ),
+                    );
+                  },
+                  onFailure: (message) {
+                    _handlePaymentError(
+                      PaymentFailureResponse(
+                        0,
+                        message,
+                        null,
+                      ),
+                    );
+                  },
+                );
+              } catch (e) {
+                if (mounted) {
+                  setState(() => _isProcessingPayment = false);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Razorpay SDK failed to initialize. Please verify if the gateway script is loaded.'),
+                      backgroundColor: Colors.redAccent,
                     ),
                   );
-                },
-                onFailure: (message) {
-                  _handlePaymentError(
-                    PaymentFailureResponse(
-                      0,
-                      message,
-                      null,
-                    ),
-                  );
-                },
-              );
+                }
+              }
             } else {
               _razorpay.open(options);
             }

@@ -326,6 +326,9 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
       try {
         final userData = jsonDecode(userDataString) as Map<String, dynamic>;
         _user = UserModel.fromJson(userData);
+        try {
+          sl<FavoritesProvider>().setUserId(_user?.id);
+        } catch (_) {}
       } catch (e) {}
     }
   }
@@ -342,6 +345,9 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
       try {
         final userData = jsonDecode(userDataString) as Map<String, dynamic>;
         _user = UserModel.fromJson(userData);
+        try {
+          sl<FavoritesProvider>().setUserId(_user?.id);
+        } catch (_) {}
         notifyListeners();
       } catch (e) {}
     }
@@ -367,6 +373,9 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
             await storage.delete(key: AppConstants.tokenKey);
             await storage.delete(key: 'user_data');
             _user = null;
+            try {
+              sl<FavoritesProvider>().setUserId(null);
+            } catch (_) {}
             return false;
           } else {
             // Network issue / server unreachable — allow them to continue with cached session
@@ -409,6 +418,7 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
 
       try {
         await sl<FavoritesProvider>().clearFavorites();
+        sl<FavoritesProvider>().setUserId(null);
         sl<PromoProvider>().reset();
       } catch (_) {}
 
@@ -448,61 +458,76 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
 
   Future<bool> signInWithGoogle() async {
     try {
-      debugPrint('[GoogleSignIn] Starting Google Sign-In flow...');
+      if (kDebugMode) {
+        debugPrint('[GoogleSignIn] Starting Google Sign-In flow...');
+      }
       _isLoading = true;
       notifyListeners();
 
       // Sign out from any current session to force account picker
-      debugPrint('[GoogleSignIn] Force signing out of previous session...');
+      if (kDebugMode) {
+        debugPrint('[GoogleSignIn] Force signing out of previous session...');
+      }
       await _googleSignIn.signOut().catchError((_) {});
 
-      debugPrint('[GoogleSignIn] Triggering account chooser picker...');
+      if (kDebugMode) {
+        debugPrint('[GoogleSignIn] Triggering account chooser picker...');
+      }
       final GoogleSignInAccount? account = await _googleSignIn.signIn();
-      if (kDebugMode)
+      if (kDebugMode) {
         debugPrint(
           '[GoogleSignIn] Account picker returned: ${account?.email ?? "null"}',
         );
+      }
 
       if (account == null) {
-        debugPrint('[GoogleSignIn] User canceled account selection.');
+        if (kDebugMode) {
+          debugPrint('[GoogleSignIn] User canceled account selection.');
+        }
         _isLoading = false;
         notifyListeners();
         return false;
       }
 
-      debugPrint('[GoogleSignIn] Retrieving authentication credentials...');
+      if (kDebugMode) {
+        debugPrint('[GoogleSignIn] Retrieving authentication credentials...');
+      }
       final GoogleSignInAuthentication auth = await account.authentication;
       final String? idToken = auth.idToken;
-      debugPrint(
-        '[GoogleSignIn] Token retrieved: ${idToken != null ? "YES (length ${idToken.length})" : "NO"}',
-      );
-      debugPrint(
-        '[GoogleSignIn] Token starts with: ${idToken?.substring(0, idToken.length > 20 ? 20 : idToken.length)}',
-      );
-      debugPrint(
-        '[GoogleSignIn] Is JWT (3 segments): ${idToken?.split('.').length == 3}',
-      );
-      debugPrint(
-        '[GoogleSignIn] AccessToken present: ${auth.accessToken != null}',
-      );
+      if (kDebugMode) {
+        debugPrint(
+          '[GoogleSignIn] Token retrieved: ${idToken != null ? "YES" : "NO"}',
+        );
+        debugPrint(
+          '[GoogleSignIn] AccessToken present: ${auth.accessToken != null}',
+        );
+      }
 
       if (idToken == null || idToken.isEmpty) {
-        debugPrint('[GoogleSignIn] Error: Token is null or empty!');
+        if (kDebugMode) {
+          debugPrint('[GoogleSignIn] Error: Token is null or empty!');
+        }
         _error = 'Sign-in failed. Please try again.';
         _isLoading = false;
         notifyListeners();
         return false;
       }
 
-      debugPrint('[GoogleSignIn] Sending token to backend for verification...');
+      if (kDebugMode) {
+        debugPrint('[GoogleSignIn] Sending token to backend for verification...');
+      }
       final res = await _authRepository.signInWithGoogle(idToken);
-      debugPrint('[GoogleSignIn] Backend response received.');
+      if (kDebugMode) {
+        debugPrint('[GoogleSignIn] Backend response received.');
+      }
 
       return res.fold(
         (failure) {
-          debugPrint(
-            '[GoogleSignIn] Backend verification failed: ${failure.message}',
-          );
+          if (kDebugMode) {
+            debugPrint(
+              '[GoogleSignIn] Backend verification failed: ${failure.message}',
+            );
+          }
           _error = failure.message;
           _isLoading = false;
           notifyListeners();
@@ -676,6 +701,9 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
       );
       final userJson = jsonEncode(userModel.toJson());
       await storage.write(key: 'user_data', value: userJson);
+      try {
+        sl<FavoritesProvider>().setUserId(user.id);
+      } catch (_) {}
     } catch (e) {}
   }
 

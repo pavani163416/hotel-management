@@ -11,7 +11,9 @@ import '../../../../core/widgets/main_layout.dart';
 import '../../../../core/widgets/custom_text_field.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/providers/booking_provider.dart';
+import '../../../../core/providers/theme_provider.dart';
 import '../../../../core/utils/performance_utils.dart';
+import '../../../../core/utils/validators.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:shimmer/shimmer.dart';
@@ -168,9 +170,15 @@ class _ProfilePageState extends State<ProfilePage> {
                   onTap: () => _showNotifications(context),
                 ),
                 _buildSettingItem(
+                  LucideIcons.moon,
+                  'Display Theme',
+                  'Choose Light, Dark, or System theme',
+                  onTap: () => _showThemePicker(context),
+                ),
+                _buildSettingItem(
                   LucideIcons.shield,
                   'Security',
-                  'Password, 2FA',
+                  'Password Security',
                   onTap: () => _showSecurity(context),
                 ),
                 const SizedBox(height: 32),
@@ -818,6 +826,7 @@ class _ProfilePageState extends State<ProfilePage> {
   void _showPersonalInfo(BuildContext context) async {
     final authenticated = await BiometricHelper.authenticate(
       reason: 'Confirm your identity to edit personal information',
+      context: context,
     );
     if (!authenticated) return;
 
@@ -950,9 +959,65 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
+  void _showThemePicker(BuildContext context) {
+    final themeProvider = context.read<ThemeProvider>();
+    showModalBottomSheet(
+      context: context,
+      backgroundColor:
+          Theme.of(context).colorScheme.brightness == Brightness.dark
+          ? const Color(0xFF253040)
+          : Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) => Container(
+        padding: const EdgeInsets.symmetric(vertical: 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+              child: Text(
+                'Select Display Theme',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+            ),
+            const Divider(),
+            ...['System Default', 'Light', 'Dark'].map(
+              (themeModeName) => ListTile(
+                title: Text(
+                  themeModeName,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+                trailing: themeProvider.themeModeName == themeModeName
+                    ? Icon(
+                        LucideIcons.check,
+                        color: Theme.of(context).colorScheme.primary,
+                      )
+                    : null,
+                onTap: () {
+                  themeProvider.setTheme(themeModeName == 'System Default' ? 'System' : themeModeName);
+                  Navigator.pop(context);
+                },
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _showPaymentMethods(BuildContext context) async {
     final authenticated = await BiometricHelper.authenticate(
       reason: 'Confirm your identity to view payment methods',
+      context: context,
     );
     if (!authenticated) return;
 
@@ -1033,6 +1098,7 @@ class _ProfilePageState extends State<ProfilePage> {
   void _showSecurity(BuildContext context) async {
     final authenticated = await BiometricHelper.authenticate(
       reason: 'Confirm your identity to view security settings',
+      context: context,
     );
     if (!authenticated) return;
 
@@ -1130,17 +1196,11 @@ class _ProfilePageState extends State<ProfilePage> {
                 const SizedBox(height: 16),
                 CustomTextField(
                   label: 'New Password',
-                  hint: 'Enter new password (min. 6 characters)',
+                  hint: 'Enter new password',
                   obscureText: true,
                   prefixIcon: LucideIcons.lock,
                   controller: newPasswordController,
-                  validator: (val) {
-                    if (val == null || val.isEmpty)
-                      return 'New password is required';
-                    if (val.length < 6)
-                      return 'Password must be at least 6 characters';
-                    return null;
-                  },
+                  validator: AppValidators.validatePassword,
                 ),
                 const SizedBox(height: 16),
                 CustomTextField(
