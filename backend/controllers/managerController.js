@@ -623,11 +623,30 @@ export const getManagerHalls = async (req, res, next) => {
 export const createManagerHall = async (req, res, next) => {
   try {
     const hId = req.body.hotelId || req.scopedHotelId;
+    let resolvedHotelId = mongoose.Types.ObjectId.isValid(hId) ? hId : (req.scopedHotelObjectId || null);
+    let resolvedHotelStringId = hId;
+    let resolvedHotelName = req.body.hotelName || req.scopedHotelName;
+
+    if (hId) {
+      let hotel = null;
+      if (mongoose.Types.ObjectId.isValid(hId)) {
+        hotel = await Hotel.findById(hId);
+      }
+      if (!hotel) {
+        hotel = await Hotel.findOne({ hotelId: hId });
+      }
+      if (hotel) {
+        resolvedHotelId = hotel._id;
+        resolvedHotelStringId = hotel.hotelId;
+        resolvedHotelName = hotel.name;
+      }
+    }
+
     const hall = await FunctionHall.create({
       ...req.body,
-      hotelStringId: hId,
-      hotelId: mongoose.Types.ObjectId.isValid(hId) ? hId : (req.scopedHotelObjectId || null),
-      hotelName: req.body.hotelName || req.scopedHotelName,
+      hotelStringId: resolvedHotelStringId,
+      hotelId: resolvedHotelId,
+      hotelName: resolvedHotelName,
     });
     const io = getIo();
     if (io) {

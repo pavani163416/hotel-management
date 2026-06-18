@@ -130,8 +130,13 @@ export const getHotelHalls = async (req, res, next) => {
     }
 
     const filter = { isActive: true, $or: [] };
-    filter.$or.push({ hotelStringId: hotel.hotelId });
-    if (hotel._id) filter.$or.push({ hotelId: hotel._id });
+    if (hotel.hotelId) {
+      filter.$or.push({ hotelStringId: hotel.hotelId });
+    }
+    if (hotel._id) {
+      filter.$or.push({ hotelId: hotel._id });
+      filter.$or.push({ hotelStringId: hotel._id.toString() });
+    }
 
     const halls = await FunctionHall.find(filter).sort({ name: 1 }).lean();
     res.status(200).json({ success: true, count: halls.length, data: halls });
@@ -153,6 +158,7 @@ export const bookHotelHall = async (req, res, next) => {
       $or: [
         { hotelStringId: hotel.hotelId },
         { hotelId: hotel._id },
+        { hotelStringId: hotel._id.toString() },
       ],
     });
 
