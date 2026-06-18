@@ -69,9 +69,9 @@ const Halls = () => {
       setSelectedHallId("");
       try {
         const response = await getHotelHalls(selectedHotelId);
-        if (Array.isArray(response?.data)) {
-          setHalls(response.data);
-        }
+        const data = response?.data;
+        const hallsArray = Array.isArray(data) ? data : (Array.isArray(data?.data) ? data.data : []);
+        setHalls(hallsArray);
       } catch (error: any) {
         console.error("Failed to load halls", error);
         toast.error("Unable to load halls right now.");
