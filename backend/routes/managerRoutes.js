@@ -305,6 +305,7 @@ import {
   getManagerHalls,
   createManagerHall,
   updateManagerHall,
+  deleteManagerHall,
   updateHallBookingStatus,
   createPriceRequest,
   getManagerPriceRequests,
@@ -472,6 +473,7 @@ router.get("/guests",            ...protect, getManagerGuests);
 router.get("/halls",        ...protect, getManagerHalls);
 router.post("/halls",       ...protect, createManagerHall);
 router.put("/halls/:id",    ...protect, requireObjectId(), updateManagerHall);
+router.delete("/halls/:id", ...protect, requireObjectId(), deleteManagerHall);
 router.patch("/halls/:hallId/bookings/:bookingId/status", ...protect, requireObjectId("hallId"), requireObjectId("bookingId"), updateHallBookingStatus);
 
 // ── Price Requests ────────────────────────────────────────
