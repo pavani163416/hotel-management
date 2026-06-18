@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import {
   Plus, Calendar, List, ChevronLeft, ChevronRight,
-  Users, Clock, MapPin, Edit2, Trash2, Check,
+  Users, Clock, MapPin, Edit2, Trash2, Check, Building2
 } from "lucide-react";
 import AdminLayout from "@/components/AdminLayout";
 import Topbar from "@/components/Topbar";
