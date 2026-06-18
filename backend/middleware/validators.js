@@ -77,7 +77,7 @@ export const validateBooking = [
     .withMessage("Email address is required")
     .isEmail()
     .withMessage("Please provide a valid email address")
-    .normalizeEmail(),
+    .normalizeEmail({ gmail_remove_dots: false }),
 
   body("guest.phone")
     .trim()

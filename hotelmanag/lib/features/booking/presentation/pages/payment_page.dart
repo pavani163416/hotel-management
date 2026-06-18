@@ -17,6 +17,7 @@ import '../../../../core/network/api_service.dart';
 import '../../../../core/utils/injection_container.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../core/utils/biometric_helper.dart';
+import 'package:dio/dio.dart';
 
 class PaymentPage extends StatefulWidget {
   const PaymentPage({super.key});
@@ -469,9 +470,25 @@ class _PaymentPageState extends State<PaymentPage> {
           }
         } catch (e) {
           if (mounted) {
+            setState(() => _isProcessingPayment = false);
+            String message = 'Could not initialize payment gateway.';
+            if (e is DioException) {
+              if (e.response != null) {
+                if (e.response?.data is Map) {
+                  message = e.response?.data['message'] ?? message;
+                } else if (e.response?.data is String) {
+                  message = e.response?.data as String;
+                }
+              } else if (e.type == DioExceptionType.connectionError ||
+                  e.type == DioExceptionType.connectionTimeout) {
+                message = 'Unable to connect to the server. Please check your internet connection.';
+              }
+            } else if (e is Exception) {
+              message = e.toString().replaceFirst('Exception: ', '');
+            }
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Could not initialize payment gateway.'),
+              SnackBar(
+                content: Text(message),
                 backgroundColor: Colors.redAccent,
               ),
             );

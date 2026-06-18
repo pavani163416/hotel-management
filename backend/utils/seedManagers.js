@@ -28,7 +28,7 @@ dns.setServers(["8.8.8.8", "8.8.4.4", "1.1.1.1"]);
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 import connectDB from "../config/db.js";
-import AdminUser from "../models/AdminUser.js";
+import Manager from "../models/Manager.js";
 
 const MANAGERS = [
   {
@@ -99,14 +99,15 @@ const seed = async () => {
   for (const mgr of MANAGERS) {
     const hashedPassword = await bcrypt.hash(mgr.password, 12);
 
-    const existing = await AdminUser.findOne({ email: mgr.email });
+    const existing = await Manager.findOne({ email: mgr.email });
 
     if (existing) {
-      // Update existing manager with hotel assignment
-      await AdminUser.findOneAndUpdate(
+      // Update existing manager with hotel assignment & password
+      await Manager.findOneAndUpdate(
         { email: mgr.email },
         {
           name:              mgr.name,
+          password:          hashedPassword,
           role:              mgr.role,
           assignedHotelId:   mgr.assignedHotelId,
           assignedHotelName: mgr.assignedHotelName,
@@ -117,7 +118,7 @@ const seed = async () => {
       console.log(`  ↻  Updated: ${mgr.email} → ${mgr.assignedHotelName}`);
       updated++;
     } else {
-      await AdminUser.create({
+      await Manager.create({
         name:              mgr.name,
         email:             mgr.email,
         password:          hashedPassword,

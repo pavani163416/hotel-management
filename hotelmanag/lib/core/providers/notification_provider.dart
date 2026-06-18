@@ -40,20 +40,6 @@ class NotificationProvider extends ChangeNotifier {
     final saved = prefs.getStringList('read_notification_ids');
     if (saved != null) {
       _readIds.addAll(saved);
-      if (_backendNotifications.isNotEmpty) {
-        _backendNotifications = _backendNotifications
-            .map(
-              (n) => NotificationItem(
-                id: n.id,
-                title: n.title,
-                type: n.type,
-                timestamp: n.timestamp,
-                isNew: n.isNew && !_readIds.contains(n.id),
-                isCancelled: n.isCancelled,
-              ),
-            )
-            .toList();
-      }
       notifyListeners();
     }
   }
@@ -219,10 +205,6 @@ class NotificationProvider extends ChangeNotifier {
   void markAllAsRead(List<NotificationItem> items) {
     for (final item in items) {
       _readIds.add(item.id);
-      // Asynchronously call the backend read endpoint
-      _apiService.put('/notifications/${item.id}/read').catchError((e) {
-        debugPrint('[NotificationProvider] Failed to mark notification ${item.id} as read on backend: $e');
-      });
     }
     // Also update local backend list so dots disappear immediately
     _backendNotifications = _backendNotifications

@@ -41,7 +41,6 @@ class HotelDetailsPage extends StatefulWidget {
 class _HotelDetailsPageState extends State<HotelDetailsPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  final ScrollController _tabScrollController = ScrollController();
   int _currentMobileImageIndex = 0;
 
   // Room filter state
@@ -69,7 +68,6 @@ class _HotelDetailsPageState extends State<HotelDetailsPage>
   @override
   void dispose() {
     _tabController.dispose();
-    _tabScrollController.dispose();
     _reviewNameController.dispose();
     _reviewCommentController.dispose();
     super.dispose();
@@ -619,11 +617,9 @@ class _HotelDetailsPageState extends State<HotelDetailsPage>
         border: Border(bottom: BorderSide(color: AppTheme.mutedColor)),
       ),
       child: Scrollbar(
-        controller: _tabScrollController,
         thumbVisibility: true,
         trackVisibility: true,
         child: SingleChildScrollView(
-          controller: _tabScrollController,
           scrollDirection: Axis.horizontal,
           child: TabBar(
             isScrollable: true,
@@ -2247,12 +2243,25 @@ class ReviewCard extends StatelessWidget {
                 children: List.generate(
                   5,
                   (index) {
-                    final isFilled = index < review.rating;
-                    return Icon(
-                      isFilled ? Icons.star : Icons.star_border,
-                      color: isFilled ? Colors.amber[600] : Colors.grey[400],
-                      size: 12,
-                    );
+                    if (index < review.rating.floor()) {
+                      return Icon(
+                        Icons.star,
+                        color: Colors.amber[600],
+                        size: 14,
+                      );
+                    } else if (index < review.rating && review.rating - index >= 0.5) {
+                      return Icon(
+                        Icons.star_half,
+                        color: Colors.amber[600],
+                        size: 14,
+                      );
+                    } else {
+                      return Icon(
+                        Icons.star_border,
+                        color: Colors.amber[600],
+                        size: 14,
+                      );
+                    }
                   },
                 ),
               ),

@@ -40,9 +40,11 @@ async function run() {
   console.log("Connected to MongoDB.");
 
   // Clear previous test users and events to ensure clean slate
-  const TEST_EMAIL = "testpayment@athithigriha.com";
-  await User.deleteOne({ email: TEST_EMAIL });
-  await Guest.deleteOne({ email: TEST_EMAIL });
+  const TEST_EMAIL = "testpayment.athithigriha@gmail.com";
+  const TEST_PHONE = "+91" + Math.floor(1000000000 + Math.random() * 9000000000);
+  const userDel = await User.deleteMany({ $or: [{ email: TEST_EMAIL }, { phone: TEST_PHONE }] });
+  const guestDel = await Guest.deleteMany({ $or: [{ email: TEST_EMAIL }, { phone: TEST_PHONE }] });
+  console.log(`Cleaned up DB: ${userDel.deletedCount} users, ${guestDel.deletedCount} guests.`);
   await WebhookEvent.deleteMany({ eventId: /^evt_test_/ });
 
   // Initialize Redis client
@@ -64,7 +66,7 @@ async function run() {
     name: "Test Payment User",
     email: TEST_EMAIL,
     password: "TestPassword123!",
-    phone: "+919876543210",
+    phone: TEST_PHONE,
     city: "Hyderabad"
   };
 
@@ -149,7 +151,7 @@ async function run() {
     guest: {
       name: "Test Payment User",
       email: TEST_EMAIL,
-      phone: "+919876543210",
+      phone: TEST_PHONE,
       id: "123412341234"
     },
     checkIn: new Date().toISOString().slice(0, 10),

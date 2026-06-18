@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../../../core/providers/currency_provider.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -19,30 +20,34 @@ class HotelsPage extends StatefulWidget {
 }
 
 class _HotelsPageState extends State<HotelsPage> {
-  final TextEditingController _searchController = TextEditingController();
+  late final TextEditingController _searchController;
+  Timer? _debounceTimer;
 
   @override
   void initState() {
     super.initState();
-    _searchController.addListener(() {
-      final provider = context.read<HotelProvider>();
-      if (provider.searchQuery != _searchController.text.toLowerCase()) {
-        provider.updateSearch(_searchController.text);
-      }
-    });
+    _searchController = TextEditingController();
     // Only fetch if we have no data yet — avoids a loading flash on every navigation
     Future.microtask(() {
       final provider = context.read<HotelProvider>();
       if (provider.allHotels.isEmpty) {
         provider.fetchHotels();
-      } else {
-        _searchController.text = provider.searchQuery;
+      }
+    });
+  }
+
+  void _onSearchChanged(String query) {
+    if (_debounceTimer?.isActive ?? false) _debounceTimer!.cancel();
+    _debounceTimer = Timer(const Duration(milliseconds: 300), () {
+      if (mounted) {
+        context.read<HotelProvider>().updateSearch(query);
       }
     });
   }
 
   @override
   void dispose() {
+    _debounceTimer?.cancel();
     _searchController.dispose();
     super.dispose();
   }
@@ -58,38 +63,99 @@ class _HotelsPageState extends State<HotelsPage> {
       },
       child: MainLayout(
         isScrollable: false,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final isWide = constraints.maxWidth > 1000;
-          return Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (isWide) _buildSidebar(context),
-              Expanded(
-                child: SingleChildScrollView(
-                  child: Padding(
-                    padding: EdgeInsets.all(isWide ? 32 : 16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (context.watch<HotelProvider>().searchQuery.trim().isEmpty) ...[
-                          _buildTopDeals(context, isWide),
-                          const SizedBox(height: 32),
-                        ],
-                        _buildMainListHeader(context, isWide),
-                        const SizedBox(height: 24),
-                        _buildMainList(context, isWide),
-                        const SizedBox(height: 100),
-                      ],
+        child: SafeArea(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final isWide = constraints.maxWidth > 1000;
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (isWide) _buildSidebar(context),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      child: Padding(
+                        padding: EdgeInsets.all(isWide ? 32 : 16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const SizedBox(height: 16),
+                            _buildSearchField(context, isWide),
+                            const SizedBox(height: 24),
+                            if (context.watch<HotelProvider>().searchQuery.isEmpty) ...[
+                              _buildTopDeals(context, isWide),
+                              const SizedBox(height: 32),
+                            ],
+                            _buildMainListHeader(context, isWide),
+                            const SizedBox(height: 24),
+                            _buildMainList(context, isWide),
+                            const SizedBox(height: 100),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              ),
-            ],
-          );
-        },
+                ],
+              );
+            },
+          ),
+        ),
+    );
+  }
+
+  Widget _buildSearchField(BuildContext context, bool isWide) {
+    final provider = context.watch<HotelProvider>();
+    final isDark = Theme.of(context).colorScheme.brightness == Brightness.dark;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF253040) : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDark ? Colors.white10 : AppTheme.mutedColor,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isDark ? 0.2 : 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
-    ));
+      child: TextField(
+        onChanged: _onSearchChanged,
+        controller: _searchController,
+        style: TextStyle(
+          color: Theme.of(context).colorScheme.onSurface,
+          fontSize: 14,
+        ),
+        decoration: InputDecoration(
+          hintText: 'Search hotels by name, location, features...',
+          hintStyle: TextStyle(
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+          ),
+          prefixIcon: Icon(
+            LucideIcons.search,
+            color: Theme.of(context).colorScheme.primary,
+            size: 20,
+          ),
+          suffixIcon: provider.searchQuery.isNotEmpty
+              ? IconButton(
+                  icon: const Icon(LucideIcons.x, size: 18),
+                  onPressed: () {
+                    _searchController.clear();
+                    if (_debounceTimer?.isActive ?? false) _debounceTimer!.cancel();
+                    provider.updateSearch('');
+                  },
+                )
+              : null,
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 16,
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildSidebar(BuildContext context) {
@@ -716,53 +782,9 @@ class _HotelsPageState extends State<HotelsPage> {
 
   Widget _buildMainListHeader(BuildContext context, bool isWide) {
     final provider = context.watch<HotelProvider>();
-    if (provider.searchQuery.isEmpty && _searchController.text.isNotEmpty) {
-      _searchController.text = '';
-    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          margin: const EdgeInsets.only(bottom: 24),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.brightness == Brightness.dark
-                ? const Color(0xFF253040)
-                : Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: Theme.of(context).colorScheme.brightness == Brightness.dark
-                  ? Colors.white10
-                  : AppTheme.mutedColor,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.03),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: TextField(
-            controller: _searchController,
-            style: TextStyle(
-              color: Theme.of(context).colorScheme.onSurface,
-              fontSize: 14,
-            ),
-            decoration: InputDecoration(
-              hintText: 'Search hotels by name, location, or amenities...',
-              hintStyle: TextStyle(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
-              ),
-              prefixIcon: Icon(
-                LucideIcons.search,
-                size: 18,
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-              ),
-              border: InputBorder.none,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            ),
-          ),
-        ),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [

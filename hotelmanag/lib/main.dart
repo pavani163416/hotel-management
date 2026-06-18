@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:provider/provider.dart';
 import 'core/theme/app_theme.dart';
 import 'core/routes/app_router.dart';
+import 'package:go_router/go_router.dart';
 import 'core/providers/favorites_provider.dart';
 import 'core/providers/auth_provider.dart';
 import 'core/providers/hotel_provider.dart';
@@ -21,7 +22,6 @@ import 'core/services/push_notifications.dart';
 import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:go_router/go_router.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

@@ -11,20 +11,17 @@ export const requestService = async (req, res, next) => {
       return res.status(400).json({ success: false, message: "No services requested" });
     }
 
-    // Find the user's active/latest booking using guestSnapshot.id or email and correct uppercase statuses
+    // Find the user's active/latest booking
     const activeBooking = await Booking.findOne({
-      $or: [
-        { "guestSnapshot.id": userId },
-        { "guestSnapshot.email": req.customer.email?.toLowerCase().trim() }
-      ],
-      status: { $in: ["Confirmed", "CheckedIn", "CONFIRMED"] }
+      user: userId,
+      status: { $in: ["confirmed", "checked_in"] }
     }).sort({ createdAt: -1 });
 
     if (!activeBooking) {
       return res.status(400).json({ success: false, message: "No active booking found for user" });
     }
 
-    const hotelId = activeBooking.hotelStringId || (activeBooking.hotelId ? activeBooking.hotelId.toString() : null);
+    const hotelId = activeBooking.hotel;
 
     // Build the notification message
     const serviceList = services.map(s => `- ${s.name} x${s.quantity || 1}`).join("<br>");
