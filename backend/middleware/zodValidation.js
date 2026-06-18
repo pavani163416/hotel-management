@@ -244,6 +244,7 @@ const createPriceRequest = z.object({
   roomId:           mongoIdField,
   requestedPrice:   positiveNumber,
   reason:           z.string().max(500).trim().optional(),
+  effectiveDate:    dateField.optional().nullable().or(z.literal("")),
 }).strict();
 
 // ── Review Schema ─────────────────────────────────────────────────────────────

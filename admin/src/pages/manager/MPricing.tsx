@@ -488,9 +488,15 @@ export default function Pricing() {
               onBlur={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"; e.currentTarget.style.boxShadow = "none"; }}
             />
           </div>
-          <button type="submit"
-            className="w-full py-3 rounded-xl font-semibold text-sm text-white btn-imperial">
-            Submit Request
+          {error && (
+            <div className="flex items-center gap-2 text-sm px-4 py-2.5 rounded-xl"
+              style={{ background: "rgba(225,29,72,0.12)", border: "1px solid rgba(225,29,72,0.25)", color: "#e11d48" }}>
+              <AlertCircle className="w-4 h-4 shrink-0" /> {error}
+            </div>
+          )}
+          <button type="submit" disabled={saving}
+            className="w-full py-3 rounded-xl font-semibold text-sm text-white btn-imperial disabled:opacity-60">
+            {saving ? "Submitting..." : "Submit Request"}
           </button>
         </form>
       </Modal>

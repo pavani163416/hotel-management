@@ -15,6 +15,25 @@ import { useNavigate } from "react-router-dom";
 
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
+function formatRelativeTime(timeInput: any): string {
+  if (!timeInput) return "just now";
+  const date = new Date(timeInput);
+  if (isNaN(date.getTime())) return String(timeInput);
+  
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffSecs = Math.floor(diffMs / 1000);
+  const diffMins = Math.floor(diffSecs / 60);
+  const diffHours = Math.floor(diffMins / 60);
+  const diffDays = Math.floor(diffHours / 24);
+
+  if (diffSecs < 10) return "just now";
+  if (diffSecs < 60) return `${diffSecs}s ago`;
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  return `${diffDays}d ago`;
+}
+
 // Circular occupancy ring
 function OccupancyRing({ pct }: { pct: number }) {
   const r = 52, circ = 2 * Math.PI * r;
@@ -89,7 +108,7 @@ function normalizeNotificationToAlert(data: any) {
     id:       data._id || data.id || Date.now().toString(),
     type:     typeMap[data.type] || "booking",
     msg:      data.message || data.msg || "",
-    time:     "just now",
+    time:     data.createdAt || data.timestamp || new Date().toISOString(),
     priority: data.priority || (data.type === "assistance" ? "high" : "medium"),
     fullData: data,
   };
@@ -104,6 +123,14 @@ export default function Dashboard() {
   const [refreshing, setRefreshing] = useState(false);
   const [alerts, setAlerts] = useState(() => loadAlerts());
   const [alertDetail, setAlertDetail] = useState<any | null>(null);
+
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTick((t) => t + 1);
+    }, 30000);
+    return () => clearInterval(timer);
+  }, []);
 
   const updateAlerts = (next: any[]) => {
     setAlerts(next);
@@ -149,7 +176,7 @@ export default function Dashboard() {
     load();
     setAlerts((prev) => {
       const next = [
-        { id: Date.now().toString(), type: "booking", msg: `New booking: ${data.guestName || "Guest"}`, time: "just now", priority: "medium" },
+        { id: Date.now().toString(), type: "booking", msg: `New booking: ${data.guestName || "Guest"}`, time: new Date().toISOString(), priority: "medium" },
         ...prev.slice(0, 5),
       ];
       saveAlerts(next);
@@ -352,7 +379,7 @@ export default function Dashboard() {
                   <p className="text-sm text-soft leading-snug">{a.msg}</p>
                   <div className="flex items-center gap-2 mt-1">
                     <Clock className="w-3 h-3 text-dim" />
-                    <span className="text-xs text-dim">{a.time}</span>
+                    <span className="text-xs text-dim">{formatRelativeTime(a.time)}</span>
                     {a.priority === "high" && (
                       <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full"
                         style={{ color: "#c0392b", background: "rgba(192,57,43,0.12)" }}>High</span>
@@ -536,7 +563,7 @@ export default function Dashboard() {
                 </div>
                 <div>
                   <p className="text-sm font-bold text-bright capitalize">{alertDetail.type?.replace("vip","Admin Alert").replace("assistance","Assistance").replace("maintenance","Maintenance").replace("payment","Payment").replace("booking","Booking")} Alert</p>
-                  <p className="text-xs text-dim">{alertDetail.time}</p>
+                  <p className="text-xs text-dim">{formatRelativeTime(alertDetail.time)}</p>
                 </div>
               </div>
               <button onClick={() => setAlertDetail(null)}
@@ -588,7 +615,7 @@ export default function Dashboard() {
               {/* Time */}
               <div className="flex items-center gap-2 pt-1">
                 <Clock className="w-3.5 h-3.5 text-dim" />
-                <span className="text-xs text-dim">{alertDetail.time}</span>
+                <span className="text-xs text-dim">{formatRelativeTime(alertDetail.time)}</span>
               </div>
             </div>
 
