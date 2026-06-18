@@ -125,6 +125,7 @@ export const createNotification = async (req, res, next) => {
       userId,
       message,
       type: type || "system",
+      skipEmail: true,
     });
 
     res.status(201).json({ success: true, data: notification });

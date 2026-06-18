@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import {
-  LayoutDashboard, Hotel, BedDouble, CalendarCheck,
+  LayoutDashboard, Hotel, BedDouble, CalendarCheck, Presentation,
   Users, BarChart3, Building2, DollarSign, CreditCard, Lightbulb, ArrowLeft, UserCog, Tag, Flame, Map, BadgeDollarSign, LifeBuoy, Bell, KeyRound
 } from "lucide-react";
 import { useAdmin } from "@/context/AdminContext";
@@ -12,6 +12,7 @@ const links = [
   { to: "/rooms",         icon: BedDouble,       label: "Rooms" },
   { to: "/hotel-map",     icon: Map,             label: "Hotel Map" },
   { to: "/bookings",      icon: CalendarCheck,   label: "Bookings" },
+  { to: "/halls",         icon: Presentation,    label: "Halls" },
   { to: "/payments",      icon: CreditCard,      label: "Payments" },
   { to: "/guests",        icon: Users,           label: "Guests" },
   { to: "/revenue",       icon: DollarSign,      label: "Revenue" },
@@ -24,7 +25,7 @@ const links = [
   { to: "/notifications", icon: Bell,            label: "Notifications" },
 ];
 
-const topLevel = new Set(["/dashboard", "/hotels", "/rooms", "/hotel-map", "/bookings", "/payments", "/guests", "/revenue", "/analytics", "/insights", "/managers", "/owners", "/coupons", "/top-deals", "/notifications"]);
+const topLevel = new Set(["/dashboard", "/hotels", "/rooms", "/hotel-map", "/bookings", "/halls", "/payments", "/guests", "/revenue", "/analytics", "/insights", "/managers", "/owners", "/coupons", "/top-deals", "/notifications"]);
 
 export default function Sidebar() {
   const { admin, theme, t, sidebarOpen, setSidebarOpen } = useAdmin();

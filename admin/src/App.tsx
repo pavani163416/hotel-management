@@ -23,6 +23,7 @@ import Revenue    from "@/pages/Revenue";
 import Insights   from "@/pages/Insights";
 import Managers   from "@/pages/Managers";
 import Profile    from "@/pages/Profile";
+import Halls      from "@/pages/Halls";
 import Coupons       from "@/pages/Coupons";
 import TopDeals      from "@/pages/TopDeals";
 import Notifications from "@/pages/Notifications";
@@ -96,6 +97,7 @@ export default function App() {
             <Route path="/coupons" element={<Coupons />} />
             <Route path="/top-deals" element={<TopDeals />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/halls" element={<Halls />} />
             <Route path="/notifications" element={<Notifications />} />
             <Route path="/price-requests" element={<PriceRequests />} />
             <Route path="/settings" element={<Settings />} />

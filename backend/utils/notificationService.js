@@ -26,7 +26,7 @@ export const roomNames = {
  * @param {string}      opts.message  - Notification message
  * @param {string}      [opts.type]   - Notification type (default: "system")
  */
-export async function sendNotification({ userId = null, hotelId = null, role, message, type = "system" }) {
+export async function sendNotification({ userId = null, hotelId = null, role, message, type = "system", skipEmail = false }) {
   if (!role || !message) return null;
 
   const notification = await Notification.create({
@@ -97,7 +97,7 @@ export async function sendNotification({ userId = null, hotelId = null, role, me
   }
 
   // ── 3. Email broadcast (for newsletter subscribers / customer notifications) ──
-  if (payload.role === "customer") {
+  if (payload.role === "customer" && !skipEmail) {
     try {
       const { sendGeneralEmail } = await import("./emailService.js");
       const NewsletterSubscriber = (await import("../models/NewsletterSubscriber.js")).default;
