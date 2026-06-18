@@ -53,6 +53,9 @@ api.interceptors.response.use(
       localStorage.removeItem("luxe_user");
       localStorage.removeItem("luxe_bookings");
       window.dispatchEvent(new Event("luxe_logout"));
+      if (window.location.pathname !== '/') {
+        window.location.href = '/';
+      }
     }
 
     const message =
@@ -152,12 +155,14 @@ export const getHotelById = async (hotelId: string) => {
   return data;
 };
 
-export const getHotelHalls = async (hotelId: string) => {
-  const { data } = await api.get(`/hotels/${hotelId}/halls`);
-  return data;
-};
+// ════════════════════════════════════════════════════════
+// FUNCTION HALLS
+// ════════════════════════════════════════════════════════
+export const getHotelHalls = (hotelId: string) => api.get(`/hotels/${hotelId}/halls`);
+export const bookHotelHall = (hallId: string, data: any) => api.post(`/hotels/halls/${hallId}/book`, data);
+export const getMyHallBookings = () => api.get(`/hotels/halls/my-bookings`);
 
-export const bookHotelHall = async (
+export const bookHotelHallOld = async (
   hotelId: string,
   hallId: string,
   payload: {

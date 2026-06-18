@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import {
-  LayoutDashboard, Hotel, BedDouble, CalendarCheck,
+  LayoutDashboard, Hotel, BedDouble, CalendarCheck, Presentation,
   Users, BarChart3, Building2, DollarSign, CreditCard, Lightbulb, ArrowLeft, UserCog, Tag, Flame, Map, BadgeDollarSign, LifeBuoy, Bell, KeyRound
 } from "lucide-react";
 import { useAdmin } from "@/context/AdminContext";
@@ -12,6 +12,7 @@ const links = [
   { to: "/rooms",         icon: BedDouble,       label: "Rooms" },
   { to: "/hotel-map",     icon: Map,             label: "Hotel Map" },
   { to: "/bookings",      icon: CalendarCheck,   label: "Bookings" },
+  { to: "/halls",         icon: Presentation,    label: "Halls" },
   { to: "/payments",      icon: CreditCard,      label: "Payments" },
   { to: "/guests",        icon: Users,           label: "Guests" },
   { to: "/revenue",       icon: DollarSign,      label: "Revenue" },
@@ -50,12 +51,8 @@ export default function Sidebar() {
       {/* Logo */}
       <div className="flex items-center gap-3 px-5 py-5"
         style={{ borderBottom: theme === "light" ? "1px solid #cbd5e1" : "1px solid rgba(255,255,255,0.07)" }}>
-        <div className="w-8 h-8 rounded-lg grid place-items-center shrink-0"
-          style={{
-            background: "linear-gradient(135deg, rgba(212,168,67,0.2) 0%, rgba(212,168,67,0.08) 100%)",
-            border: "1px solid rgba(212,168,67,0.3)",
-          }}>
-          <Building2 className="w-4 h-4 text-gold" />
+        <div className="w-8 h-8 rounded-full overflow-hidden shrink-0">
+          <img src="/logo.png" alt="Logo" className="w-full h-full object-cover" />
         </div>
         <div>
           <p className="text-bright font-bold text-sm leading-none">AthithiGriha</p>

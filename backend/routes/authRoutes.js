@@ -1414,6 +1414,39 @@ router.post('/wishlist', verifyCustomerToken, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// ==========================================
+// 8) Update Preferences
+// ==========================================
+router.patch("/preferences", verifyCustomerToken, async (req, res, next) => {
+  try {
+    const { emailUpdates } = req.body;
+    
+    const user = await User.findById(req.customer.id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    if (typeof emailUpdates === "boolean") {
+      user.emailUpdates = emailUpdates;
+    }
+
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Preferences updated successfully",
+      data: {
+        emailUpdates: user.emailUpdates
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ==========================================
+// 9) Update Profile
+// ==========================================
 // ── PATCH /api/auth/profile ───────────────────────────────
 router.patch("/profile", verifyCustomerToken, async (req, res, next) => {
   try {

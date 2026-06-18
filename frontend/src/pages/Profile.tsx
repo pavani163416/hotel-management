@@ -6,6 +6,7 @@ import Layout from "@/components/Layout";
 import { useBooking } from "@/context/BookingContext";
 import api, { createNotification, changePassword } from "@/services/api";
 import { AssistanceModal } from "@/components/AssistanceModal";
+import { toast } from "sonner";
 
 const Profile = () => {
   const { user, setUser, bookings, selectedHotel } = useBooking();
@@ -83,9 +84,14 @@ const Profile = () => {
             const newUrl = uploadRes.data.url;
             await api.patch("/auth/profile", { profileImage: newUrl });
             setForm((prev) => ({ ...prev, profileImage: newUrl }));
+            if (user) {
+              setUser({ ...user, profileImage: newUrl } as any);
+            }
+            toast.success("Profile updated successfully!");
           }
         } catch (err: any) {
           console.error("Upload error", err);
+          toast.error("Failed to upload profile picture");
         } finally {
           setUploadingImage(false);
         }

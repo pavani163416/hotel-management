@@ -13,6 +13,7 @@ import Guest      from "../models/Guest.js";
 import Hotel      from "../models/Hotel.js";
 import AdditionalGuest from "../models/AdditionalGuest.js";
 import PriceRequest    from "../models/PriceRequest.js";
+import { getIo } from "../utils/notificationService.js";
 import FunctionHall    from "../models/FunctionHall.js";
 import { sendNotification } from "../utils/notificationService.js";
 import logger from "../utils/logger.js";
@@ -628,6 +629,10 @@ export const createManagerHall = async (req, res, next) => {
       hotelId: mongoose.Types.ObjectId.isValid(hId) ? hId : (req.scopedHotelObjectId || null),
       hotelName: req.body.hotelName || req.scopedHotelName,
     });
+    const io = getIo();
+    if (io) {
+      io.emit("hallsUpdated", { hotelId: hId });
+    }
     res.status(201).json({ success:true, message:"Hall created", data:hall });
   } catch (err) { next(err); }
 };
@@ -649,6 +654,43 @@ export const updateManagerHall = async (req, res, next) => {
     for (const f of allowed) { if (req.body[f] !== undefined) update[f] = req.body[f]; }
     const updated = await FunctionHall.findByIdAndUpdate(req.params.id, update, { new:true, runValidators:true });
     res.status(200).json({ success:true, message:"Hall updated", data:updated });
+  } catch (err) { next(err); }
+};
+
+// ── PATCH /api/manager/halls/:hallId/bookings/:bookingId/status ──────────────
+export const updateHallBookingStatus = async (req, res, next) => {
+  try {
+    const { hallId, bookingId } = req.params;
+    const { status } = req.body;
+    
+    if (!["Confirmed", "Pending", "Cancelled"].includes(status)) {
+      return res.status(400).json({ success: false, message: "Invalid status" });
+    }
+
+    const hall = await FunctionHall.findById(hallId);
+    if (!hall) return res.status(404).json({ success: false, message: "Hall not found" });
+
+    if (req.manager?.role === "Manager" && hall.hotelStringId && hall.hotelStringId !== req.scopedHotelId) {
+      return res.status(403).json({ success: false, message: "Unauthorized: This hall does not belong to your hotel." });
+    }
+
+    const booking = hall.bookings.id(bookingId);
+    if (!booking) return res.status(404).json({ success: false, message: "Booking not found in this hall" });
+
+    booking.status = status;
+    await hall.save();
+
+    // Send notification if user email is available
+    if (booking.organizerEmail && (status === "Confirmed" || status === "Cancelled")) {
+      sendNotification({
+        userId: booking.organizerEmail,
+        role: "customer",
+        message: `Your hall booking request for ${hall.name} on ${new Date(booking.date).toLocaleDateString()} has been ${status.toLowerCase()}.`,
+        type: "booking",
+      }).catch(() => {});
+    }
+
+    res.status(200).json({ success: true, message: `Booking status updated to ${status}`, data: hall });
   } catch (err) { next(err); }
 };
 

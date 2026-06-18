@@ -293,16 +293,16 @@ const Navbar = () => {
             className="flex items-center gap-2 font-display font-bold text-lg text-primary md:hidden min-h-[44px] outline-none"
             aria-label="Toggle menu"
           >
-            <span className="grid place-items-center w-8 h-8 rounded-lg bg-primary text-primary-foreground shrink-0">
-              <Hotel className="w-4 h-4" />
+            <span className="grid place-items-center w-10 h-10 shrink-0 rounded-full overflow-hidden">
+              <img src="/logo.png" alt="Logo" className="w-full h-full object-cover" />
             </span>
             <span>AthithiGriha</span>
           </button>
 
           {/* Desktop Logo Link */}
           <Link to="/" className="hidden md:flex items-center justify-start gap-2 font-display font-bold text-lg text-primary md:w-auto">
-            <span className="grid place-items-center w-8 h-8 rounded-lg bg-primary text-primary-foreground shrink-0">
-              <Hotel className="w-4 h-4" />
+            <span className="grid place-items-center w-10 h-10 shrink-0 rounded-full overflow-hidden">
+              <img src="/logo.png" alt="Logo" className="w-full h-full object-cover" />
             </span>
             <span>AthithiGriha</span>
           </Link>
@@ -383,13 +383,12 @@ const Navbar = () => {
                 )}
               </div>
 
-              {/* Desktop User Avatar (hidden on mobile, but user wants avatar on right. "Profile Avatar OR Guest Icon") */}
-              {/* Since we need avatar on mobile, we show it! */}
-              <div className="hidden md:block">
+              {/* User Avatar Dropdown (responsive for mobile & desktop) */}
+              <div>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <button className="flex items-center gap-2 px-3 py-1.5 rounded-full hover:bg-accent/5 transition-base border border-transparent hover:border-border outline-none min-h-[44px]">
-                      <span className="font-semibold text-sm text-primary">{user.name.split(" ")[0]}</span>
+                    <button className="flex items-center gap-2 px-1.5 py-1.5 md:px-3 md:py-1.5 rounded-full hover:bg-accent/5 transition-base border border-transparent hover:border-border outline-none min-h-[44px]">
+                      <span className="font-semibold text-sm text-primary hidden md:inline-block">{user.name.split(" ")[0]}</span>
                       {user.profileImage ? (
                         <img src={user.profileImage} alt={user.name} className="w-7 h-7 rounded-full object-cover shrink-0" />
                       ) : (
@@ -485,14 +484,27 @@ const Navbar = () => {
                 </button>
               </div>
               
-              {/* Mobile Guest Avatar */}
-              <button 
-                onClick={() => setMobileMenuOpen(true)}
-                className="md:hidden flex items-center justify-center min-w-[44px] min-h-[44px] -mr-2"
-                aria-label="Open menu"
-              >
-                <UserCircle className="w-6 h-6 text-muted-foreground" />
-              </button>
+              {/* Mobile Guest Dropdown Menu */}
+              <div className="md:hidden">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button 
+                      className="flex items-center justify-center min-w-[44px] min-h-[44px] -mr-2 outline-none"
+                      aria-label="Guest Menu"
+                    >
+                      <UserCircle className="w-6 h-6 text-muted-foreground" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-40">
+                    <DropdownMenuItem onClick={() => openAuth("signin")} className="min-h-[44px] cursor-pointer">
+                      Sign In
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => openAuth("signup")} className="min-h-[44px] cursor-pointer">
+                      Sign Up
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             </>
           )}
         </div>

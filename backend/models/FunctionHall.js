@@ -8,8 +8,10 @@ import mongoose from "mongoose";
 
 const bookingSlotSchema = new mongoose.Schema({
   eventName:  { type: String, required: true, trim: true },
-  organizer:  { type: String, trim: true },
-  date:       { type: Date, required: true },
+  organizer:      { type: String, trim: true },
+  organizerEmail: { type: String, trim: true },
+  userId:         { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+  date:           { type: Date, required: true },
   startTime:  { type: String, required: true }, // "HH:MM"
   endTime:    { type: String, required: true },
   capacity:   { type: Number, default: 50 },

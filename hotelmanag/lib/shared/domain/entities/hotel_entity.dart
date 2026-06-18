@@ -114,6 +114,8 @@ class HotelEntity extends Equatable {
   final List<ReviewEntity> reviews;
   final List<RoomEntity> rooms;
   final List<String> gallery;
+  final String category;
+  final int maxGuests;
 
   const HotelEntity({
     required this.id,
@@ -134,6 +136,8 @@ class HotelEntity extends Equatable {
     this.reviews = const [],
     this.rooms = const [],
     this.gallery = const [],
+    this.category = 'General',
+    this.maxGuests = 8,
   });
 
   Map<String, dynamic> toJson() {
@@ -156,6 +160,8 @@ class HotelEntity extends Equatable {
       'reviews': reviews.map((r) => r.toJson()).toList(),
       'rooms': rooms.map((r) => r.toJson()).toList(),
       'gallery': gallery,
+      'category': category,
+      'maxGuests': maxGuests,
     };
   }
 
@@ -189,6 +195,8 @@ class HotelEntity extends Equatable {
           .map((r) => RoomEntity.fromJson(r))
           .toList(),
       gallery: List<String>.from(json['gallery'] ?? []),
+      category: json['category'] ?? 'General',
+      maxGuests: (json['maxGuests'] ?? 8).toInt(),
     );
   }
 
@@ -212,5 +220,7 @@ class HotelEntity extends Equatable {
     reviews,
     rooms,
     gallery,
+    category,
+    maxGuests,
   ];
 }

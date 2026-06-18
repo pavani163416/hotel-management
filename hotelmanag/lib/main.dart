@@ -109,7 +109,7 @@ void main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
-        ChangeNotifierProvider(create: (_) => FavoritesProvider()),
+        ChangeNotifierProvider(create: (_) => di.sl<FavoritesProvider>()),
         ChangeNotifierProvider(create: (_) => di.sl<AuthProvider>()),
         ChangeNotifierProvider(create: (_) => di.sl<HotelProvider>()),
         ChangeNotifierProvider(create: (_) => di.sl<BookingProvider>()),
@@ -136,12 +136,14 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = context.watch<ThemeProvider>();
     return MaterialApp.router(
       title: 'Athithigriha',
       debugShowCheckedModeBanner: false,
       scrollBehavior: MyScrollBehavior(),
       theme: AppTheme.lightTheme,
-      themeMode: ThemeMode.light,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: themeProvider.themeMode,
       routerConfig: AppRouter.createRouter(di.sl<AuthProvider>()),
       builder: (context, child) => MediaQuery(
         data: MediaQuery.of(context).copyWith(

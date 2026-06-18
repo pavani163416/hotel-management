@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Building2, Calendar, Clock, Users, Check, Loader2, ArrowRight, Mail, UserCircle } from "lucide-react";
+import { Building2, Calendar, Clock, Users, Check, Loader2, ArrowRight, Mail, UserCircle, CheckCircle2 } from "lucide-react";
 import Layout from "@/components/Layout";
 import { useBooking } from "@/context/BookingContext";
 import { getHotelHalls, bookHotelHall } from "@/services/api";
+import socket from "@/services/socket";
 import { AuthModal } from "@/components/AuthModal";
 import { toast } from "sonner";
 
@@ -23,7 +24,7 @@ type HallBookingForm = {
   date: string;
   startTime: string;
   endTime: string;
-  capacity: number;
+  capacity: string;
   notes: string;
 };
 
@@ -32,7 +33,7 @@ const defaultForm: HallBookingForm = {
   date: "",
   startTime: "",
   endTime: "",
-  capacity: 1,
+  capacity: "", 
   notes: "",
 };
 
@@ -78,7 +79,18 @@ const Halls = () => {
         setHallLoading(false);
       }
     };
+
     loadHalls();
+
+    const handleHallsUpdated = () => {
+      loadHalls();
+    };
+
+    socket.on("hallsUpdated", handleHallsUpdated);
+
+    return () => {
+      socket.off("hallsUpdated", handleHallsUpdated);
+    };
   }, [selectedHotelId]);
 
   const openAuth = (mode: "signin" | "signup") => {
@@ -106,7 +118,7 @@ const Halls = () => {
     if (!form.date) validation.date = "Date is required.";
     if (!form.startTime) validation.startTime = "Start time is required.";
     if (!form.endTime) validation.endTime = "End time is required.";
-    if (!form.capacity || form.capacity < 1) validation.capacity = "Capacity must be at least 1.";
+    if (!form.capacity || parseInt(form.capacity) < 1) validation.capacity = "Capacity must be at least 1.";
     if (form.startTime && form.endTime && form.startTime >= form.endTime) validation.endTime = "End time must be after start time.";
 
     if (Object.keys(validation).length > 0) {
@@ -121,8 +133,12 @@ const Halls = () => {
         date: form.date,
         startTime: form.startTime,
         endTime: form.endTime,
-        capacity: form.capacity,
+        capacity: Number(form.capacity),
         notes: form.notes,
+        organizer: user?.name,
+        organizerEmail: user?.email,
+        userId: user?.id,
+        status: "Pending" as const,
       });
       toast.success("Hall booking request submitted successfully.");
       setForm(defaultForm);
@@ -235,8 +251,13 @@ const Halls = () => {
                         key={hall._id}
                         type="button"
                         onClick={() => setSelectedHallId(hall._id)}
-                        className={`w-full rounded-3xl border p-5 text-left transition-base ${selectedHallId === hall._id ? "border-accent bg-accent/10" : "border-border bg-background hover:border-accent hover:bg-secondary/80"}`}
+                        className={`w-full rounded-3xl border p-5 text-left transition-base relative overflow-hidden ${selectedHallId === hall._id ? "border-accent bg-accent/5 ring-1 ring-accent" : "border-border bg-background hover:border-accent hover:bg-secondary/80"}`}
                       >
+                        {selectedHallId === hall._id && (
+                          <div className="absolute top-5 right-5 text-accent animate-in zoom-in duration-200">
+                            <CheckCircle2 className="w-5 h-5 fill-accent text-white" />
+                          </div>
+                        )}
                         <div className="flex items-start justify-between gap-4">
                           <div>
                             <h3 className="font-semibold text-lg text-primary">{hall.name}</h3>
@@ -319,7 +340,10 @@ const Halls = () => {
                       type="number"
                       min={1}
                       value={form.capacity}
-                      onChange={(e) => handleFormChange("capacity", Number(e.target.value))}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/^0+/, "");
+                        handleFormChange("capacity", val ? Number(val) : "");
+                      }}
                       className="w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-accent focus:ring-1 focus:ring-accent"
                     />
                     {errors.capacity && <p className="text-xs text-destructive">{errors.capacity}</p>}

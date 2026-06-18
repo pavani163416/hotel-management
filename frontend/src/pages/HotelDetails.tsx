@@ -294,9 +294,9 @@ const HotelDetails = () => {
                   <select value={capacityFilter} onChange={(e) => setCapacityFilter(Number(e.target.value))}
                     className="appearance-none border border-border rounded-xl pl-9 pr-8 py-2 text-sm font-medium bg-card outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-base cursor-pointer shadow-sm min-w-[130px]">
                     <option value={1}>Any Capacity</option>
-                    <option value={2}>2+ Guests</option>
-                    <option value={3}>3+ Guests</option>
-                    <option value={4}>4+ Guests</option>
+                    {Array.from({ length: ((hotel as any)?.maxGuests || 8) - 1 }).map((_, i) => (
+                      <option key={i + 2} value={i + 2}>{i + 2}+ Guests</option>
+                    ))}
                   </select>
                   <Users className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
                 </div>

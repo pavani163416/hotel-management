@@ -73,11 +73,14 @@ export default function Dashboard() {
   })();
 
   // ── Compute live booking share by hotel ──
+  const activeHotels = new Set(hotels.map((h) => h.name));
+  const validBookings = bookings.filter((b) => activeHotels.has((b as any).hotelName || b.property));
+
   const bookingShare = (() => {
-    const total = bookings.length || 1;
+    const total = validBookings.length || 1;
     const hotelCounts: Record<string, number> = {};
-    if (bookings.length === 0) return [];
-    bookings.forEach((b) => {
+    if (validBookings.length === 0) return [];
+    validBookings.forEach((b) => {
       const name = (b as any).hotelName || b.property || "Other";
       hotelCounts[name] = (hotelCounts[name] || 0) + 1;
     });
@@ -94,8 +97,8 @@ export default function Dashboard() {
   // ── Compute top hotels by revenue ──
   const topHotels = (() => {
     const hotelRevenue: Record<string, number> = {};
-    if (bookings.length === 0) return [];
-    bookings.forEach((b) => {
+    if (validBookings.length === 0) return [];
+    validBookings.forEach((b) => {
       const name = (b as any).hotelName || b.property || "Other";
       hotelRevenue[name] = (hotelRevenue[name] || 0) + b.totalAmount;
     });

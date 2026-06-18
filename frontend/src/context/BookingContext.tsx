@@ -14,7 +14,7 @@ function mapHotel(h: any): Hotel {
     : undefined;
 
   return {
-    id: h.hotelId,
+    id: h._id || h.hotelId,
     name: h.name,
     location: h.location,
     city: h.city,

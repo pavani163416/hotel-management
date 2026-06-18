@@ -9,6 +9,7 @@ class UserModel extends UserEntity {
     super.city,
     super.profileImage,
     super.coverImage,
+    super.emailUpdates = true,
     super.paymentMethods,
   });
 
@@ -21,6 +22,7 @@ class UserModel extends UserEntity {
       city: json['city'],
       profileImage: json['profileImage'],
       coverImage: json['coverImage'],
+      emailUpdates: json['emailUpdates'] ?? true,
       paymentMethods: (json['paymentMethods'] as List? ?? [])
           .map((pm) => PaymentMethodModel.fromJson(pm))
           .toList(),
@@ -36,6 +38,7 @@ class UserModel extends UserEntity {
       'city': city,
       'profileImage': profileImage,
       'coverImage': coverImage,
+      'emailUpdates': emailUpdates,
       'paymentMethods': paymentMethods
           .map((pm) => (pm as PaymentMethodModel).toJson())
           .toList(),
