@@ -8,6 +8,7 @@ class UserEntity extends Equatable {
   final String? city;
   final String? profileImage;
   final String? coverImage;
+  final bool emailUpdates;
   final List<PaymentMethod> paymentMethods;
 
   const UserEntity({
@@ -18,6 +19,7 @@ class UserEntity extends Equatable {
     this.city,
     this.profileImage,
     this.coverImage,
+    this.emailUpdates = true,
     this.paymentMethods = const [],
   });
 
@@ -30,6 +32,7 @@ class UserEntity extends Equatable {
     city,
     profileImage,
     coverImage,
+    emailUpdates,
     paymentMethods,
   ];
 }

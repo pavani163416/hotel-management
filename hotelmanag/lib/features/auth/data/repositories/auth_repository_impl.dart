@@ -251,6 +251,26 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Future<Either<Failure, bool>> updatePreferences({
+    required bool emailUpdates,
+  }) async {
+    try {
+      final success = await _remoteDataSource.updatePreferences(
+        emailUpdates: emailUpdates,
+      );
+      return Right(success);
+    } on DioException catch (e) {
+      return Left(
+        ServerFailure(
+          e.response?.data['message'] ?? 'Failed to update preferences',
+        ),
+      );
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
   Future<Either<Failure, String>> uploadImage(String base64Image) async {
     try {
       final url = await _remoteDataSource.uploadImage(base64Image);

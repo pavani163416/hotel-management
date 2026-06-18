@@ -33,6 +33,9 @@ abstract class AuthRemoteDataSource {
     String? profileImage,
     String? coverImage,
   });
+  Future<bool> updatePreferences({
+    required bool emailUpdates,
+  });
   Future<String> uploadImage(String base64Image);
   Future<List<PaymentMethodModel>> addPaymentMethod({
     required String type,
@@ -288,6 +291,19 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       },
     );
     return UserModel.fromJson(response.data['data']);
+  }
+
+  @override
+  Future<bool> updatePreferences({
+    required bool emailUpdates,
+  }) async {
+    final response = await _apiService.patch(
+      'auth/preferences',
+      data: {
+        'emailUpdates': emailUpdates,
+      },
+    );
+    return response.data['success'] == true;
   }
 
   @override

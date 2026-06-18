@@ -40,6 +40,9 @@ abstract class AuthRepository {
     String? profileImage,
     String? coverImage,
   });
+  Future<Either<Failure, bool>> updatePreferences({
+    required bool emailUpdates,
+  });
   Future<Either<Failure, String>> uploadImage(String base64Image);
   Future<Either<Failure, List<PaymentMethod>>> addPaymentMethod({
     required String type,

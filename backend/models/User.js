@@ -144,6 +144,11 @@ const userSchema = new mongoose.Schema(
       default: null,
     },
 
+    emailUpdates: {
+      type: Boolean,
+      default: true,
+    },
+
     // Owner fields
     hotelIds: [
       {

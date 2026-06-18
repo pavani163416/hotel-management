@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/providers/booking_provider.dart';
 import '../../../../core/providers/currency_provider.dart';
+import '../../../../core/network/api_service.dart';
+import '../../../../injection_container.dart';
 
 class ServiceItem {
   final String id;
@@ -172,7 +174,7 @@ class _InRoomServicesPageState extends State<InRoomServicesPage> {
 
   double get _totalPrice => _cart.fold(0, (sum, item) => sum + item.price);
 
-  void _submitRequest() {
+  void _submitRequest() async {
     if (_roomController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -196,13 +198,42 @@ class _InRoomServicesPageState extends State<InRoomServicesPage> {
       _requestSubmitted = true;
     });
 
-    // Simulate concierge live status steps
-    Future.delayed(const Duration(seconds: 4), () {
-      if (mounted) setState(() => _currentStep = 'Received');
-    });
-    Future.delayed(const Duration(seconds: 10), () {
-      if (mounted) setState(() => _currentStep = 'Dispatched');
-    });
+    try {
+      final apiService = sl<ApiService>();
+      final servicesList = _cart.map((service) {
+        return {
+          'id': service.id,
+          'name': service.name,
+          'quantity': 1,
+        };
+      }).toList();
+
+      await apiService.post(
+        'services/request',
+        data: {'services': servicesList},
+      );
+
+      // Simulate concierge live status steps
+      Future.delayed(const Duration(seconds: 4), () {
+        if (mounted) setState(() => _currentStep = 'Received');
+      });
+      Future.delayed(const Duration(seconds: 10), () {
+        if (mounted) setState(() => _currentStep = 'Dispatched');
+      });
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _requestSubmitted = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to submit request: ${e.toString()}'),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   @override

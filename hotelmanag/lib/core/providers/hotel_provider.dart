@@ -163,19 +163,7 @@ class HotelProvider extends ChangeNotifier {
 
       bool matchesType = true;
       if (_propertyType != 'Any') {
-        if (_propertyType == 'Beach') {
-          matchesType = _isBeachHotel(hotel, searchStr);
-        } else if (_propertyType == 'Mountain') {
-          matchesType = _isMountainHotel(hotel, searchStr);
-        } else if (_propertyType == 'City') {
-          matchesType = _isCityHotel(hotel, searchStr);
-        } else if (_propertyType == 'Desert') {
-          matchesType = _isDesertHotel(hotel, searchStr);
-        } else if (_propertyType == 'Luxury') {
-          matchesType = _isLuxuryHotel(hotel, searchStr);
-        } else {
-          matchesType = hotel.type == _propertyType;
-        }
+        matchesType = hotel.category.toLowerCase() == _propertyType.toLowerCase();
       }
 
       final matchesRating = hotel.rating >= _minRating;
@@ -207,78 +195,6 @@ class HotelProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  bool _isBeachHotel(HotelEntity hotel, String searchStr) {
-    return searchStr.contains('beach') ||
-        searchStr.contains('coast') ||
-        searchStr.contains('sea') ||
-        searchStr.contains('ocean') ||
-        searchStr.contains('surf') ||
-        searchStr.contains('sand') ||
-        searchStr.contains('island') ||
-        searchStr.contains('maldives') ||
-        searchStr.contains('bali') ||
-        searchStr.contains('tropical') ||
-        searchStr.contains('shore') ||
-        searchStr.contains('waterfront') ||
-        searchStr.contains('palm') ||
-        hotel.type.toLowerCase() == 'resort';
-  }
-
-  bool _isMountainHotel(HotelEntity hotel, String searchStr) {
-    return searchStr.contains('mountain') ||
-        searchStr.contains('hill') ||
-        searchStr.contains('alps') ||
-        searchStr.contains('peak') ||
-        searchStr.contains('summit') ||
-        searchStr.contains('highland') ||
-        searchStr.contains('snow') ||
-        searchStr.contains('ski') ||
-        searchStr.contains('forest') ||
-        searchStr.contains('wood') ||
-        searchStr.contains('nature') ||
-        searchStr.contains('valley') ||
-        searchStr.contains('ridge');
-  }
-
-  bool _isCityHotel(HotelEntity hotel, String searchStr) {
-    return searchStr.contains('city') ||
-        searchStr.contains('downtown') ||
-        searchStr.contains('urban') ||
-        searchStr.contains('metropolis') ||
-        searchStr.contains('tower') ||
-        searchStr.contains('plaza') ||
-        searchStr.contains('london') ||
-        searchStr.contains('paris') ||
-        searchStr.contains('tokyo') ||
-        searchStr.contains('york') ||
-        searchStr.contains('boulevard') ||
-        searchStr.contains('center') ||
-        hotel.type.toLowerCase() == 'hotel';
-  }
-
-  bool _isDesertHotel(HotelEntity hotel, String searchStr) {
-    return searchStr.contains('desert') ||
-        searchStr.contains('dune') ||
-        searchStr.contains('oasis') ||
-        searchStr.contains('safari') ||
-        searchStr.contains('canyon') ||
-        searchStr.contains('dubai') ||
-        searchStr.contains('sahara') ||
-        searchStr.contains('sun');
-  }
-
-  bool _isLuxuryHotel(HotelEntity hotel, String searchStr) {
-    return hotel.pricePerNight > 300 ||
-        searchStr.contains('luxury') ||
-        searchStr.contains('spa') ||
-        searchStr.contains('boutique') ||
-        searchStr.contains('premium') ||
-        searchStr.contains('royal') ||
-        searchStr.contains('grand') ||
-        searchStr.contains('star') ||
-        hotel.type.toLowerCase() == 'villa' ||
-        hotel.type.toLowerCase() == 'suite';
-  }
 
   Future<bool> submitReview({
     required String hotelId,

@@ -206,6 +206,8 @@ export const bookHotelHall = async (req, res, next) => {
     const bookingPayload = {
       eventName: String(eventName).trim(),
       organizer,
+      organizerEmail: String(req.body.organizerEmail || req.user?.email || "").trim(),
+      userId: req.user?._id || req.user?.id || null,
       date: normalizedDate,
       startTime,
       endTime,

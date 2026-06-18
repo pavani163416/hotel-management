@@ -110,9 +110,12 @@ export async function sendNotification({ userId = null, hotelId = null, role, me
           const User = (await import("../models/User.js")).default;
           // Try fetching by ID
           if (payload.userId.match(/^[a-f\d]{24}$/i)) {
-            const userObj = await User.findById(payload.userId).select("email");
-            if (userObj?.email) {
+            const userObj = await User.findById(payload.userId).select("email emailUpdates");
+            if (userObj?.email && userObj.emailUpdates !== false) {
               recipientEmail = userObj.email.toLowerCase();
+            } else if (userObj && userObj.emailUpdates === false) {
+              // User opted out
+              recipientEmail = null;
             }
           }
         }

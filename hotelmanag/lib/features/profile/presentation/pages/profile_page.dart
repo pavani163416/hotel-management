@@ -61,6 +61,10 @@ class _ProfilePageState extends State<ProfilePage> {
     _phoneController = TextEditingController(text: user?.phone ?? '');
     _cityController = TextEditingController(text: user?.city ?? '');
 
+    if (user != null) {
+      _emailUpdates = user.emailUpdates;
+    }
+
     if (user?.profileImage != null && user!.profileImage!.isNotEmpty) {
       _profileImageUrl = user.profileImage!;
     } else {
@@ -1419,20 +1423,26 @@ class _ProfilePageState extends State<ProfilePage> {
                   width: double.infinity,
                   height: 52,
                   child: ElevatedButton(
-                    onPressed: () {
+                    onPressed: () async {
                       setState(() {
                         _pushNotifications = localPush;
                         _emailUpdates = localEmail;
                         _promotions = localPromo;
                       });
                       Navigator.pop(ctx);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Notification preferences saved'),
-                          behavior: SnackBarBehavior.floating,
-                          backgroundColor: Colors.green,
-                        ),
-                      );
+
+                      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+                      final success = await authProvider.updatePreferences(emailUpdates: _emailUpdates);
+
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(success ? 'Notification preferences saved' : 'Failed to save preferences'),
+                            behavior: SnackBarBehavior.floating,
+                            backgroundColor: success ? Colors.green : Colors.red,
+                          ),
+                        );
+                      }
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Theme.of(ctx).colorScheme.primary,

@@ -598,6 +598,39 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
     }
   }
 
+  Future<bool> updatePreferences({
+    required bool emailUpdates,
+  }) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final result = await _authRepository.updatePreferences(
+        emailUpdates: emailUpdates,
+      );
+
+      return result.fold(
+        (failure) {
+          _error = failure.message;
+          return false;
+        },
+        (success) {
+          // You could also update the local `_user` model if you wanted to reflect this locally
+          return success;
+        },
+      );
+    } catch (e) {
+      _error = e.toString();
+      return false;
+    } finally {
+      if (_isLoading) {
+        _isLoading = false;
+        notifyListeners();
+      }
+    }
+  }
+
   Future<String?> uploadImage(String base64Image) async {
     _isLoading = true;
     _error = null;

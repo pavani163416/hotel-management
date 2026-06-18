@@ -259,13 +259,14 @@ class _BookingPageState extends State<BookingPage> {
                                     provider.updateGuests(provider.guests - 1);
                                 },
                                 () {
-                                  if (provider.guests < 8) {
+                                  final maxG = provider.currentHotel?.maxGuests ?? 8;
+                                  if (provider.guests < maxG) {
                                     provider.updateGuests(provider.guests + 1);
                                   } else {
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
+                                      SnackBar(
                                         content: Text(
-                                          'Maximum 8 guests allowed',
+                                          'Maximum $maxG guests allowed',
                                         ),
                                         behavior: SnackBarBehavior.floating,
                                       ),
