@@ -199,6 +199,7 @@ export type UserProfile = {
   city: string;
   wishlist?: string[];
   role?: string;
+  profileImage?: string;
 };
 
 type Ctx = {
@@ -318,10 +319,17 @@ export const BookingProvider = ({ children }: { children: ReactNode }) => {
       else if (type === "price") toast(msg, { duration: 6000, icon: "💰" });
       else toast(msg, { duration: 6000, icon: "🔔" });
     };
+
+    const onProfileUpdated = (data: { profileImage: string }) => {
+      _setUser((prev) => prev ? { ...prev, profileImage: data.profileImage } : prev);
+    };
+
     socket.on("notification", onNotification);
+    socket.on("profileUpdated", onProfileUpdated);
     return () => {
       socket.off("connect", register);
       socket.off("notification", onNotification);
+      socket.off("profileUpdated", onProfileUpdated);
     };
   }, [user?.email]);
 

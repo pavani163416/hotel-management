@@ -8,6 +8,8 @@ export const setNotificationIo = (socketServer) => {
   io = socketServer;
 };
 
+export const getIo = () => io;
+
 export const roomNames = {
   user: (userId) => `user:${String(userId).toLowerCase()}`,
   hotel: (hotelId) => `hotel:${hotelId}`,

@@ -398,7 +398,11 @@ const Navbar = () => {
                   <DropdownMenuTrigger asChild>
                     <button className="flex items-center gap-2 px-3 py-1.5 rounded-full hover:bg-accent/5 transition-base border border-transparent hover:border-border outline-none min-h-[44px]">
                       <span className="font-semibold text-sm text-primary">{user.name.split(" ")[0]}</span>
-                      <UserCircle className="w-7 h-7 text-muted-foreground shrink-0" />
+                      {user.profileImage ? (
+                        <img src={user.profileImage} alt={user.name} className="w-7 h-7 rounded-full object-cover shrink-0" />
+                      ) : (
+                        <UserCircle className="w-7 h-7 text-muted-foreground shrink-0" />
+                      )}
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-48">
@@ -467,7 +471,11 @@ const Navbar = () => {
                 className="md:hidden flex items-center justify-center min-w-[44px] min-h-[44px] -mr-2"
                 aria-label="Open menu"
               >
-                <UserCircle className="w-6 h-6 text-muted-foreground" />
+                {user.profileImage ? (
+                  <img src={user.profileImage} alt={user.name} className="w-6 h-6 rounded-full object-cover" />
+                ) : (
+                  <UserCircle className="w-6 h-6 text-muted-foreground" />
+                )}
               </button>
             </>
           ) : (

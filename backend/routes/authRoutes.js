@@ -210,6 +210,7 @@ import {
   validateEmailPayload,
   validateResetPasswordPayload
 } from "../middleware/authValidator.js";
+import { getIo, roomNames } from "../utils/notificationService.js";
 
 import { OAuth2Client } from "google-auth-library";
 const googleClient = new OAuth2Client(
@@ -1481,6 +1482,11 @@ router.patch("/profile", verifyCustomerToken, async (req, res, next) => {
         if (coverImage !== undefined) guest.coverImage = coverImage;
         await guest.save();
       }
+    }
+
+    const io = getIo();
+    if (io) {
+      io.to(roomNames.user(user.email)).emit("profileUpdated", { profileImage: user.profileImage });
     }
 
     res.json({
