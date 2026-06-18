@@ -165,12 +165,11 @@ class FavoritesPage extends StatelessWidget {
                                   ),
                                 );
                               },
-                              child: Icon(
-                                LucideIcons.heart,
-                                size: 18,
-                                color: isFav ? Colors.red : Colors.grey[400],
-                                fill: isFav ? 1.0 : 0.0,
-                              ),
+                                child: Icon(
+                                  isFav ? Icons.favorite : Icons.favorite_border,
+                                  size: 18,
+                                  color: isFav ? Colors.pinkAccent : Colors.grey[400],
+                                ),
                             );
                           },
                         ),

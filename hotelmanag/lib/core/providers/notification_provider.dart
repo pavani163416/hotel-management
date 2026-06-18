@@ -4,6 +4,7 @@ import '../widgets/notification_popup.dart';
 import '../../features/booking/domain/entities/booking_entity.dart';
 import '../services/push_notifications.dart';
 import '../network/api_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class NotificationItem {
   final String id;
@@ -30,7 +31,23 @@ class NotificationProvider extends ChangeNotifier {
   List<NotificationItem> _backendNotifications = [];
   bool _isFetching = false;
 
-  NotificationProvider(this._apiService);
+  NotificationProvider(this._apiService) {
+    _loadReadIds();
+  }
+
+  Future<void> _loadReadIds() async {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getStringList('read_notification_ids');
+    if (saved != null) {
+      _readIds.addAll(saved);
+      notifyListeners();
+    }
+  }
+
+  Future<void> _saveReadIds() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList('read_notification_ids', _readIds.toList());
+  }
 
   bool get isFetching => _isFetching;
 
@@ -197,11 +214,12 @@ class NotificationProvider extends ChangeNotifier {
             title: n.title,
             type: n.type,
             timestamp: n.timestamp,
-            isNew: false,
+            isNew: !_readIds.contains(n.id),
             isCancelled: n.isCancelled,
           ),
         )
         .toList();
+    _saveReadIds();
     notifyListeners();
   }
 }

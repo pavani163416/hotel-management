@@ -227,8 +227,19 @@ class _NotificationModalState extends State<NotificationModal> {
                           iconColor = Colors.green;
                         }
 
-                        return Container(
-                          color: cardColor,
+                        return InkWell(
+                          onTap: () {
+                            provider.markAllAsRead([item]);
+                            Navigator.pop(context);
+                            if (item.type == 'Offer') {
+                              // Could go to offers, default to profile for now
+                            } else {
+                              // Default booking
+                              // context.push('/profile'); // if there's a booking page
+                            }
+                          },
+                          child: Container(
+                            color: cardColor,
                           padding: const EdgeInsets.symmetric(
                             vertical: 12,
                             horizontal: 20,
@@ -288,7 +299,7 @@ class _NotificationModalState extends State<NotificationModal> {
                                 ),
                             ],
                           ),
-                        );
+                        ));
                       }, childCount: items.length),
                     ),
                   ),

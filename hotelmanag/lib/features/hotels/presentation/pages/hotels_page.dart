@@ -33,8 +33,15 @@ class _HotelsPageState extends State<HotelsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return MainLayout(
-      isScrollable: false,
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (didPop) {
+        if (!didPop) {
+          context.go('/');
+        }
+      },
+      child: MainLayout(
+        isScrollable: false,
       child: LayoutBuilder(
         builder: (context, constraints) {
           final isWide = constraints.maxWidth > 1000;
@@ -64,7 +71,7 @@ class _HotelsPageState extends State<HotelsPage> {
           );
         },
       ),
-    );
+    ));
   }
 
   Widget _buildSidebar(BuildContext context) {
@@ -87,8 +94,6 @@ class _HotelsPageState extends State<HotelsPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildMapPlaceholder(),
-            const SizedBox(height: 32),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -528,7 +533,7 @@ class _HotelsPageState extends State<HotelsPage> {
               if (hasDiscount)
                 Positioned(
                   top: 10,
-                  right: 10,
+                  left: hotel.isDeal ? 90 : 10,
                   child: _buildBadge(
                     '-${hotel.discountPct.toInt()}%',
                     Colors.black.withOpacity(0.5),
@@ -574,6 +579,30 @@ class _HotelsPageState extends State<HotelsPage> {
                               fontWeight: FontWeight.bold,
                               color: Theme.of(context).colorScheme.onSurface,
                             ),
+                          ),
+                          const SizedBox(width: 8),
+                          Consumer<FavoritesProvider>(
+                            builder: (context, favProvider, child) {
+                              final isFav = favProvider.isFavorite(hotel);
+                              return InkWell(
+                                onTap: () => favProvider.toggleFavorite(hotel),
+                                borderRadius: BorderRadius.circular(50),
+                                child: Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: BoxDecoration(
+                                    color: isFav
+                                        ? Colors.pinkAccent.withOpacity(0.1)
+                                        : AppTheme.primaryColor.withOpacity(0.05),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(
+                                    isFav ? Icons.favorite : Icons.favorite_border,
+                                    size: 12,
+                                    color: isFav ? Colors.pinkAccent : AppTheme.primaryColor,
+                                  ),
+                                ),
+                              );
+                            },
                           ),
                         ],
                       ),
@@ -719,12 +748,6 @@ class _HotelsPageState extends State<HotelsPage> {
           Row(
             children: [
               Expanded(child: _buildSortDropdown()),
-              const SizedBox(width: 12),
-              _buildIconBtn(
-                LucideIcons.map,
-                false,
-                onTap: () => context.push('/map-search'),
-              ),
               const SizedBox(width: 12),
               _buildIconBtn(
                 LucideIcons.slidersHorizontal,
@@ -926,17 +949,16 @@ class _HotelsPageState extends State<HotelsPage> {
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
                                 color: isFav
-                                    ? Colors.red.withOpacity(0.1)
+                                    ? Colors.pinkAccent.withOpacity(0.1)
                                     : AppTheme.primaryColor.withOpacity(0.05),
                                 shape: BoxShape.circle,
                               ),
                               child: Icon(
-                                LucideIcons.heart,
+                                isFav ? Icons.favorite : Icons.favorite_border,
                                 size: 16,
                                 color: isFav
-                                    ? Colors.red
+                                    ? Colors.pinkAccent
                                     : AppTheme.primaryColor,
-                                fill: isFav ? 1 : 0,
                               ),
                             ),
                           );
@@ -1162,17 +1184,16 @@ class _HotelsPageState extends State<HotelsPage> {
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
                                 color: isFav
-                                    ? Colors.red.withOpacity(0.1)
+                                    ? Colors.pinkAccent.withOpacity(0.1)
                                     : AppTheme.primaryColor.withOpacity(0.05),
                                 shape: BoxShape.circle,
                               ),
                               child: Icon(
-                                LucideIcons.heart,
+                                isFav ? Icons.favorite : Icons.favorite_border,
                                 size: 16,
                                 color: isFav
-                                    ? Colors.red
+                                    ? Colors.pinkAccent
                                     : AppTheme.primaryColor,
-                                fill: isFav ? 1 : 0,
                               ),
                             ),
                           );

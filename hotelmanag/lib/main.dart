@@ -140,10 +140,15 @@ class MyApp extends StatelessWidget {
       theme: AppTheme.lightTheme,
       themeMode: ThemeMode.light,
       routerConfig: AppRouter.createRouter(di.sl<AuthProvider>()),
-      builder: (context, child) => IdleDetector(
-        child: NotificationPopupOverlay(
-          key: notificationPopupKey,
-          child: child ?? const SizedBox.shrink(),
+      builder: (context, child) => MediaQuery(
+        data: MediaQuery.of(context).copyWith(
+          textScaler: MediaQuery.of(context).textScaler.clamp(minScaleFactor: 0.8, maxScaleFactor: 1.1),
+        ),
+        child: IdleDetector(
+          child: NotificationPopupOverlay(
+            key: notificationPopupKey,
+            child: child ?? const SizedBox.shrink(),
+          ),
         ),
       ),
     );

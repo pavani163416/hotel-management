@@ -129,9 +129,16 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    return MainLayout(
-      child: Column(
-        children: [
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (didPop) {
+        if (!didPop) {
+          context.go('/history');
+        }
+      },
+      child: MainLayout(
+        child: Column(
+          children: [
           _buildHeader(),
           Padding(
             padding: const EdgeInsets.all(24.0),
@@ -193,7 +200,7 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
         ],
       ),
-    );
+    ));
   }
 
   Widget _buildCustomerSupportCard(BuildContext context) {
@@ -2008,13 +2015,19 @@ class _ProfilePageState extends State<ProfilePage> {
                   context,
                   LucideIcons.camera,
                   'Camera',
-                  onTap: () => _pickImage(ImageSource.camera, isProfile: true),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _pickImage(ImageSource.camera, isProfile: true);
+                  },
                 ),
                 _buildUploadOption(
                   context,
                   LucideIcons.image,
                   'Gallery',
-                  onTap: () => _pickImage(ImageSource.gallery, isProfile: true),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _pickImage(ImageSource.gallery, isProfile: true);
+                  },
                 ),
               ],
             ),
@@ -2138,7 +2151,8 @@ class _ProfilePageState extends State<ProfilePage> {
     try {
       final XFile? pickedFile = await _picker.pickImage(source: source);
       if (pickedFile != null) {
-        if (mounted) Navigator.pop(context); // Close the bottom sheet
+        // The bottom sheet is now closed BEFORE we await the picker, 
+        // so we don't pop here and accidentally pop the profile page.
 
         setState(() {
           if (isProfile) {
@@ -2262,14 +2276,20 @@ class _ProfilePageState extends State<ProfilePage> {
               LucideIcons.camera,
               'Camera',
               'Capture a new cover image',
-              onTap: () => _pickImage(ImageSource.camera, isProfile: false),
+              onTap: () {
+                Navigator.pop(context);
+                _pickImage(ImageSource.camera, isProfile: false);
+              },
             ),
             _buildCoverListTile(
               context,
               LucideIcons.image,
               'Upload from Gallery',
               'Select from your library',
-              onTap: () => _pickImage(ImageSource.gallery, isProfile: false),
+              onTap: () {
+                Navigator.pop(context);
+                _pickImage(ImageSource.gallery, isProfile: false);
+              },
             ),
             const SizedBox(height: 16),
           ],

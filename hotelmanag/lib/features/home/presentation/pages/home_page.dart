@@ -364,12 +364,11 @@ class _HomePageState extends State<HomePage> {
                                         );
                                       },
                                       child: Icon(
-                                        LucideIcons.heart,
+                                        isFav ? Icons.favorite : Icons.favorite_border,
                                         size: 16,
                                         color: isFav
-                                            ? Colors.red
+                                            ? Colors.pinkAccent
                                             : Colors.grey[400],
-                                        fill: isFav ? 1.0 : 0.0,
                                       ),
                                     );
                                   },
@@ -396,43 +395,30 @@ class _HomePageState extends State<HomePage> {
       children: [
         // Premium Background Image
         Positioned.fill(
-          child: Consumer<HotelProvider>(
-            builder: (context, provider, child) {
-              final String heroImage = provider.allHotels.isNotEmpty
-                  ? provider.allHotels.first.imageUrl
-                  : '';
-              return Container(
-                width: double.infinity,
-                foregroundDecoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.black.withOpacity(0.3),
-                      Colors.transparent,
-                      AppTheme.backgroundColor.withOpacity(0.9),
-                      AppTheme.backgroundColor,
-                    ],
-                    stops: const [
-                      0.0,
-                      0.4,
-                      0.8,
-                      1.0,
-                    ], // Adjusted stops for quicker fade
-                  ),
-                ),
-                child: heroImage.isNotEmpty
-                    ? CachedNetworkImage(
-                        imageUrl: heroImage,
-                        fit: BoxFit.cover,
-                        memCacheWidth: 1000,
-                        memCacheHeight: 700,
-                        placeholder: (context, url) =>
-                            Container(color: AppTheme.primaryColor),
-                      )
-                    : Container(color: AppTheme.primaryColor),
-              );
-            },
+          child: Container(
+            width: double.infinity,
+            foregroundDecoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.black.withOpacity(0.3),
+                  Colors.transparent,
+                  AppTheme.backgroundColor.withOpacity(0.9),
+                  AppTheme.backgroundColor,
+                ],
+                stops: const [
+                  0.0,
+                  0.4,
+                  0.8,
+                  1.0,
+                ], // Adjusted stops for quicker fade
+              ),
+            ),
+            child: Image.asset(
+              'assets/images/hero.png',
+              fit: BoxFit.cover,
+            ),
           ),
         ),
         // Hero Content
@@ -1204,13 +1190,12 @@ class _HomePageState extends State<HomePage> {
                                                       shape: BoxShape.circle,
                                                     ),
                                                     child: Icon(
-                                                      LucideIcons.heart,
+                                                      isFav ? Icons.favorite : Icons.favorite_border,
                                                       size: 14,
                                                       color: isFav
-                                                          ? Colors.red
+                                                          ? Colors.pinkAccent
                                                           : AppTheme
                                                                 .primaryColor,
-                                                      fill: isFav ? 1 : 0,
                                                     ),
                                                   ),
                                                 );
@@ -2074,12 +2059,11 @@ class FeaturedCard extends StatelessWidget {
                                     shape: BoxShape.circle,
                                   ),
                                   child: Icon(
-                                    LucideIcons.heart,
+                                    isFav ? Icons.favorite : Icons.favorite_border,
                                     size: 16,
                                     color: isFav
-                                        ? Colors.red
+                                        ? Colors.pinkAccent
                                         : AppTheme.primaryColor,
-                                    fill: isFav ? 1 : 0,
                                   ),
                                 ),
                               );

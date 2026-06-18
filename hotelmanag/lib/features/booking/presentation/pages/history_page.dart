@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/providers/currency_provider.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/main_layout.dart';
 import '../../../../core/providers/booking_provider.dart';
@@ -31,9 +32,16 @@ class _HistoryPageState extends State<HistoryPage> {
 
   @override
   Widget build(BuildContext context) {
-    return MainLayout(
-      child: SingleChildScrollView(
-        child: Padding(
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (didPop) {
+        if (!didPop) {
+          context.go('/hotels');
+        }
+      },
+      child: MainLayout(
+        child: SingleChildScrollView(
+          child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 32),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -87,7 +95,7 @@ class _HistoryPageState extends State<HistoryPage> {
           ),
         ),
       ),
-    );
+    ));
   }
 
   Widget _buildEmptyState() {
