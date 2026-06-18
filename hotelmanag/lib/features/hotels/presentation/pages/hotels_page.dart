@@ -19,16 +19,32 @@ class HotelsPage extends StatefulWidget {
 }
 
 class _HotelsPageState extends State<HotelsPage> {
+  final TextEditingController _searchController = TextEditingController();
+
   @override
   void initState() {
     super.initState();
+    _searchController.addListener(() {
+      final provider = context.read<HotelProvider>();
+      if (provider.searchQuery != _searchController.text.toLowerCase()) {
+        provider.updateSearch(_searchController.text);
+      }
+    });
     // Only fetch if we have no data yet — avoids a loading flash on every navigation
     Future.microtask(() {
       final provider = context.read<HotelProvider>();
       if (provider.allHotels.isEmpty) {
         provider.fetchHotels();
+      } else {
+        _searchController.text = provider.searchQuery;
       }
     });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   @override
@@ -698,9 +714,53 @@ class _HotelsPageState extends State<HotelsPage> {
 
   Widget _buildMainListHeader(BuildContext context, bool isWide) {
     final provider = context.watch<HotelProvider>();
+    if (provider.searchQuery.isEmpty && _searchController.text.isNotEmpty) {
+      _searchController.text = '';
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        Container(
+          margin: const EdgeInsets.only(bottom: 24),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.brightness == Brightness.dark
+                ? const Color(0xFF253040)
+                : Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: Theme.of(context).colorScheme.brightness == Brightness.dark
+                  ? Colors.white10
+                  : AppTheme.mutedColor,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.03),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: TextField(
+            controller: _searchController,
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurface,
+              fontSize: 14,
+            ),
+            decoration: InputDecoration(
+              hintText: 'Search hotels by name, location, or amenities...',
+              hintStyle: TextStyle(
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+              ),
+              prefixIcon: Icon(
+                LucideIcons.search,
+                size: 18,
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+              ),
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            ),
+          ),
+        ),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [

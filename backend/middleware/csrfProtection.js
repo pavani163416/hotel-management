@@ -78,6 +78,16 @@ const csrfProtection = (req, res, next) => {
     return next();
   }
 
+  // Bypass CSRF for token-authorized requests (inherently immune to CSRF as browsers do not auto-attach Authorization headers)
+  if (req.headers.authorization?.startsWith("Bearer ")) {
+    return next();
+  }
+
+  // Bypass CSRF for pre-authentication and authentication endpoints
+  if (req.path.startsWith("/auth") || req.path.startsWith("/api/auth")) {
+    return next();
+  }
+
   const origin  = req.headers["origin"];
   const referer = req.headers["referer"];
 

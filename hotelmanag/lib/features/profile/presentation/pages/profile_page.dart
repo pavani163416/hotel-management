@@ -183,7 +183,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 _buildSettingItem(
                   LucideIcons.moon,
                   'Display Theme',
-                  'Choose Light, Dark, or System theme',
+                  'Choose Light or Dark theme',
                   onTap: () => _showThemePicker(context),
                 ),
                 _buildSettingItem(
@@ -1003,7 +1003,7 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
             ),
             const Divider(),
-            ...['System Default', 'Light', 'Dark'].map(
+            ...['Light', 'Dark'].map(
               (themeModeName) => ListTile(
                 title: Text(
                   themeModeName,
@@ -1018,7 +1018,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       )
                     : null,
                 onTap: () {
-                  themeProvider.setTheme(themeModeName == 'System Default' ? 'System' : themeModeName);
+                  themeProvider.setTheme(themeModeName);
                   Navigator.pop(context);
                 },
               ),

@@ -298,7 +298,9 @@ export const validateOwnership = (modelName) => {
               });
             }
           } else if (user.role === "customer") {
-            if (notification.userId !== user.id) {
+            const isOwner = notification.userId === user.id || 
+                            (user.email && notification.userId?.toLowerCase() === user.email.toLowerCase());
+            if (!isOwner) {
               return res.status(403).json({
                 success: false,
                 message: "Unauthorized: You do not own this notification.",

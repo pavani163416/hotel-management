@@ -6,7 +6,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/providers/booking_provider.dart';
 import '../../../../core/providers/currency_provider.dart';
 import '../../../../core/network/api_service.dart';
-import '../../../../injection_container.dart';
+import '../../../../core/utils/injection_container.dart';
 
 class ServiceItem {
   final String id;

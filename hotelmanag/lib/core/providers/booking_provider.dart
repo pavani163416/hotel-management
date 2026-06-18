@@ -82,7 +82,7 @@ class BookingProvider extends ChangeNotifier {
       'name': user?.name ?? '',
       'email': user?.email ?? '',
       'phone': user?.phone ?? '',
-      'id': '',
+      'id': user?.id ?? '',
       'requests': '',
     };
     _additionalAdults = [];

@@ -12,6 +12,7 @@ class HotelModel extends HotelEntity {
     super.type,
     super.amenities,
     super.reviews,
+    super.rooms,
     super.gallery,
     super.category,
     super.maxGuests,

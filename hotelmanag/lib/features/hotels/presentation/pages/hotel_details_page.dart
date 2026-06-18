@@ -1551,36 +1551,34 @@ class _HotelDetailsPageState extends State<HotelDetailsPage>
             'Restaurant',
             'Airport Shuttle',
           ];
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: amenities.map((amenity) => Container(
-          margin: const EdgeInsets.only(right: 12),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF253040) : Colors.white,
-            border: Border.all(
-              color: isDark ? Colors.white10 : AppTheme.mutedColor,
-            ),
-            borderRadius: BorderRadius.circular(12),
+    return Wrap(
+      spacing: 12,
+      runSpacing: 12,
+      children: amenities.map((amenity) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF253040) : Colors.white,
+          border: Border.all(
+            color: isDark ? Colors.white10 : AppTheme.mutedColor,
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(LucideIcons.check, size: 16, color: AppTheme.accentColor),
-              const SizedBox(width: 8),
-              Text(
-                amenity,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(LucideIcons.check, size: 16, color: AppTheme.accentColor),
+            const SizedBox(width: 8),
+            Text(
+              amenity,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
-            ],
-          ),
-        )).toList(),
-      ),
+            ),
+          ],
+        ),
+      )).toList(),
     );
   }
 
@@ -2244,12 +2242,14 @@ class ReviewCard extends StatelessWidget {
               Row(
                 children: List.generate(
                   5,
-                  (index) => Icon(
-                    LucideIcons.star,
-                    color: AppTheme.accentColor,
-                    size: 12,
-                    fill: index < review.rating ? 1 : 0,
-                  ),
+                  (index) {
+                    final isFilled = index < review.rating;
+                    return Icon(
+                      isFilled ? Icons.star : Icons.star_border,
+                      color: isFilled ? Colors.amber[600] : Colors.grey[400],
+                      size: 12,
+                    );
+                  },
                 ),
               ),
             ],

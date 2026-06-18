@@ -60,6 +60,7 @@ class HotelProvider extends ChangeNotifier {
   String get propertyType => _propertyType;
   double get minRating => _minRating;
   List<String> get selectedAmenities => _selectedAmenities;
+  String get searchQuery => _searchQuery;
   String get sortBy => _sortBy;
 
   Future<void> fetchHotels({bool silent = false}) async {
