@@ -137,7 +137,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -146,7 +146,7 @@ class _LoginPageState extends State<LoginPage> {
           padding: const EdgeInsets.only(left: 16, top: 8),
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Theme.of(context).colorScheme.surface,
               shape: BoxShape.circle,
               border: Border.all(color: AppTheme.mutedColor),
             ),
@@ -161,9 +161,10 @@ class _LoginPageState extends State<LoginPage> {
           ),
         ),
       ),
-      body: AutofillGroup(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
+      body: SafeArea(
+        child: AutofillGroup(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24.0),
           child: Column(
             children: [
               _buildLogo(),
@@ -547,6 +548,7 @@ class _LoginPageState extends State<LoginPage> {
             ],
           ),
         ),
+      ),
       ),
     );
   }

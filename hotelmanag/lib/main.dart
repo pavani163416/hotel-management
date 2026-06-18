@@ -183,6 +183,18 @@ class _IdleDetectorState extends State<IdleDetector> {
   }
 
   void _logoutUser() {
+    try {
+      final router = GoRouter.of(context);
+      final path = router.routerDelegate.currentConfiguration.last.matchedLocation;
+      if (path == '/payment' ||
+          path == '/guest-details' ||
+          path == '/booking' ||
+          path == '/review') {
+        _resetTimer();
+        return;
+      }
+    } catch (_) {}
+
     final auth = context.read<AuthProvider>();
     if (auth.isAuthenticated) {
       auth.logout();
