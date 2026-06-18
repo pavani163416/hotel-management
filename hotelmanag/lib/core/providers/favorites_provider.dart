@@ -5,10 +5,21 @@ import '../../shared/domain/entities/hotel_entity.dart';
 
 class FavoritesProvider extends ChangeNotifier {
   List<HotelEntity> _favorites = [];
-  static const String _favoritesKey = 'user_favorites';
+  String? _userId;
+
+  String get _favoritesKey => _userId == null || _userId!.isEmpty
+      ? 'user_favorites_guest'
+      : 'user_favorites_$_userId';
 
   FavoritesProvider() {
     _loadFavorites();
+  }
+
+  void setUserId(String? userId) {
+    if (_userId != userId) {
+      _userId = userId;
+      _loadFavorites();
+    }
   }
 
   List<HotelEntity> get favorites => List.unmodifiable(_favorites);
@@ -73,6 +84,9 @@ class FavoritesProvider extends ChangeNotifier {
         if (needsResave) {
           await _saveFavorites();
         }
+        notifyListeners();
+      } else {
+        _favorites = [];
         notifyListeners();
       }
     } catch (e) {
