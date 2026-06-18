@@ -8,6 +8,8 @@ export const setNotificationIo = (socketServer) => {
   io = socketServer;
 };
 
+export const getIo = () => io;
+
 export const roomNames = {
   user: (userId) => `user:${String(userId).toLowerCase()}`,
   hotel: (hotelId) => `hotel:${hotelId}`,
@@ -24,7 +26,7 @@ export const roomNames = {
  * @param {string}      opts.message  - Notification message
  * @param {string}      [opts.type]   - Notification type (default: "system")
  */
-export async function sendNotification({ userId = null, hotelId = null, role, message, type = "system" }) {
+export async function sendNotification({ userId = null, hotelId = null, role, message, type = "system", skipEmail = false }) {
   if (!role || !message) return null;
 
   const notification = await Notification.create({
@@ -55,51 +57,47 @@ export async function sendNotification({ userId = null, hotelId = null, role, me
     }
   }
 
-  // ── 2. FCM push (mobile app) — customers and owners ────────
-  if (payload.role === "customer" || payload.role === "owner") {
-    try {
-      // Lazy import to avoid circular deps at module load time
-      const User = (await import("../models/User.js")).default;
+  // ── 2. FCM push (mobile app) ──────────────────────────
+  try {
+    // Lazy import to avoid circular deps
+    const User = (await import("../models/User.js")).default;
+    let fcmTokens = [];
 
-      let fcmTokens = [];
-
-      if (payload.userId) {
-        // Target a specific user by email or _id
-        const user = await User.findOne({
-          $or: [
-            { email: payload.userId.toLowerCase() },
-            ...(payload.userId.match(/^[a-f\d]{24}$/i)
-              ? [{ _id: payload.userId }]
-              : []),
-          ],
-          fcmToken: { $ne: null, $exists: true },
-          isActive: true,
-        }).select("fcmToken");
-
-        if (user?.fcmToken) fcmTokens = [user.fcmToken];
-      } else {
-        // Broadcast to ALL customers & owners who have an FCM token
-        const users = await User.find({
-          role: { $in: ["customer", "owner"] },
-          fcmToken: { $ne: null, $exists: true },
-          isActive: true,
-        }).select("fcmToken");
-
-        fcmTokens = users.map((u) => u.fcmToken).filter(Boolean);
-      }
-
-      if (fcmTokens.length > 0) {
-        await sendFcmNotification(fcmTokens, "AthithiGriha", message, { type, notificationId: String(notification._id) });
-        logger.info(`FCM push sent to ${fcmTokens.length} device(s) for notification ${notification._id}`);
-      }
-    } catch (fcmErr) {
-      // Non-blocking — don't fail the whole notification if FCM push fails
-      logger.warn("FCM push failed (non-blocking)", { error: fcmErr.message });
+    if (payload.userId) {
+      // Target a specific user by email or _id
+      const user = await User.findOne({
+        $or: [
+          { email: payload.userId.toLowerCase() },
+          ...(payload.userId.match(/^[a-f\d]{24}$/i) ? [{ _id: payload.userId }] : []),
+        ],
+        fcmToken: { $ne: null, $exists: true },
+        isActive: true,
+      }).select("fcmToken");
+      if (user?.fcmToken) fcmTokens = [user.fcmToken];
+    } else {
+      // Broadcast to users in the target role
+      const users = await User.find({
+        role: payload.role,
+        fcmToken: { $ne: null, $exists: true },
+        isActive: true,
+      }).select("fcmToken");
+      fcmTokens = users.map((u) => u.fcmToken).filter(Boolean);
     }
+
+    if (fcmTokens.length > 0) {
+      await sendFcmNotification(fcmTokens, "AthithiGriha", message, { 
+        type, 
+        notificationId: String(notification._id),
+        role: String(payload.role)
+      });
+      logger.info(`FCM push sent to ${fcmTokens.length} device(s) for role ${payload.role}`);
+    }
+  } catch (fcmErr) {
+    logger.warn("FCM push failed (non-blocking)", { error: fcmErr.message });
   }
 
   // ── 3. Email broadcast (for newsletter subscribers / customer notifications) ──
-  if (payload.role === "customer") {
+  if (payload.role === "customer" && !skipEmail) {
     try {
       const { sendGeneralEmail } = await import("./emailService.js");
       const NewsletterSubscriber = (await import("../models/NewsletterSubscriber.js")).default;

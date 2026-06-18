@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { User, Save, LogOut, Mail, CheckCircle2, Key } from "lucide-react";
+import { User, Save, LogOut, Mail, CheckCircle2, Key, Camera, Loader2 } from "lucide-react";
 import PasswordInput from "@/components/PasswordInput";
 import Layout from "@/components/Layout";
 import { useBooking } from "@/context/BookingContext";
-import { createNotification, changePassword } from "@/services/api";
+import api, { createNotification, changePassword } from "@/services/api";
 import { AssistanceModal } from "@/components/AssistanceModal";
+import { toast } from "sonner";
 
 const Profile = () => {
   const { user, setUser, bookings, selectedHotel } = useBooking();
@@ -22,6 +23,7 @@ const Profile = () => {
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [passwordSaved, setPasswordSaved] = useState(false);
   const [passwordError, setPasswordError] = useState("");
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   useEffect(() => { if (user) setForm(user); }, [user]);
 
@@ -67,12 +69,54 @@ const Profile = () => {
       setRequesting(false);
     }
   };
-  const save = (e: React.FormEvent) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingImage(true);
+    try {
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64 = reader.result as string;
+        try {
+          const uploadRes = await api.post("/upload/image", { image: base64, folder: "profiles" });
+          if (uploadRes.data?.success && uploadRes.data?.url) {
+            const newUrl = uploadRes.data.url;
+            await api.patch("/auth/profile", { profileImage: newUrl });
+            setForm((prev) => ({ ...prev, profileImage: newUrl }));
+            if (user) {
+              setUser({ ...user, profileImage: newUrl } as any);
+            }
+            toast.success("Profile updated successfully!");
+          }
+        } catch (err: any) {
+          console.error("Upload error", err);
+          toast.error("Failed to upload profile picture");
+        } finally {
+          setUploadingImage(false);
+        }
+      };
+      reader.readAsDataURL(file);
+    } catch (err) {
+      setUploadingImage(false);
+    }
+  };
+
+  const save = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
-    setUser(form as any);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2200);
+    try {
+      await api.patch("/auth/profile", {
+        name: form.name,
+        phone: form.phone,
+        city: form.city
+      });
+      setUser(form as any);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2200);
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const handlePasswordChange = async (e: React.FormEvent) => {
@@ -129,8 +173,17 @@ const Profile = () => {
       <div className="container py-10 max-w-5xl">
         <div className="flex items-start sm:items-center justify-between flex-col sm:flex-row gap-5 mb-10">
           <div className="flex items-center gap-5">
-            <div className="grid place-items-center w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-primary text-primary-foreground shrink-0">
-              <User className="w-8 h-8 sm:w-10 sm:h-10" />
+            <div className="relative grid place-items-center w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-primary text-primary-foreground shrink-0 group">
+              {user.profileImage ? (
+                <img src={user.profileImage} alt={user.name} className="w-full h-full rounded-full object-cover" />
+              ) : (
+                <User className="w-8 h-8 sm:w-10 sm:h-10" />
+              )}
+              
+              <label className="absolute inset-0 grid place-items-center bg-black/40 text-white opacity-0 group-hover:opacity-100 transition-opacity rounded-full cursor-pointer">
+                {uploadingImage ? <Loader2 className="w-6 h-6 animate-spin" /> : <Camera className="w-6 h-6" />}
+                <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} disabled={uploadingImage} />
+              </label>
             </div>
             <div>
               <h1 className="font-display text-2xl sm:text-3xl font-bold">{user.name}</h1>

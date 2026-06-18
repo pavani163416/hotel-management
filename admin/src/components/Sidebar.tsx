@@ -1,8 +1,8 @@
 import { useEffect } from "react";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import {
-  LayoutDashboard, Hotel, BedDouble, CalendarCheck,
-  Users, BarChart3, Building2, DollarSign, CreditCard, Lightbulb, ArrowLeft, UserCog, Tag, Flame, Map, BadgeDollarSign, LifeBuoy, Bell, KeyRound, Clock3, PackageSearch
+  LayoutDashboard, Hotel, BedDouble, CalendarCheck, Presentation,
+  Users, BarChart3, Building2, DollarSign, CreditCard, Lightbulb, ArrowLeft, UserCog, Tag, Flame, Map, BadgeDollarSign, LifeBuoy, Bell, KeyRound
 } from "lucide-react";
 import { useAdmin } from "@/context/AdminContext";
 
@@ -12,6 +12,7 @@ const links = [
   { to: "/rooms",         icon: BedDouble,       label: "Rooms" },
   { to: "/hotel-map",     icon: Map,             label: "Hotel Map" },
   { to: "/bookings",      icon: CalendarCheck,   label: "Bookings" },
+  { to: "/halls",         icon: Presentation,    label: "Halls" },
   { to: "/payments",      icon: CreditCard,      label: "Payments" },
   { to: "/guests",        icon: Users,           label: "Guests" },
   { to: "/revenue",       icon: DollarSign,      label: "Revenue" },
@@ -21,12 +22,10 @@ const links = [
   { to: "/owners",        icon: KeyRound,        label: "Property Owners" },
   { to: "/coupons",       icon: Tag,             label: "Coupons & Offers" },
   { to: "/top-deals",    icon: Flame,           label: "Top Deals" },
-  { to: "/waitlist",      icon: Clock3,          label: "Waitlists" },
-  { to: "/lost-found",    icon: PackageSearch,   label: "Lost & Found" },
   { to: "/notifications", icon: Bell,            label: "Notifications" },
 ];
 
-const topLevel = new Set(["/dashboard", "/hotels", "/rooms", "/hotel-map", "/bookings", "/payments", "/guests", "/revenue", "/analytics", "/insights", "/managers", "/owners", "/coupons", "/top-deals", "/notifications"]);
+const topLevel = new Set(["/dashboard", "/hotels", "/rooms", "/hotel-map", "/bookings", "/halls", "/payments", "/guests", "/revenue", "/analytics", "/insights", "/managers", "/owners", "/coupons", "/top-deals", "/notifications"]);
 
 export default function Sidebar() {
   const { admin, theme, t, sidebarOpen, setSidebarOpen } = useAdmin();
@@ -58,7 +57,7 @@ export default function Sidebar() {
             background: "linear-gradient(135deg, rgba(212,168,67,0.2) 0%, rgba(212,168,67,0.08) 100%)",
             border: "1px solid rgba(212,168,67,0.3)",
           }}>
-          <Building2 className="w-4 h-4 text-gold" />
+          <img src="/logo.png" alt="Logo" className="w-5 h-5 object-contain" />
         </div>
         <div>
           <p className="text-bright font-bold text-sm leading-none">AthithiGriha</p>

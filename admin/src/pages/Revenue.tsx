@@ -11,6 +11,7 @@ import PageHeader from "@/components/PageHeader";
 import StatsCard from "@/components/StatsCard";
 import { useBookings } from "@/context/BookingsContext";
 import { useHotels } from "@/context/HotelsContext";
+import { formatCurrency } from "@/utils/currency";
 
 const revenueBySource = [
   { name: "Room Bookings", value: 62, color: "#6366f1" },
@@ -47,6 +48,10 @@ export default function Revenue() {
   const selectedHotelName = selectedHotelId === "all"
     ? "All Hotels"
     : hotels.find((h) => h.hotelId === selectedHotelId)?.name || selectedHotelId;
+
+  const selectedCurrency = selectedHotelId === "all"
+    ? "USD"
+    : hotels.find((h) => h.hotelId === selectedHotelId)?.currency ?? "USD";
 
   // Group bookings by month for chart
   const monthlyData: Record<string, { revenue: number; expenses: number; bookings: number }> = {};
@@ -154,20 +159,20 @@ export default function Revenue() {
               </div>
             )}
             <span className="ml-auto text-xs text-muted">
-              {hotelBookings.length} booking{hotelBookings.length !== 1 ? "s" : ""} · ${totalRevenue.toLocaleString()} revenue
+              {hotelBookings.length} booking{hotelBookings.length !== 1 ? "s" : ""} · {formatCurrency(totalRevenue, selectedCurrency)} revenue
             </span>
           </div>
         </div>
 
         {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <StatsCard title="Total Revenue" value={`$${(totalRevenue / 1000).toFixed(1)}k`} change={`${hotelBookings.length} bookings`} trend="up"
+          <StatsCard title="Total Revenue" value={formatCurrency(totalRevenue, selectedCurrency, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} change={`${hotelBookings.length} bookings`} trend="up"
             icon={<DollarSign className="w-5 h-5 text-primary" />} iconBg="bg-primary-light" />
-          <StatsCard title="Avg/Booking" value={`$${avgPerBooking}`} change="Per reservation" trend="up"
+          <StatsCard title="Avg/Booking" value={formatCurrency(avgPerBooking, selectedCurrency)} change="Per reservation" trend="up"
             icon={<TrendingUp className="w-5 h-5 text-success" />} iconBg="bg-success-light" />
-          <StatsCard title="Total Expenses" value={`$${(totalRevenue * 0.24 / 1000).toFixed(1)}k`} change="~24% of revenue" trend="neutral"
+          <StatsCard title="Total Expenses" value={formatCurrency((totalRevenue * 0.24), selectedCurrency, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} change="~24% of revenue" trend="neutral"
             icon={<TrendingDown className="w-5 h-5 text-danger" />} iconBg="bg-danger-light" />
-          <StatsCard title="Net Profit" value={`$${(netProfit / 1000).toFixed(1)}k`} change="~76% of revenue" trend="up"
+          <StatsCard title="Net Profit" value={formatCurrency(netProfit, selectedCurrency, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} change="~76% of revenue" trend="up"
             icon={<CreditCard className="w-5 h-5 text-warning" />} iconBg="bg-warning-light" />
         </div>
 
@@ -189,8 +194,8 @@ export default function Revenue() {
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f3f9" vertical={false} />
                 <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false}
-                  tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
-                <Tooltip formatter={(v: any) => [`$${(v / 1000).toFixed(1)}k`]}
+                  tickFormatter={(v) => formatCurrency(v, selectedCurrency, { minimumFractionDigits: 0, maximumFractionDigits: 0 }).replace(/\s+/g, "")} />
+                <Tooltip formatter={(v: any) => [formatCurrency(v, selectedCurrency, { minimumFractionDigits: 0, maximumFractionDigits: 0 }), "Revenue"]}
                   contentStyle={{ borderRadius: 8, border: "1px solid #e5e7f0", fontSize: 12 }} />
                 <Bar dataKey="revenue" fill="#6366f1" radius={[4, 4, 0, 0]} maxBarSize={28} />
                 <Bar dataKey="expenses" fill="#f87171" radius={[4, 4, 0, 0]} maxBarSize={28} />
@@ -223,8 +228,8 @@ export default function Revenue() {
                   <CartesianGrid strokeDasharray="3 3" stroke="#f1f3f9" />
                   <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false}
-                    tickFormatter={(v) => `$${v}`} />
-                  <Tooltip formatter={(v: any) => [`$${v}`, "Avg Spend"]}
+                    tickFormatter={(v) => formatCurrency(v, selectedCurrency, { minimumFractionDigits: 0, maximumFractionDigits: 0 }).replace(/\s+/g, "")} />
+                  <Tooltip formatter={(v: any) => [formatCurrency(v, selectedCurrency, { minimumFractionDigits: 0, maximumFractionDigits: 0 }), "Avg Spend"]}
                     contentStyle={{ borderRadius: 8, border: "1px solid #e5e7f0", fontSize: 12 }} />
                   <Area type="monotone" dataKey="avg" stroke="#10b981" strokeWidth={2.5}
                     fill="url(#avgGrad)" dot={{ fill: "#10b981", r: 3 }} />
@@ -274,7 +279,7 @@ export default function Revenue() {
                     <span className="text-text-primary font-medium">{h.name}</span>
                     <div className="flex items-center gap-3">
                       <span className="text-xs text-muted">{h.bookings} bookings</span>
-                      <span className="text-text-secondary font-semibold">${(h.revenue / 1000).toFixed(1)}k</span>
+                      <span className="text-text-secondary font-semibold">{formatCurrency(h.revenue, selectedCurrency, { minimumFractionDigits: 1, maximumFractionDigits: 1 }).replace(/\s+/g, "")}</span>
                     </div>
                   </div>
                   <div className="h-2 bg-surface-3 rounded-full overflow-hidden">

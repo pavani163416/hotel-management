@@ -184,41 +184,6 @@ const HotelDetails = () => {
     nav("/booking");
   };
 
-  const joinWaitlist = async (roomId: string) => {
-    const room = (hotel.rooms || []).find((r) => r.id === roomId);
-    if (!room) return;
-
-    if (!user) {
-      setPendingRoomId(roomId);
-      setAuthMode("signin");
-      setAuthOpen(true);
-      return;
-    }
-
-    if (!search.checkIn || !search.checkOut) {
-      toast.error("Please select dates first.");
-      return;
-    }
-
-    setRoomStatus((prev) => ({ ...prev, [roomId]: { checking: true, error: "" } }));
-    try {
-      const res = await API.post("/waitlist/join", {
-        hotelId: hotel.id,
-        roomId: room.id,
-        roomTypeId: room.roomTypeId || room.id,
-        startDate: search.checkIn,
-        endDate: search.checkOut
-      });
-      if (res.data.success) {
-        toast.success(`You are #${res.data.data.position} on the waitlist!`);
-      }
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || "Failed to join waitlist.");
-    } finally {
-      setRoomStatus((prev) => ({ ...prev, [roomId]: { checking: false, error: "" } }));
-    }
-  };
-
   const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!reviewName.trim() || !reviewText.trim()) {
@@ -267,10 +232,17 @@ const HotelDetails = () => {
       <div className="container pt-8 px-0 sm:px-4">
         {/* Desktop Gallery */}
         <div className="hidden md:grid grid-cols-3 gap-3 rounded-2xl overflow-hidden h-[420px] max-h-[50vh]">
-          <img src={hotel.gallery?.[0] || hotel.image} alt={hotel.name} className="col-span-2 w-full h-full object-cover" />
-          <div className="grid grid-rows-2 gap-3 h-full">
-            <img src={hotel.gallery?.[1] || hotel.image} alt="" className="w-full h-full object-cover" loading="lazy" />
-            <img src={hotel.gallery?.[2] || hotel.image} alt="" className="w-full h-full object-cover" loading="lazy" />
+          <div className="col-span-2 overflow-hidden rounded-2xl bg-surface-2">
+            <img src={hotel.gallery?.[0] || hotel.image} alt={hotel.name}
+              className="block w-full h-full object-cover" />
+          </div>
+          <div className="grid grid-rows-2 gap-3 h-full min-h-0">
+            <div className="overflow-hidden rounded-2xl h-full min-h-0 bg-surface-2">
+              <img src={hotel.gallery?.[1] || hotel.image} alt="" className="block w-full h-full object-cover" loading="lazy" />
+            </div>
+            <div className="overflow-hidden rounded-2xl h-full min-h-0 bg-surface-2">
+              <img src={hotel.gallery?.[2] || hotel.image} alt="" className="block w-full h-full object-cover" loading="lazy" />
+            </div>
           </div>
         </div>
 
@@ -440,17 +412,11 @@ const HotelDetails = () => {
                       </div>
                       <div className="flex flex-col items-stretch gap-1 md:min-w-[140px]">
                         {isSoldOut ? (
-                          /* Sold out button replaced with Join Waitlist */
                           <button
-                            onClick={() => joinWaitlist(r.id)}
-                            disabled={roomStatus[r.id]?.checking}
-                            className="bg-secondary text-muted-foreground hover:bg-secondary/80 hover:text-primary disabled:opacity-60 disabled:cursor-not-allowed px-4 py-2.5 rounded-lg font-semibold text-sm border border-border transition-colors flex items-center justify-center gap-1.5"
+                            disabled
+                            className="bg-secondary text-muted-foreground px-4 py-2.5 rounded-lg font-semibold text-sm border border-border cursor-not-allowed"
                           >
-                            {roomStatus[r.id]?.checking ? (
-                              <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Joining...</>
-                            ) : (
-                              <><Clock className="w-3.5 h-3.5" /> Join Waitlist</>
-                            )}
+                            Sold Out
                           </button>
                         ) : (
                           <button

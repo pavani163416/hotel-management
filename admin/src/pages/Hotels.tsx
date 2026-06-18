@@ -47,9 +47,21 @@ export default function Hotels() {
     "AC", "Smart TV", "Pet Friendly", "Family Friendly",
   ]);
 
+  // Allow admins to add a custom amenity string quickly
+  const addCustomAmenity = (custom: string) => {
+    const a = custom.trim();
+    if (!a) return;
+    if (!allAmenities.includes(a)) {
+      // mutate the array reference used for rendering (safe here)
+      (allAmenities as string[]).push(a);
+    }
+    // toggle it into the current form selection
+    if (!form.amenities.includes(a)) setForm({ ...form, amenities: [...form.amenities, a] });
+  };
+
   const [form, setForm] = useState({
     name: "", subtitle: "", location: "", country: "",
-    pricePerNight: "500", status: "Active" as Hotel["status"],
+    pricePerNight: "500", status: "Active" as Hotel["status"], category: "General",
     mapUrl: "",
     amenities: ["Free WiFi", "Restaurant", "Concierge"] as string[],
     roomInventory: {
@@ -143,7 +155,7 @@ export default function Hotels() {
   const openAdd = () => {
     setEditTarget(null);
     setForm({
-      name: "", subtitle: "", location: "", country: "", pricePerNight: "500", status: "Active",
+      name: "", subtitle: "", location: "", country: "", pricePerNight: "500", status: "Active", category: "General",
       mapUrl: "",
       amenities: ["Free WiFi", "Restaurant", "Concierge"],
       roomInventory: {
@@ -171,7 +183,7 @@ export default function Hotels() {
     const statePart = parts[1]?.trim() || "";
 
     setForm({
-      name: h.name, subtitle: h.subtitle, location: h.location, country: h.country, pricePerNight: "500", status: h.status,
+      name: h.name, subtitle: h.subtitle, location: h.location, country: h.country, pricePerNight: "500", status: h.status, category: (h as any).category || "General",
       mapUrl: h.mapUrl || "",
       amenities: h.amenities?.length ? h.amenities : ["Free WiFi", "Restaurant", "Concierge"],
       roomInventory: (h as any).roomInventory || {
@@ -361,6 +373,7 @@ export default function Hotels() {
       reviewCount: 0,
       pricePerNight: price,
       type: "Hotel",
+      category: form.category,
       coords: [0, 0],
       mapUrl: form.mapUrl,
       amenities: form.amenities,
@@ -757,6 +770,18 @@ export default function Hotels() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
+                <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">Category</label>
+                <select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}
+                  className="w-full px-3 py-2.5 border border-border rounded-lg text-sm bg-transparent outline-none focus:border-primary text-text-primary">
+                  <option value="General">General</option>
+                  <option value="Beach">Beach</option>
+                  <option value="Mountain">Mountain</option>
+                  <option value="City">City</option>
+                  <option value="Desert">Desert</option>
+                  <option value="Luxury">Luxury</option>
+                </select>
+              </div>
+              <div>
                 <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">
                   Country * {loadingCountries && <span className="text-[10px] text-primary animate-pulse">(loading...)</span>}
                 </label>
@@ -969,6 +994,15 @@ export default function Hotels() {
                     {a}
                   </button>
                 ))}
+              </div>
+              <div className="mt-2 flex gap-2">
+                <input type="text" placeholder="Add custom amenity" id="customAmenityInput"
+                  className="flex-1 px-3 py-2.5 border border-border rounded-lg text-sm outline-none focus:border-primary"
+                />
+                <button type="button" onClick={() => { const el = document.getElementById("customAmenityInput") as HTMLInputElement | null; if (el) { addCustomAmenity(el.value); el.value = ""; } }}
+                  className="px-3 py-2.5 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-primary-dark transition-colors">
+                  Add
+                </button>
               </div>
               {form.amenities.length > 0 && (
                 <p className="text-xs text-muted mt-1.5">{form.amenities.length} selected</p>

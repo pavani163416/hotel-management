@@ -7,6 +7,7 @@ import StatusBadge from "@/components/StatusBadge";
 import { useHotels } from "@/context/HotelsContext";
 import { useBookings } from "@/context/BookingsContext";
 import { useState, useEffect } from "react";
+import { formatCurrency } from "@/utils/currency";
 
 import { API } from "@/services/api";
 
@@ -65,6 +66,7 @@ export default function HotelDetail() {
   const occupancyPct   = hotelRooms.length
     ? Math.round(((hotelRooms.length - availableRooms) / hotelRooms.length) * 100)
     : hotel.activeBookings > 0 ? Math.round((hotel.activeBookings / hotel.rooms) * 100) : 0;
+  const currency = hotel.currency || "USD";
 
   return (
     <AdminLayout>
@@ -109,7 +111,7 @@ export default function HotelDetail() {
             icon={<CalendarCheck className="w-5 h-5 text-primary" />} iconBg="bg-primary-light" />
           <StatsCard title="Pending" value={pending} change="Needs action" trend={pending > 0 ? "down" : "neutral"}
             icon={<TrendingUp className="w-5 h-5 text-warning" />} iconBg="bg-warning-light" />
-          <StatsCard title="Revenue" value={`$${revenue.toLocaleString()}`} change="From bookings" trend="up"
+          <StatsCard title="Revenue" value={formatCurrency(revenue, currency)} change="From bookings" trend="up"
             icon={<DollarSign className="w-5 h-5 text-success" />} iconBg="bg-success-light" />
           <StatsCard title="Rooms" value={hotelRooms.length || hotel.rooms} change={`${availableRooms || hotel.rooms - hotel.activeBookings} available`}
             icon={<BedDouble className="w-5 h-5 text-text-secondary" />} iconBg="bg-surface-3" />
@@ -143,7 +145,7 @@ export default function HotelDetail() {
                     <tr key={r.id || r._id} className="border-b border-border last:border-0 hover:bg-surface-2 transition-colors">
                       <td className="px-5 py-3.5 text-sm font-semibold text-text-primary">{r.id || r._id}</td>
                       <td className="px-5 py-3.5 text-sm text-text-secondary">{r.name}</td>
-                      <td className="px-5 py-3.5 text-sm font-semibold text-text-primary">${r.price}</td>
+                      <td className="px-5 py-3.5 text-sm font-semibold text-text-primary">{formatCurrency(r.price, currency)}</td>
                       <td className="px-5 py-3.5 text-sm text-text-secondary">{r.capacity}</td>
                       <td className="px-5 py-3.5 text-sm text-text-secondary">{r.bed || "—"}</td>
                       <td className="px-5 py-3.5">
@@ -200,7 +202,7 @@ export default function HotelDetail() {
                         {new Date(b.checkOut).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                       </td>
                       <td className="px-5 py-3.5 text-sm text-text-secondary">{b.nights}</td>
-                      <td className="px-5 py-3.5 text-sm font-semibold text-text-primary">${b.totalAmount.toLocaleString()}</td>
+                      <td className="px-5 py-3.5 text-sm font-semibold text-text-primary">{formatCurrency(b.totalAmount, currency)}</td>
                       <td className="px-5 py-3.5"><StatusBadge status={b.status} /></td>
                     </tr>
                   ))}

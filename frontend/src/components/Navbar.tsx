@@ -302,7 +302,7 @@ const Navbar = () => {
             aria-label="Toggle menu"
           >
             <span className="grid place-items-center w-8 h-8 rounded-lg bg-primary text-primary-foreground shrink-0">
-              <Hotel className="w-4 h-4" />
+              <img src="/logo.png" alt="Logo" className="w-5 h-5 object-contain invert" />
             </span>
             <span>AthithiGriha</span>
           </button>
@@ -310,7 +310,7 @@ const Navbar = () => {
           {/* Desktop Logo Link */}
           <Link to="/" className="hidden md:flex items-center justify-start gap-2 font-display font-bold text-lg text-primary md:w-auto">
             <span className="grid place-items-center w-8 h-8 rounded-lg bg-primary text-primary-foreground shrink-0">
-              <Hotel className="w-4 h-4" />
+              <img src="/logo.png" alt="Logo" className="w-5 h-5 object-contain invert" />
             </span>
             <span>AthithiGriha</span>
           </Link>
@@ -397,7 +397,11 @@ const Navbar = () => {
                   <DropdownMenuTrigger asChild>
                     <button className="flex items-center gap-2 px-1.5 py-1.5 md:px-3 md:py-1.5 rounded-full hover:bg-accent/5 transition-base border border-transparent hover:border-border outline-none min-h-[44px]">
                       <span className="font-semibold text-sm text-primary hidden md:inline-block">{user.name.split(" ")[0]}</span>
-                      <UserCircle className="w-7 h-7 text-muted-foreground shrink-0" />
+                      {user.profileImage ? (
+                        <img src={user.profileImage} alt={user.name} className="w-7 h-7 rounded-full object-cover shrink-0" />
+                      ) : (
+                        <UserCircle className="w-7 h-7 text-muted-foreground shrink-0" />
+                      )}
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-48">
@@ -409,21 +413,6 @@ const Navbar = () => {
                     <DropdownMenuItem asChild>
                       <Link to="/halls" className="w-full cursor-pointer min-h-[44px] flex items-center">
                         <Building2 className="w-4 h-4 mr-2" /> Book a Hall
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link to="/history" className="flex items-center gap-3 px-4 py-2.5 text-sm text-text-primary hover:bg-surface-2 transition-colors">
-                        <Calendar className="w-4 h-4 text-text-secondary" /> Bookings
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link to="/my-waitlists" className="flex items-center gap-3 px-4 py-2.5 text-sm text-text-primary hover:bg-surface-2 transition-colors">
-                        <Clock className="w-4 h-4 text-text-secondary" /> My Waitlists
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link to="/lost-found" className="flex items-center gap-3 px-4 py-2.5 text-sm text-text-primary hover:bg-surface-2 transition-colors">
-                        <PackageSearch className="w-4 h-4 text-text-secondary" /> Lost & Found
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
@@ -474,6 +463,19 @@ const Navbar = () => {
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
+
+              {/* Mobile Avatar (just triggers drawer or acts as avatar) */}
+              <button 
+                onClick={() => setMobileMenuOpen(true)}
+                className="md:hidden flex items-center justify-center min-w-[44px] min-h-[44px] -mr-2"
+                aria-label="Open menu"
+              >
+                {user.profileImage ? (
+                  <img src={user.profileImage} alt={user.name} className="w-6 h-6 rounded-full object-cover" />
+                ) : (
+                  <UserCircle className="w-6 h-6 text-muted-foreground" />
+                )}
+              </button>
             </>
           ) : (
             <>
@@ -580,9 +582,6 @@ const Navbar = () => {
                 </button>
                 <button onClick={() => handleMenuNavigation("/owner-portal")} className="px-4 py-3 min-h-[44px] flex items-center text-base font-semibold text-muted-foreground hover:bg-secondary hover:text-primary rounded-lg transition-base">
                   List Your Property
-                </button>
-                <button onClick={() => handleMenuNavigation("/history")} className="px-4 py-3 min-h-[44px] flex items-center text-base font-semibold text-muted-foreground hover:bg-secondary hover:text-primary rounded-lg transition-base">
-                  My Bookings
                 </button>
                 <button onClick={() => { setMobileMenuOpen(false); handleLogout(); }} className="px-4 py-3 min-h-[44px] flex items-center text-base font-semibold text-destructive hover:bg-destructive/10 rounded-lg transition-base mt-1">
                   Log out

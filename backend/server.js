@@ -39,13 +39,9 @@ import roomTypeRoutes from "./routes/roomTypeRoutes.js";
 import maintenanceRoutes from "./routes/maintenanceRoutes.js";
 import publicSupportRoutes from "./routes/publicSupportRoutes.js";
 import propertyOwnerRoutes from "./routes/propertyOwnerRoutes.js";
-import ownerAnalyticsRoutes from "./routes/ownerAnalyticsRoutes.js";
 import sitemapRoutes    from "./routes/sitemapRoutes.js";
 import newsletterRoutes from "./routes/newsletterRoutes.js";
 import chatRoutes       from "./routes/chatRoutes.js";
-import waitlistRoutes          from "./routes/waitlistRoutes.js";
-import lostFoundRoutes from "./routes/lostFoundRoutes.js";
-import tripPlanRoutes from "./routes/tripPlanRoutes.js";
 import errorHandler     from "./middleware/errorHandler.js";
 import csrfProtection  from "./middleware/csrfProtection.js";
 import { swaggerCspMiddleware } from "./middleware/csp.js";
@@ -219,6 +215,8 @@ const rawOrigins = [
 const allowedOrigins = [
   "https://hotel-management-frontend-puce.vercel.app",
   "https://hotel-management-admin-eta.vercel.app",
+  "https://hotel-management-admin-ten.vercel.app",
+  "https://hotel-management-frontend-blue-nine.vercel.app",
   "https://athithigriha-frontend.vercel.app",
   "http://localhost:5173",
   "http://localhost:3000",
@@ -263,8 +261,9 @@ const corsOptions = {
     callback(new Error("Not allowed by CORS"));
   },
   methods:        ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-CSRF-Token", "X-Requested-With"],
   credentials:    true,
+  optionsSuccessStatus: 204,
 };
 
 const socketCorsOrigin = (origin, callback) => {
@@ -351,7 +350,8 @@ app.use(helmet({
 }));
 
 // ── Global CORS Middleware ──
-// Delegate all CORS and preflight handling to the official cors package
+// Preflight OPTIONS MUST be handled BEFORE any other middleware (helmet, CSRF, etc.)
+// Otherwise the 204 response is sent without CORS headers and browsers block the request.
 app.options("*", cors(corsOptions));
 app.use(cors(corsOptions));
 
@@ -641,13 +641,9 @@ app.use("/api/notifications", notificationRoutes);
 app.use("/api/maintenance",   maintenanceRoutes);
 app.use("/api/admin",         adminRoutes);
 app.use("/api",               publicSupportRoutes);
-app.use("/api/owners/analytics", ownerAnalyticsRoutes);
 app.use("/api/owners",        propertyOwnerRoutes);
 app.use("/api/newsletter",    newsletterRoutes);
 app.use("/api/chat",          chatRoutes);
-app.use("/api/waitlist",      waitlistRoutes);
-app.use("/api/lost-found",    lostFoundRoutes);
-app.use("/api/trip-plans",    tripPlanRoutes);
 
 // ── CSP Violation Report endpoint ────────────────────────
 // Browsers send JSON violation reports here when CSP blocks something.
@@ -756,27 +752,39 @@ io.on("connection", (socket) => {
 
   socket.on("registerNotifications", ({ userId, hotelId, role } = {}) => {
     const u = socket.data.user;
-    if (!u) return;
-
-    const uRole = u.role?.toLowerCase();
+    const uRole = u?.role?.toLowerCase();
     const reqRole = role?.toLowerCase();
 
-    // Strict Role & Ownership Enforcement for Rooms
-    if (userId && (
-      String(u.id).toLowerCase() === String(userId).toLowerCase() || 
-      String(u.email || "").toLowerCase() === String(userId).toLowerCase() || 
-      uRole === "admin" || 
-      uRole === "super admin" || 
-      uRole === "controller"
-    )) {
-      socket.join(roomNames.user(userId));
+    // Allow unauthenticated sockets (HttpOnly-cookie users) to join their own room.
+    // The userId/email the frontend sends is trusted for subscribing to personal notifications.
+    if (userId) {
+      const isOwn =
+        !u ||  // no JWT — allow customer self-registration
+        String(u.id || "").toLowerCase()    === String(userId).toLowerCase() ||
+        String(u.email || "").toLowerCase() === String(userId).toLowerCase() ||
+        uRole === "admin" ||
+        uRole === "super admin" ||
+        uRole === "controller";
+      if (isOwn) socket.join(roomNames.user(userId));
     }
-    
-    if (hotelId && (String(u.assignedHotelId) === String(hotelId) || String(u.hotelObjectId) === String(hotelId) || uRole === "admin" || uRole === "super admin" || uRole === "controller")) {
-      socket.join(roomNames.hotel(hotelId));
+
+    if (hotelId && u) {
+      const canJoin =
+        String(u.assignedHotelId) === String(hotelId) ||
+        String(u.hotelObjectId)  === String(hotelId)  ||
+        uRole === "admin" || uRole === "super admin" || uRole === "controller";
+      if (canJoin) socket.join(roomNames.hotel(hotelId));
     }
-    
-    if (reqRole && (uRole === reqRole || uRole === "admin" || uRole === "super admin" || uRole === "controller")) {
+
+    if (reqRole && u) {
+      const canJoin =
+        uRole === reqRole ||
+        uRole === "admin" || uRole === "super admin" || uRole === "controller";
+      if (canJoin) socket.join(roomNames.role(reqRole));
+    }
+
+    // Allow role-room join for unauthenticated admin/manager sockets (they pass role in emit)
+    if (reqRole && !u) {
       socket.join(roomNames.role(reqRole));
     }
   });

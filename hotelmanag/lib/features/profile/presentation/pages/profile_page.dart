@@ -179,22 +179,10 @@ class _ProfilePageState extends State<ProfilePage> {
                 _buildCustomerSupportCard(context),
                 const SizedBox(height: 16),
                 _buildSettingItem(
-                  LucideIcons.barChart2,
-                  'Owner Dashboard',
-                  'View revenue and booking analytics',
-                  onTap: () => context.push('/owner-dashboard'),
-                ),
-                _buildSettingItem(
                   LucideIcons.clipboardList,
                   'In-Room Service Requests',
                   'Request room service, housekeeping, or repairs',
                   onTap: () => context.push('/in-room-services'),
-                ),
-                _buildSettingItem(
-                  LucideIcons.helpCircle,
-                  'Lost & Found Reports',
-                  'Report lost or found belongings during your stay',
-                  onTap: () => context.push('/lost-and-found'),
                 ),
                 const SizedBox(height: 24),
                 _buildLogoutButton(),

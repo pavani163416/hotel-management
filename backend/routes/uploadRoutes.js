@@ -242,6 +242,29 @@ router.get("/fix-hotel-names", protect, authorizeRoles("Super Admin", "admin"), 
   }
 });
 
+// GET /api/upload/cleanup-orphans
+router.get("/cleanup-orphans", protect, authorizeRoles("Super Admin", "admin"), async (req, res) => {
+  try {
+    const Booking = (await import("../models/Booking.js")).default;
+    const Hotel = (await import("../models/Hotel.js")).default;
+    
+    const hotels = await Hotel.find({}, "_id hotelId");
+    const hotelIds = hotels.map(h => h._id);
+    const hotelStringIds = hotels.map(h => h.hotelId).filter(Boolean);
+
+    const result = await Booking.deleteMany({
+      $and: [
+        { hotelId: { $nin: hotelIds } },
+        { hotelStringId: { $nin: hotelStringIds } }
+      ]
+    });
+    
+    res.json({ success: true, message: `Orphaned bookings removed: ${result.deletedCount}` });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 export default router;
 
 // GET /api/upload/fix-seeded-bookings — fixes the 7 seeded bookings with no room ref

@@ -484,12 +484,56 @@ export const deleteHotel = async (req, res, next) => {
       const HotelSnapshot = await getHotelSnapshot();
       await HotelSnapshot.findOneAndDelete({ hotelId: req.params.id });
     } catch {}
+    
+    // Auto-cleanup orphaned Rooms and Bookings when a Hotel is destroyed
+    await Room.deleteMany({ $or: [{ hotelStringId: hotel.hotelId }, { hotelId: hotel._id }] }).catch(() => {});
+    await Booking.deleteMany({ $or: [{ hotelStringId: hotel.hotelId }, { hotelId: hotel._id }] }).catch(() => {});
+
     await invalidateHotelCache();
     broadcastHotels();
     res.status(200).json({ success: true, message: "Hotel permanently deleted" });
   } catch (error) {
     next(error);
   }
+};
+
+// ── GET /api/hotels/halls/my-bookings ────────────────────────────
+export const getMyHallBookings = async (req, res, next) => {
+  try {
+    if (!req.user || !req.user.email) return res.status(401).json({ success: false, message: "Unauthorized" });
+    
+    // Find all halls that have a booking with the user's email or ID
+    const halls = await FunctionHall.find({
+      $or: [
+        { "bookings.organizerEmail": req.user.email },
+        { "bookings.userId": req.user.id }
+      ]
+    }).lean();
+
+    const myBookings = [];
+    halls.forEach(hall => {
+      hall.bookings.forEach(booking => {
+        if (booking.organizerEmail === req.user.email || String(booking.userId) === String(req.user.id)) {
+          myBookings.push({
+            id: booking._id,
+            hotelName: hall.hotelName || hall.hotelStringId || "Hotel",
+            hotelImage: "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=400&q=80",
+            checkIn: booking.date,
+            checkOut: booking.date,
+            nights: 1,
+            total: hall.pricePerDay || hall.pricePerHour || 0,
+            status: booking.status,
+            guestName: booking.organizer || req.user.name,
+            roomName: hall.name,
+            createdAt: booking.bookedAt,
+            isHallBooking: true
+          });
+        }
+      });
+    });
+
+    res.status(200).json({ success: true, count: myBookings.length, data: myBookings });
+  } catch (err) { next(err); }
 };
 
 // POST /api/hotels/:id/rooms — add a room to a hotel's embedded rooms array

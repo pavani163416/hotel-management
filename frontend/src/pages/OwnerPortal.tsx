@@ -6,11 +6,7 @@ import {
   Star, Users, DollarSign, X, Eye, EyeOff, ClipboardList,
   UserCheck, BadgeCheck, Clock3
 } from "lucide-react";
-import { useAuth } from "@/context/AuthContext";
 import api from "@/services/api";
-import OwnerWaitlist from "./owner/OwnerWaitlist";
-import OwnerLostFound from "./owner/OwnerLostFound";
-import OwnerAnalytics from "./owner/OwnerAnalytics";
 import { AuthModal } from "@/components/AuthModal";
 import { useBooking } from "@/context/BookingContext";
 import Layout from "@/components/Layout";
@@ -119,9 +115,6 @@ const OwnerPortal = () => {
       setDashboardData(null);
     }
   }, [user]);
-
-  // Dashboard Tabs
-  const [activeTab, setActiveTab] = useState<"dashboard" | "waitlist" | "lost-found" | "analytics">("dashboard");
 
   const fetchApplicationStatus = async () => {
     setLoading(true);
@@ -324,41 +317,9 @@ const OwnerPortal = () => {
               </div>
             </div>
 
-            {/* Navigation Tabs */}
-            <div className="flex gap-2 mb-6 border-b border-border overflow-x-auto scrollbar-hide">
-              <button
-                onClick={() => setActiveTab("dashboard")}
-                className={`px-4 py-2 text-sm font-semibold whitespace-nowrap transition-colors relative ${activeTab === "dashboard" ? "text-primary" : "text-muted-foreground hover:text-primary"}`}
-              >
-                Dashboard
-                {activeTab === "dashboard" && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent rounded-t-full" />}
-              </button>
-              <button
-                onClick={() => setActiveTab("waitlist")}
-                className={`px-4 py-2 text-sm font-semibold whitespace-nowrap transition-colors relative ${activeTab === "waitlist" ? "text-primary" : "text-muted-foreground hover:text-primary"}`}
-              >
-                Waitlist Management
-                {activeTab === "waitlist" && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent rounded-t-full" />}
-              </button>
-              <button
-                onClick={() => setActiveTab("lost-found")}
-                className={`px-4 py-2 text-sm font-semibold whitespace-nowrap transition-colors relative ${activeTab === "lost-found" ? "text-primary" : "text-muted-foreground hover:text-primary"}`}
-              >
-                Lost & Found
-                {activeTab === "lost-found" && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent rounded-t-full" />}
-              </button>
-              <button
-                onClick={() => setActiveTab("analytics")}
-                className={`px-4 py-2 text-sm font-semibold whitespace-nowrap transition-colors relative ${activeTab === "analytics" ? "text-primary" : "text-muted-foreground hover:text-primary"}`}
-              >
-                Analytics
-                {activeTab === "analytics" && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent rounded-t-full" />}
-              </button>
-            </div>
-
-            {activeTab === "dashboard" && (
-              <>
-                {/* Stats */}
+            {/* Dashboard content */}
+            <div>
+              {/* Stats */}
             <div className="grid sm:grid-cols-3 gap-4 mb-6">
               {[
                 { label: "My Hotels", value: dashboardData?.stats?.totalHotels ?? 0, icon: Building2 },
@@ -402,20 +363,7 @@ const OwnerPortal = () => {
                 </div>
               )}
             </div>
-              </>
-            )}
-
-            {activeTab === "waitlist" && (
-              <OwnerWaitlist />
-            )}
-
-            {activeTab === "lost-found" && (
-              <OwnerLostFound />
-            )}
-
-            {activeTab === "analytics" && (
-              <OwnerAnalytics />
-            )}
+            </div>
           </div>
         </div>
       </Layout>

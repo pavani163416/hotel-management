@@ -191,28 +191,31 @@ const Home = () => {
         </div>
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[...hotels].sort((a, b) => (b.activeBookings || 0) - (a.activeBookings || 0)).slice(0, 6).map((h) => (
-            <button key={h.id} onClick={() => nav(`/hotel/${h.id}`)} className="group text-left animate-fade-in hover:-translate-y-1 transition-base">
-              <div className="relative aspect-[4/3] overflow-hidden rounded-2xl mb-3 shadow-elegant hover:shadow-luxe transition-base">
-                <img src={h.image} alt={h.name} loading="lazy"
-                  className="w-full h-full object-cover group-hover:scale-105 transition-base duration-500" />
-                <button
-                  onClick={(e) => { e.stopPropagation(); toggleWishlist(h.id); }}
-                  className="absolute top-3 left-3 bg-background/95 backdrop-blur w-8 h-8 rounded-full grid place-items-center hover:scale-110 transition-transform shadow-md border border-border/50"
-                  aria-label="Add to wishlist"
-                >
-                  <Heart className={`w-4 h-4 ${isWishlisted(h.id) ? "fill-red-500 text-red-500" : "text-muted-foreground"}`} />
-                </button>
-              </div>
-              <div className="flex items-start justify-between gap-2">
-                <div>
-                  <h3 className="font-semibold text-primary group-hover:text-accent transition-base">{h.name}</h3>
-                  <p className="text-sm text-muted-foreground">{h.location}</p>
+            <div key={h.id} className="group text-left animate-fade-in hover:-translate-y-1 transition-base">
+              <Link to={`/hotel/${h.id}`} className="block">
+                <div className="relative aspect-[4/3] overflow-hidden rounded-2xl mb-3 shadow-elegant hover:shadow-luxe transition-base">
+                  <img src={h.image} alt={h.name} loading="lazy"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-base duration-500" />
+                  <button
+                    type="button"
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleWishlist(h.id); }}
+                    className="absolute top-3 left-3 bg-background/95 backdrop-blur w-8 h-8 rounded-full grid place-items-center hover:scale-110 transition-transform shadow-md border border-border/50"
+                    aria-label="Add to wishlist"
+                  >
+                    <Heart className={`w-4 h-4 ${isWishlisted(h.id) ? "fill-red-500 text-red-500" : "text-muted-foreground"}`} />
+                  </button>
                 </div>
-                <p className="text-sm font-semibold text-primary whitespace-nowrap">
-                  From {format(h.pricePerNight)}<span className="text-muted-foreground font-normal">/night</span>
-                </p>
-              </div>
-            </button>
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <h3 className="font-semibold text-primary group-hover:text-accent transition-base">{h.name}</h3>
+                    <p className="text-sm text-muted-foreground">{h.location}</p>
+                  </div>
+                  <p className="text-sm font-semibold text-primary whitespace-nowrap">
+                    From {format(h.pricePerNight)}<span className="text-muted-foreground font-normal">/night</span>
+                  </p>
+                </div>
+              </Link>
+            </div>
           ))}
         </div>
       </section>

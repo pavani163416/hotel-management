@@ -210,6 +210,7 @@ import {
   validateEmailPayload,
   validateResetPasswordPayload
 } from "../middleware/authValidator.js";
+import { getIo, roomNames } from "../utils/notificationService.js";
 
 import { OAuth2Client } from "google-auth-library";
 const googleClient = new OAuth2Client(
@@ -409,7 +410,7 @@ router.get("/captcha", async (req, res) => {
 // ── POST /api/auth/register ───────────────────────────────
 router.post("/register", authLimiter, validateRegisterPayload, async (req, res, next) => {
   try {
-    const { name, email, password, phone, city } = req.body;
+    const { name, email, password, phone, city, captchaId, captchaAnswer, captchaToken } = req.body;
 
     if (!name || !email || !password || !phone) {
       return res.status(400).json({
@@ -1483,6 +1484,11 @@ router.patch("/profile", verifyCustomerToken, async (req, res, next) => {
       }
     }
 
+    const io = getIo();
+    if (io) {
+      io.to(roomNames.user(user.email)).emit("profileUpdated", { profileImage: user.profileImage });
+    }
+
     res.json({
       success: true,
       message: "Profile updated successfully.",
@@ -1816,13 +1822,26 @@ router.post("/resend-otp", otpRateLimiter, async (req, res, next) => {
       });
     }
 
+    // Look up user in DB first
     const user = await User.findOne({ email: normalEmail });
-    if (!user) {
-      return res.status(404).json({ success: false, message: "User not found." });
-    }
 
-    if (user.isVerified) {
-      return res.status(400).json({ success: false, message: "Email is already verified." });
+    // If not in DB, check Redis pending cache (new registrations before email verify)
+    let userName = user?.name;
+    if (!user) {
+      const pendingRaw = await cacheGet(`pending_user_${normalEmail}`);
+      if (!pendingRaw) {
+        return res.status(404).json({ success: false, message: "User not found. Please register first." });
+      }
+      try {
+        const pending = typeof pendingRaw === "string" ? JSON.parse(pendingRaw) : pendingRaw;
+        userName = pending.name || "User";
+      } catch {
+        userName = "User";
+      }
+    } else {
+      if (user.isVerified) {
+        return res.status(400).json({ success: false, message: "Email is already verified." });
+      }
     }
 
     // Generate new OTP and set cooldown
@@ -1830,7 +1849,7 @@ router.post("/resend-otp", otpRateLimiter, async (req, res, next) => {
     await cacheSet(`otp_${normalEmail}`, otp, 300);
     await cacheSet(`cooldown_${normalEmail}`, "true", 60);
 
-    const otpEmailPayload = { to: normalEmail, name: user.name, otp };
+    const otpEmailPayload = { to: normalEmail, name: userName, otp };
     try {
       await sendOtpEmail(otpEmailPayload);
     } catch (emailErr) {

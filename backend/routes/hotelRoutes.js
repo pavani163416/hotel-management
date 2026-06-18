@@ -109,7 +109,7 @@
  *         description: Room removed successfully
  */
 import express from "express";
-import { getHotels, getHotelById, createHotel, updateHotel, deleteHotel, addRoomToHotel, removeRoomFromHotel, updateRoomInHotel, addReviewToHotel, editReviewInHotel, deleteReviewFromHotel, getHotelHalls, bookHotelHall } from "../controllers/hotelController.js";
+import { getHotels, getHotelById, createHotel, updateHotel, deleteHotel, addRoomToHotel, removeRoomFromHotel, updateRoomInHotel, addReviewToHotel, editReviewInHotel, deleteReviewFromHotel, getHotelHalls, bookHotelHall, getMyHallBookings } from "../controllers/hotelController.js";
 import { protect, authorizeRoles, validateOwnership, requireObjectId } from "../middleware/auth.js";
 import { validate, schemas } from "../middleware/zodValidation.js";
 
@@ -124,11 +124,10 @@ router.route("/:id")
   .patch(protect, validateOwnership("Hotel"), validate(schemas.updateHotel), updateHotel)
   .delete(protect, validateOwnership("Hotel"), deleteHotel);
 
-router.route("/:id/halls")
-  .get(getHotelHalls);
-
-router.route("/:id/halls/:hallId/book")
-  .post(protect, bookHotelHall);
+// ── Function Halls ──────────────────────────────────────────────
+router.get("/halls/my-bookings", protect, getMyHallBookings);
+router.get("/:id/halls", getHotelHalls);
+router.post("/:id/halls/:hallId/book", protect, bookHotelHall);
 
 router.route("/:id/reviews")
   .post(protect, validate(schemas.addReview), addReviewToHotel);

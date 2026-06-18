@@ -46,13 +46,13 @@ import svgCaptcha from "svg-captcha";
 export const generateCaptcha = async () => {
   const captcha = svgCaptcha.create({
     size: 4,
-    ignoreChars: '0o1iIlLqQpP', 
-    noise: 1, 
-    color: false,
-    background: '#f8f9fa',
+    ignoreChars: '0o1iIlLqQpP',
+    noise: 0,          // No crossing noise lines
+    color: true,       // Colorful letters like the reference image
+    background: '#f0ebe1', // Warm beige background matching the UI
     width: 200,
     height: 60,
-    fontSize: 55,
+    fontSize: 50,
   });
 
   const captchaId = randomUUID();
