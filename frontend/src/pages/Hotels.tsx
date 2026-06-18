@@ -90,6 +90,32 @@ const Hotels = () => {
 
   useEffect(() => { setLoading(false); }, []);
 
+  useEffect(() => {
+    if (!mapOpen) return;
+
+    const handleScroll = (e: Event) => {
+      const modalEl = document.getElementById("map-modal-container");
+      if (modalEl && modalEl.contains(e.target as Node)) {
+        return;
+      }
+      setMapOpen(false);
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    
+    const scrollableSections = document.querySelectorAll(".overflow-y-auto");
+    scrollableSections.forEach((sec) => {
+      sec.addEventListener("scroll", handleScroll, { passive: true });
+    });
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      scrollableSections.forEach((sec) => {
+        sec.removeEventListener("scroll", handleScroll);
+      });
+    };
+  }, [mapOpen]);
+
   const filtered = useMemo(() => {
     let list = hotels.filter((h) => {
       const ratingValue = typeof h.rating === "number" ? h.rating : 0;
@@ -327,8 +353,8 @@ const Hotels = () => {
       </div>
 
       {mapOpen && (
-        <div className="fixed inset-0 z-50 bg-primary/60 backdrop-blur-sm p-4 md:p-8 animate-fade-in" onClick={() => setMapOpen(false)}>
-          <div className="bg-background rounded-2xl overflow-hidden h-full max-w-6xl mx-auto flex flex-col shadow-luxe" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[1010] bg-primary/60 backdrop-blur-sm p-4 md:p-8 animate-fade-in" onClick={() => setMapOpen(false)}>
+          <div id="map-modal-container" className="bg-background rounded-2xl overflow-hidden h-full max-w-6xl mx-auto flex flex-col shadow-luxe" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between px-5 py-3 border-b border-border">
               <div>
                 <h3 className="font-display font-bold text-primary">Map View</h3>
