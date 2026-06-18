@@ -46,6 +46,8 @@ router.use(protect); // Ensure all routes require authentication
 
 router.get("/", getNotifications); // Fetches notifications bounded to req.user internally
 router.post("/", createNotification);
+// Support both PUT and PATCH for marking notifications as read
 router.put("/:id/read", requireObjectId(), validateOwnership("Notification"), markNotificationRead);
+router.patch("/:id/read", requireObjectId(), validateOwnership("Notification"), markNotificationRead);
 
 export default router;
