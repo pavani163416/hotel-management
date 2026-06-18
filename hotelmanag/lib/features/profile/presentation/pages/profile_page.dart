@@ -758,7 +758,6 @@ class _ProfilePageState extends State<ProfilePage> {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: cardColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: isDark
             ? []
@@ -770,7 +769,11 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
               ],
       ),
-      child: ListTile(
+      child: Material(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(16),
+        clipBehavior: Clip.hardEdge,
+        child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
         leading: Container(
           padding: const EdgeInsets.all(10),
@@ -803,6 +806,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
               );
             },
+      ),
       ),
     );
   }
@@ -2278,7 +2282,9 @@ class _ProfilePageState extends State<ProfilePage> {
               'Capture a new cover image',
               onTap: () {
                 Navigator.pop(context);
-                _pickImage(ImageSource.camera, isProfile: false);
+                Future.delayed(const Duration(milliseconds: 300), () {
+                  _pickImage(ImageSource.camera, isProfile: false);
+                });
               },
             ),
             _buildCoverListTile(
@@ -2288,7 +2294,9 @@ class _ProfilePageState extends State<ProfilePage> {
               'Select from your library',
               onTap: () {
                 Navigator.pop(context);
-                _pickImage(ImageSource.gallery, isProfile: false);
+                Future.delayed(const Duration(milliseconds: 300), () {
+                  _pickImage(ImageSource.gallery, isProfile: false);
+                });
               },
             ),
             const SizedBox(height: 16),

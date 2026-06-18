@@ -20,9 +20,12 @@ import 'package:firebase_app_check/firebase_app_check.dart';
 import 'core/services/push_notifications.dart';
 import 'dart:io';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Prevent Google Fonts from fetching over the network — use cached/bundled fonts only
+  GoogleFonts.config.allowRuntimeFetching = false;
 
   try {
     if (Firebase.apps.isEmpty) {
