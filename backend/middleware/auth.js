@@ -297,7 +297,7 @@ export const validateOwnership = (modelName) => {
                 message: "Unauthorized: You do not have access to this notification.",
               });
             }
-          } else if (user.role === "customer") {
+          } else if (user.role === "customer" || user.role === "owner") {
             const isOwner = notification.userId === user.id || 
                             (user.email && notification.userId?.toLowerCase() === user.email.toLowerCase());
             if (!isOwner) {

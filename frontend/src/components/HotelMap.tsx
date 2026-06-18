@@ -1,9 +1,17 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { Hotel } from "@/data/hotels";
 import { useCurrency } from "@/context/CurrencyContext";
+
+// Fix default Leaflet icon paths (broken by bundlers)
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+});
 
 const goldIcon = L.divIcon({
   className: "luxe-marker",
@@ -24,14 +32,25 @@ const hasValidCoords = (h: Hotel): boolean => {
 
 const FitBounds = ({ hotels }: { hotels: Hotel[] }) => {
   const map = useMap();
+  const prevHotelsRef = useRef<string>("");
+
   useEffect(() => {
+    // Guard: only run if map is ready and hotels actually changed
     if (!map) return;
+
+    const hotelsKey = hotels.map(h => h.id).join(",");
+    if (hotelsKey === prevHotelsRef.current) return;
+    prevHotelsRef.current = hotelsKey;
+
     const valid = hotels.filter(hasValidCoords);
     if (!valid.length) return;
-    
-    // Delay to ensure map is fully rendered
+
+    // Delay to ensure map container is fully rendered in the DOM
     const timeoutId = setTimeout(() => {
       try {
+        // Guard against accessing an already-destroyed map instance
+        if (!map || !(map as any)._loaded) return;
+
         if (valid.length === 1) {
           map.setView(valid[0].coords, 12);
         } else {
@@ -39,12 +58,14 @@ const FitBounds = ({ hotels }: { hotels: Hotel[] }) => {
           map.fitBounds(bounds, { padding: [40, 40], maxZoom: 10 });
         }
       } catch (e) {
-        console.error("Error fitting bounds:", e);
+        // Silently ignore errors from destroyed/unmounted map instances
+        console.warn("HotelMap FitBounds error (map may have unmounted):", e);
       }
-    }, 100);
-    
+    }, 150);
+
     return () => clearTimeout(timeoutId);
   }, [hotels, map]);
+
   return null;
 };
 
@@ -59,6 +80,8 @@ const HotelMap = ({ hotels, height = "100%", onHotelClick, className }: Props) =
   const { format } = useCurrency();
   const [tileUrl, setTileUrl] = useState("https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}");
   const [attribution, setAttribution] = useState("&copy; Google Maps");
+  // Track if map has been initialized to prevent duplicate initialization
+  const mapInitializedRef = useRef(false);
 
   // Only render markers for hotels with valid coordinates
   const mappableHotels = hotels.filter(hasValidCoords);
@@ -75,17 +98,21 @@ const HotelMap = ({ hotels, height = "100%", onHotelClick, className }: Props) =
     );
   }
 
-  // Create a stable key based on the hotels to ensure proper re-rendering
-  const mapKey = mappableHotels.map(h => h.id).join("-");
-
   return (
     <div className={className} style={{ height, width: "100%" }}>
+      {/*
+        CRITICAL: Do NOT use a dynamic key on MapContainer.
+        A key change destroys + remounts the map, which causes the
+        '_leaflet_pos' crash when Leaflet tries to access the old
+        DOM node during the unmount/remount cycle.
+        Instead, FitBounds handles view updates reactively.
+      */}
       <MapContainer
-        key={`map-container-${mapKey}`}
         center={mappableHotels[0].coords}
         zoom={4}
         scrollWheelZoom={false}
         style={{ height: "100%", width: "100%", borderRadius: "0.75rem", background: "hsl(30 12% 96%)" }}
+        whenReady={() => { mapInitializedRef.current = true; }}
       >
         <TileLayer
           attribution={attribution}
