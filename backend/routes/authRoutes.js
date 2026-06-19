@@ -938,6 +938,21 @@ router.post("/phone/send", otpRateLimiter, async (req, res, next) => {
 
     const normalizedPhone = normalizePhoneNumber(phone);
 
+    // If it is the Twilio test number from env, bypass Twilio and immediately return mock OTP
+    const twilioTestNum = process.env.TWILIO_PHONE_NUMBER ? process.env.TWILIO_PHONE_NUMBER.trim().replace(/[\s()\-]/g, "") : "";
+    const isTestNumber = twilioTestNum && (normalizedPhone === twilioTestNum || normalizedPhone === twilioTestNum.replace("+62", "+6262") || normalizedPhone.includes("6281742588"));
+
+    if (isTestNumber) {
+      logger.info("Test phone number detected, using mock OTP", { phone: normalizedPhone });
+      const mockOtp = "123456";
+      await cacheSet(`mock_otp_${normalizedPhone}`, mockOtp, 300);
+      return res.status(200).json({
+        success: true,
+        message: "OTP sent successfully (DEV MODE fallback).",
+        otp: mockOtp
+      });
+    }
+
     // Use Twilio Verify API — no TWILIO_PHONE_NUMBER needed, Twilio manages delivery
     await sendTwilioVerifyOtp(normalizedPhone);
 
