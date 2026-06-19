@@ -204,6 +204,12 @@ class _ProfilePageState extends State<ProfilePage> {
                   'Request room service, housekeeping, or repairs',
                   onTap: () => context.push('/in-room-services'),
                 ),
+                _buildSettingItem(
+                  LucideIcons.building2,
+                  'Function Halls',
+                  'Book halls for weddings, conferences, parties',
+                  onTap: () => context.push('/halls-booking'),
+                ),
                 const SizedBox(height: 24),
                 _buildLogoutButton(),
                 const SizedBox(height: 120),
