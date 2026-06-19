@@ -41,7 +41,7 @@ function mapHotel(h: any): Hotel {
           name: r.name || "Standard Room",
           description: r.description || "",
           price: r.price || h.pricePerNight || 500,
-          capacity: r.capacity || 2,
+          capacity: h.maxGuests || r.capacity || 2,
           bed: r.bed || "1 King Bed",
           available: r.available ?? 1,
           features: Array.isArray(r.features) ? r.features : (typeof r.features === 'string' ? r.features.split(' ') : ["WiFi"]),

@@ -7,14 +7,14 @@
 import axios from "axios";
 
 export const getApiUrl = () => {
-  let url = import.meta.env.VITE_API_URL || "https://hotel-mgmt-backend-production.up.railway.app/api";
+  let url = import.meta.env.VITE_API_URL || "https://hotel-management-production-2225.up.railway.app/api";
   if (!url) {
     const isLocal = typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
     if (isLocal) {
       return "http://localhost:5000/api";
     }
     // Fallback to production URL
-    return "https://hotel-mgmt-backend-production.up.railway.app/api";
+    return "https://hotel-management-production-2225.up.railway.app/api";
   }
   url = url.trim().replace(/\/+$/, "");
   if (!url.toLowerCase().endsWith("/api")) {
@@ -159,7 +159,7 @@ export const getHotelById = async (hotelId: string) => {
 // FUNCTION HALLS
 // ════════════════════════════════════════════════════════
 export const getHotelHalls = (hotelId: string) => api.get(`/hotels/${hotelId}/halls`);
-export const bookHotelHall = (hallId: string, data: any) => api.post(`/hotels/halls/${hallId}/book`, data);
+export const bookHotelHall = (hotelId: string, hallId: string, data: any) => api.post(`/hotels/${hotelId}/halls/${hallId}/book`, data);
 
 export const bookHotelHallOld = async (
   hotelId: string,

@@ -27,7 +27,7 @@ const BED_TYPES  = ["Single", "Double", "Queen", "King", "Twin"];
 const STATUSES   = ["Available", "Booked", "Maintenance"];
 
 const emptyForm = {
-  roomNumber: "", type: "Deluxe", pricePerNight: "", capacity: "2",
+  roomNumber: "", type: "Deluxe", pricePerNight: "", capacity: "8",
   bedType: "King", floor: "", status: "Available", description: "", amenities: "",
 };
 
@@ -249,10 +249,6 @@ export default function Rooms() {
                   <span className="text-dim">/ night</span>
                 </div>
                 <div className="flex items-center gap-2.5 text-xs text-soft">
-                  <Users className="w-4 h-4 text-gold" />
-                  <span>Capacity: {room.capacity} guests</span>
-                </div>
-                <div className="flex items-center gap-2.5 text-xs text-soft">
                   <BedDouble className="w-4 h-4 text-gold" />
                   <span>{room.bedType || "King"} bed</span>
                 </div>
@@ -290,7 +286,7 @@ export default function Rooms() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-white/5 bg-white/5">
-                {["Room", "Type", "Price/Night", "Capacity", "Bed", "Status", "Actions"].map((h) => (
+                {["Room", "Type", "Price/Night", "Bed", "Status", "Actions"].map((h) => (
                   <th key={h} className="text-left text-xs font-semibold text-dim uppercase tracking-wider px-5 py-4 whitespace-nowrap">
                     {h}
                   </th>
@@ -303,7 +299,6 @@ export default function Rooms() {
                   <td className="px-5 py-4 font-bold text-bright text-sm">#{room.roomNumber}</td>
                   <td className="px-5 py-4 text-sm text-soft">{room.type}</td>
                   <td className="px-5 py-4 text-sm font-bold text-bright">${room.pricePerNight}</td>
-                  <td className="px-5 py-4 text-sm text-soft">{room.capacity} guests</td>
                   <td className="px-5 py-4 text-sm text-soft">{room.bedType || "King"}</td>
                   <td className="px-5 py-4">
                     <select
@@ -368,12 +363,7 @@ export default function Rooms() {
                   placeholder="e.g. 250"
                   className="w-full border border-white/10 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-gold focus:ring-2 focus:ring-gold/10 bg-white/5 text-bright" />
               </div>
-              <div>
-                <label className="block text-[10px] font-bold text-dim uppercase tracking-wider mb-1.5">Capacity *</label>
-                <input required type="number" min="1" max="20" value={form.capacity}
-                  onChange={(e) => setForm({ ...form, capacity: e.target.value })}
-                  className="w-full border border-white/10 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-gold focus:ring-2 focus:ring-gold/10 bg-white/5 text-bright" />
-              </div>
+
               <div>
                 <label className="block text-[10px] font-bold text-dim uppercase tracking-wider mb-1.5">Bed Type</label>
                 <select value={form.bedType} onChange={(e) => setForm({ ...form, bedType: e.target.value })}

@@ -69,9 +69,9 @@ const Halls = () => {
       setSelectedHallId("");
       try {
         const response = await getHotelHalls(selectedHotelId);
-        if (Array.isArray(response?.data)) {
-          setHalls(response.data);
-        }
+        const data = response?.data;
+        const hallsArray = Array.isArray(data) ? data : (Array.isArray(data?.data) ? data.data : []);
+        setHalls(hallsArray);
       } catch (error: any) {
         console.error("Failed to load halls", error);
         toast.error("Unable to load halls right now.");
@@ -250,7 +250,7 @@ const Halls = () => {
                       <button
                         key={hall._id}
                         type="button"
-                        onClick={() => setSelectedHallId(hall._id)}
+                        onClick={() => setSelectedHallId(selectedHallId === hall._id ? "" : hall._id)}
                         className={`w-full rounded-3xl border p-5 text-left transition-base relative overflow-hidden ${selectedHallId === hall._id ? "border-accent bg-accent/5 ring-1 ring-accent" : "border-border bg-background hover:border-accent hover:bg-secondary/80"}`}
                       >
                         {selectedHallId === hall._id && (

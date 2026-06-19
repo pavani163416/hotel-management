@@ -5,9 +5,9 @@ class AppConstants {
 
   // ── Environment-driven API Configuration ──────────────────────────
   static const String _productionApiUrl =
-      'https://hotel-mgnt-backend-production.up.railway.app/api/';
+      'https://hotel-management-production-2225.up.railway.app/api/';
   static const String _stagingApiUrl =
-      'https://hotel-mgnt-backend-production.up.railway.app/api/';
+      'https://hotel-management-production-2225.up.railway.app/api/';
 
   static const String _envApiUrl = String.fromEnvironment('API_URL');
   static const String _envType = String.fromEnvironment(

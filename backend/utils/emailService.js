@@ -49,10 +49,6 @@ const FROM = process.env.RESEND_FROM_EMAIL || "AthithiGriha <onboarding@resend.d
  * In production with a verified domain, remove RESEND_TEST_EMAIL and emails go to real recipients.
  */
 const resolveRecipient = (to) => {
-  if (process.env.RESEND_TEST_EMAIL) {
-    console.log(`📧 [Email] Redirecting to test email: ${process.env.RESEND_TEST_EMAIL}`);
-    return [process.env.RESEND_TEST_EMAIL];
-  }
   return [to];
 };
 
@@ -96,6 +92,9 @@ const sendMailInternal = async ({ to, subject, html }) => {
 // Called when user requests a password reset link
 // ─────────────────────────────────────────────────────────
 export const sendPasswordResetEmail = async ({ to, name, resetUrl }) => {
+  console.log("EMAIL TYPE: Forgot Password");
+  console.log("RECIPIENT:", to);
+
   if (!process.env.RESEND_API_KEY && (!process.env.SMTP_USER || !process.env.SMTP_PASS)) {
     console.log("📧 [Email] No email service configured — skipping password reset email.");
     return;
@@ -177,6 +176,9 @@ export const sendBookingConfirmation = async ({
   roomType,
   totalAmount,
 }) => {
+  console.log("EMAIL TYPE: Booking Confirmation");
+  console.log("RECIPIENT:", to);
+
   if (!process.env.RESEND_API_KEY && (!process.env.SMTP_USER || !process.env.SMTP_PASS)) {
     console.log("📧 [Email] No email service configured — skipping confirmation email.");
     return;
@@ -287,6 +289,9 @@ export const sendCancellationEmail = async ({
   bookingRef,
   reason,
 }) => {
+  console.log("EMAIL TYPE: Booking Cancellation");
+  console.log("RECIPIENT:", to);
+
   if (!process.env.RESEND_API_KEY && (!process.env.SMTP_USER || !process.env.SMTP_PASS)) {
     console.log("📧 [Email] No email service configured — skipping cancellation email.");
     return;
@@ -355,6 +360,9 @@ export const sendCancellationEmail = async ({
 // Called when registering or sending verification codes
 // ─────────────────────────────────────────────────────────
 export const sendOtpEmail = async ({ to, name, otp }) => {
+  console.log("EMAIL TYPE: Registration OTP");
+  console.log("RECIPIENT:", to);
+
   if (!process.env.RESEND_API_KEY && (!process.env.SMTP_USER || !process.env.SMTP_PASS)) {
     console.error("📧 [Email] Email service not configured — cannot send OTP email.");
     throw new Error("Email service is not configured (missing SMTP or Resend credentials).");
@@ -427,6 +435,9 @@ export const sendOtpEmail = async ({ to, name, otp }) => {
 // Called when admin approves an owner application
 // ─────────────────────────────────────────────────────────
 export const sendOwnerApprovalEmail = async ({ to, name }) => {
+  console.log("EMAIL TYPE: Owner Application Approval");
+  console.log("RECIPIENT:", to);
+
   if (!process.env.RESEND_API_KEY && (!process.env.SMTP_USER || !process.env.SMTP_PASS)) {
     console.log("📧 [Email] No email service configured — skipping owner approval email.");
     return;
@@ -499,6 +510,9 @@ export const sendOwnerApprovalEmail = async ({ to, name }) => {
 // Called when admin rejects an owner application
 // ─────────────────────────────────────────────────────────
 export const sendOwnerRejectionEmail = async ({ to, name, reason }) => {
+  console.log("EMAIL TYPE: Owner Application Rejection");
+  console.log("RECIPIENT:", to);
+
   if (!process.env.RESEND_API_KEY && (!process.env.SMTP_USER || !process.env.SMTP_PASS)) {
     console.log("📧 [Email] No email service configured — skipping owner rejection email.");
     return;
@@ -575,6 +589,9 @@ export const sendOwnerRejectionEmail = async ({ to, name, reason }) => {
 // Called when admin broadcasts a general message/newsletter
 // ─────────────────────────────────────────────────────────
 export const sendGeneralEmail = async ({ to, subject, bodyHtml }) => {
+  console.log("EMAIL TYPE: General Broadcast");
+  console.log("RECIPIENT:", to);
+
   if (!process.env.RESEND_API_KEY && (!process.env.SMTP_USER || !process.env.SMTP_PASS)) {
     console.log("📧 [Email] No email service configured — skipping general email.");
     return;
