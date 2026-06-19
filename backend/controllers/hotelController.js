@@ -277,7 +277,7 @@ export const addReviewToHotel = async (req, res, next) => {
     const userId   = req.user?._id || req.user?.id;
     const guestId  = req.user?.guestId;
     const userEmail = req.user?.email?.toLowerCase().trim();
-    const author = String(req.user?.name || req.user?.fullName || userEmail?.split("@")[0] || "Guest").trim();
+    const author = String(req.body.author || req.user?.name || req.user?.fullName || userEmail?.split("@")[0] || "Guest").trim();
 
     if (!userId && !guestId && !userEmail) {
       return res.status(401).json({ success: false, message: "Authentication required to submit a review." });

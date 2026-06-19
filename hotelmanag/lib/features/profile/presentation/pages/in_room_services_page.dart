@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
+import 'package:dio/dio.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/providers/booking_provider.dart';
 import '../../../../core/network/api_service.dart';
@@ -23,34 +24,46 @@ class _InRoomServicesPageState extends State<InRoomServicesPage> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final activeBookings = Provider.of<BookingProvider>(
-        context,
-        listen: false,
-      ).bookings;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final bookingProvider = Provider.of<BookingProvider>(context, listen: false);
+      try {
+        debugPrint('[InRoomConcierge] Fetching user bookings to auto-populate room...');
+        await bookingProvider.fetchMyBookings();
+      } catch (e) {
+        debugPrint('[InRoomConcierge] Failed to fetch bookings: $e');
+      }
+
+      if (!mounted) return;
+      final activeBookings = bookingProvider.bookings;
 
       if (activeBookings.isNotEmpty) {
         final active = activeBookings
             .where(
               (b) =>
                   b.status.toLowerCase() == 'confirmed' ||
-                  b.status.toLowerCase() == 'active',
+                  b.status.toLowerCase() == 'active' ||
+                  b.status.toLowerCase() == 'checkedin' ||
+                  b.status.toLowerCase() == 'checked_in',
             )
             .toList();
         final booking = active.isNotEmpty ? active.first : activeBookings.first;
         final roomNo = booking.roomNumber;
 
         if (roomNo != null && roomNo.trim().isNotEmpty) {
-          _roomController.text = roomNo.toLowerCase().contains('room')
-              ? roomNo
-              : 'Room $roomNo';
+          final cleanRoom = roomNo.replaceAll(RegExp(r'[^0-9]'), '');
+          _roomController.text = cleanRoom.isNotEmpty ? cleanRoom : roomNo;
+          debugPrint('[InRoomConcierge] Auto-populated room number: ${_roomController.text}');
         } else {
           final shortId = booking.id.length > 4
               ? booking.id.substring(booking.id.length - 3)
               : '104';
           final parsed = int.tryParse(shortId) ?? 104;
-          _roomController.text = 'Room ${200 + (parsed % 300)}';
+          _roomController.text = '${200 + (parsed % 300)}';
+          debugPrint('[InRoomConcierge] Fallback generated room number: ${_roomController.text}');
         }
+      } else {
+        _roomController.text = '';
+        debugPrint('[InRoomConcierge] No active bookings found for user.');
       }
     });
   }
@@ -63,11 +76,13 @@ class _InRoomServicesPageState extends State<InRoomServicesPage> {
   }
 
   void _submitRequest() async {
-    if (_roomController.text.trim().isEmpty) {
+    final roomStr = _roomController.text.trim();
+    if (roomStr.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Please enter your room number'),
+          content: Text('No active room assigned. You must have an active booking to make a concierge request.'),
           behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.redAccent,
         ),
       );
       return;
@@ -78,6 +93,7 @@ class _InRoomServicesPageState extends State<InRoomServicesPage> {
         const SnackBar(
           content: Text('Please describe your request'),
           behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.redAccent,
         ),
       );
       return;
@@ -88,14 +104,26 @@ class _InRoomServicesPageState extends State<InRoomServicesPage> {
     });
 
     try {
+      debugPrint('[InRoomConcierge] Submitting request for room $roomStr: ${_descriptionController.text.trim()}');
       final apiService = sl<ApiService>();
       await apiService.post(
         'services/request',
         data: {
-          'roomNumber': _roomController.text.trim(),
+          'roomNumber': roomStr,
           'description': _descriptionController.text.trim(),
         },
       );
+
+      debugPrint('[InRoomConcierge] Request submitted successfully.');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Request submitted to concierge successfully!'),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
 
       Future.delayed(const Duration(seconds: 4), () {
         if (mounted) setState(() => _currentStep = 'Received');
@@ -104,13 +132,23 @@ class _InRoomServicesPageState extends State<InRoomServicesPage> {
         if (mounted) setState(() => _currentStep = 'Dispatched');
       });
     } catch (e) {
+      debugPrint('[InRoomConcierge] Submission failed: $e');
+      String errorMsg = e.toString();
+      if (e is DioException) {
+        final resData = e.response?.data;
+        if (resData is Map && resData.containsKey('message')) {
+          errorMsg = resData['message'] ?? errorMsg;
+        } else if (e.message != null) {
+          errorMsg = e.message!;
+        }
+      }
       if (mounted) {
         setState(() {
           _requestSubmitted = false;
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to submit request: ${e.toString()}'),
+            content: Text('Failed to submit request: $errorMsg'),
             behavior: SnackBarBehavior.floating,
             backgroundColor: Colors.red,
           ),
@@ -197,12 +235,14 @@ class _InRoomServicesPageState extends State<InRoomServicesPage> {
                       const SizedBox(height: 4),
                       TextField(
                         controller: _roomController,
+                        readOnly: true,
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
+                          color: AppTheme.primaryColor,
                         ),
                         decoration: const InputDecoration(
-                          hintText: 'Enter room number (e.g. 402)',
+                          hintText: 'No assigned room',
                           border: InputBorder.none,
                           isDense: true,
                           contentPadding: EdgeInsets.zero,

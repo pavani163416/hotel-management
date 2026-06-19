@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:dio/dio.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/providers/hotel_provider.dart';
 import '../../../../core/providers/currency_provider.dart';
@@ -88,24 +89,43 @@ class _HallsBookingPageState extends State<HallsBookingPage> {
   }
 
   Future<void> _fetchHalls(String hotelId) async {
+    debugPrint('[HallsBookingPage] _fetchHalls called for hotelId: $hotelId');
     setState(() {
       _isLoadingHalls = true;
       _hallsError = null;
       _selectedHall = null;
+      _halls = [];
     });
 
     try {
       final apiService = sl<ApiService>();
-      final response = await apiService.get('hotels/$hotelId/halls');
+      final url = 'hotels/$hotelId/halls';
+      debugPrint('[HallsBookingPage] Querying API: $url');
+      final response = await apiService.get(url);
+      
+      debugPrint('[HallsBookingPage] API response status: ${response.statusCode}');
+      debugPrint('[HallsBookingPage] API response payload: ${response.data}');
+      
       final List dataList = response.data['data'] ?? [];
       
       setState(() {
         _halls = dataList.map((e) => HallItem.fromJson(e)).toList();
         _isLoadingHalls = false;
       });
+      debugPrint('[HallsBookingPage] Successfully mapped ${_halls.length} function halls.');
     } catch (e) {
+      debugPrint('[HallsBookingPage] Exception during _fetchHalls: $e');
+      String errorMsg = e.toString();
+      if (e is DioException) {
+        final resData = e.response?.data;
+        if (resData is Map && resData.containsKey('message')) {
+          errorMsg = resData['message'] ?? errorMsg;
+        } else if (e.message != null) {
+          errorMsg = e.message!;
+        }
+      }
       setState(() {
-        _hallsError = 'Failed to load function halls. Please try again.';
+        _hallsError = 'Failed to load function halls: $errorMsg';
         _isLoadingHalls = false;
       });
     }
@@ -224,21 +244,34 @@ class _HallsBookingPageState extends State<HallsBookingPage> {
           'notes': _notesController.text.trim(),
         };
 
-        await apiService.post(
-          'hotels/$_selectedHotelId/halls/${_selectedHall!.id}/book',
+        final url = 'hotels/$_selectedHotelId/halls/${_selectedHall!.id}/book';
+        debugPrint('[HallsBookingPage] Submitting booking request to: $url with payload: $payload');
+        
+        final response = await apiService.post(
+          url,
           data: payload,
         );
+
+        debugPrint('[HallsBookingPage] Booking request success. Response: ${response.data}');
 
         setState(() {
           _bookingSuccess = true;
           _isSubmitting = false;
         });
       } catch (e) {
+        debugPrint('[HallsBookingPage] Booking request error: $e');
         setState(() {
           _isSubmitting = false;
         });
         String message = e.toString();
-        if (e is Map && e.containsKey('message')) {
+        if (e is DioException) {
+          final resData = e.response?.data;
+          if (resData is Map && resData.containsKey('message')) {
+            message = resData['message'] ?? message;
+          } else if (e.message != null) {
+            message = e.message!;
+          }
+        } else if (e is Map && e.containsKey('message')) {
           message = e['message'];
         }
         ScaffoldMessenger.of(context).showSnackBar(

@@ -10,15 +10,16 @@ class WelcomePage extends StatelessWidget {
     return Scaffold(
       body: Stack(
         children: [
-          // Background Image
-          Container(
-            decoration: const BoxDecoration(
-              image: DecorationImage(
-                image: NetworkImage(
-                  'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?q=80&w=1000',
-                ),
-                fit: BoxFit.cover,
-              ),
+          Positioned.fill(
+            child: Image.network(
+              'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?q=80&w=1000',
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return Image.asset(
+                  'assets/images/hero.png',
+                  fit: BoxFit.cover,
+                );
+              },
             ),
           ),
           // Dark Overlay

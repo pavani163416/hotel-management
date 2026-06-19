@@ -219,6 +219,10 @@ class BookingListItem extends StatelessWidget {
               fit: BoxFit.cover,
               memCacheWidth: 320,
               memCacheHeight: 240,
+              errorWidget: (context, url, error) => Image.asset(
+                'assets/images/hero.png',
+                fit: BoxFit.cover,
+              ),
             ),
           ),
           Expanded(
@@ -378,6 +382,10 @@ class BookingListItem extends StatelessWidget {
               fit: BoxFit.cover,
               memCacheWidth: 400,
               memCacheHeight: 240,
+              errorWidget: (context, url, error) => Image.asset(
+                'assets/images/hero.png',
+                fit: BoxFit.cover,
+              ),
             ),
             Positioned(
               top: 12,
@@ -705,6 +713,10 @@ class BookingListItem extends StatelessWidget {
                         fit: BoxFit.cover,
                         memCacheWidth: 600,
                         memCacheHeight: 360,
+                        errorWidget: (context, url, error) => Image.asset(
+                          'assets/images/hero.png',
+                          fit: BoxFit.cover,
+                        ),
                       ),
                     ),
                     Positioned(
