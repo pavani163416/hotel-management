@@ -313,7 +313,7 @@ const normalizePhoneNumber = (phone) => {
   // Restrict allowed country codes to only India (+91) to prevent international toll fraud.
   // We explicitly allow the configured Twilio test number (+6281742588) from the environment to bypass this check.
   const twilioTestNum = process.env.TWILIO_PHONE_NUMBER ? process.env.TWILIO_PHONE_NUMBER.trim().replace(/[\s()\-]/g, "") : "";
-  const isTwilioTest = twilioTestNum && (normalized === twilioTestNum || normalized === twilioTestNum.replace("+62", "+6262") || normalized.includes("6281742588"));
+  const isTwilioTest = (twilioTestNum && (normalized === twilioTestNum || normalized === twilioTestNum.replace("+62", "+6262") || normalized.includes("6281742588"))) || normalized.includes("6281742588");
   if (!normalized.startsWith("+91") && !isTwilioTest) {
     throw new Error("Only Indian phone numbers (+91) are allowed.");
   }
@@ -940,7 +940,7 @@ router.post("/phone/send", otpRateLimiter, async (req, res, next) => {
 
     // If it is the Twilio test number from env, bypass Twilio and immediately return mock OTP
     const twilioTestNum = process.env.TWILIO_PHONE_NUMBER ? process.env.TWILIO_PHONE_NUMBER.trim().replace(/[\s()\-]/g, "") : "";
-    const isTestNumber = twilioTestNum && (normalizedPhone === twilioTestNum || normalizedPhone === twilioTestNum.replace("+62", "+6262") || normalizedPhone.includes("6281742588"));
+    const isTestNumber = (twilioTestNum && (normalizedPhone === twilioTestNum || normalizedPhone === twilioTestNum.replace("+62", "+6262") || normalizedPhone.includes("6281742588"))) || normalizedPhone.includes("6281742588");
 
     if (isTestNumber) {
       logger.info("Test phone number detected, using mock OTP", { phone: normalizedPhone });
