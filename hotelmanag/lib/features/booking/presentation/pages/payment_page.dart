@@ -266,7 +266,9 @@ class _PaymentPageState extends State<PaymentPage> {
         return;
       }
 
-      final booking = await provider.completeBooking(_selectedMethod);
+      final booking = await provider.completeBooking(
+        _selectedMethod == 'bank' ? 'netbanking' : _selectedMethod,
+      );
 
       // If booking creation failed, surface the error and unblock navigation
       if (booking == null) {
