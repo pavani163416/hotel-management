@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/providers/booking_provider.dart';
+import '../../../../core/providers/notification_provider.dart';
 import '../../../../core/utils/validators.dart';
 import '../widgets/phone_auth_bottom_sheet.dart';
 import 'dart:math';
@@ -61,6 +62,7 @@ class _RegisterPageState extends State<RegisterPage> {
   String _captchaId = '';
   String _captchaChallenge = '';
   bool _captchaLoading = false;
+  String? _captchaError;
 
   @override
   void initState() {
@@ -84,6 +86,7 @@ class _RegisterPageState extends State<RegisterPage> {
     setState(() {
       _captchaLoading = true;
       _captchaController.clear();
+      _captchaError = null;
     });
     final auth = Provider.of<AuthProvider>(context, listen: false);
     final result = await auth.fetchCaptcha();
@@ -94,8 +97,10 @@ class _RegisterPageState extends State<RegisterPage> {
         _captchaLoading = false;
       });
     } else {
+      debugPrint('[RegisterPage] Failed to fetch CAPTCHA: ${auth.error}');
       setState(() {
         _captchaChallenge = 'ERROR';
+        _captchaError = auth.error;
         _captchaId = '';
         _captchaLoading = false;
       });
@@ -183,6 +188,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
     if (auth.isAuthenticated) {
       context.read<BookingProvider>().fetchMyBookings();
+      context.read<NotificationProvider>().fetchNotifications();
       context.go('/');
     } else if (auth.unverifiedEmail != null) {
       context.push('/otp', extra: auth.unverifiedEmail);
@@ -505,28 +511,32 @@ class _RegisterPageState extends State<RegisterPage> {
                                 _captchaChallenge,
                                 fit: BoxFit.contain,
                               )
-                            : Text(
-                                _captchaChallenge == 'ERROR'
-                                    ? 'Failed to load CAPTCHA'
-                                    : _captchaChallenge,
-                                style: TextStyle(
-                                  fontFamily: _captchaChallenge == 'ERROR'
-                                      ? 'sans-serif'
-                                      : 'monospace',
-                                  fontSize: _captchaChallenge == 'ERROR'
-                                      ? 14
-                                      : 24,
-                                  letterSpacing: _captchaChallenge == 'ERROR'
-                                      ? 0
-                                      : 8,
-                                  fontWeight: _captchaChallenge == 'ERROR'
-                                      ? FontWeight.w500
-                                      : FontWeight.w800,
-                                  color: _captchaChallenge == 'ERROR'
-                                      ? Colors.red
-                                      : Colors.black87,
-                                ),
-                              ),
+                             : Padding(
+                                 padding: const EdgeInsets.symmetric(horizontal: 16),
+                                 child: Text(
+                                   _captchaChallenge == 'ERROR'
+                                       ? (_captchaError != null ? 'Failed to load CAPTCHA: $_captchaError' : 'Failed to load CAPTCHA')
+                                       : _captchaChallenge,
+                                   textAlign: TextAlign.center,
+                                   style: TextStyle(
+                                     fontFamily: _captchaChallenge == 'ERROR'
+                                         ? 'sans-serif'
+                                         : 'monospace',
+                                     fontSize: _captchaChallenge == 'ERROR'
+                                         ? 12
+                                         : 24,
+                                     letterSpacing: _captchaChallenge == 'ERROR'
+                                         ? 0
+                                         : 8,
+                                     fontWeight: _captchaChallenge == 'ERROR'
+                                         ? FontWeight.w500
+                                         : FontWeight.w800,
+                                     color: _captchaChallenge == 'ERROR'
+                                         ? Colors.red
+                                         : Colors.black87,
+                                   ),
+                                 ),
+                               ),
                       ),
                     ),
                   ),
@@ -649,6 +659,7 @@ class _RegisterPageState extends State<RegisterPage> {
                             final ok = await auth.signInWithGoogle();
                             if (ok && mounted) {
                               context.read<BookingProvider>().fetchMyBookings();
+                              context.read<NotificationProvider>().fetchNotifications();
                               context.go('/');
                             } else if (!ok && auth.error != null && mounted) {
                               _showSnack(auth.error!);

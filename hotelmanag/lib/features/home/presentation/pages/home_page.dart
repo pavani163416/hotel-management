@@ -38,6 +38,7 @@ class _HomePageState extends State<HomePage> {
     super.initState();
     Future.microtask(() {
       context.read<HotelProvider>().fetchHotels();
+      context.read<NotificationProvider>().fetchNotifications();
       final bookingProvider = context.read<BookingProvider>();
       bookingProvider.fetchMyBookings().then((_) {
         // Fetch coupons after bookings so we know if they are a first-time user

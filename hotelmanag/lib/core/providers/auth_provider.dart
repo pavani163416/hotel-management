@@ -20,6 +20,7 @@ import '../../core/utils/injection_container.dart';
 import '../../core/providers/booking_provider.dart';
 import '../../core/providers/promo_provider.dart';
 import '../../core/providers/favorites_provider.dart';
+import '../../core/providers/notification_provider.dart';
 
 class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
   final AuthRepository _authRepository;
@@ -442,6 +443,10 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
 
       try {
         sl<BookingProvider>().reset();
+      } catch (_) {}
+
+      try {
+        sl<NotificationProvider>().clear();
       } catch (_) {}
 
       try {

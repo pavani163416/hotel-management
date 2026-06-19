@@ -7,6 +7,8 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../core/providers/auth_provider.dart';
+import '../../../../core/providers/booking_provider.dart';
+import '../../../../core/providers/notification_provider.dart';
 import '../../../../core/constants/app_constants.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -62,6 +64,12 @@ class _SplashScreenState extends State<SplashScreen>
 
     if (mounted) {
       if (isLoggedIn) {
+        try {
+          Provider.of<BookingProvider>(context, listen: false).fetchMyBookings();
+          Provider.of<NotificationProvider>(context, listen: false).fetchNotifications();
+        } catch (e) {
+          debugPrint('Error prefetching data on auto login: $e');
+        }
         try {
           final ImagePicker picker = ImagePicker();
           final LostDataResponse response = await picker.retrieveLostData();

@@ -49,6 +49,14 @@ class NotificationProvider extends ChangeNotifier {
     await prefs.setStringList('read_notification_ids', _readIds.toList());
   }
 
+  void clear() {
+    _backendNotifications = [];
+    _liveNotifications.clear();
+    _readIds.clear();
+    _saveReadIds();
+    notifyListeners();
+  }
+
   bool get isFetching => _isFetching;
 
   /// Fetch notifications from the backend /api/notifications endpoint.

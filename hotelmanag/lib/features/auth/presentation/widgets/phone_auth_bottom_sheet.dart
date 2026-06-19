@@ -7,6 +7,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/providers/booking_provider.dart';
+import '../../../../core/providers/notification_provider.dart';
 
 // Same country codes as the website's AuthModal
 const List<(String, String)> _countryCodes = [
@@ -171,6 +172,7 @@ class _PhoneAuthBottomSheetState extends State<PhoneAuthBottomSheet> {
 
     if (success) {
       Provider.of<BookingProvider>(context, listen: false).fetchMyBookings();
+      Provider.of<NotificationProvider>(context, listen: false).fetchNotifications();
       Navigator.pop(context);
       // TC-FE-022: Removed imperative context.go('/'), relying on GoRouter redirect logic.
     } else {

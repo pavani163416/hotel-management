@@ -7,6 +7,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/custom_text_field.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/providers/booking_provider.dart';
+import '../../../../core/providers/notification_provider.dart';
 import '../widgets/phone_auth_bottom_sheet.dart';
 import '../../../../core/utils/validators.dart';
 import 'dart:math';
@@ -31,6 +32,7 @@ class _LoginPageState extends State<LoginPage> {
   String? _captchaId;
   final _captchaController = TextEditingController();
   bool _captchaLoading = false;
+  String? _captchaError;
 
   @override
   void initState() {
@@ -39,7 +41,10 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void _fetchCaptcha() async {
-    setState(() => _captchaLoading = true);
+    setState(() {
+      _captchaLoading = true;
+      _captchaError = null;
+    });
     final auth = Provider.of<AuthProvider>(context, listen: false);
     final result = await auth.fetchCaptcha();
     if (result != null) {
@@ -50,8 +55,10 @@ class _LoginPageState extends State<LoginPage> {
         _captchaLoading = false;
       });
     } else {
+      debugPrint('[LoginPage] Failed to fetch CAPTCHA: ${auth.error}');
       setState(() {
         _captchaChallenge = 'ERROR';
+        _captchaError = auth.error;
         _captchaId = '';
         _captchaController.clear();
         _captchaLoading = false;
@@ -112,6 +119,7 @@ class _LoginPageState extends State<LoginPage> {
       if (auth.isAuthenticated) {
         if (mounted) {
           context.read<BookingProvider>().fetchMyBookings();
+          context.read<NotificationProvider>().fetchNotifications();
           context.go('/');
         }
       } else if (auth.unverifiedEmail != null) {
@@ -280,28 +288,32 @@ class _LoginPageState extends State<LoginPage> {
                                 _captchaChallenge,
                                 fit: BoxFit.contain,
                               )
-                            : Text(
-                                _captchaChallenge == 'ERROR'
-                                    ? 'Failed to load CAPTCHA'
-                                    : _captchaChallenge,
-                                style: TextStyle(
-                                  fontFamily: _captchaChallenge == 'ERROR'
-                                      ? 'sans-serif'
-                                      : 'monospace',
-                                  fontSize: _captchaChallenge == 'ERROR'
-                                      ? 14
-                                      : 24,
-                                  letterSpacing: _captchaChallenge == 'ERROR'
-                                      ? 0
-                                      : 8,
-                                  fontWeight: _captchaChallenge == 'ERROR'
-                                      ? FontWeight.w500
-                                      : FontWeight.w800,
-                                  color: _captchaChallenge == 'ERROR'
-                                      ? Colors.red
-                                      : Colors.black87,
-                                ),
-                              ),
+                             : Padding(
+                                 padding: const EdgeInsets.symmetric(horizontal: 16),
+                                 child: Text(
+                                   _captchaChallenge == 'ERROR'
+                                       ? (_captchaError != null ? 'Failed to load CAPTCHA: $_captchaError' : 'Failed to load CAPTCHA')
+                                       : _captchaChallenge,
+                                   textAlign: TextAlign.center,
+                                   style: TextStyle(
+                                     fontFamily: _captchaChallenge == 'ERROR'
+                                         ? 'sans-serif'
+                                         : 'monospace',
+                                     fontSize: _captchaChallenge == 'ERROR'
+                                         ? 12
+                                         : 24,
+                                     letterSpacing: _captchaChallenge == 'ERROR'
+                                         ? 0
+                                         : 8,
+                                     fontWeight: _captchaChallenge == 'ERROR'
+                                         ? FontWeight.w500
+                                         : FontWeight.w800,
+                                     color: _captchaChallenge == 'ERROR'
+                                         ? Colors.red
+                                         : Colors.black87,
+                                   ),
+                                 ),
+                               ),
                       ),
                     ),
                   ),
@@ -499,6 +511,9 @@ class _LoginPageState extends State<LoginPage> {
                                 context
                                     .read<BookingProvider>()
                                     .fetchMyBookings();
+                                context
+                                    .read<NotificationProvider>()
+                                    .fetchNotifications();
                                 Future.microtask(() {
                                   if (mounted) context.go('/');
                                 });
