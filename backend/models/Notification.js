@@ -13,7 +13,7 @@ const notificationSchema = new mongoose.Schema(
     message: { type: String, required: true, trim: true },
     type: {
       type: String,
-      enum: ["booking", "price", "manager", "system", "assistance"],
+      enum: ["booking", "price", "manager", "system", "assistance", "service_request"],
       default: "system",
       index: true,
     },
