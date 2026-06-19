@@ -99,6 +99,7 @@ class _HotelsPageState extends State<HotelsPage> {
             },
           ),
         ),
+      ),
     );
   }
 

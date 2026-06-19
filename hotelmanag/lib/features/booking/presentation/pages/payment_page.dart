@@ -879,12 +879,14 @@ class _PaymentPageState extends State<PaymentPage> {
             children: [
               Icon(LucideIcons.checkCircle, size: 18, color: Colors.blueAccent),
               SizedBox(width: 12),
-              Text(
-                'Guest Identity Verification',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.primaryColor,
+              Expanded(
+                child: Text(
+                  'Guest Identity Verification',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.primaryColor,
+                  ),
                 ),
               ),
             ],

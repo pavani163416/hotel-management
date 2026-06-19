@@ -183,7 +183,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 _buildSettingItem(
                   LucideIcons.moon,
                   'Display Theme',
-                  'Choose Light or Dark theme',
+                  'Light theme only',
                   onTap: () => _showThemePicker(context),
                 ),
                 _buildSettingItem(
@@ -1009,25 +1009,23 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
             ),
             const Divider(),
-            ...['Light', 'Dark'].map(
-              (themeModeName) => ListTile(
-                title: Text(
-                  themeModeName,
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
+            ListTile(
+              title: Text(
+                'Light',
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
-                trailing: themeProvider.themeModeName == themeModeName
-                    ? Icon(
-                        LucideIcons.check,
-                        color: Theme.of(context).colorScheme.primary,
-                      )
-                    : null,
-                onTap: () {
-                  themeProvider.setTheme(themeModeName);
-                  Navigator.pop(context);
-                },
               ),
+              trailing: themeProvider.themeMode == ThemeMode.light
+                  ? Icon(
+                      LucideIcons.check,
+                      color: Theme.of(context).colorScheme.primary,
+                    )
+                  : null,
+              onTap: () {
+                themeProvider.setTheme('Light');
+                Navigator.pop(context);
+              },
             ),
             const SizedBox(height: 16),
           ],
@@ -1736,36 +1734,37 @@ class _ProfilePageState extends State<ProfilePage> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (context) => StatefulBuilder(
-        builder: (context, setModalState) => Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom + 32,
-            top: 32,
-            left: 24,
-            right: 24,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Add Payment Method',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.onSurface,
+        builder: (context, setModalState) => SafeArea(
+          child: SingleChildScrollView(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom + 32,
+              top: 32,
+              left: 16,
+              right: 16,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Add Payment Method',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 24),
-              // Type Selector (Debit vs Credit)
-              Row(
-                children: [
-                  _buildRadioTab('Debit Card', 'debit', setModalState),
-                  const SizedBox(width: 16),
-                  _buildRadioTab('Credit Card', 'credit', setModalState),
-                ],
-              ),
-              const SizedBox(height: 24),
-              CustomTextField(
+                const SizedBox(height: 24),
+                // Type Selector (Debit vs Credit)
+                Row(
+                  children: [
+                    _buildRadioTab('Debit Card', 'debit', setModalState),
+                    const SizedBox(width: 8),
+                    _buildRadioTab('Credit Card', 'credit', setModalState),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                CustomTextField(
                 label: _selectedPaymentType == 'credit'
                     ? 'Cardholder Name *'
                     : 'Cardholder Name (Optional)',
@@ -1954,7 +1953,8 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
         ),
       ),
-    );
+    ),
+  );
   }
 
   Widget _buildRadioTab(String label, String type, StateSetter setModalState) {
@@ -1968,7 +1968,7 @@ class _ProfilePageState extends State<ProfilePage> {
           });
         },
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
           decoration: BoxDecoration(
             color: isSelected
                 ? Theme.of(context).colorScheme.primary.withOpacity(0.05)
@@ -2010,12 +2010,16 @@ class _ProfilePageState extends State<ProfilePage> {
                     : null,
               ),
               const SizedBox(width: 8),
-              Text(
-                label,
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurface,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
+              Expanded(
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
                 ),
               ),
             ],

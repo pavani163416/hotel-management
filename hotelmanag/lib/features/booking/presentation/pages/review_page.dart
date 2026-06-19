@@ -421,8 +421,7 @@ class _ReviewPageState extends State<ReviewPage> {
             },
             borderRadius: BorderRadius.circular(12),
             child: Container(
-              height: 54,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
                 color: provider.appliedPromoCode != null
                     ? const Color(0xFFF0FDF4) // Light mint green
@@ -543,16 +542,24 @@ class _ReviewPageState extends State<ReviewPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Total Amount',
-                style: TextStyle(fontSize: 14, color: AppTheme.primaryColor),
+              const Expanded(
+                child: Text(
+                  'Total Amount',
+                  style: TextStyle(fontSize: 14, color: AppTheme.primaryColor),
+                ),
               ),
-              Text(
-                context.watch<CurrencyProvider>().format(provider.total),
-                style: const TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.primaryColor,
+              const SizedBox(width: 8),
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    context.watch<CurrencyProvider>().format(provider.total),
+                    style: const TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.primaryColor,
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -595,15 +602,19 @@ class _ReviewPageState extends State<ReviewPage> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 14,
-              color: isDiscount
-                  ? Colors.grey[400]
-                  : AppTheme.primaryColor.withOpacity(0.6),
+          Expanded(
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 14,
+                color: isDiscount
+                    ? Colors.grey[400]
+                    : AppTheme.primaryColor.withOpacity(0.6),
+              ),
+              overflow: TextOverflow.ellipsis,
             ),
           ),
+          const SizedBox(width: 8),
           Text(
             value,
             style: TextStyle(

@@ -310,6 +310,11 @@ import {
   createPriceRequest,
   getManagerPriceRequests,
 } from "../controllers/managerController.js";
+import {
+  requestService,
+  getManagerServiceRequests,
+  updateServiceRequestStatus,
+} from "../controllers/serviceController.js";
 import { verifyManagerToken, isAssignedManager, scopeToHotel } from "../middleware/managerAuth.js";
 import { authLimiter } from "../middleware/rateLimiter.js";
 import { validateLoginPayload } from "../middleware/authValidator.js";
@@ -349,6 +354,21 @@ const protect = [verifyManagerToken, scopeToHotel];
 // ── Dashboard ─────────────────────────────────────────────
 router.get("/dashboard", ...protect, getManagerDashboard);
 router.get("/stats",     ...protect, getManagerStats);
+
+// ── Service requests (hotel-scoped manager view) ──────────
+router.get(
+  "/service-requests",
+  ...protect,
+  isAssignedManager,
+  getManagerServiceRequests,
+);
+router.patch(
+  "/service-requests/:id/status",
+  ...protect,
+  isAssignedManager,
+  requireObjectId(),
+  updateServiceRequestStatus,
+);
 
 // ── Rooms (full CRUD, hotel-scoped) ──────────────────────
 router.get("/rooms",        ...protect, getManagerRooms);

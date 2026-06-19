@@ -297,15 +297,10 @@ export const validateOwnership = (modelName) => {
                 message: "Unauthorized: You do not have access to this notification.",
               });
             }
-<<<<<<< HEAD
-          } else if (user.role === "customer") {
-            if (notification.userId !== user.id) {
-=======
           } else if (user.role === "customer" || user.role === "owner") {
             const isOwner = notification.userId === user.id || 
                             (user.email && notification.userId?.toLowerCase() === user.email.toLowerCase());
             if (!isOwner) {
->>>>>>> 0a87a8a8d7aa9d7ffb8a14a57393059ddb841004
               return res.status(403).json({
                 success: false,
                 message: "Unauthorized: You do not own this notification.",

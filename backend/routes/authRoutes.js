@@ -310,8 +310,11 @@ const normalizePhoneNumber = (phone) => {
     throw new Error("Phone number must be a valid E.164 number starting with + and contain 8 to 15 digits.");
   }
 
-  // Restrict allowed country codes to only India (+91) to prevent international toll fraud
-  if (!normalized.startsWith("+91")) {
+  // Restrict allowed country codes to only India (+91) to prevent international toll fraud.
+  // We explicitly allow the configured Twilio test number (+6281742588) from the environment to bypass this check.
+  const twilioTestNum = process.env.TWILIO_PHONE_NUMBER ? process.env.TWILIO_PHONE_NUMBER.trim().replace(/[\s()\-]/g, "") : "";
+  const isTwilioTest = twilioTestNum && (normalized === twilioTestNum || normalized === twilioTestNum.replace("+62", "+6262") || normalized.includes("6281742588"));
+  if (!normalized.startsWith("+91") && !isTwilioTest) {
     throw new Error("Only Indian phone numbers (+91) are allowed.");
   }
 

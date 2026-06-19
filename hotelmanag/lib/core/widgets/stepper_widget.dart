@@ -18,21 +18,21 @@ class StepperWidget extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 24),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: List.generate(steps.length, (index) {
-          return Expanded(
-            child: Row(
-              children: [
-                _buildStepCircle(
-                  index,
-                  index < currentStep,
-                  index == currentStep,
-                ),
-                if (index < steps.length - 1)
-                  Expanded(child: _buildConnector(index < currentStep)),
-              ],
-            ),
-          );
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: List.generate(steps.length * 2 - 1, (index) {
+          if (index.isEven) {
+            final stepIndex = index ~/ 2;
+            return _buildStepCircle(
+              stepIndex,
+              stepIndex < currentStep,
+              stepIndex == currentStep,
+            );
+          } else {
+            final stepIndex = index ~/ 2;
+            return Expanded(
+              child: _buildConnector(stepIndex < currentStep),
+            );
+          }
         }),
       ),
     );
@@ -40,6 +40,7 @@ class StepperWidget extends StatelessWidget {
 
   Widget _buildStepCircle(int index, bool isDone, bool isActive) {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Container(
           width: 32,
@@ -70,12 +71,19 @@ class StepperWidget extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 8),
-        Text(
-          steps[index],
-          style: TextStyle(
-            fontSize: 10,
-            fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
-            color: isActive ? AppTheme.primaryColor : Colors.grey,
+        SizedBox(
+          width: 60,
+          child: Text(
+            steps[index],
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            softWrap: true,
+            style: TextStyle(
+              fontSize: 9.5,
+              fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+              color: isActive ? AppTheme.primaryColor : Colors.grey,
+            ),
           ),
         ),
       ],
@@ -85,7 +93,7 @@ class StepperWidget extends StatelessWidget {
   Widget _buildConnector(bool isDone) {
     return Container(
       height: 1,
-      margin: const EdgeInsets.symmetric(horizontal: 8).copyWith(bottom: 18),
+      margin: const EdgeInsets.symmetric(horizontal: 4).copyWith(bottom: 18),
       color: isDone ? AppTheme.accentColor : AppTheme.mutedColor,
     );
   }
