@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:ui';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
 import 'razorpay_web_helper.dart';
@@ -848,29 +849,121 @@ class _PaymentPageState extends State<PaymentPage> {
           ),
           if (provider.isLoading)
             Positioned.fill(
-              child: Container(
-                color: Colors.black.withOpacity(0.6),
-                child: const Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      CircularProgressIndicator(color: Colors.white),
-                      SizedBox(height: 24),
-                      Text(
-                        'Processing Payment...',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                child: Container(
+                  color: Colors.black.withOpacity(0.55),
+                  child: Center(
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 32),
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 36),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF182232).withOpacity(0.95),
+                        borderRadius: BorderRadius.circular(28),
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.08),
+                          width: 1.5,
                         ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.4),
+                            blurRadius: 30,
+                            offset: const Offset(0, 15),
+                          ),
+                        ],
                       ),
-                      SizedBox(height: 8),
-                      Text(
-                        'Please do not close the app while payment is processing.',
-                        style: TextStyle(color: Colors.white, fontSize: 14),
-                        textAlign: TextAlign.center,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Glowing Indicator
+                          Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              Container(
+                                width: 80,
+                                height: 80,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: AppTheme.accentColor.withOpacity(0.1),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: AppTheme.accentColor.withOpacity(0.2),
+                                      blurRadius: 20,
+                                      spreadRadius: 2,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(
+                                width: 64,
+                                height: 64,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 3,
+                                  valueColor: AlwaysStoppedAnimation<Color>(AppTheme.accentColor),
+                                ),
+                              ),
+                              const Icon(
+                                LucideIcons.shieldCheck,
+                                color: AppTheme.accentColor,
+                                size: 32,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 28),
+                          const Text(
+                            'Processing Payment',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 0.5,
+                              fontFamily: 'Serif',
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            'Please do not close the app, lock your screen, or press the back button while we secure your transaction.',
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.7),
+                              fontSize: 13,
+                              height: 1.5,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 28),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.05),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: Colors.white.withOpacity(0.05),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  LucideIcons.lock,
+                                  color: Colors.white.withOpacity(0.6),
+                                  size: 14,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Secure 256-Bit SSL Connection',
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(0.6),
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
               ),
