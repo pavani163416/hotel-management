@@ -97,10 +97,15 @@ const csrfProtection = (req, res, next) => {
 
   // No origin at all — allow server-to-server / Postman / curl in non-prod.
   // In production or if cookies/credentials are present, require an origin for mutating requests.
-  const isProd = process.env.NODE_ENV === "production";
-  const hasCookies = req.headers.cookie || (req.cookies && Object.keys(req.cookies).length > 0);
+  const hasAuthCookie = req.cookies?.luxe_access_token || req.cookies?.token || 
+                        req.headers.cookie?.includes("luxe_access_token") || 
+                        req.headers.cookie?.includes("token");
+  const hasBearerToken = req.headers.authorization?.startsWith("Bearer ");
+
   if (!effectiveOrigin || effectiveOrigin === "null" || effectiveOrigin === "undefined") {
-    if (!isProd && !hasCookies) return next();
+    // Mobile apps and CLI/Postman don't send Origin headers.
+    // If they use Bearer tokens or don't have auth cookies, they are immune to CSRF.
+    if (hasBearerToken || !hasAuthCookie) return next();
     return res.status(403).json({
       success: false,
       message: "Forbidden: missing origin header.",
