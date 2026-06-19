@@ -1,5 +1,5 @@
 /**
- * errorHandler.js — Global Error Handler Middleware (GLB-004 hardened)
+ * errorHandler.js — Global Error Handler Middleware (GLB-004 hardened and updated again)
  * Must be registered LAST in Express (after all routes).
  * Never exposes stack traces, internal error names, or raw messages in production.
  */

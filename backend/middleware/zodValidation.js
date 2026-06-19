@@ -257,7 +257,7 @@ const addReview = z.object({
 });
 
 const editReview = z.object({
-  rating:  z.number().int().min(1).max(5).optional(),
+  rating:  z.coerce.number().int().min(1).max(5).optional(),
   comment: z.string().max(1000).trim().optional(),
 }).refine((d) => d.rating != null || d.comment != null, {
   message: "Rating or comment is required",

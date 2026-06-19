@@ -1,38 +1,51 @@
 import 'package:equatable/equatable.dart';
 
 class ReviewEntity extends Equatable {
+  final String id;
   final String author;
   final double rating;
   final String comment;
   final String date;
+  final String? userId;
+  final String? userEmail;
 
   const ReviewEntity({
+    required this.id,
     required this.author,
     required this.rating,
     required this.comment,
     required this.date,
+    this.userId,
+    this.userEmail,
   });
 
   factory ReviewEntity.fromJson(Map<String, dynamic> json) {
     return ReviewEntity(
+      id: json['_id']?.toString() ?? json['id']?.toString() ?? '',
       author: json['author'] ?? '',
       rating: (json['rating'] ?? 0).toDouble(),
       comment: json['comment'] ?? '',
       date: json['date'] ?? '',
+      userId: json['userId']?.toString(),
+      userEmail: json['userEmail']?.toString(),
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
+      'id': id,
+      '_id': id,
       'author': author,
       'rating': rating,
       'comment': comment,
       'date': date,
+      'userId': userId,
+      'userEmail': userEmail,
     };
   }
 
   @override
-  List<Object?> get props => [author, rating, comment, date];
+  List<Object?> get props => [id, author, rating, comment, date, userId, userEmail];
 }
 
 class RoomEntity extends Equatable {

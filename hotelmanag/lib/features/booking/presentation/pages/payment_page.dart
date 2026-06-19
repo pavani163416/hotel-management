@@ -407,6 +407,29 @@ class _PaymentPageState extends State<PaymentPage> {
               prefill['name'] = provider.leadGuest['name']!;
             }
 
+            if (_selectedMethod == 'bank') {
+              prefill['method'] = 'netbanking';
+              if (_selectedBank != null) {
+                final bankMap = {
+                  'State Bank of India': 'SBIN',
+                  'HDFC Bank': 'HDFC',
+                  'ICICI Bank': 'ICIC',
+                  'Axis Bank': 'UTIB',
+                };
+                final code = bankMap[_selectedBank];
+                if (code != null) {
+                  prefill['bank'] = code;
+                }
+              }
+            } else if (_selectedMethod == 'upi') {
+              prefill['method'] = 'upi';
+              if (_upiIdController.text.isNotEmpty) {
+                prefill['vpa'] = _upiIdController.text.trim();
+              }
+            } else if (_selectedMethod == 'card') {
+              prefill['method'] = 'card';
+            }
+
             var options = <String, dynamic>{
               'key': data['key'] ?? 'rzp_test_dummy',
               'amount': (data['amount'] as num).toInt(),
@@ -849,7 +872,7 @@ class _PaymentPageState extends State<PaymentPage> {
               ),
             ),
           ),
-          if (provider.isLoading)
+          if (provider.isLoading || _isProcessingPayment)
             Positioned.fill(
               child: BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),

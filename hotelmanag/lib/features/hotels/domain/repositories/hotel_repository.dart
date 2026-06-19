@@ -11,4 +11,14 @@ abstract class HotelRepository {
     int rating,
     String comment,
   );
+  Future<Either<Failure, HotelEntity>> updateReview(
+    String hotelId,
+    String reviewId,
+    int rating,
+    String comment,
+  );
+  Future<Either<Failure, HotelEntity>> deleteReview(
+    String hotelId,
+    String reviewId,
+  );
 }

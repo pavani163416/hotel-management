@@ -67,14 +67,14 @@ async function testReview() {
     const token = loginRes.data.data.token;
     console.log(`Logged in successfully, token: ${token.substring(0, 15)}...`);
 
-    // Now try to submit a review
+    // 1. Submit a review
     console.log("Submitting review...");
     const reviewRes = await axios.post(
       `http://localhost:5000/api/hotels/${hotel.hotelId}/reviews`,
       {
         rating: 5,
         comment: "Excellent hotel! Highly recommended.",
-        author: "John Doe"
+        author: user.name || "Test User"
       },
       {
         headers: {
@@ -84,6 +84,69 @@ async function testReview() {
     );
 
     console.log("Review submitted successfully:", reviewRes.data);
+
+    // Verify in DB
+    let hotelDoc = await Hotel.findOne({ hotelId: hotel.hotelId });
+    const insertedReview = hotelDoc.reviews.find(
+      r => r.userId?.toString() === userId.toString() || r.userEmail === userEmail
+    );
+
+    if (!insertedReview) {
+      throw new Error("Review was not found in the database after insertion!");
+    }
+    console.log(`Review verified in DB. ID: ${insertedReview._id}, userId: ${insertedReview.userId}, userEmail: ${insertedReview.userEmail}`);
+
+    const reviewId = insertedReview._id.toString();
+
+    // 2. Edit the review
+    console.log(`Editing review ${reviewId}...`);
+    const editRes = await axios.put(
+      `http://localhost:5000/api/hotels/${hotel.hotelId}/reviews/${reviewId}`,
+      {
+        rating: 4,
+        comment: "Great experience, but some amenities were missing."
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      }
+    );
+    console.log("Review edited successfully:", editRes.data);
+
+    // Verify updated review in DB
+    hotelDoc = await Hotel.findOne({ hotelId: hotel.hotelId });
+    const updatedReview = hotelDoc.reviews.id(reviewId);
+    if (!updatedReview) {
+      throw new Error("Review disappeared after editing!");
+    }
+    console.log(`Updated Review in DB - rating: ${updatedReview.rating}, comment: "${updatedReview.comment}"`);
+    if (updatedReview.rating !== 4 || updatedReview.comment !== "Great experience, but some amenities were missing.") {
+      throw new Error("Review updates were not persisted correctly in DB!");
+    }
+    console.log("Edit verification passed!");
+
+    // 3. Delete the review
+    console.log(`Deleting review ${reviewId}...`);
+    const deleteRes = await axios.delete(
+      `http://localhost:5000/api/hotels/${hotel.hotelId}/reviews/${reviewId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      }
+    );
+    console.log("Review deleted successfully:", deleteRes.data);
+
+    // Verify deletion in DB
+    hotelDoc = await Hotel.findOne({ hotelId: hotel.hotelId });
+    const deletedReview = hotelDoc.reviews.id(reviewId);
+    if (deletedReview) {
+      throw new Error("Review still exists in DB after deletion!");
+    }
+    console.log("Deletion verification passed!");
+    console.log("\n✅ ALL REVIEW CRUD INTEGRATION TESTS PASSED SUCCESSFULLY!");
+
     await mongoose.disconnect();
   } catch (err) {
     if (err.response) {

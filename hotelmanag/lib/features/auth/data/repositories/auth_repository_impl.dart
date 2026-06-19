@@ -102,7 +102,7 @@ class AuthRepositoryImpl implements AuthRepository {
       final captcha = await _remoteDataSource.fetchCaptcha();
       return Right(captcha);
     } on DioException catch (e) {
-      String message = 'Failed to fetch CAPTCHA';
+      String message = 'Failed to fetch CAPTCHA: ${e.message} (${e.error})';
       if (e.response?.data is Map) {
         message = e.response?.data['message'] ?? message;
       }

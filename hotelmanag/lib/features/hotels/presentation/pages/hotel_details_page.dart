@@ -1862,7 +1862,10 @@ class _HotelDetailsPageState extends State<HotelDetailsPage>
                             .map(
                               (r) => Padding(
                                 padding: const EdgeInsets.only(bottom: 16.0),
-                                child: ReviewCard(review: r),
+                                child: ReviewCard(
+                                  hotelId: hotel.id,
+                                  review: r,
+                                ),
                               ),
                             ),
                     ],
@@ -1895,7 +1898,10 @@ class _HotelDetailsPageState extends State<HotelDetailsPage>
                         .map(
                           (r) => Padding(
                             padding: const EdgeInsets.only(bottom: 16.0),
-                            child: ReviewCard(review: r),
+                            child: ReviewCard(
+                              hotelId: hotel.id,
+                              review: r,
+                            ),
                           ),
                         )
                         .toList(),
@@ -2215,12 +2221,209 @@ class _HotelDetailsPageState extends State<HotelDetailsPage>
 }
 
 class ReviewCard extends StatelessWidget {
+  final String hotelId;
   final ReviewEntity review;
-  const ReviewCard({super.key, required this.review});
+  const ReviewCard({super.key, required this.hotelId, required this.review});
+
+  void _showEditReviewDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        int tempRating = review.rating.round();
+        final commentController = TextEditingController(text: review.comment);
+
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              title: const Text(
+                'Edit Your Review',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  fontFamily: 'Serif',
+                ),
+              ),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Rating',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: List.generate(5, (index) {
+                        final starVal = index + 1;
+                        final isSelected = starVal <= tempRating;
+                        return GestureDetector(
+                          onTap: () {
+                            setDialogState(() {
+                              tempRating = starVal;
+                            });
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.only(right: 8.0),
+                            child: Icon(
+                              isSelected ? Icons.star : Icons.star_border,
+                              color: isSelected ? Colors.amber[600] : Colors.grey[400],
+                              size: 32,
+                            ),
+                          ),
+                        );
+                      }),
+                    ),
+                    const SizedBox(height: 20),
+                    const Text(
+                      'Comment',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: commentController,
+                      maxLines: 4,
+                      decoration: InputDecoration(
+                        hintText: 'Share your experience...',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        contentPadding: const EdgeInsets.all(12),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    final comment = commentController.text.trim();
+                    if (comment.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Please enter a comment.')),
+                      );
+                      return;
+                    }
+                    Navigator.pop(dialogContext);
+
+                    final success = await context.read<HotelProvider>().updateReview(
+                      hotelId: hotelId,
+                      reviewId: review.id,
+                      rating: tempRating,
+                      comment: comment,
+                    );
+
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            success
+                                ? 'Review updated successfully!'
+                                : 'Failed to update review.',
+                          ),
+                          backgroundColor: success ? Colors.green : Colors.redAccent,
+                        ),
+                      );
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF34495E),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text('Save'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showDeleteConfirmation(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: const Text(
+            'Delete Review',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
+              fontFamily: 'Serif',
+            ),
+          ),
+          content: const Text('Are you sure you want to delete your review? This action cannot be undone.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.pop(dialogContext);
+
+                final success = await context.read<HotelProvider>().deleteReview(
+                  hotelId: hotelId,
+                  reviewId: review.id,
+                );
+
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        success
+                            ? 'Review deleted successfully!'
+                            : 'Failed to delete review.',
+                      ),
+                      backgroundColor: success ? Colors.green : Colors.redAccent,
+                    ),
+                  );
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.redAccent,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text('Delete'),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).colorScheme.brightness == Brightness.dark;
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final currentUser = authProvider.user;
+    final isOwnReview = currentUser != null &&
+        (review.userId == currentUser.id ||
+            review.userEmail?.toLowerCase().trim() == currentUser.email.toLowerCase().trim());
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -2237,44 +2440,65 @@ class ReviewCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Expanded(
-                child: Text(
-                  review.author,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      review.author,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: List.generate(
+                        5,
+                        (index) {
+                          if (index < review.rating.floor()) {
+                            return Icon(
+                              Icons.star,
+                              color: Colors.amber[600],
+                              size: 14,
+                            );
+                          } else if (index < review.rating && review.rating - index >= 0.5) {
+                            return Icon(
+                              Icons.star_half,
+                              color: Colors.amber[600],
+                              size: 14,
+                            );
+                          } else {
+                            return Icon(
+                              Icons.star_border,
+                              color: Colors.amber[600],
+                              size: 14,
+                            );
+                          }
+                        },
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(width: 8),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: List.generate(
-                  5,
-                  (index) {
-                    if (index < review.rating.floor()) {
-                      return Icon(
-                        Icons.star,
-                        color: Colors.amber[600],
-                        size: 14,
-                      );
-                    } else if (index < review.rating && review.rating - index >= 0.5) {
-                      return Icon(
-                        Icons.star_half,
-                        color: Colors.amber[600],
-                        size: 14,
-                      );
-                    } else {
-                      return Icon(
-                        Icons.star_border,
-                        color: Colors.amber[600],
-                        size: 14,
-                      );
-                    }
-                  },
+              if (isOwnReview) ...[
+                IconButton(
+                  icon: const Icon(Icons.edit_outlined, size: 18, color: Colors.blueAccent),
+                  onPressed: () => _showEditReviewDialog(context),
+                  tooltip: 'Edit Review',
+                  constraints: const BoxConstraints(),
+                  padding: const EdgeInsets.all(8),
                 ),
-              ),
+                IconButton(
+                  icon: const Icon(Icons.delete_outline, size: 18, color: Colors.redAccent),
+                  onPressed: () => _showDeleteConfirmation(context),
+                  tooltip: 'Delete Review',
+                  constraints: const BoxConstraints(),
+                  padding: const EdgeInsets.all(8),
+                ),
+              ],
             ],
           ),
           const SizedBox(height: 8),

@@ -142,4 +142,74 @@ class HotelRepositoryImpl implements HotelRepository {
       return Left(ServerFailure(e.toString()));
     }
   }
+
+  @override
+  Future<Either<Failure, HotelEntity>> updateReview(
+    String hotelId,
+    String reviewId,
+    int rating,
+    String comment,
+  ) async {
+    try {
+      final hotel = await _remoteDataSource.updateReview(
+        hotelId,
+        reviewId,
+        rating,
+        comment,
+      );
+      // Update cache
+      final cached = await _loadFromCache();
+      final idx = cached.indexWhere((h) => h.id == hotelId);
+      if (idx != -1) {
+        cached[idx] = hotel;
+        await _saveToCache(cached);
+      }
+      return Right(hotel);
+    } on DioException catch (e) {
+      debugPrint('[HotelRepositoryImpl] updateReview failed. Response: ${e.response?.data}');
+      String message = 'Failed to update review';
+      if (e.response?.data is Map) {
+        message = e.response?.data['message'] ?? message;
+      } else if (e.message != null && e.message!.isNotEmpty) {
+        message = e.message!;
+      }
+      return Left(ServerFailure(message));
+    } catch (e) {
+      debugPrint('[HotelRepositoryImpl] updateReview failed with unexpected error: $e');
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, HotelEntity>> deleteReview(
+    String hotelId,
+    String reviewId,
+  ) async {
+    try {
+      final hotel = await _remoteDataSource.deleteReview(
+        hotelId,
+        reviewId,
+      );
+      // Update cache
+      final cached = await _loadFromCache();
+      final idx = cached.indexWhere((h) => h.id == hotelId);
+      if (idx != -1) {
+        cached[idx] = hotel;
+        await _saveToCache(cached);
+      }
+      return Right(hotel);
+    } on DioException catch (e) {
+      debugPrint('[HotelRepositoryImpl] deleteReview failed. Response: ${e.response?.data}');
+      String message = 'Failed to delete review';
+      if (e.response?.data is Map) {
+        message = e.response?.data['message'] ?? message;
+      } else if (e.message != null && e.message!.isNotEmpty) {
+        message = e.message!;
+      }
+      return Left(ServerFailure(message));
+    } catch (e) {
+      debugPrint('[HotelRepositoryImpl] deleteReview failed with unexpected error: $e');
+      return Left(ServerFailure(e.toString()));
+    }
+  }
 }
