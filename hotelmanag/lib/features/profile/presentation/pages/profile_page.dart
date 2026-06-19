@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:io' as io;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:convert';
@@ -84,6 +85,7 @@ class _ProfilePageState extends State<ProfilePage> {
     // Fetch fresh profile data on entry
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _refreshProfile();
+      _checkForLostImage();
     });
   }
 
@@ -2235,95 +2237,121 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  Future<void> _pickImage(ImageSource source, {required bool isProfile}) async {
+  Future<void> _checkForLostImage() async {
     try {
-      final XFile? pickedFile = await _picker.pickImage(source: source);
-      if (pickedFile != null) {
-        // The bottom sheet is now closed BEFORE we await the picker, 
-        // so we don't pop here and accidentally pop the profile page.
-
-        setState(() {
-          if (isProfile) {
-            _profileImageFile = pickedFile;
-          } else {
-            _coverImageFile = pickedFile;
-          }
-        });
-
-        if (mounted) {
-          // Show loading indicator
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Row(
-                children: [
-                  const SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Text(
-                    isProfile
-                        ? 'Uploading profile photo...'
-                        : 'Uploading cover photo...',
-                  ),
-                ],
-              ),
-              duration: const Duration(seconds: 2),
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-
-          final auth = Provider.of<AuthProvider>(context, listen: false);
-          final bytes = await pickedFile.readAsBytes();
-          final base64Image = base64Encode(bytes);
-
-          final newImageUrl = await auth.uploadImage(base64Image);
-
-          if (newImageUrl != null) {
-            final success = await auth.updateProfile(
-              profileImage: isProfile ? newImageUrl : null,
-              coverImage: !isProfile ? newImageUrl : null,
-            );
-            if (success && mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    isProfile
-                        ? 'Profile photo updated successfully!'
-                        : 'Cover photo updated successfully!',
-                  ),
-                  behavior: SnackBarBehavior.floating,
-                  backgroundColor: Colors.green,
-                ),
-              );
-              setState(() {
-                if (isProfile) {
-                  _profileImageUrl = newImageUrl;
-                  _profileImageFile = null;
-                } else {
-                  _coverImageUrl = newImageUrl;
-                  _coverImageFile = null;
-                }
-              });
-            }
-          } else {
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(auth.error ?? 'Failed to upload image'),
-                  behavior: SnackBarBehavior.floating,
-                  backgroundColor: Colors.red,
-                ),
-              );
-            }
-          }
-        }
+      final prefs = await SharedPreferences.getInstance();
+      final path = prefs.getString('lost_image_path');
+      final type = prefs.getString('picking_image_type');
+      if (path != null && type != null) {
+        await prefs.remove('lost_image_path');
+        await prefs.remove('picking_image_type');
+        final isProfile = type == 'profile';
+        final pickedFile = XFile(path);
+        await _uploadAndSetImage(pickedFile, isProfile: isProfile);
       }
     } catch (e) {
+      debugPrint('Error recovering lost image: $e');
+    }
+  }
+
+  Future<void> _uploadAndSetImage(XFile pickedFile, {required bool isProfile}) async {
+    setState(() {
+      if (isProfile) {
+        _profileImageFile = pickedFile;
+      } else {
+        _coverImageFile = pickedFile;
+      }
+    });
+
+    if (mounted) {
+      // Show loading indicator
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const SizedBox(
+                height: 20,
+                width: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Text(
+                isProfile
+                    ? 'Uploading profile photo...'
+                    : 'Uploading cover photo...',
+              ),
+            ],
+          ),
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+
+      final auth = Provider.of<AuthProvider>(context, listen: false);
+      final bytes = await pickedFile.readAsBytes();
+      final base64Image = base64Encode(bytes);
+
+      final newImageUrl = await auth.uploadImage(base64Image);
+
+      if (newImageUrl != null) {
+        final success = await auth.updateProfile(
+          profileImage: isProfile ? newImageUrl : null,
+          coverImage: !isProfile ? newImageUrl : null,
+        );
+        if (success && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                isProfile
+                    ? 'Profile photo updated successfully!'
+                    : 'Cover photo updated successfully!',
+              ),
+              behavior: SnackBarBehavior.floating,
+              backgroundColor: Colors.green,
+            ),
+          );
+          setState(() {
+            if (isProfile) {
+              _profileImageUrl = newImageUrl;
+              _profileImageFile = null;
+            } else {
+              _coverImageUrl = newImageUrl;
+              _coverImageFile = null;
+            }
+          });
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(auth.error ?? 'Failed to upload image'),
+              behavior: SnackBarBehavior.floating,
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  Future<void> _pickImage(ImageSource source, {required bool isProfile}) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('picking_image_type', isProfile ? 'profile' : 'cover');
+
+      final XFile? pickedFile = await _picker.pickImage(source: source);
+      if (pickedFile != null) {
+        await prefs.remove('picking_image_type');
+        await _uploadAndSetImage(pickedFile, isProfile: isProfile);
+      } else {
+        await prefs.remove('picking_image_type');
+      }
+    } catch (e) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('picking_image_type');
       if (mounted) {
         ScaffoldMessenger.of(
           context,

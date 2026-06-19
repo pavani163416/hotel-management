@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/constants/app_constants.dart';
 
@@ -61,6 +62,21 @@ class _SplashScreenState extends State<SplashScreen>
 
     if (mounted) {
       if (isLoggedIn) {
+        try {
+          final ImagePicker picker = ImagePicker();
+          final LostDataResponse response = await picker.retrieveLostData();
+          if (!response.isEmpty && response.file != null) {
+            final prefs = await SharedPreferences.getInstance();
+            await prefs.setString('lost_image_path', response.file!.path);
+            if (mounted) {
+              context.go('/profile');
+            }
+            return;
+          }
+        } catch (e) {
+          debugPrint('Error checking for lost image picker data: $e');
+        }
+
         // Authenticated: transition to home
         context.go('/');
         return;
@@ -94,6 +110,12 @@ class _SplashScreenState extends State<SplashScreen>
             child: Image.network(
               'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?q=80&w=1600',
               fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return Image.asset(
+                  'assets/images/hero.png',
+                  fit: BoxFit.cover,
+                );
+              },
             ),
           ),
           // Dark/Gold Ambient Overlay
