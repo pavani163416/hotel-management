@@ -1,4 +1,4 @@
-import "dotenv/config"; // reload trigger update
+import "dotenv/config"; // reload trigger update force restart
 import express          from "express";
 import cors             from "cors";
 import helmet           from "helmet";
@@ -247,6 +247,17 @@ const isTrustedVercelDomain = (origin) => {
 const isValidOrigin = (origin) => {
   if (!origin || origin === "null" || origin === "undefined") return false;
   if (allowedOrigins.includes(origin)) return true;
+  
+  // Allow localhost/127.0.0.1 with any port for development
+  if (
+    origin.startsWith("http://localhost:") ||
+    origin.startsWith("http://127.0.0.1:") ||
+    origin === "http://localhost" ||
+    origin === "http://127.0.0.1"
+  ) {
+    return true;
+  }
+
   // Dynamic Vercel subdomains allowed for PR deployments and branching
   if (origin.endsWith('.vercel.app')) return true;
   if (isTrustedVercelDomain(origin)) return true;
@@ -860,4 +871,4 @@ process.on("uncaughtException", (err) => {
   process.exit(1);
 });
 
-export default app;
+export default app; // reload
