@@ -202,7 +202,50 @@ class NotificationProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void markAllAsRead(List<NotificationItem> items) {
+  Future<void> markAsRead(String id) async {
+    _readIds.add(id);
+
+    // Update locally in backend list
+    _backendNotifications = _backendNotifications
+        .map(
+          (n) => n.id == id
+              ? NotificationItem(
+                  id: n.id,
+                  title: n.title,
+                  type: n.type,
+                  timestamp: n.timestamp,
+                  isNew: false,
+                  isCancelled: n.isCancelled,
+                )
+              : n,
+        )
+        .toList();
+
+    // Update locally in live list
+    for (int i = 0; i < _liveNotifications.length; i++) {
+      if (_liveNotifications[i].id == id) {
+        _liveNotifications[i] = NotificationItem(
+          id: _liveNotifications[i].id,
+          title: _liveNotifications[i].title,
+          type: _liveNotifications[i].type,
+          timestamp: _liveNotifications[i].timestamp,
+          isNew: false,
+          isCancelled: _liveNotifications[i].isCancelled,
+        );
+      }
+    }
+
+    _saveReadIds();
+    notifyListeners();
+
+    try {
+      await _apiService.put('/notifications/$id/read');
+    } catch (e) {
+      debugPrint('[NotificationProvider] Failed to mark notification $id as read on backend: $e');
+    }
+  }
+
+  Future<void> markAllAsRead(List<NotificationItem> items) async {
     for (final item in items) {
       _readIds.add(item.id);
     }
@@ -219,7 +262,33 @@ class NotificationProvider extends ChangeNotifier {
           ),
         )
         .toList();
+
+    // Also update locally in live list
+    for (int i = 0; i < _liveNotifications.length; i++) {
+      if (_readIds.contains(_liveNotifications[i].id)) {
+        _liveNotifications[i] = NotificationItem(
+          id: _liveNotifications[i].id,
+          title: _liveNotifications[i].title,
+          type: _liveNotifications[i].type,
+          timestamp: _liveNotifications[i].timestamp,
+          isNew: false,
+          isCancelled: _liveNotifications[i].isCancelled,
+        );
+      }
+    }
+
     _saveReadIds();
     notifyListeners();
+
+    // Trigger API calls in parallel
+    await Future.wait(
+      items.map((item) async {
+        try {
+          await _apiService.put('/notifications/${item.id}/read');
+        } catch (e) {
+          debugPrint('[NotificationProvider] Failed to mark notification ${item.id} as read on backend: $e');
+        }
+      }),
+    );
   }
 }

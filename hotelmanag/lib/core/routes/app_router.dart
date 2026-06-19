@@ -51,8 +51,10 @@ class AppRouter {
   static const String hallsBooking = '/halls-booking';
 
 
+  static GoRouter? router;
+
   static GoRouter createRouter(AuthProvider authProvider) {
-    return GoRouter(
+    final r = GoRouter(
       initialLocation: splash,
       refreshListenable: authProvider,
       errorBuilder: (context, state) {
@@ -178,5 +180,7 @@ class AppRouter {
 
       ],
     );
+    router = r;
+    return r;
   }
 }

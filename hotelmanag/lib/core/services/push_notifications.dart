@@ -4,6 +4,9 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter/material.dart';
 import '../utils/audio_helper.dart' as audio_helper;
 import '../widgets/notification_popup.dart' as popup;
+import '../utils/injection_container.dart' as di;
+import '../providers/notification_provider.dart';
+import '../routes/app_router.dart';
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -134,6 +137,46 @@ class PushNotificationService {
       _cachedFcmToken = newToken;
       onTokenRefresh?.call(newToken);
     });
+
+    // Handle notification click when app is in background but not terminated
+    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+      _handleNotificationClick(message);
+    });
+
+    // Handle notification click when app is terminated (cold start)
+    FirebaseMessaging.instance.getInitialMessage().then((RemoteMessage? message) {
+      if (message != null) {
+        _handleNotificationClick(message);
+      }
+    });
+  }
+
+  static void _handleNotificationClick(RemoteMessage message) {
+    debugPrint('Push Notification clicked: ${message.messageId}');
+    final String? notificationId = message.data['notificationId'] ?? message.data['id'];
+    final String? type = message.data['type'];
+
+    if (notificationId != null) {
+      try {
+        final notificationProvider = di.sl<NotificationProvider>();
+        notificationProvider.markAsRead(notificationId);
+      } catch (e) {
+        debugPrint('Error marking notification from click as read: $e');
+      }
+    }
+
+    try {
+      final router = AppRouter.router;
+      if (router != null) {
+        if (type == 'offer' || type == 'Offer') {
+          router.push('/promo-codes');
+        } else {
+          router.push('/history');
+        }
+      }
+    } catch (e) {
+      debugPrint('Error navigating on notification click: $e');
+    }
   }
 
   static void _showLocalNotification(

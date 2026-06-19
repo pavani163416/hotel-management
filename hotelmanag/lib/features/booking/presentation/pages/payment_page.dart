@@ -645,11 +645,13 @@ class _PaymentPageState extends State<PaymentPage> {
                   size: 28,
                 ),
                 SizedBox(width: 10),
-                Text(
-                  'Payment In Progress',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.primaryColor,
+                Expanded(
+                  child: Text(
+                    'Payment In Progress',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.primaryColor,
+                    ),
                   ),
                 ),
               ],
@@ -711,11 +713,13 @@ class _PaymentPageState extends State<PaymentPage> {
                           color: AppTheme.primaryColor.withOpacity(0.5),
                         ),
                         const SizedBox(width: 8),
-                        Text(
-                          'Secure 256-bit SSL encrypted',
-                          style: TextStyle(
-                            color: AppTheme.primaryColor.withOpacity(0.5),
-                            fontSize: 13,
+                        Expanded(
+                          child: Text(
+                            'Secure 256-bit SSL encrypted',
+                            style: TextStyle(
+                              color: AppTheme.primaryColor.withOpacity(0.5),
+                              fontSize: 13,
+                            ),
                           ),
                         ),
                       ],
@@ -755,6 +759,34 @@ class _PaymentPageState extends State<PaymentPage> {
                     LayoutBuilder(
                       builder: (context, constraints) {
                         final isWide = constraints.maxWidth > 800;
+                        if (!isWide) {
+                          return Column(
+                            children: [
+                              Form(
+                                key: _idFormKey,
+                                child: _buildGuestIdentityVerification(
+                                  provider,
+                                ),
+                              ),
+                              const SizedBox(height: 24),
+                              _buildPaymentMethodSelector(),
+                              const SizedBox(height: 24),
+                              Form(
+                                key: _paymentFormKey,
+                                child: Column(
+                                  children: [
+                                    if (_selectedMethod == 'card')
+                                      _buildCardForm(provider),
+                                    if (_selectedMethod == 'upi')
+                                      _buildUpiForm(provider),
+                                    if (_selectedMethod == 'bank')
+                                      _buildNetBankingForm(provider),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          );
+                        }
                         return Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -787,12 +819,11 @@ class _PaymentPageState extends State<PaymentPage> {
                                 ],
                               ),
                             ),
-                            if (isWide) const SizedBox(width: 32),
-                            if (isWide)
-                              Expanded(
-                                flex: 2,
-                                child: _buildFinalSummary(context, provider),
-                              ),
+                            const SizedBox(width: 32),
+                            Expanded(
+                              flex: 2,
+                              child: _buildFinalSummary(context, provider),
+                            ),
                           ],
                         );
                       },
@@ -1140,6 +1171,8 @@ class _PaymentPageState extends State<PaymentPage> {
                   fontWeight: FontWeight.bold,
                   color: isSelected ? AppTheme.primaryColor : Colors.grey,
                 ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ],
           ),
@@ -1416,10 +1449,13 @@ class _PaymentPageState extends State<PaymentPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Total',
-                style: TextStyle(fontSize: 14, color: AppTheme.primaryColor),
+              const Expanded(
+                child: Text(
+                  'Total',
+                  style: TextStyle(fontSize: 14, color: AppTheme.primaryColor),
+                ),
               ),
+              const SizedBox(width: 16),
               Text(
                 context.watch<CurrencyProvider>().format(provider.total),
                 style: const TextStyle(
@@ -1461,13 +1497,17 @@ class _PaymentPageState extends State<PaymentPage> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 14,
-              color: AppTheme.primaryColor.withOpacity(0.6),
+          Expanded(
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 14,
+                color: AppTheme.primaryColor.withOpacity(0.6),
+              ),
+              overflow: TextOverflow.ellipsis,
             ),
           ),
+          const SizedBox(width: 16),
           Text(
             value,
             style: const TextStyle(
@@ -1488,7 +1528,14 @@ class _PaymentPageState extends State<PaymentPage> {
         children: [
           const Icon(LucideIcons.check, size: 10, color: Colors.orangeAccent),
           const SizedBox(width: 8),
-          Text(text, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+          Expanded(
+            child: Text(
+              text,
+              style: const TextStyle(fontSize: 11, color: Colors.grey),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
         ],
       ),
     );

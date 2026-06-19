@@ -222,7 +222,7 @@ class _NotificationModalState extends State<NotificationModal> {
 
                         return InkWell(
                           onTap: () {
-                            provider.markAllAsRead([item]);
+                            provider.markAsRead(item.id);
                             
                             showDialog(
                               context: context,
