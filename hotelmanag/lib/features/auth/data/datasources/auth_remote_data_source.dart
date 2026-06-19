@@ -308,10 +308,17 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
 
   @override
   Future<String> uploadImage(String base64Image) async {
+    String mimeType = 'image/jpeg';
+    if (base64Image.startsWith('iVBOR')) {
+      mimeType = 'image/png';
+    } else if (base64Image.startsWith('UklGR')) {
+      mimeType = 'image/webp';
+    }
+
     final response = await _apiService.post(
       'upload/image',
       data: {
-        'image': 'data:image/jpeg;base64,$base64Image',
+        'image': 'data:$mimeType;base64,$base64Image',
         'folder': 'profiles',
       },
     );

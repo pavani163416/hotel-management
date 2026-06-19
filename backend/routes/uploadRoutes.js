@@ -84,7 +84,7 @@ router.post("/image", jsonLargeBody, protect, async (req, res) => {
 
     // ── Advanced File Security (Base64 Sanitization) ──
     // 1. Strict MIME Type check (Allow svg+xml to let the router parse and reject it with 400)
-    const mimeRegex = /^data:image\/(jpeg|jpg|png|svg\+xml);base64,/;
+    const mimeRegex = /^data:image\/(jpeg|jpg|png|webp|svg\+xml);base64,/;
     if (!mimeRegex.test(image)) {
       const AuditLog = (await import("../models/AuditLog.js")).default;
       AuditLog.create({
@@ -95,7 +95,7 @@ router.post("/image", jsonLargeBody, protect, async (req, res) => {
         description: "Attempted to upload an invalid or malicious file type (MIME mismatch).",
         severity: "High"
       }).catch(() => {});
-      return res.status(415).json({ success: false, message: "Invalid file type. Only JPG and PNG are allowed." });
+      return res.status(415).json({ success: false, message: "Invalid file type. Only JPG, PNG, and WebP are allowed." });
     }
 
     // 2. Strict Size Limit (Max ~10MB raw = ~14MB Base64 string length)
@@ -137,8 +137,9 @@ router.post("/image", jsonLargeBody, protect, async (req, res) => {
       const hex = buffer.toString("hex", 0, 16);
       const isJPEG = hex.startsWith("ffd8ff");
       const isPNG = hex.startsWith("89504e470d0a1a0a");
+      const isWebP = hex.startsWith("52494646") && hex.substring(16, 24) === "57454250";
       
-      if (!isJPEG && !isPNG) {
+      if (!isJPEG && !isPNG && !isWebP) {
         const AuditLog = (await import("../models/AuditLog.js")).default;
         AuditLog.create({
           event: "UnauthorizedAccess",

@@ -2061,7 +2061,7 @@ class _ProfilePageState extends State<ProfilePage> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (context) => Container(
+      builder: (sheetContext) => Container(
         padding: const EdgeInsets.all(32),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -2080,7 +2080,7 @@ class _ProfilePageState extends State<ProfilePage> {
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.onSurface,
+                color: Theme.of(sheetContext).colorScheme.onSurface,
               ),
             ),
             const SizedBox(height: 8),
@@ -2088,7 +2088,7 @@ class _ProfilePageState extends State<ProfilePage> {
               'Choose a source for your new profile picture',
               style: TextStyle(
                 fontSize: 14,
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                color: Theme.of(sheetContext).colorScheme.onSurface.withOpacity(0.6),
               ),
             ),
             const SizedBox(height: 32),
@@ -2096,21 +2096,25 @@ class _ProfilePageState extends State<ProfilePage> {
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 _buildUploadOption(
-                  context,
+                  sheetContext,
                   LucideIcons.camera,
                   'Camera',
                   onTap: () {
-                    Navigator.pop(context);
-                    _pickImage(ImageSource.camera, isProfile: true);
+                    Navigator.pop(sheetContext);
+                    Future.delayed(const Duration(milliseconds: 300), () {
+                      _pickImage(ImageSource.camera, isProfile: true);
+                    });
                   },
                 ),
                 _buildUploadOption(
-                  context,
+                  sheetContext,
                   LucideIcons.image,
                   'Gallery',
                   onTap: () {
-                    Navigator.pop(context);
-                    _pickImage(ImageSource.gallery, isProfile: true);
+                    Navigator.pop(sheetContext);
+                    Future.delayed(const Duration(milliseconds: 300), () {
+                      _pickImage(ImageSource.gallery, isProfile: true);
+                    });
                   },
                 ),
               ],
@@ -2338,7 +2342,7 @@ class _ProfilePageState extends State<ProfilePage> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (context) => Container(
+      builder: (sheetContext) => Container(
         padding: const EdgeInsets.symmetric(vertical: 24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -2350,30 +2354,30 @@ class _ProfilePageState extends State<ProfilePage> {
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.onSurface,
+                  color: Theme.of(sheetContext).colorScheme.onSurface,
                 ),
               ),
             ),
             const Divider(),
             _buildCoverListTile(
-              context,
+              sheetContext,
               LucideIcons.camera,
               'Camera',
               'Capture a new cover image',
               onTap: () {
-                Navigator.pop(context);
+                Navigator.pop(sheetContext);
                 Future.delayed(const Duration(milliseconds: 300), () {
                   _pickImage(ImageSource.camera, isProfile: false);
                 });
               },
             ),
             _buildCoverListTile(
-              context,
+              sheetContext,
               LucideIcons.image,
               'Upload from Gallery',
               'Select from your library',
               onTap: () {
-                Navigator.pop(context);
+                Navigator.pop(sheetContext);
                 Future.delayed(const Duration(milliseconds: 300), () {
                   _pickImage(ImageSource.gallery, isProfile: false);
                 });
