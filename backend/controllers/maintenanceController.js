@@ -29,6 +29,8 @@ export const createMaintenanceRequest = async (req, res, next) => {
 
     // Log the manager/admin action
     await AuditLog.create({
+      action: "MAINTENANCE_CREATED",
+      targetType: "Maintenance",
       event: "AdminAction",
       userId: req.user?._id || req.admin?._id,
       userEmail: req.user?.email || req.admin?.email,
@@ -56,6 +58,8 @@ export const updateMaintenanceRequest = async (req, res, next) => {
     }
 
     await AuditLog.create({
+      action: "MAINTENANCE_UPDATED",
+      targetType: "Maintenance",
       event: "AdminAction",
       userId: req.user?._id || req.admin?._id,
       userEmail: req.user?.email || req.admin?.email,

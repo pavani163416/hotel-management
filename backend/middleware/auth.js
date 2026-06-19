@@ -60,6 +60,8 @@ export const protect = async (req, res, next) => {
     if (decoded.ip && decoded.deviceFingerprint) {
       if (currentIp !== decoded.ip || currentDevice !== decoded.deviceFingerprint) {
         AuditLog.create({
+          action: "IP_ANOMALY",
+          targetType: "User",
           event: "IPAnomaly",
           userId: decoded.id,
           userEmail: decoded.email,

@@ -842,6 +842,8 @@ router.post("/login", loginLimiter, validateLoginPayload, async (req, res, next)
     const jti = crypto.randomUUID();
 
     AuditLog.create({
+      action: "LOGIN",
+      targetType: "User",
       event: "LoginSuccess",
       userId: user._id,
       userEmail: user.email,
@@ -2079,6 +2081,7 @@ router.post("/logout", async (req, res, next) => {
     // Write audit log
     AuditLog.create({
       action: "LOGOUT",
+      targetType: "User",
       userId: userId,
       role: userRole,
       ip: req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || req.socket.remoteAddress || "127.0.0.1",
@@ -2140,6 +2143,8 @@ router.post("/logout-all", verifyCustomerToken, async (req, res, next) => {
     }
 
     AuditLog.create({
+      action: "LOGOUT_ALL",
+      targetType: "User",
       event: "LogoutAllDevices",
       userId: userId,
       role: "customer",

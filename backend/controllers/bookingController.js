@@ -395,6 +395,7 @@ export const createBooking = async (req, res, next) => {
     // Write audit log
     AuditLog.create({
       action: "BOOKING_CREATED",
+      targetType: "Booking",
       userId: guest.email || "anonymous",
       role: req.user?.role || "customer",
       ip: req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || req.socket.remoteAddress || "127.0.0.1",
@@ -783,6 +784,7 @@ export const cancelBooking = async (req, res, next) => {
     // Write audit log
     AuditLog.create({
       action: "BOOKING_CANCELLED",
+      targetType: "Booking",
       userId: booking.guestSnapshot?.email || "unknown",
       role: currentUser?.role || "customer",
       ip: req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || req.socket.remoteAddress || "127.0.0.1",

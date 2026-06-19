@@ -88,6 +88,8 @@ router.post("/image", jsonLargeBody, protect, async (req, res) => {
     if (!mimeRegex.test(image)) {
       const AuditLog = (await import("../models/AuditLog.js")).default;
       AuditLog.create({
+        action: "UNAUTHORIZED_UPLOAD",
+        targetType: "System",
         event: "UnauthorizedAccess",
         userId: req.user?.id,
         userEmail: req.user?.email,
@@ -123,6 +125,8 @@ router.post("/image", jsonLargeBody, protect, async (req, res) => {
       ) {
         const AuditLog = (await import("../models/AuditLog.js")).default;
         AuditLog.create({
+          action: "MALICIOUS_UPLOAD",
+          targetType: "System",
           event: "UnauthorizedAccess",
           userId: req.user?.id,
           userEmail: req.user?.email,
@@ -142,6 +146,8 @@ router.post("/image", jsonLargeBody, protect, async (req, res) => {
       if (!isJPEG && !isPNG && !isWebP) {
         const AuditLog = (await import("../models/AuditLog.js")).default;
         AuditLog.create({
+          action: "SPOOFED_UPLOAD",
+          targetType: "System",
           event: "UnauthorizedAccess",
           userId: req.user?.id,
           userEmail: req.user?.email,

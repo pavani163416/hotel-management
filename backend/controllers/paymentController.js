@@ -129,6 +129,8 @@ export const createOrder = async (req, res, next) => {
 
     // Write audit log
     AuditLog.create({
+      action: "PAYMENT_ORDER_CREATED",
+      targetType: "Payment",
       event: "PaymentOrderCreated",
       userId: user.id,
       userEmail: user.email,
@@ -770,6 +772,8 @@ export const refundPayment = async (req, res, next) => {
 
     // Write audit log
     AuditLog.create({
+      action: "PAYMENT_REFUNDED",
+      targetType: "Payment",
       event: "PaymentRefunded",
       userId: user.id,
       userEmail: user.email,

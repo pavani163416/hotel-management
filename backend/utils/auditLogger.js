@@ -11,6 +11,7 @@ export const logAudit = async ({ req, userId, role, action, details }) => {
       userId: finalUserId,
       role: finalRole,
       action,
+      targetType: "System",
       ip,
       details: details || {},
     });
