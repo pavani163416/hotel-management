@@ -378,8 +378,8 @@ const HotelDetails = () => {
         </div>
 
         {/* Tabs */}
-        <div id="rooms-section" className="flex gap-1 border-b border-border mt-8 overflow-x-auto scrollbar-hide whitespace-nowrap">
-          {["rooms", "halls", "amenities", "reviews", "location"].map((t) => (
+        <div id="rooms-section" className="flex gap-1 border-b border-border mt-8 overflow-x-auto overflow-y-hidden scrollbar-hide whitespace-nowrap">
+          {["rooms", "amenities", "reviews", "location"].map((t) => (
             <button key={t} onClick={() => setTab(t as any)}
               className={`px-5 py-3 text-sm font-semibold capitalize relative transition-base min-h-[44px] ${tab === t ? "text-primary" : "text-muted-foreground hover:text-primary"}`}>
               {t} {t === "reviews" && `(${allReviews.length})`}
@@ -559,45 +559,7 @@ const HotelDetails = () => {
             })()}
           </div>
         )}
-        {tab === "halls" && (
-          <div className="mt-8">
-            <h2 className="font-display text-2xl font-bold mb-5">Function Halls & Event Spaces</h2>
-            {!hotel.functionHalls || hotel.functionHalls.length === 0 ? (
-              <p className="text-muted-foreground text-sm bg-card p-6 border border-border rounded-xl text-center">
-                No function halls are currently available at this property.
-              </p>
-            ) : (
-              <div className="grid md:grid-cols-2 gap-5">
-                {hotel.functionHalls.map((hall) => (
-                  <div key={hall.id || hall._id} className="border border-border rounded-2xl overflow-hidden bg-card flex flex-col">
-                    {hall.images && hall.images.length > 0 && (
-                      <div className="h-48 overflow-hidden bg-surface-2">
-                        <img src={hall.images[0]} alt={hall.name} className="w-full h-full object-cover transition-transform hover:scale-105 duration-500" />
-                      </div>
-                    )}
-                    <div className="p-5 flex-1 flex flex-col">
-                      <h3 className="text-lg font-bold text-primary mb-2">{hall.name}</h3>
-                      <p className="text-sm text-muted-foreground mb-4 flex-1 line-clamp-2">{hall.description}</p>
-                      
-                      <div className="flex flex-wrap gap-4 text-xs font-medium text-primary mb-4 bg-secondary/20 p-3 rounded-xl border border-border/50">
-                        <span className="flex items-center gap-1.5"><Users className="w-4 h-4 text-accent" /> Up to {hall.capacity} Guests</span>
-                        {hall.pricePerHour && <span className="flex items-center gap-1.5"><Clock className="w-4 h-4 text-accent" /> ${hall.pricePerHour}/hr</span>}
-                        {hall.pricePerDay && <span className="flex items-center gap-1.5"><Calendar className="w-4 h-4 text-accent" /> ${hall.pricePerDay}/day</span>}
-                      </div>
 
-                      <button
-                        onClick={() => { setSelectedHall(hall); setHallModalOpen(true); }}
-                        className="w-full py-3 bg-accent/10 text-accent font-semibold rounded-xl hover:bg-accent hover:text-white transition-base border border-accent/20 hover:border-transparent"
-                      >
-                        Request to Book
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
         {tab === "amenities" && (
           <div className="mt-8 grid sm:grid-cols-2 md:grid-cols-3 gap-3">
             {(Array.isArray(hotel.amenities) ? hotel.amenities : []).map((a) => (

@@ -43,7 +43,7 @@ function timeAgo(iso: string) {
 const Navbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, setUser, bookings, selectedHotel } = useBooking();
+  const { user, setUser, bookings, selectedHotel, search, setSearch } = useBooking();
   const { wishlist } = useWishlist();
 
   const [authOpen, setAuthOpen] = useState(false);
@@ -64,6 +64,9 @@ const Navbar = () => {
   const mobileLogoRef = useRef<HTMLButtonElement>(null);
 
   const handleMenuNavigation = (route: string) => {
+    if (route === "/hotels") {
+      setSearch({ ...search, location: "" });
+    }
     setMobileMenuOpen(false);
     navigate(route);
   };
@@ -312,6 +315,9 @@ const Navbar = () => {
         <nav className="hidden md:flex items-center gap-1">
           {links.map((l) => (
             <NavLink key={l.to} to={l.to} end={l.to === "/"}
+              onClick={() => {
+                if (l.to === "/hotels") setSearch({ ...search, location: "" });
+              }}
               className={({ isActive }) =>
                 `relative px-4 py-2 text-sm font-medium transition-base min-h-[44px] flex items-center ${isActive ? "text-primary" : "text-muted-foreground hover:text-primary"}`
               }>

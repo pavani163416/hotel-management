@@ -92,6 +92,8 @@
   .shadow-elegant { box-shadow: var(--shadow-md); }
   .shadow-luxe { box-shadow: var(--shadow-lg); }
   .transition-base { transition: all var(--transition-base); }
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+  .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 }
 
 @media (max-width: 768px) {
