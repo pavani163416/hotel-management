@@ -45,25 +45,18 @@ const FitBounds = ({ hotels }: { hotels: Hotel[] }) => {
     const valid = hotels.filter(hasValidCoords);
     if (!valid.length) return;
 
-    // Delay to ensure map container is fully rendered in the DOM
-    const timeoutId = setTimeout(() => {
-      try {
-        // Guard against accessing an already-destroyed map instance
-        if (!map || !(map as any)._loaded) return;
-
+    try {
+      map.whenReady(() => {
         if (valid.length === 1) {
           map.setView(valid[0].coords, 12);
         } else {
           const bounds = L.latLngBounds(valid.map((h) => h.coords));
           map.fitBounds(bounds, { padding: [40, 40], maxZoom: 10 });
         }
-      } catch (e) {
-        // Silently ignore errors from destroyed/unmounted map instances
-        console.warn("HotelMap FitBounds error (map may have unmounted):", e);
-      }
-    }, 150);
-
-    return () => clearTimeout(timeoutId);
+      });
+    } catch (e) {
+      console.warn("HotelMap FitBounds error:", e);
+    }
   }, [hotels, map]);
 
   return null;

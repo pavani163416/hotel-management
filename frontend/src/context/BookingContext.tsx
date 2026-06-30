@@ -107,6 +107,7 @@ const CITY_COORDS: Record<string, [number, number]> = {
   "new york": [40.7128, -74.0060], "los angeles": [34.0522, -118.2437],
   "miami": [25.7617, -80.1918], "chicago": [41.8781, -87.6298],
   "san francisco": [37.7749, -122.4194], "las vegas": [36.1699, -115.1398],
+  "boston": [42.3601, -71.0589], "beverly hills": [34.0736, -118.4004],
   "toronto": [43.6532, -79.3832], "vancouver": [49.2827, -123.1207],
   "mexico city": [19.4326, -99.1332], "cancun": [21.1619, -86.8515],
   "rio de janeiro": [-22.9068, -43.1729], "são paulo": [-23.5505, -46.6333],
