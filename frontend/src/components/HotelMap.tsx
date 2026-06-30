@@ -45,18 +45,22 @@ const FitBounds = ({ hotels }: { hotels: Hotel[] }) => {
     const valid = hotels.filter(hasValidCoords);
     if (!valid.length) return;
 
-    try {
-      map.whenReady(() => {
+    // Delay to allow the DOM to fully layout the map container before calculating bounds
+    const timer = setTimeout(() => {
+      try {
+        map.invalidateSize();
         if (valid.length === 1) {
           map.setView(valid[0].coords, 12);
         } else {
           const bounds = L.latLngBounds(valid.map((h) => h.coords));
           map.fitBounds(bounds, { padding: [40, 40], maxZoom: 10 });
         }
-      });
-    } catch (e) {
-      console.warn("HotelMap FitBounds error:", e);
-    }
+      } catch (e) {
+        console.warn("HotelMap FitBounds error:", e);
+      }
+    }, 250);
+
+    return () => clearTimeout(timer);
   }, [hotels, map]);
 
   return null;
@@ -81,7 +85,7 @@ const HotelMap = ({ hotels, height = "100%", onHotelClick, className }: Props) =
 
   if (mappableHotels.length === 0) {
     return (
-      <div className={className} style={{ height, width: "100%", display: "flex", alignItems: "center", justifyContent: "center", background: "hsl(30 12% 96%)", borderRadius: "0.75rem" }}>
+      <div className={className} style={{ height, width: "100%", display: "flex", alignItems: "center", justifyContent: "center", background: "hsl(30 12% 96%)" }}>
         <div style={{ textAlign: "center", color: "hsl(25 15% 38%)", padding: "1rem" }}>
           <div style={{ fontSize: 28, marginBottom: 8 }}>📍</div>
           <p style={{ fontSize: 13, fontWeight: 600 }}>No location data</p>
@@ -104,7 +108,7 @@ const HotelMap = ({ hotels, height = "100%", onHotelClick, className }: Props) =
         center={mappableHotels[0].coords}
         zoom={4}
         scrollWheelZoom={false}
-        style={{ height: "100%", width: "100%", borderRadius: "0.75rem", background: "hsl(30 12% 96%)" }}
+        style={{ height: "100%", width: "100%", background: "hsl(30 12% 96%)" }}
         whenReady={() => { mapInitializedRef.current = true; }}
       >
         <TileLayer
