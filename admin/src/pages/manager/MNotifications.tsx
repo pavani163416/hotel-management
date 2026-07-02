@@ -188,7 +188,8 @@ export default function MNotifications() {
       return { label: "Review Pricing", path: "/m/pricing" };
     }
     if (n.type === "booking" || n.type === "assistance") {
-      return { label: "View Bookings", path: "/m/bookings" };
+      const match = n.message?.match(/LS-[A-Z0-9]{5}/i);
+      return { label: "View Booking", path: match ? `/m/bookings?search=${match[0]}` : "/m/bookings" };
     }
     if (n.message?.toLowerCase().includes("property owner") || n.message?.toLowerCase().includes("property application") || n.message?.toLowerCase().includes("owners")) {
       return { label: "Review Application", path: "/owners" };

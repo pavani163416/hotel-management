@@ -369,8 +369,6 @@ export default function Hotels() {
       description: form.subtitle || `${form.name} — a premium property in ${form.location}.`,
       image: imageUrl,
       gallery,
-      rating: 4.5,
-      reviewCount: 0,
       pricePerNight: price,
       type: "Hotel",
       category: form.category,

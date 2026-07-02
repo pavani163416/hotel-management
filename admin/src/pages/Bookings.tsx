@@ -14,7 +14,7 @@ import Modal from "@/components/Modal";
 import { useBookings, Booking } from "@/context/BookingsContext";
 import { useHotels } from "@/context/HotelsContext";
 import { formatCurrency, currencySymbol } from "@/utils/currency";
-import { cancelBooking as apiCancelBooking, getBookingById as apiGetBookingById, createBooking } from "@/services/api";
+import { cancelBooking as apiCancelBooking, getBookingById as apiGetBookingById, createBooking, updateDeltaPaymentStatus } from "@/services/api";
 
 
 const formatAadhaar = (aadhaar?: string) => {
@@ -71,6 +71,7 @@ export default function Bookings() {
   // Simple cancel confirmation state (no reason required for admin)
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [cancelling, setCancelling] = useState(false);
+  const [resolvingDelta, setResolvingDelta] = useState(false);
 
   // Open detail modal — fetch full booking data including additional guests
   const openDetail = async (b: Booking) => {
@@ -129,6 +130,13 @@ export default function Bookings() {
 
   const paginated = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
   const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
+
+  // Auto-open deep-linked booking detail modal
+  useEffect(() => {
+    if (filtered.length === 1 && search.toLowerCase().startsWith("ls-") && !detailBooking) {
+      openDetail(filtered[0]);
+    }
+  }, [filtered, search, detailBooking]);
 
   const selectedCurrency = propertyFilter === "All Properties"
     ? "USD"
@@ -443,6 +451,82 @@ export default function Bookings() {
                 </div>
               ))}
             </div>
+
+            {/* Delta Pricing Reconciliation (Admin Action) */}
+            {detailFull && detailFull.deltaPaymentStatus && detailFull.deltaPaymentStatus !== "none" && (
+              <div className="bg-surface-3 rounded-xl p-4 border border-border">
+                <p className="text-xs text-muted uppercase tracking-wider font-semibold mb-1">Pricing Delta Reconciliation</p>
+                <div className="flex justify-between items-center text-sm font-medium text-text-primary mt-1.5">
+                  <span className="flex items-center gap-1">
+                    Delta Amount: 
+                    <span className={`font-bold ${detailFull.priceDelta > 0 ? "text-orange-600" : "text-green-600"}`}>
+                      {detailFull.priceDelta > 0 ? "+" : ""}{formatCurrency(detailFull.priceDelta, hotels.find((h) => h.name === detailBooking.property)?.currency ?? "USD")}
+                    </span>
+                  </span>
+                  <span className={`px-2 py-0.5 rounded text-xs uppercase tracking-wide font-semibold ${
+                    detailFull.deltaPaymentStatus === "resolved" ? "bg-green-100 text-green-800" :
+                    detailFull.deltaPaymentStatus === "pending_collection" ? "bg-orange-100 text-orange-800" :
+                    "bg-blue-100 text-blue-800"
+                  }`}>
+                    {detailFull.deltaPaymentStatus.replace("_", " ")}
+                  </span>
+                </div>
+                {detailFull.deltaPaymentStatus !== "resolved" && (
+                  <button
+                    onClick={async () => {
+                      setResolvingDelta(true);
+                      try {
+                        await updateDeltaPaymentStatus(detailFull._id, "resolved");
+                        // Refresh details
+                        const r: any = await apiGetBookingById(detailBooking.id);
+                        setDetailFull(r?.data?.data || null);
+                        refetch();
+                      } catch (err: any) {
+                        alert(err.message || "Failed to update status");
+                      } finally {
+                        setResolvingDelta(false);
+                      }
+                    }}
+                    disabled={resolvingDelta}
+                    className="mt-3 w-full bg-success text-white py-2 rounded-lg text-xs font-semibold hover:bg-success/90 transition-colors disabled:opacity-50">
+                    {resolvingDelta ? "Updating..." : "Mark Delta as Resolved (Paid/Refunded)"}
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Rescheduling History */}
+            {detailFull && detailFull.editHistory?.length > 0 && (
+              <div className="border-t border-border pt-4">
+                <p className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">Rescheduling History ({detailFull.editHistory.length})</p>
+                <div className="space-y-3 max-h-40 overflow-y-auto pr-1">
+                  {detailFull.editHistory.map((h: any, idx: number) => {
+                    const formattedCI = new Date(h.newCheckIn).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+                    const formattedCO = new Date(h.newCheckOut).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+                    const prevCI = new Date(h.previousCheckIn).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+                    const prevCO = new Date(h.previousCheckOut).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+                    return (
+                      <div key={idx} className="bg-surface-2 rounded-lg p-3 text-xs space-y-1">
+                        <div className="flex justify-between font-semibold text-text-primary">
+                          <span>Updated by {h.changedBy}</span>
+                          <span className="text-muted">{new Date(h.timestamp).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
+                        </div>
+                        <div className="text-muted">
+                          Dates: <span className="line-through">{prevCI} – {prevCO}</span> → <span className="text-primary font-medium">{formattedCI} – {formattedCO}</span>
+                        </div>
+                        {h.priceDelta !== 0 && (
+                          <div className="font-medium">
+                            Price Delta: <span className={h.priceDelta > 0 ? "text-orange-600" : "text-green-600"}>
+                              {h.priceDelta > 0 ? "+" : ""}{formatCurrency(h.priceDelta, hotels.find((h) => h.name === detailBooking.property)?.currency ?? "USD")}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {detailFull?.additionalAdults?.length > 0 && (
               <div>

@@ -54,10 +54,13 @@ import {
   getAllBookings,
   getBookingById,
   cancelBooking,
+  rescheduleBooking,
+  checkRescheduleAvailability,
+  updateDeltaPaymentStatus,
 } from "../controllers/bookingController.js";
 import { validateBooking } from "../middleware/validators.js";
 import { bookingLimiter } from "../middleware/rateLimiter.js";
-import { protect, validateOwnership, requireObjectId } from "../middleware/auth.js";
+import { protect, validateOwnership, requireObjectId, authorizeRoles } from "../middleware/auth.js";
 
 const router = express.Router();
 
@@ -71,5 +74,14 @@ router.route("/:id").get(protect, requireObjectId(), validateOwnership("Booking"
 
 // PATCH /api/bookings/:id/cancel   → cancel a booking (validated ownership)
 router.patch("/:id/cancel", protect, requireObjectId(), validateOwnership("Booking"), cancelBooking);
+
+// GET   /api/bookings/:id/dates/availability → check dates availability for rescheduling
+router.get("/:id/dates/availability", protect, requireObjectId(), validateOwnership("Booking"), checkRescheduleAvailability);
+
+// PATCH /api/bookings/:id/dates              → reschedule a booking (validated ownership)
+router.patch("/:id/dates", protect, requireObjectId(), validateOwnership("Booking"), rescheduleBooking);
+
+// PATCH /api/bookings/:id/delta-status        → manually resolve reschedule pricing delta
+router.patch("/:id/delta-status", protect, requireObjectId(), authorizeRoles("admin", "Super Admin", "Controller", "Manager"), updateDeltaPaymentStatus);
 
 export default router;

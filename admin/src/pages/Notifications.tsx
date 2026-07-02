@@ -229,7 +229,8 @@ export default function Notifications() {
       return { label: "Review Request", path: "/price-requests" };
     }
     if (n.type === "booking") {
-      return { label: "View Bookings", path: "/bookings" };
+      const match = n.message?.match(/LS-[A-Z0-9]{5}/i);
+      return { label: "View Booking", path: match ? `/bookings?q=${match[0]}` : "/bookings" };
     }
     if (n.message?.toLowerCase().includes("property owner") || n.message?.toLowerCase().includes("property application") || n.message?.toLowerCase().includes("owners")) {
       return { label: "Review Application", path: "/owners" };

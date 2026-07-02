@@ -640,3 +640,135 @@ export const sendGeneralEmail = async ({ to, subject, bodyHtml }) => {
     console.error("📧 [Email] Exception sending general email:", err.message);
   }
 };
+
+// ─────────────────────────────────────────────────────────
+// sendBookingRescheduleEmail
+// Called when a booking is successfully rescheduled
+// ─────────────────────────────────────────────────────────
+export const sendBookingRescheduleEmail = async ({
+  to,
+  guestName,
+  hotelName,
+  bookingRef,
+  previousCheckIn,
+  previousCheckOut,
+  newCheckIn,
+  newCheckOut,
+  nights,
+  priceDelta,
+  totalAmount,
+}) => {
+  console.log("EMAIL TYPE: Booking Rescheduled");
+  console.log("RECIPIENT:", to);
+
+  if (!process.env.RESEND_API_KEY && (!process.env.SMTP_USER || !process.env.SMTP_PASS)) {
+    console.log("📧 [Email] No email service configured — skipping reschedule email.");
+    return;
+  }
+
+  const formattedPrevCI = new Date(previousCheckIn).toLocaleDateString("en-US", {
+    weekday: "short", month: "long", day: "numeric", year: "numeric",
+  });
+  const formattedPrevCO = new Date(previousCheckOut).toLocaleDateString("en-US", {
+    weekday: "short", month: "long", day: "numeric", year: "numeric",
+  });
+  const formattedNewCI = new Date(newCheckIn).toLocaleDateString("en-US", {
+    weekday: "short", month: "long", day: "numeric", year: "numeric",
+  });
+  const formattedNewCO = new Date(newCheckOut).toLocaleDateString("en-US", {
+    weekday: "short", month: "long", day: "numeric", year: "numeric",
+  });
+
+  let deltaText = "No change in payment.";
+  if (priceDelta > 0) {
+    deltaText = `Additional amount due: ₹${Math.abs(priceDelta)}.`;
+  } else if (priceDelta < 0) {
+    deltaText = `Refund owed: ₹${Math.abs(priceDelta)}.`;
+  }
+
+  const subject = `🔄 Stay Rescheduled — ${hotelName} · ${bookingRef}`;
+  const html = `
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"/></head>
+<body style="margin:0;padding:0;background:#f4f4f0;font-family:'Helvetica Neue',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f0;padding:40px 0;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+        <tr>
+          <td style="background:#1a1f2e;padding:32px 40px;text-align:center;">
+            <h1 style="color:#ffffff;margin:0;font-size:26px;font-weight:700;">LuxeStay</h1>
+            <p style="color:#a5b4fc;margin:8px 0 0;font-size:14px;letter-spacing:1px;text-transform:uppercase;">Reservation Rescheduled</p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:40px;text-align:left;color:#374151;">
+            <h2 style="margin:0 0 16px;font-size:20px;font-weight:700;color:#111827;">Your dates have been updated!</h2>
+            <p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#4b5563;">
+              Hi <strong>${guestName}</strong>, your reservation at <strong>${hotelName}</strong> has been successfully rescheduled. Below are your updated stay details.
+            </p>
+
+            <table width="100%" style="border-collapse:collapse;margin-bottom:24px;">
+              <tr>
+                <td style="padding:12px;background:#f9fafb;border:1px solid #e5e7eb;font-weight:bold;font-size:14px;width:30%;">Booking Reference</td>
+                <td style="padding:12px;border:1px solid #e5e7eb;font-size:14px;color:#111827;font-family:monospace;font-weight:bold;">${bookingRef}</td>
+              </tr>
+              <tr>
+                <td style="padding:12px;background:#f9fafb;border:1px solid #e5e7eb;font-weight:bold;font-size:14px;">Previous Dates</td>
+                <td style="padding:12px;border:1px solid #e5e7eb;font-size:14px;color:#dc2626;text-decoration:line-through;">
+                  ${formattedPrevCI} to ${formattedPrevCO}
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:12px;background:#f9fafb;border:1px solid #e5e7eb;font-weight:bold;font-size:14px;">New Dates</td>
+                <td style="padding:12px;border:1px solid #e5e7eb;font-size:14px;color:#16a34a;font-weight:bold;">
+                  ${formattedNewCI} to ${formattedNewCO} (${nights} nights)
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:12px;background:#f9fafb;border:1px solid #e5e7eb;font-weight:bold;font-size:14px;">Price Adjustment</td>
+                <td style="padding:12px;border:1px solid #e5e7eb;font-size:14px;color:#111827;font-weight:bold;">
+                  ${deltaText}
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:12px;background:#f9fafb;border:1px solid #e5e7eb;font-weight:bold;font-size:14px;">New Total Amount</td>
+                <td style="padding:12px;border:1px solid #e5e7eb;font-size:14px;color:#111827;font-weight:bold;">
+                  ₹${totalAmount}
+                </td>
+              </tr>
+            </table>
+
+            <p style="margin:0 0 24px;font-size:14px;line-height:1.6;color:#6b7280;">
+              If any payment adjustment is due or a refund is pending, our property manager will reconcile this with you at check-in or handle it shortly.
+            </p>
+            
+            <p style="margin:0;font-size:14px;color:#4b5563;">
+              Thank you for choosing LuxeStay. We look forward to welcoming you!
+            </p>
+          </td>
+        </tr>
+        <tr>
+          <td style="background:#f9fafb;border-top:1px solid #e5e7eb;padding:24px 40px;text-align:center;">
+            <p style="margin:0 0 8px;color:#1a1f2e;font-size:14px;font-weight:bold;">LuxeStay Hospitality</p>
+            <p style="margin:0;color:#9ca3af;font-size:12px;">© 2026 LuxeStay. All rights reserved.</p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>
+  `;
+
+  try {
+    const { data, error } = await sendMailInternal({ to, subject, html });
+    if (error) {
+      console.error("📧 [Email] Reschedule email send error:", error);
+    } else {
+      console.log(`📧 [Email] Reschedule email sent successfully → ${to} | ID: ${data?.id}`);
+    }
+  } catch (err) {
+    console.error("📧 [Email] Exception sending reschedule email:", err.message);
+  }
+};

@@ -270,3 +270,20 @@ export const cancelPaymentOrder = async (payload: { orderId?: string; bookingId?
   const { data } = await api.post("/payments/cancel", payload);
   return data;
 };
+
+/** GET /api/bookings/:id/dates/availability */
+export const checkRescheduleAvailability = async (bookingId: string, checkIn: string, checkOut: string) => {
+  const { data } = await api.get(`/bookings/${bookingId}/dates/availability`, {
+    params: { checkIn, checkOut }
+  });
+  return data;
+};
+
+/** PATCH /api/bookings/:id/dates */
+export const rescheduleBooking = async (bookingId: string, checkIn: string, checkOut: string) => {
+  const { data } = await api.patch(`/bookings/${bookingId}/dates`, {
+    newCheckIn: checkIn,
+    newCheckOut: checkOut
+  });
+  return data;
+};

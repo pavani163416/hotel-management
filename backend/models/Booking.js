@@ -192,6 +192,32 @@ const bookingSchema = new mongoose.Schema(
     cancellationReason: {
       type: String,
     },
+
+    // ── Rescheduling / Date Edits ─────────────────────────
+    priceDelta: {
+      type: Number,
+      default: 0,
+    },
+
+    deltaPaymentStatus: {
+      type: String,
+      enum: ["none", "pending_collection", "pending_refund", "resolved"],
+      default: "none",
+      index: true,
+    },
+
+    editHistory: [
+      {
+        previousCheckIn: Date,
+        previousCheckOut: Date,
+        newCheckIn: Date,
+        newCheckOut: Date,
+        priceDelta: Number,
+        changedBy: String, // "customer", "admin", "manager"
+        changedById: mongoose.Schema.Types.ObjectId,
+        timestamp: { type: Date, default: Date.now }
+      }
+    ],
   },
   {
     timestamps: true,

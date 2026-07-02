@@ -17,24 +17,29 @@ export const getNotifications = async (req, res, next) => {
     const role = user.role?.toLowerCase();
 
     if (role === "customer" || role === "owner") {
-      // Customer/Owner: only their own notifications — keyed by email or userId in token
+      // Customer/Owner: their own notifications OR role-based broadcasts (where userId is null or missing)
       const orConditions = [];
       if (user.email) orConditions.push({ userId: user.email.toLowerCase() });
       if (user.id)    orConditions.push({ userId: user.id.toString() });
-      if (orConditions.length === 0) {
-        return res.status(200).json({ success: true, count: 0, data: [] });
-      }
+      orConditions.push({ userId: null });
+      orConditions.push({ userId: { $exists: false } });
+
       filter.$or = orConditions;
       filter.role = { $in: ["customer", "owner"] };
 
     } else if (role === "manager") {
-      // Manager: only notifications for their assigned hotel
+      // Manager: notifications for their assigned hotel OR global manager broadcasts (where hotelId is null or missing)
       const hotelId = user.assignedHotelId;
-      if (!hotelId) {
-        return res.status(200).json({ success: true, count: 0, data: [] });
-      }
-      filter.hotelId = hotelId;
       filter.role = "manager";
+      
+      const orConditions = [
+        { hotelId: null },
+        { hotelId: { $exists: false } }
+      ];
+      if (hotelId) {
+        orConditions.push({ hotelId: hotelId });
+      }
+      filter.$or = orConditions;
 
     } else if (
       role === "super admin" || role === "admin" || role === "controller"

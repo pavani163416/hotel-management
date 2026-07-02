@@ -184,9 +184,8 @@ class PushNotificationService {
     AndroidNotificationChannel channel,
   ) {
     RemoteNotification? notification = message.notification;
-    AndroidNotification? android = message.notification?.android;
 
-    if (notification != null && android != null) {
+    if (notification != null) {
       _localNotificationsPlugin.show(
         id: notification.hashCode,
         title: notification.title,

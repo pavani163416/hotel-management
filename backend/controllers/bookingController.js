@@ -11,7 +11,7 @@ import Payment from "../models/Payment.js";
 import Coupon from "../models/Coupon.js";
 import AuditLog from "../models/AuditLog.js";
 import { broadcastBookingUpdate } from "../routes/wsRoutes.js";
-import { sendBookingConfirmation, sendCancellationEmail } from "../utils/emailService.js";
+import { sendBookingConfirmation, sendCancellationEmail, sendBookingRescheduleEmail } from "../utils/emailService.js";
 import { sendNotification } from "../utils/notificationService.js";
 import logger from "../utils/logger.js";
 import {
@@ -915,6 +915,500 @@ export const cancelBooking = async (req, res, next) => {
       success: true,
       message: "Booking cancelled and room is now available",
       data: booking,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ─────────────────────────────────────────────────────────
+// PATCH /api/bookings/:id/dates
+// Reschedules a booking's check-in / check-out dates
+// ─────────────────────────────────────────────────────────
+export const rescheduleBooking = async (req, res, next) => {
+  const { newCheckIn, newCheckOut } = req.body;
+  if (!newCheckIn || !newCheckOut) {
+    return res.status(400).json({
+      success: false,
+      message: "New check-in and check-out dates are required."
+    });
+  }
+
+  const session = await mongoose.startSession();
+  session.startTransaction();
+  let transactionCommitted = false;
+
+  try {
+    const booking = await Booking.findById(req.params.id).session(session);
+    if (!booking) {
+      await session.abortTransaction();
+      transactionCommitted = true;
+      session.endSession();
+      return res.status(404).json({ success: false, message: "Booking not found" });
+    }
+
+    // ── 1. Validate ownership & authorization (Admins/Managers bypass guest ownership checks) ──
+    const currentUser = req.user || req.customer;
+    let changedBy = "customer";
+    if (["admin", "super admin", "controller"].includes(currentUser.role?.toLowerCase())) {
+      changedBy = "admin";
+    } else if (currentUser.role?.toLowerCase() === "manager") {
+      changedBy = "manager";
+      // Verify manager belongs to the hotel
+      const managerHotelId = currentUser.assignedHotelId;
+      const managerHotelObjId = currentUser.hotelObjectId;
+      const isAuthorized =
+        (managerHotelId && booking.hotelStringId === managerHotelId) ||
+        (managerHotelObjId && booking.hotelId?.toString() === String(managerHotelObjId));
+      if (!isAuthorized) {
+        await session.abortTransaction();
+        transactionCommitted = true;
+        session.endSession();
+        return res.status(403).json({ success: false, message: "Unauthorized to access this booking" });
+      }
+    } else {
+      // Customer checks
+      const isGuestOwner = (currentUser.guestId && booking.guest && booking.guest.toString() === currentUser.guestId) ||
+                           (currentUser.guestId && booking.guestSnapshot?.id && booking.guestSnapshot.id === currentUser.guestId) ||
+                           (currentUser.email && booking.guestSnapshot?.email?.toLowerCase() === currentUser.email.toLowerCase());
+      if (!isGuestOwner) {
+        await session.abortTransaction();
+        transactionCommitted = true;
+        session.endSession();
+        return res.status(403).json({ success: false, message: "Unauthorized to edit this booking" });
+      }
+    }
+
+    // ── 2. Check 3-hour cutoff rule ──
+    const checkInDate = new Date(booking.checkIn);
+    const threeHours = 3 * 60 * 60 * 1000;
+    if (checkInDate.getTime() - Date.now() < threeHours) {
+      await session.abortTransaction();
+      transactionCommitted = true;
+      session.endSession();
+      return res.status(400).json({
+        success: false,
+        message: "Bookings cannot be rescheduled within 3 hours of check-in time.",
+        code: "EDIT_WINDOW_CLOSED",
+      });
+    }
+
+    // ── 3. Check booking status (must be in ACTIVE_BOOKING_STATUSES) ──
+    const statusLower = String(booking.status || "").toLowerCase();
+    const activeLower = ACTIVE_BOOKING_STATUSES.map(s => s.toLowerCase());
+    if (!activeLower.includes(statusLower)) {
+      await session.abortTransaction();
+      transactionCommitted = true;
+      session.endSession();
+      return res.status(400).json({
+        success: false,
+        message: "This booking is in a status that cannot be rescheduled.",
+        code: "BOOKING_NOT_EDITABLE",
+      });
+    }
+
+    // ── 4. Check same dates ──
+    const currentCI = new Date(booking.checkIn).toISOString().slice(0, 10);
+    const currentCO = new Date(booking.checkOut).toISOString().slice(0, 10);
+    const reqCI = new Date(newCheckIn).toISOString().slice(0, 10);
+    const reqCO = new Date(newCheckOut).toISOString().slice(0, 10);
+    if (currentCI === reqCI && currentCO === reqCO) {
+      await session.abortTransaction();
+      transactionCommitted = true;
+      session.endSession();
+      return res.status(200).json({
+        success: true,
+        message: "Reschedule completed (no change in dates)",
+        data: booking,
+      });
+    }
+
+    // ── 5. Run Availability / Conflict Logic ──
+    // A. Check capacity count if roomInventory exists
+    const actualHotel = await Hotel.findById(booking.hotelId).session(session);
+    const targetRoomType = booking.roomType;
+    if (actualHotel && actualHotel.roomInventory && targetRoomType) {
+      const inv = actualHotel.roomInventory[targetRoomType] || actualHotel.roomInventory.get?.(targetRoomType);
+      if (inv && typeof inv.total === "number") {
+        const capacity = inv.total;
+        // Write lock the hotel document to force serial execution of bookings/reschedules for this hotel
+        await Hotel.updateOne({ _id: actualHotel._id }, { $set: { updatedAt: new Date() } }).session(session);
+
+        // Count active overlapping bookings excluding this booking
+        const activeBookingsCount = await Booking.countDocuments({
+          _id: { $ne: booking._id },
+          hotelId: actualHotel._id,
+          roomType: targetRoomType,
+          status: { $in: ACTIVE_BOOKING_STATUSES },
+          checkIn: { $lt: new Date(newCheckOut) },
+          checkOut: { $gt: new Date(newCheckIn) }
+        }).session(session);
+
+        if (activeBookingsCount >= capacity) {
+          await session.abortTransaction();
+          transactionCommitted = true;
+          session.endSession();
+          return res.status(409).json({
+            success: false,
+            message: "No rooms available for the selected dates.",
+            code: "NO_ROOMS_AVAILABLE",
+          });
+        }
+      }
+    }
+
+    // B. Check physical room availability
+    const resolvedRoom = await findAvailableRoom({
+      hotelObjectId: booking.hotelId,
+      hotelStringId: booking.hotelStringId,
+      roomId: booking.room,
+      roomTypeId: targetRoomType,
+      pricePerNight: booking.pricePerNight,
+      checkIn: newCheckIn,
+      checkOut: newCheckOut,
+      excludeBookingId: booking._id,
+    });
+
+    if (!resolvedRoom) {
+      await session.abortTransaction();
+      transactionCommitted = true;
+      session.endSession();
+      return res.status(409).json({
+        success: false,
+        message: "No physical rooms available for the selected dates.",
+        code: "NO_ROOMS_AVAILABLE",
+      });
+    }
+
+    // ── 6. Pricing Delta & Calculations ──
+    const ms = new Date(newCheckOut).getTime() - new Date(newCheckIn).getTime();
+    const newNights = Math.max(1, Math.round(ms / (1000 * 60 * 60 * 24)));
+
+    const previousSubtotal = booking.subtotal || (booking.pricePerNight * booking.nights);
+    const taxRate = previousSubtotal > 0 ? (booking.taxes || 0) / previousSubtotal : 0.18;
+    const discountRate = previousSubtotal > 0 ? (booking.discount || 0) / previousSubtotal : 0;
+
+    const newSubtotal = booking.pricePerNight * newNights;
+    const newTaxes = Math.round(newSubtotal * taxRate);
+    const newDiscount = Math.round(newSubtotal * discountRate);
+    const newTotalAmount = newSubtotal + newTaxes - newDiscount;
+
+    const priceDelta = newTotalAmount - booking.totalAmount;
+    let deltaStatus = "none";
+    if (priceDelta > 0) deltaStatus = "pending_collection";
+    if (priceDelta < 0) deltaStatus = "pending_refund";
+
+    // Keep references to previous dates
+    const prevCheckIn = booking.checkIn;
+    const prevCheckOut = booking.checkOut;
+
+    // ── 7. Perform Updates ──
+    booking.checkIn = new Date(newCheckIn);
+    booking.checkOut = new Date(newCheckOut);
+    booking.nights = newNights;
+    booking.subtotal = newSubtotal;
+    booking.taxes = newTaxes;
+    booking.discount = newDiscount;
+    booking.totalAmount = newTotalAmount;
+    booking.room = resolvedRoom._id;
+    if (resolvedRoom.roomNumber) {
+      booking.roomNumber = resolvedRoom.roomNumber;
+    }
+    booking.priceDelta = priceDelta;
+    booking.deltaPaymentStatus = deltaStatus;
+
+    // Audit History Entry
+    booking.editHistory.push({
+      previousCheckIn: prevCheckIn,
+      previousCheckOut: prevCheckOut,
+      newCheckIn: booking.checkIn,
+      newCheckOut: booking.checkOut,
+      priceDelta,
+      changedBy,
+      changedById: currentUser.id,
+      timestamp: new Date()
+    });
+
+    await booking.save({ session });
+
+    // Commit MongoDB transaction
+    await session.commitTransaction();
+    transactionCommitted = true;
+    session.endSession();
+
+    // ── 8. Log Audit & Notifications (Outside Transaction for performance) ──
+    AuditLog.create({
+      userId: currentUser.id || currentUser.email,
+      role: currentUser.role,
+      action: "RESCHEDULE_BOOKING",
+      targetType: "Booking",
+      targetId: booking._id,
+      ipAddress: req?.ip || req?.headers?.["x-forwarded-for"] || "unknown",
+      details: {
+        previousCheckIn: prevCheckIn,
+        previousCheckOut: prevCheckOut,
+        newCheckIn: booking.checkIn,
+        newCheckOut: booking.checkOut,
+        priceDelta,
+        changedBy,
+      }
+    }).catch(() => {});
+
+    // Sync room statuses
+    await syncRoomLegacyStatus(booking.room).catch(() => {});
+
+    // Format notification text with clear price delta
+    let deltaMessage = "No change in payment.";
+    if (priceDelta > 0) {
+      deltaMessage = `Customer owes ₹${Math.abs(priceDelta)} more.`;
+    } else if (priceDelta < 0) {
+      deltaMessage = `Refund ₹${Math.abs(priceDelta)} owed to customer.`;
+    }
+
+    const customerName = booking.guestSnapshot?.name || "Guest";
+    const hotelName = booking.hotelName || "AthithiGriha";
+    const formattedPrevCI = new Date(prevCheckIn).toISOString().slice(0, 10);
+    const formattedPrevCO = new Date(prevCheckOut).toISOString().slice(0, 10);
+    const formattedNewCI = booking.checkIn.toISOString().slice(0, 10);
+    const formattedNewCO = booking.checkOut.toISOString().slice(0, 10);
+
+    const notificationMessage = `Booking ${booking.bookingRef} rescheduled by ${changedBy} (${customerName} at ${hotelName}). Dates changed from ${formattedPrevCI} to ${formattedNewCI}. ${deltaMessage}`;
+
+    // Notify Admins
+    sendNotification({
+      role: "admin",
+      message: notificationMessage,
+      type: "booking",
+    }).catch(() => {});
+
+    // Notify Managers
+    sendNotification({
+      hotelId: booking.hotelStringId || booking.hotelId?.toString() || null,
+      role: "manager",
+      message: notificationMessage,
+      type: "booking",
+    }).catch(() => {});
+
+    // Notify Customer
+    sendNotification({
+      userId: booking.guestSnapshot?.email || booking.userId,
+      role: "customer",
+      message: `Your stay at ${hotelName} has been rescheduled to ${formattedNewCI}. ${deltaMessage}`,
+      type: "booking",
+    }).catch(() => {});
+
+    // Notify Customer via Email
+    const customerEmail = booking.guestSnapshot?.email || booking.userId;
+    if (customerEmail && !customerEmail.includes("@placeholder.com")) {
+      sendBookingRescheduleEmail({
+        to: customerEmail.toLowerCase().trim(),
+        guestName: customerName,
+        hotelName,
+        bookingRef: booking.bookingRef,
+        previousCheckIn: prevCheckIn,
+        previousCheckOut: prevCheckOut,
+        newCheckIn: booking.checkIn,
+        newCheckOut: booking.checkOut,
+        nights: newNights,
+        priceDelta,
+        totalAmount: newTotalAmount,
+      }).catch(err => {
+        logger.warn("Failed to send reschedule email", { error: err.message, bookingId: booking._id });
+      });
+    }
+
+    // Emit Socket.IO room status and booking updates
+    const io = req.app?.get?.("io");
+    if (io) {
+      const userRoom = `user:${booking.userId || booking.guestSnapshot?.id || booking.guest}`;
+      let targetEmitter = io.to(userRoom);
+      if (booking.guestSnapshot?.email) {
+        targetEmitter = targetEmitter.to(`user:${booking.guestSnapshot.email.toLowerCase()}`);
+      }
+      targetEmitter = targetEmitter
+        .to("role:admin")
+        .to("role:super admin")
+        .to("role:controller");
+      if (booking.hotelStringId) {
+        targetEmitter = targetEmitter.to(`hotel:${booking.hotelStringId}`);
+      }
+      if (booking.hotelId) {
+        targetEmitter = targetEmitter.to(`hotel:${booking.hotelId}`);
+      }
+
+      io.emit("roomStatusUpdate", { roomId: booking.room, hotelStringId: booking.hotelStringId });
+      targetEmitter.emit("booking_update", booking.toJSON());
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Booking rescheduled successfully.",
+      data: booking,
+    });
+
+  } catch (error) {
+    if (!transactionCommitted) {
+      try {
+        await session.abortTransaction();
+      } catch (abortErr) {}
+      try {
+        session.endSession();
+      } catch (endErr) {}
+    }
+    // Map database concurrency write conflicts to user-friendly 409 conflict
+    if (
+      error.code === 112 ||
+      error.codeName === "WriteConflict" ||
+      error.message?.includes("WriteConflict") ||
+      (error.errorLabels && error.errorLabels.includes("TransientTransactionError"))
+    ) {
+      return res.status(409).json({
+        success: false,
+        message: "The room is currently being rescheduled by another user. Please try again.",
+        code: "NO_ROOMS_AVAILABLE",
+      });
+    }
+    next(error);
+  }
+};
+
+// ─────────────────────────────────────────────────────────
+// GET /api/bookings/:id/dates/availability
+// Pre-checks availability of new check-in / check-out dates
+// ─────────────────────────────────────────────────────────
+export const checkRescheduleAvailability = async (req, res, next) => {
+  const { checkIn, checkOut } = req.query;
+  if (!checkIn || !checkOut) {
+    return res.status(400).json({
+      success: false,
+      message: "checkIn and checkOut query parameters are required."
+    });
+  }
+
+  try {
+    const booking = await Booking.findById(req.params.id);
+    if (!booking) {
+      return res.status(404).json({ success: false, message: "Booking not found." });
+    }
+
+    // A. Check capacity count if roomInventory exists
+    const actualHotel = await Hotel.findById(booking.hotelId);
+    const targetRoomType = booking.roomType;
+    if (actualHotel && actualHotel.roomInventory && targetRoomType) {
+      const inv = actualHotel.roomInventory[targetRoomType] || actualHotel.roomInventory.get?.(targetRoomType);
+      if (inv && typeof inv.total === "number") {
+        const capacity = inv.total;
+
+        // Count active overlapping bookings excluding this booking
+        const activeBookingsCount = await Booking.countDocuments({
+          _id: { $ne: booking._id },
+          hotelId: actualHotel._id,
+          roomType: targetRoomType,
+          status: { $in: ACTIVE_BOOKING_STATUSES },
+          checkIn: { $lt: new Date(checkOut) },
+          checkOut: { $gt: new Date(checkIn) }
+        });
+
+        if (activeBookingsCount >= capacity) {
+          return res.status(200).json({
+            success: true,
+            available: false,
+            code: "NO_ROOMS_AVAILABLE",
+            message: "No capacity available for the selected dates."
+          });
+        }
+      }
+    }
+
+    // B. Check physical room availability
+    const resolvedRoom = await findAvailableRoom({
+      hotelObjectId: booking.hotelId,
+      hotelStringId: booking.hotelStringId,
+      roomId: booking.room,
+      roomTypeId: targetRoomType,
+      pricePerNight: booking.pricePerNight,
+      checkIn,
+      checkOut,
+      excludeBookingId: booking._id,
+    });
+
+    if (!resolvedRoom) {
+      return res.status(200).json({
+        success: true,
+        available: false,
+        code: "NO_ROOMS_AVAILABLE",
+        message: "No physical rooms available for the selected dates."
+      });
+    }
+
+    // Preview pricing delta
+    const ms = new Date(checkOut).getTime() - new Date(checkIn).getTime();
+    const newNights = Math.max(1, Math.round(ms / (1000 * 60 * 60 * 24)));
+
+    const previousSubtotal = booking.subtotal || (booking.pricePerNight * booking.nights);
+    const taxRate = previousSubtotal > 0 ? (booking.taxes || 0) / previousSubtotal : 0.18;
+    const discountRate = previousSubtotal > 0 ? (booking.discount || 0) / previousSubtotal : 0;
+
+    const newSubtotal = booking.pricePerNight * newNights;
+    const newTaxes = Math.round(newSubtotal * taxRate);
+    const newDiscount = Math.round(newSubtotal * discountRate);
+    const newTotalAmount = newSubtotal + newTaxes - newDiscount;
+
+    const priceDelta = newTotalAmount - booking.totalAmount;
+
+    return res.status(200).json({
+      success: true,
+      available: true,
+      data: {
+        newNights,
+        newTotalAmount,
+        priceDelta,
+      }
+    });
+
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ─────────────────────────────────────────────────────────
+// PATCH /api/bookings/:id/delta-status
+// Restricted to manager/admin roles to manually resolve payment delta
+// ─────────────────────────────────────────────────────────
+export const updateDeltaPaymentStatus = async (req, res, next) => {
+  const { status } = req.body;
+  if (!status || !["none", "pending_collection", "pending_refund", "resolved"].includes(status)) {
+    return res.status(400).json({
+      success: false,
+      message: "Valid status ('none', 'pending_collection', 'pending_refund', 'resolved') is required."
+    });
+  }
+
+  try {
+    const booking = await Booking.findById(req.params.id);
+    if (!booking) {
+      return res.status(404).json({ success: false, message: "Booking not found." });
+    }
+
+    booking.deltaPaymentStatus = status;
+    await booking.save();
+
+    AuditLog.create({
+      userId: req.user?.id || req.user?.email,
+      role: req.user?.role,
+      action: "RESOLVE_PAYMENT_DELTA",
+      targetType: "Booking",
+      targetId: booking._id,
+      ipAddress: req?.ip || req?.headers?.["x-forwarded-for"] || "unknown",
+      details: {
+        newStatus: status,
+      }
+    }).catch(() => {});
+
+    return res.status(200).json({
+      success: true,
+      message: "Delta payment status updated successfully.",
+      data: booking
     });
   } catch (error) {
     next(error);

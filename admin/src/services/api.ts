@@ -277,3 +277,15 @@ export const getAvailableRoomCount = (params: {
   checkIn: string;
   checkOut: string;
 }) => api.get("/rooms/available-count", { params });
+
+/** GET /api/bookings/:id/dates/availability */
+export const checkRescheduleAvailability = (bookingId: string, checkIn: string, checkOut: string) =>
+  api.get(`/bookings/${bookingId}/dates/availability`, { params: { checkIn, checkOut } });
+
+/** PATCH /api/bookings/:id/dates */
+export const rescheduleBooking = (bookingId: string, checkIn: string, checkOut: string) =>
+  api.patch(`/bookings/${bookingId}/dates`, { newCheckIn: checkIn, newCheckOut: checkOut });
+
+/** PATCH /api/bookings/:id/delta-status */
+export const updateDeltaPaymentStatus = (bookingId: string, status: string) =>
+  api.patch(`/bookings/${bookingId}/delta-status`, { status });

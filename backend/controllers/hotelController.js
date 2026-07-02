@@ -422,6 +422,16 @@ export const createHotel = async (req, res, next) => {
     if (req.body.pricePerNight != null) req.body.pricePerNight = Number(req.body.pricePerNight);
     if (req.body.totalRooms != null) req.body.totalRooms = Number(req.body.totalRooms);
 
+    // Recalculate rating based on actual reviews to prevent hardcoded/static rating
+    const reviews = req.body.reviews || [];
+    req.body.reviewCount = reviews.length;
+    if (reviews.length > 0) {
+      const totalRating = reviews.reduce((sum, r) => sum + (r.rating || 0), 0);
+      req.body.rating = Number((totalRating / reviews.length).toFixed(1));
+    } else {
+      req.body.rating = undefined;
+    }
+
     const hotel = await Hotel.create(req.body);
     
     // Auto-generate room documents from roomInventory
@@ -455,6 +465,10 @@ export const updateHotel = async (req, res, next) => {
     if (req.body.roomsPerFloor != null) req.body.roomsPerFloor = Number(req.body.roomsPerFloor);
     if (req.body.pricePerNight != null) req.body.pricePerNight = Number(req.body.pricePerNight);
     if (req.body.totalRooms != null) req.body.totalRooms = Number(req.body.totalRooms);
+
+    // Avoid overriding rating and reviewCount in update unless specifically calculated
+    delete req.body.rating;
+    delete req.body.reviewCount;
 
     const hotel = await Hotel.findOne({ hotelId: req.params.id });
     if (!hotel) return res.status(404).json({ success: false, message: "Hotel not found" });

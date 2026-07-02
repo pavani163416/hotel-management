@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { useSearchParams } from "react-router-dom";
 import {
   Search, CalendarCheck, Phone, Users,
   DollarSign, Clock, CheckCircle, XCircle,
@@ -8,7 +9,7 @@ import {
 import ManagerLayout from "@/components/ManagerLayout";
 import StatusBadge from "@/components/StatusBadge";
 import Drawer from "@/components/Drawer";
-import { checkInManagerBooking, checkOutManagerBooking, getManagerBookings, cancelBooking } from "@/services/api";
+import { checkInManagerBooking, checkOutManagerBooking, getManagerBookings, cancelBooking, updateDeltaPaymentStatus } from "@/services/api";
 import { useSocket } from "@/hooks/useSocket";
 
 type Booking = {
@@ -27,6 +28,9 @@ type Booking = {
   specialRequests?: string;
   createdAt: string;
   hotelName?: string;
+  priceDelta?: number;
+  deltaPaymentStatus?: string;
+  editHistory?: any[];
 };
 
 const STATUSES   = ["All", "Confirmed", "Pending", "CheckedIn", "CheckedOut", "Completed", "Cancelled"];
@@ -50,10 +54,17 @@ export default function Bookings() {
   const todayMonth = today.getMonth();
   const todayDate = today.getDate();
 
+  const [searchParams] = useSearchParams();
   const [bookings, setBookings]   = useState<Booking[]>([]);
   const [loading, setLoading]     = useState(true);
   const [view, setView]           = useState<"list" | "calendar">("list");
   const [search, setSearch]       = useState("");
+
+  useEffect(() => {
+    const q = searchParams.get("search");
+    if (q) setSearch(q);
+  }, [searchParams]);
+
   const [filterStatus, setFilterStatus]   = useState("All");
   const [filterPayment, setFilterPayment] = useState("All");
   const [filterType, setFilterType]       = useState("All");
@@ -61,6 +72,7 @@ export default function Bookings() {
   const [cancelTarget, setCancelTarget]   = useState<Booking | null>(null);
   const [cancelReason, setCancelReason]   = useState("");
   const [cancelling, setCancelling]       = useState(false);
+  const [resolvingDelta, setResolvingDelta] = useState(false);
   const [refreshing, setRefreshing]       = useState(false);
   const [calDate, setCalDate]     = useState(new Date());
 
@@ -91,6 +103,13 @@ export default function Bookings() {
   const sorted = [...filtered].sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   );
+
+  // Auto-open deep-linked booking detail drawer
+  useEffect(() => {
+    if (sorted.length === 1 && search.toLowerCase().startsWith("ls-") && !selected) {
+      setSelected(sorted[0]);
+    }
+  }, [sorted, search, selected]);
 
   const handleCancel = async () => {
     if (!cancelTarget) return;
@@ -420,6 +439,87 @@ export default function Bookings() {
                     </div>
                   </div>
                 </section>
+
+                {/* Delta Pricing Reconciliation (Manager Action) */}
+                {selected.deltaPaymentStatus && selected.deltaPaymentStatus !== "none" && (
+                  <section>
+                    <h3 className="text-xs font-semibold text-dim uppercase tracking-wider mb-2">Delta Pricing Reconciliation</h3>
+                    <div className="rounded-xl p-4 space-y-3"
+                      style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-soft">Delta Amount</span>
+                        <span className={`font-bold ${selected.priceDelta && selected.priceDelta > 0 ? "text-orange-400" : "text-green-400"}`}>
+                          {selected.priceDelta && selected.priceDelta > 0 ? "+" : ""}${selected.priceDelta?.toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-soft">Status</span>
+                        <span className={`px-2 py-0.5 rounded text-xs uppercase tracking-wide font-semibold ${
+                          selected.deltaPaymentStatus === "resolved" ? "bg-green-500/20 text-green-400" :
+                          selected.deltaPaymentStatus === "pending_collection" ? "bg-orange-500/20 text-orange-400" :
+                          "bg-blue-500/20 text-blue-400"
+                        }`}>
+                          {selected.deltaPaymentStatus.replace("_", " ")}
+                        </span>
+                      </div>
+                      {selected.deltaPaymentStatus !== "resolved" && (
+                        <button
+                          onClick={async () => {
+                            setResolvingDelta(true);
+                            try {
+                              await updateDeltaPaymentStatus(selected._id, "resolved");
+                              // Refresh selected
+                              const updated = { ...selected, deltaPaymentStatus: "resolved" };
+                              setSelected(updated);
+                              load();
+                            } catch (err: any) {
+                              alert(err.message || "Failed to update delta status");
+                            } finally {
+                              setResolvingDelta(false);
+                            }
+                          }}
+                          disabled={resolvingDelta}
+                          className="w-full bg-success text-white py-2 rounded-xl text-xs font-semibold hover:bg-green-700 transition-colors disabled:opacity-50">
+                          {resolvingDelta ? "Updating..." : "Mark Delta as Resolved"}
+                        </button>
+                      )}
+                    </div>
+                  </section>
+                )}
+
+                {/* Rescheduling History */}
+                {selected.editHistory && selected.editHistory.length > 0 && (
+                  <section>
+                    <h3 className="text-xs font-semibold text-dim uppercase tracking-wider mb-2">Rescheduling History ({selected.editHistory.length})</h3>
+                    <div className="space-y-2.5 max-h-40 overflow-y-auto pr-1">
+                      {selected.editHistory.map((h: any, idx: number) => {
+                        const formattedCI = new Date(h.newCheckIn).toLocaleDateString();
+                        const formattedCO = new Date(h.newCheckOut).toLocaleDateString();
+                        const prevCI = new Date(h.previousCheckIn).toLocaleDateString();
+                        const prevCO = new Date(h.previousCheckOut).toLocaleDateString();
+                        return (
+                          <div key={idx} className="rounded-xl p-3 text-xs space-y-1.5"
+                            style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)" }}>
+                            <div className="flex justify-between font-semibold text-bright">
+                              <span>Updated by {h.changedBy}</span>
+                              <span className="text-dim">{new Date(h.timestamp).toLocaleDateString()}</span>
+                            </div>
+                            <div className="text-soft">
+                              Dates: <span className="line-through">{prevCI} – {prevCO}</span> → <span className="text-accent font-medium">{formattedCI} – {formattedCO}</span>
+                            </div>
+                            {h.priceDelta !== 0 && (
+                              <div className="font-medium text-bright">
+                                Delta: <span className={h.priceDelta > 0 ? "text-orange-400" : "text-green-400"}>
+                                  {h.priceDelta > 0 ? "+" : ""}${h.priceDelta.toLocaleString()}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </section>
+                )}
 
                 {/* Special Requests */}
                 {selected.specialRequests && (

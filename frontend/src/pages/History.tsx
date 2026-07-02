@@ -5,7 +5,7 @@ import { downloadBookingReceipt, historyItemToReceipt } from "@/utils/receiptPdf
 import Layout from "@/components/Layout";
 import { useBooking, Booking } from "@/context/BookingContext";
 import { useCurrency } from "@/context/CurrencyContext";
-import { getBookingsByEmail, getMyBookings, cancelBooking as cancelBookingApi, getMyHallBookings, cancelHallBooking } from "@/services/api";
+import { getBookingsByEmail, getMyBookings, cancelBooking as cancelBookingApi, getMyHallBookings, cancelHallBooking, checkRescheduleAvailability, rescheduleBooking } from "@/services/api";
 
 const CANCEL_REASONS = [
   "Change of plans",
@@ -56,6 +56,83 @@ const History = () => {
 
   const [authOpen, setAuthOpen] = useState(false);
   const [authMode, setAuthMode] = useState<"signin" | "signup">("signin");
+
+  // Reschedule state
+  const [rescheduleTarget, setRescheduleTarget] = useState<any | null>(null);
+  const [newCheckIn, setNewCheckIn] = useState("");
+  const [newCheckOut, setNewCheckOut] = useState("");
+  const [checkingAvailability, setCheckingAvailability] = useState(false);
+  const [previewData, setPreviewData] = useState<any | null>(null);
+  const [previewError, setPreviewError] = useState("");
+  const [rescheduling, setRescheduling] = useState(false);
+
+  const isCutoffExceeded = (checkInStr: string) => {
+    if (!checkInStr) return true;
+    const checkInDate = new Date(checkInStr);
+    const threeHours = 3 * 60 * 60 * 1000;
+    return checkInDate.getTime() - Date.now() < threeHours;
+  };
+
+  useEffect(() => {
+    if (!rescheduleTarget || !newCheckIn || !newCheckOut) return;
+    
+    if (new Date(newCheckOut) <= new Date(newCheckIn)) {
+      setPreviewError("Check-out date must be after check-in date");
+      setPreviewData(null);
+      return;
+    }
+    
+    const delayDebounce = setTimeout(async () => {
+      setCheckingAvailability(true);
+      setPreviewError("");
+      try {
+        const res: any = await checkRescheduleAvailability(rescheduleTarget.id, newCheckIn, newCheckOut);
+        if (res.success) {
+          if (res.available) {
+            setPreviewData(res.data);
+          } else {
+            setPreviewError(res.message || "No rooms available for the selected dates.");
+            setPreviewData(null);
+          }
+        } else {
+          setPreviewError(res.message || "Unable to verify availability.");
+          setPreviewData(null);
+        }
+      } catch (err: any) {
+        setPreviewError(err.message || "Failed to check availability.");
+        setPreviewData(null);
+      } finally {
+        setCheckingAvailability(false);
+      }
+    }, 400);
+    
+    return () => clearTimeout(delayDebounce);
+  }, [newCheckIn, newCheckOut, rescheduleTarget]);
+
+  const handleRescheduleConfirm = async () => {
+    if (!rescheduleTarget || !newCheckIn || !newCheckOut || !previewData) return;
+    setRescheduling(true);
+    try {
+      await rescheduleBooking(rescheduleTarget.id, newCheckIn, newCheckOut);
+      // Refresh list
+      try {
+        let hB = [];
+        try { const hr: any = await getMyHallBookings(); if(hr?.data) hB = hr.data; } catch {}
+        const res: any = await getMyBookings();
+        if (res?.data || hB.length > 0) setApiBookings([...(res?.data || []), ...hB]);
+      } catch {
+        if (user?.email) {
+          const res: any = await getBookingsByEmail(user.email);
+          if (res?.data) setApiBookings(res.data);
+        }
+      }
+      setRescheduleTarget(null);
+    } catch (err: any) {
+      alert(err.message || "Failed to reschedule booking");
+    } finally {
+      setRescheduling(false);
+    }
+  };
 
   // Fetch real bookings from API when user is logged in
   // location.key changes on every navigation so this re-fetches whenever the user visits History
@@ -280,11 +357,31 @@ const History = () => {
                       <p className="text-xs text-muted-foreground">Total</p>
                       <p className="font-display text-xl font-bold text-primary">{format(b.total)}</p>
                     </div>
-                    <div className="flex flex-col gap-2">
+                    <div className="flex flex-col gap-2 items-center md:items-end">
                       <button onClick={() => setModal(b)}
-                        className="bg-accent hover:bg-accent/90 text-accent-foreground px-4 py-2 rounded-lg text-sm font-semibold transition-base">
+                        className="bg-accent hover:bg-accent/90 text-accent-foreground px-4 py-2 rounded-lg text-sm font-semibold transition-base w-full md:w-auto text-center">
                         View Details
                       </button>
+                      {["confirmed", "pending", "pending_payment"].includes(b.status.toLowerCase()) && (
+                        <button
+                          onClick={() => {
+                            if (isCutoffExceeded(b.raw?.checkIn || b.checkIn)) {
+                              alert("Bookings cannot be rescheduled within 3 hours of check-in time.");
+                              return;
+                            }
+                            setRescheduleTarget(b);
+                            setNewCheckIn(b.checkIn);
+                            setNewCheckOut(b.checkOut);
+                            setPreviewData(null);
+                            setPreviewError("");
+                            setCheckingAvailability(false);
+                          }}
+                          disabled={isCutoffExceeded(b.raw?.checkIn || b.checkIn)}
+                          title={isCutoffExceeded(b.raw?.checkIn || b.checkIn) ? "Cannot reschedule within 3 hours of check-in" : ""}
+                          className="text-accent text-xs font-semibold hover:underline disabled:opacity-50 disabled:cursor-not-allowed mt-1">
+                          Edit Dates
+                        </button>
+                      )}
                       {b.status === "Confirmed" && (
                         <button onClick={() => { setCancelTarget(b); setCancelReason(""); setCancelOther(""); }}
                           className="text-destructive text-xs font-semibold hover:underline mt-1">
@@ -391,6 +488,124 @@ const History = () => {
             <p className="text-xs text-muted-foreground text-center mt-3">
               Refund of <strong>{format(cancelTarget.total)}</strong> will be processed to your original payment method.
             </p>
+          </div>
+        </div>
+      )}
+
+      {/* Reschedule Dates Modal */}
+      {rescheduleTarget && (
+        <div className="fixed inset-0 bg-primary/50 backdrop-blur-sm grid place-items-center z-50 p-4"
+          onClick={() => setRescheduleTarget(null)}>
+          <div className="bg-card rounded-2xl max-w-md w-full p-6 relative animate-fade-in" onClick={(e) => e.stopPropagation()}>
+            <button onClick={() => setRescheduleTarget(null)} className="absolute top-4 right-4 text-muted-foreground hover:text-primary">
+              <X className="w-5 h-5" />
+            </button>
+            <div className="flex items-center gap-3 mb-5">
+              <div className="w-10 h-10 rounded-full bg-accent/10 grid place-items-center shrink-0">
+                <Clock className="w-5 h-5 text-accent" />
+              </div>
+              <div>
+                <h3 className="font-display text-lg font-bold text-primary">Reschedule Stay</h3>
+                <p className="text-xs text-muted-foreground">{rescheduleTarget.hotelName} · #{rescheduleTarget.id}</p>
+              </div>
+            </div>
+
+            <div className="space-y-4 mb-6">
+              <div>
+                <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">New Check-In Date</label>
+                <input
+                  type="date"
+                  value={newCheckIn}
+                  min={new Date().toISOString().slice(0, 10)}
+                  onChange={(e) => setNewCheckIn(e.target.value)}
+                  className="w-full px-4 py-2.5 border border-border rounded-xl text-sm outline-none focus:border-accent bg-transparent text-primary"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">New Check-Out Date</label>
+                <input
+                  type="date"
+                  value={newCheckOut}
+                  min={newCheckIn ? new Date(new Date(newCheckIn).getTime() + 86400000).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10)}
+                  onChange={(e) => setNewCheckOut(e.target.value)}
+                  className="w-full px-4 py-2.5 border border-border rounded-xl text-sm outline-none focus:border-accent bg-transparent text-primary"
+                />
+              </div>
+            </div>
+
+            {/* Live Availability Status */}
+            <div className="mb-6 p-4 rounded-xl bg-secondary/30 min-h-[60px] flex flex-col justify-center">
+              {checkingAvailability && (
+                <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="w-4 h-4 animate-spin text-accent" />
+                  <span>Checking room availability...</span>
+                </div>
+              )}
+
+              {!checkingAvailability && previewError && (
+                <div className="flex items-center gap-2 text-sm text-destructive font-medium">
+                  <AlertTriangle className="w-4 h-4 shrink-0" />
+                  <span>{previewError}</span>
+                </div>
+              )}
+
+              {!checkingAvailability && !previewError && previewData && (
+                <div className="space-y-2">
+                  <div className="text-xs font-bold text-green-600 uppercase tracking-wider">✓ Room Available</div>
+                  <div className="text-sm font-medium text-primary">
+                    Duration: {previewData.newNights} {previewData.newNights === 1 ? "night" : "nights"}
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    New Total: <span className="font-semibold text-primary">{format(previewData.newTotalAmount)}</span>
+                  </div>
+                  {previewData.priceDelta > 0 && (
+                    <div className="text-xs text-orange-600 font-semibold bg-orange-500/10 p-2 rounded-lg">
+                      Price adjustment: +{format(Math.abs(previewData.priceDelta))} (to be paid outside/at check-in)
+                    </div>
+                  )}
+                  {previewData.priceDelta < 0 && (
+                    <div className="text-xs text-green-600 font-semibold bg-green-500/10 p-2 rounded-lg">
+                      Refund adjustment: -{format(Math.abs(previewData.priceDelta))} (will be processed manually)
+                    </div>
+                  )}
+                  {previewData.priceDelta === 0 && (
+                    <div className="text-xs text-muted-foreground bg-accent/10 p-2 rounded-lg">
+                      No change in stay pricing.
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {!checkingAvailability && !previewError && !previewData && (
+                <div className="text-center text-xs text-muted-foreground">
+                  Select valid stay dates to preview availability.
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setRescheduleTarget(null)}
+                className="flex-1 py-2.5 border border-border rounded-xl text-sm font-semibold text-muted-foreground hover:bg-secondary transition-base"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleRescheduleConfirm}
+                disabled={checkingAvailability || !!previewError || !previewData || rescheduling}
+                className="flex-1 py-2.5 bg-accent text-accent-foreground rounded-xl text-sm font-semibold hover:bg-accent/90 disabled:opacity-50 transition-base flex items-center justify-center gap-2"
+              >
+                {rescheduling ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin animate-spin-fast" />
+                    <span>Updating...</span>
+                  </>
+                ) : (
+                  "Confirm Change"
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}
