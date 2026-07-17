@@ -106,11 +106,6 @@ function AuthModalInner({ isOpen, onClose, defaultMode, mode, setMode, loading, 
           </svg>
           Continue with Google
         </button>
-        <button type="button" onClick={() => { setMode("phone"); setError(""); setOtpSent(false); setVerificationCode(""); setOtpMessage(""); }}
-          className="w-full bg-card hover:bg-secondary text-primary border border-border py-3 rounded-xl font-semibold flex items-center justify-center gap-3 transition-base">
-          <Smartphone className="w-5 h-5" />
-          Continue with Phone Number
-        </button>
       </div>
     </>
   );
@@ -119,7 +114,7 @@ function AuthModalInner({ isOpen, onClose, defaultMode, mode, setMode, loading, 
     <DialogContent className={`${mode === "signup" ? "w-[min(95vw,760px)] max-w-[760px]" : "w-[min(95vw,440px)] max-w-[440px]"} max-h-[calc(100dvh-5rem)] overflow-y-auto p-5 sm:p-6`} aria-describedby={undefined}>
       <DialogHeader>
         <DialogTitle className="font-display text-xl sm:text-2xl font-bold">
-          {mode === "signin" ? "Welcome Back" : mode === "phone" ? "Continue with Phone" : mode === "verify_email_otp" ? "Verify Your Email" : mode === "forgot_password" ? "Reset Password" : "Create an Account"}
+          {mode === "signin" ? "Welcome Back" : mode === "verify_email_otp" ? "Verify Your Email" : mode === "forgot_password" ? "Reset Password" : "Create an Account"}
         </DialogTitle>
       </DialogHeader>
 
@@ -275,47 +270,6 @@ function AuthModalInner({ isOpen, onClose, defaultMode, mode, setMode, loading, 
               className="text-primary hover:underline font-semibold">Sign In</button>
           </p>
         </form>
-      ) : mode === "phone" ? (
-        <div className="space-y-4 mt-4">
-          <div className="space-y-2">
-            <label className="block text-sm font-medium">Mobile number</label>
-            <div className="flex gap-2">
-              <select 
-                value={countryCode} 
-                onChange={e => setCountryCode(e.target.value)}
-                className="w-[75px] px-1 py-2 border border-border rounded-lg outline-none focus:border-accent bg-background"
-                style={{ fontSize: '16px' }}
-              >
-                {COUNTRY_CODES.map(c => (
-                  <option key={c.code} value={c.code}>{c.code}</option>
-                ))}
-              </select>
-              <input type="tel" value={phone} onChange={e => setPhone(e.target.value.replace(/\D/g, ""))}
-                className="flex-1 w-full px-4 py-2 border border-border rounded-lg outline-none focus:border-accent"
-                placeholder={getPhonePlaceholder(countryCode)} autoComplete="tel" />
-            </div>
-          </div>
-          {otpSent && (
-            <div className="space-y-2">
-              <label className="block text-sm font-medium">OTP Code</label>
-              <input type="text" value={verificationCode} onChange={e => setVerificationCode(e.target.value)}
-                className="w-full px-4 py-2 border border-border rounded-lg outline-none focus:border-accent"
-                placeholder="Enter OTP" autoComplete="one-time-code" />
-            </div>
-          )}
-          {otpMessage && <p className="text-sm text-foreground">{otpMessage}</p>}
-          {error && <p className="text-destructive text-sm font-medium">{error}</p>}
-          <button type="button" onClick={otpSent ? handleVerifyPhoneOTP : handleSendPhoneOTP}
-            disabled={loading}
-            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-3 rounded-xl font-semibold transition-base">
-            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : otpSent ? "Verify OTP" : "Send OTP"}
-          </button>
-          <p className="text-center text-sm text-muted-foreground mt-4">
-            Prefer email?{" "}
-            <button type="button" onClick={() => { localStorage.removeItem("luxe_pending_email"); setMode("signin"); resetForm(); }}
-              className="text-primary hover:underline font-semibold">Sign In</button>
-          </p>
-        </div>
       ) : mode === "verify_email_otp" ? (
         <form onSubmit={handleVerifyEmailOTP} className="space-y-4 mt-4">
           <div className="space-y-2">
@@ -409,7 +363,7 @@ function AuthModalInner({ isOpen, onClose, defaultMode, mode, setMode, loading, 
 export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModalProps) {
   const { user, setUser, refreshUser } = useBooking();
   const navigate = useNavigate();
-  const [mode, setMode]         = useState<"signin" | "signup" | "phone" | "verify_email_otp" | "forgot_password">(defaultMode);
+  const [mode, setMode]         = useState<"signin" | "signup" | "verify_email_otp" | "forgot_password">(defaultMode as any);
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState("");
   const [email, setEmail]       = useState("");
@@ -612,14 +566,7 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
       const fullPhone = `${countryCode}${phone.trim()}`;
       const res: any = await api.post("/auth/phone/send", { phone: fullPhone });
       setOtpSent(true);
-      const data = res.data?.data ?? res.data;
-      if (res.data?.otp || data?.otp) {
-        const otpCode = res.data?.otp || data?.otp;
-        setVerificationCode(otpCode);
-        setOtpMessage(`DEV MODE: Your phone verification code is ${otpCode}`);
-      } else {
-        setOtpMessage("OTP sent. Please check your phone and enter the code below.");
-      }
+      setOtpMessage("OTP sent. Please check your phone and enter the code below.");
     } catch (err: any) {
       setError(err.response?.data?.message || err.message || "Unable to send OTP.");
     } finally {

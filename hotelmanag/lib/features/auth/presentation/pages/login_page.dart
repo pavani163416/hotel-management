@@ -8,7 +8,7 @@ import '../../../../core/widgets/custom_text_field.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/providers/booking_provider.dart';
 import '../../../../core/providers/notification_provider.dart';
-import '../widgets/phone_auth_bottom_sheet.dart';
+
 import '../../../../core/utils/validators.dart';
 import 'dart:math';
 
@@ -523,17 +523,6 @@ class _LoginPageState extends State<LoginPage> {
                                   SnackBar(content: Text(auth.error!)),
                                 );
                               }
-                            },
-                    ),
-                    const SizedBox(height: 16),
-                    _buildSocialButton(
-                      'Continue with Phone Number',
-                      LucideIcons.phone,
-                      isLoading: false,
-                      onTap: (_isLoggingIn || _isGoogleLoggingIn)
-                          ? () {}
-                          : () {
-                              PhoneAuthBottomSheet.show(context);
                             },
                     ),
                   ],

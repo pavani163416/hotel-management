@@ -194,7 +194,7 @@ import User from "../models/User.js";
 import Guest from "../models/Guest.js";
 import Booking from "../models/Booking.js";
 import Manager from "../models/Manager.js";
-import twilio from "twilio";
+
 import connectAdminDB from "../config/adminDb.js";
 import { authLimiter, loginLimiter, otpRateLimiter } from "../middleware/rateLimiter.js";
 import logger from "../utils/logger.js";
@@ -251,19 +251,7 @@ const setAccessCookie = (res, token, expiresIn = JWT_EXPIRES) =>
 const clearAccessCookie = (res) =>
   res.clearCookie(ACCESS_COOKIE, { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: process.env.NODE_ENV === "production" ? "none" : "lax" });
 
-const twilioAuthHeaders = () => {
-  const sid = process.env.TWILIO_ACCOUNT_SID;
-  const token = process.env.TWILIO_AUTH_TOKEN;
-  const fromNumber = process.env.TWILIO_PHONE_NUMBER;
-  if (!sid || !token || !fromNumber) {
-    throw new Error("Twilio SMS is not configured.");
-  }
-  return {
-    auth: `Basic ${Buffer.from(`${sid}:${token}`).toString("base64")}`,
-    sid,
-    fromNumber,
-  };
-};
+
 
 let AdminUserModel = null;
 const getAdminUserModel = async () => {
@@ -311,10 +299,9 @@ const normalizePhoneNumber = (phone) => {
   }
 
   // Restrict allowed country codes to only India (+91) to prevent international toll fraud.
-  // We explicitly allow the configured Twilio test number (+6281742588) from the environment to bypass this check.
-  const twilioTestNum = process.env.TWILIO_PHONE_NUMBER ? process.env.TWILIO_PHONE_NUMBER.trim().replace(/[\s()\-]/g, "") : "";
-  const isTwilioTest = (twilioTestNum && (normalized === twilioTestNum || normalized === twilioTestNum.replace("+62", "+6262") || normalized.includes("6281742588"))) || normalized.includes("6281742588");
-  if (!normalized.startsWith("+91") && !isTwilioTest) {
+  // Temporarily bypass this check for dev test numbers
+  const isTestNumber = normalized.includes("6281742588");
+  if (!normalized.startsWith("+91") && !isTestNumber) {
     throw new Error("Only Indian phone numbers (+91) are allowed.");
   }
 
@@ -337,41 +324,7 @@ const normalizePhoneNumber = (phone) => {
   return normalized;
 };
 
-const sendTwilioVerifyOtp = async (normalizedPhone) => {
-  const sid = process.env.TWILIO_ACCOUNT_SID;
-  const token = process.env.TWILIO_AUTH_TOKEN;
-  const serviceSid = process.env.TWILIO_VERIFY_SERVICE_SID;
 
-  if (!sid || !token || !serviceSid) {
-    throw new Error("Twilio Verify is not configured. Set TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, and TWILIO_VERIFY_SERVICE_SID.");
-  }
-
-  const client = twilio(sid, token);
-  const verification = await client.verify.v2
-    .services(serviceSid)
-    .verifications.create({ to: normalizedPhone, channel: "sms" });
-
-  if (verification.status !== "pending") {
-    throw new Error(`Twilio Verify returned unexpected status: ${verification.status}`);
-  }
-};
-
-const checkTwilioVerifyOtp = async (normalizedPhone, code) => {
-  const sid = process.env.TWILIO_ACCOUNT_SID;
-  const token = process.env.TWILIO_AUTH_TOKEN;
-  const serviceSid = process.env.TWILIO_VERIFY_SERVICE_SID;
-
-  if (!sid || !token || !serviceSid) {
-    throw new Error("Twilio Verify is not configured.");
-  }
-
-  const client = twilio(sid, token);
-  const verificationCheck = await client.verify.v2
-    .services(serviceSid)
-    .verificationChecks.create({ to: normalizedPhone, code });
-
-  return verificationCheck.status === "approved";
-};
 
 // ── Middleware: verify customer JWT ──────────────────────
 export const verifyCustomerToken = (req, res, next) => {
@@ -931,172 +884,7 @@ router.post("/login", loginLimiter, validateLoginPayload, async (req, res, next)
   } catch (err) { next(err); }
 });
 
-router.post("/phone/send", otpRateLimiter, async (req, res, next) => {
-  try {
-    const phone = req.body.phone?.trim();
-    if (!phone) {
-      return res.status(400).json({ success: false, message: "Phone number is required." });
-    }
 
-    const normalizedPhone = normalizePhoneNumber(phone);
-
-    // If it is the Twilio test number from env, bypass Twilio and immediately return mock OTP
-    const twilioTestNum = process.env.TWILIO_PHONE_NUMBER ? process.env.TWILIO_PHONE_NUMBER.trim().replace(/[\s()\-]/g, "") : "";
-    const isTestNumber = (twilioTestNum && (normalizedPhone === twilioTestNum || normalizedPhone === twilioTestNum.replace("+62", "+6262") || normalizedPhone.includes("6281742588"))) || normalizedPhone.includes("6281742588");
-
-    if (isTestNumber) {
-      logger.info("Test phone number detected, using mock OTP", { phone: normalizedPhone });
-      const mockOtp = "123456";
-      await cacheSet(`mock_otp_${normalizedPhone}`, mockOtp, 300);
-      return res.status(200).json({
-        success: true,
-        message: "OTP sent successfully (DEV MODE fallback).",
-        otp: mockOtp
-      });
-    }
-
-    // Use Twilio Verify API — no TWILIO_PHONE_NUMBER needed, Twilio manages delivery
-    await sendTwilioVerifyOtp(normalizedPhone);
-
-    logger.info("Phone OTP sent via Twilio Verify", { phone: normalizedPhone });
-    return res.status(200).json({ success: true, message: "OTP sent successfully." });
-  } catch (err) {
-    logger.error(err.message, "Phone OTP send failed");
-    const phone = req.body.phone?.trim();
-    if (phone) {
-      try {
-        const normalizedPhone = normalizePhoneNumber(phone);
-        const msg = err.message || "";
-        if (process.env.NODE_ENV !== "production" || msg.toLowerCase().includes("trial") || msg.toLowerCase().includes("unverified")) {
-          logger.info("Falling back to DEV MODE mock OTP for testing", { phone: normalizedPhone });
-          const mockOtp = "123456";
-          await cacheSet(`mock_otp_${normalizedPhone}`, mockOtp, 300);
-          return res.status(200).json({
-            success: true,
-            message: "OTP sent successfully (DEV MODE fallback).",
-            otp: mockOtp
-          });
-        }
-      } catch (_) {}
-    }
-    const isValidationError = err.message?.includes("required") || 
-                              err.message?.includes("format") || 
-                              err.message?.includes("digits") || 
-                              err.message?.includes("allowed") || 
-                              err.message?.includes("Premium");
-    const status = isValidationError ? 400 : 500;
-    return res.status(status).json({ success: false, message: err.message || "Unable to send OTP." });
-  }
-});
-
-router.post("/phone/verify", otpRateLimiter, async (req, res, next) => {
-  try {
-    const phone = req.body.phone?.trim();
-    const code = req.body.code?.trim();
-    if (!phone || !code) {
-      return res.status(400).json({ success: false, message: "Phone and OTP code are required." });
-    }
-
-    const normalizedPhone = normalizePhoneNumber(phone);
-
-    // Check mock OTP cache first
-    const mockOtp = await cacheGet(`mock_otp_${normalizedPhone}`);
-    let isApproved = false;
-    if (mockOtp && mockOtp === code) {
-      isApproved = true;
-      await cacheDel(`mock_otp_${normalizedPhone}`);
-    } else {
-      // Verify OTP via Twilio Verify API
-      isApproved = await checkTwilioVerifyOtp(normalizedPhone, code);
-    }
-
-    if (!isApproved) {
-      return res.status(401).json({ success: false, message: "OTP verification failed. Please check the code and try again." });
-    }
-
-    let user = await User.findOne({ phone: normalizedPhone }).select("+passwordHash");
-    if (!user) {
-      const safePhone = normalizedPhone.replace(/\D/g, "") || "unknown";
-      const generatedEmail = `${safePhone || "no-phone"}@phone.luxe`;
-      const generatedName = `Guest ${safePhone.slice(-4) || safePhone}`;
-      const passwordHash = await bcrypt.hash(crypto.randomBytes(32).toString("hex"), 12);
-
-      user = await User.create({
-        name: generatedName,
-        email: generatedEmail,
-        passwordHash,
-        phone: normalizedPhone,
-        isVerified: true,
-        accountStatus: "active",
-        isActive: true,
-      });
-
-      const guest = await Guest.create({
-        name: generatedName,
-        email: generatedEmail,
-        phone: normalizedPhone,
-      });
-      user.guestId = guest._id;
-      await user.save();
-    } else {
-      // Mark existing user as verified if they aren't already
-      if (!user.isVerified || user.accountStatus !== "active") {
-        user.isVerified = true;
-        user.accountStatus = "active";
-        await user.save();
-      }
-    }
-
-    if (!user.guestId) {
-      let guest = await Guest.findOne({ phone: normalizedPhone });
-      if (!guest) {
-        guest = await Guest.create({
-          name: user.name,
-          email: user.email,
-          phone: user.phone,
-        });
-      }
-      user.guestId = guest._id;
-      await user.save();
-    }
-
-    const token = jwt.sign(
-      { id: user._id, guestId: user.guestId, email: user.email, name: user.name, role: user.role || "customer" },
-      getSecret(),
-      { expiresIn: JWT_EXPIRES }
-    );
-
-    // Set access token in HttpOnly cookie (web security hardening)
-    setAccessCookie(res, token);
-
-    return res.status(200).json({
-      success: true,
-      message: "Phone verification successful.",
-      data: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        city: user.city,
-        wishlist: user.wishlist || [],
-        profileImage: user.profileImage,
-        coverImage: user.coverImage,
-        paymentMethods: user.paymentMethods,
-        role: user.role || "customer",
-        token, // kept for mobile / Flutter clients
-      },
-    });
-  } catch (err) {
-    logger.error(err.message, "Phone OTP verify failed");
-    const isValidationError = err.message?.includes("required") || 
-                              err.message?.includes("format") || 
-                              err.message?.includes("digits") || 
-                              err.message?.includes("allowed") || 
-                              err.message?.includes("Premium");
-    const status = isValidationError ? 400 : 500;
-    return res.status(status).json({ success: false, message: err.message || "Unable to verify OTP." });
-  }
-});
 
 // ── POST /api/auth/google ──────────────────────────────────
 router.post("/google", async (req, res, next) => {

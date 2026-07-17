@@ -48,8 +48,7 @@ abstract class AuthRemoteDataSource {
   });
   Future<bool> changePassword(String oldPassword, String newPassword);
   Future<bool> forgotPassword(String email);
-  Future<String?> sendPhoneOtp(String phone);
-  Future<AuthResponse> verifyPhoneOtp(String phone, String code);
+
   Future<(String, String)?> fetchCaptcha();
 }
 
@@ -91,33 +90,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     return null;
   }
 
-  @override
-  Future<String?> sendPhoneOtp(String phone) async {
-    final response = await _apiService.post(
-      'auth/phone/send',
-      data: {'phone': phone},
-    );
-    if (response.data['success'] == true) {
-      return response.data['otp']?.toString() ?? 'success';
-    }
-    return null;
-  }
 
-  @override
-  Future<AuthResponse> verifyPhoneOtp(String phone, String code) async {
-    final response = await _apiService.post(
-      'auth/phone/verify',
-      data: {'phone': phone, 'code': code},
-    );
-    final data = response.data['data'];
-    if (data == null) {
-      throw Exception(response.data['message'] ?? 'Verification failed');
-    }
-    return AuthResponse(
-      user: UserModel.fromJson(data),
-      token: data['token'] ?? '',
-    );
-  }
 
   @override
   Future<bool> forgotPassword(String email) async {

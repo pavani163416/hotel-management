@@ -58,9 +58,4 @@ abstract class AuthRepository {
     String newPassword,
   );
   Future<Either<Failure, bool>> forgotPassword(String email);
-  Future<Either<Failure, String?>> sendPhoneOtp(String phone);
-  Future<Either<Failure, (UserEntity, String)>> verifyPhoneOtp(
-    String phone,
-    String code,
-  );
 }

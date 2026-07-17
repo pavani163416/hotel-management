@@ -7,7 +7,7 @@ import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/providers/booking_provider.dart';
 import '../../../../core/providers/notification_provider.dart';
 import '../../../../core/utils/validators.dart';
-import '../widgets/phone_auth_bottom_sheet.dart';
+
 import 'dart:math';
 
 /// Country codes — mirrors web AuthModal COUNTRY_CODES list.
@@ -677,27 +677,7 @@ class _RegisterPageState extends State<RegisterPage> {
               ),
               const SizedBox(height: 12),
 
-              // ── Phone Sign-In ─────────────────────────
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: OutlinedButton.icon(
-                  icon: const Icon(Icons.smartphone_outlined, size: 18),
-                  label: const Text(
-                    'Continue with Phone Number',
-                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
-                  ),
-                  onPressed: () => PhoneAuthBottomSheet.show(context),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppTheme.primaryColor,
-                    side: BorderSide(color: Colors.grey.shade300),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
+
 
               // ── Sign In link ──────────────────────────
               Center(
